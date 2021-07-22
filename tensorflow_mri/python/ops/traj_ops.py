@@ -36,15 +36,16 @@ def radial_trajectory(base_resolution,
     views: An `int`. Number of radial views per k-space.
     phases: An `int`. Number of phases for cine acquisitions. If `None`, this is
       assumed to be a non-cine acquisition with no time dimension.
-    spacing: A `string`. Spacing type. Must be of: `{'linear', 'golden', 'tiny',
-      'sorted'}`.
-    domain: A `string`. Rotation domain. Must be of: `{'full', 'half'}`, to
-      include the full circle (`2*pi`) or half circle (`pi`).
+    spacing: A `string`. Spacing type. Must be one of: `{'linear', 'golden',
+      'tiny', 'sorted'}`.
+    domain: A `string`. Rotation domain. Must be one of: `{'full', 'half'}`. If
+      `domain` is `'full'`, the full circle is included in the rotation domain
+      (`2 * pi`). If `domain` is `'half'`, only half circle is included (`pi`).
     readout_os: A `float`. Readout oversampling factor.
 
   Returns:
-    A `Tensor` of type `float32` and shape `[views, samples]` if `phases` is
-    `None`, or of shape `[phases, views, samples]` if `phases` is not `None`.
+    A `Tensor` of type `float32` and shape `[views, samples, 2]` if `phases` is
+    `None`, or of shape `[phases, views, samples, 2]` if `phases` is not `None`.
     `samples` is equal to `base_resolution * readout_os`. The units are
     radians/voxel, ie, values are in the range `[-pi, pi]`.
   """
@@ -114,10 +115,9 @@ def radial_waveform(base_resolution, readout_os=2.0):
   """Calculate a radial readout waveform.
 
   Args:
-    base_resolution: The base resolution, or number of pixels in the readout
-      dimension. Determines the number of base_resolution per spoke without
-      oversampling.
-    readout_os: Readout oversampling factor.
+    base_resolution: An `int`. The base resolution, or number of pixels in the
+      readout dimension.
+    readout_os: A `float`. Readout oversampling factor.
 
   Returns:
     A `Tensor` of type `float32` and shape `[samples, 2]`, where `samples` is
@@ -147,13 +147,14 @@ def radial_density(base_resolution,
                    spacing='linear',
                    domain='full',
                    readout_os=2.0):
-  """Compute density compensation weights for radial trajectories.
+  """Calculate density compensation weights for radial trajectories.
 
   For the parameters, see `radial_trajectory`.
 
   Returns:
-    A `Tensor` of type `float32` and shape `[]`. The density compensation for
-    the specified radial trajectory.
+    A `Tensor` of type `float32` and shape `[views, samples]` if `phases` is
+    `None`, or of shape `[phases, views, samples]` if `phases` is not `None`.
+    `samples` is equal to `base_resolution * readout_os`.
   """
   # Get angles.
   theta = _trajectory_angles(views, phases or 1, spacing=spacing, domain=domain)
