@@ -8,6 +8,11 @@ version: 2
 sphinx:
    configuration: tools/docs/conf.py
 
+build:
+  image: latest
+  apt_packages:
+    - libopenexr-dev
+  
 formats:
    - pdf
 
