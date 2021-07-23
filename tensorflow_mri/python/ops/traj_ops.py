@@ -233,6 +233,9 @@ def _radial_density_from_theta(samples, theta):
   Returns:
     A `Tensor` of shape `[views, samples]`, where `views = theta.shape`.
   """
+  # See https://github.com/tensorflow/tensorflow/issues/43038
+  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
+
   tf.debugging.assert_rank(theta, 1, message=(
     "`theta` must be of rank 1, but received shape: {}").format(theta.shape))
 
@@ -308,6 +311,9 @@ def radial_waveform(base_resolution, readout_os=2.0):
     equal to `base_resolution * readout_os`. The units are radians/voxel, ie,
     values are in the range `[-pi, pi]`.
   """
+  # See https://github.com/tensorflow/tensorflow/issues/43038
+  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
+
   # Number of samples with oversampling.
   samples = int(base_resolution * readout_os + 0.5)
 
@@ -415,6 +421,9 @@ def _rotate_waveform_3d(waveform, theta):
   Returns:
     Rotated waveform(s).
   """
+  # See https://github.com/tensorflow/tensorflow/issues/43038
+  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
+
   # Create Euler angle array.
   euler_angles = tf.zeros(theta.shape + (2,))
   theta = tf.expand_dims(theta, -1)
