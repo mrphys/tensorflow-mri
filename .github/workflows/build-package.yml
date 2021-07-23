@@ -62,9 +62,10 @@ jobs:
         run: |
           pip install sphinx furo
           make docs PY_VERSION=${{ matrix.py_version }}
-          echo "tmp_dir=$(mktemp -d)" >> $GITHUB_ENV
-          cp -r ./tools/docs/_build/html/* ${{ env.tmp_dir }}/
-          touch ${{ env.tmp_dir }}/.nojekyll
+          # export TMPDIR=$(mktemp -d)
+          # cp -r ./tools/docs/_build/html/* $TMPDIR/
+          # touch $TMPDIR/.nojekyll
+          # echo "docs_dir=TMPDIR" >> $GITHUB_ENV
 
       - name: Upload docs
         if: matrix.py_version == 3.9
@@ -77,14 +78,21 @@ jobs:
         uses: actions/checkout@v2
         with:
           ref: docs
+
+      - name: Clean docs
+        run: |
+          rm -r ./*
+
+      - name: Download docs
+        uses: actions/download-artifact@v2
+        with:
+          name: docs
       
       - name: Publish docs to GitHub Pages
         if: matrix.py_version == 3.9
         run: |
           git config --global user.name mrphys
           git config --global user.email mrphys@users.noreply.github.com
-          rm -r ./*
-          cp -r ${{ env.tmp_dir }}/. .
           git add -A
           git commit -m "CI/CD - Update docs"
           git push --force
