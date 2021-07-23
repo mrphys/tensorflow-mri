@@ -89,6 +89,7 @@ jobs:
     name: Publish docs
     needs: build
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags')
     
     steps:
 
