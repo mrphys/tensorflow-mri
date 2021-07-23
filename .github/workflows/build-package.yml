@@ -54,6 +54,7 @@ jobs:
 
       - name: Build docs
         run: |
+          pip install sphinx
           make docs
 
       - name: Upload wheel
