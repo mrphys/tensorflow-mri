@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2021 University College London. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,14 +31,14 @@ else
   PIP_FILE_PREFIX="bazel-bin/build_pip_pkg.runfiles/__main__/"
 fi
 
-PY_VERSION=
+PYTHON=python3
 function main() {
   while [[ ! -z "${1}" ]]; do
     if [[ ${1} == "make" ]]; then
       echo "Using Makefile to build pip package."
       PIP_FILE_PREFIX=""
-    elif [[ ${1} == "--py_version" ]]; then
-      PY_VERSION=${2}
+    elif [[ ${1} == "--python" ]]; then
+      PYTHON=${2}
       shift
     else
       DEST=${1}
@@ -71,19 +71,20 @@ function main() {
   cp ${PIP_FILE_PREFIX}setup.py "${TMPDIR}"
   cp ${PIP_FILE_PREFIX}MANIFEST.in "${TMPDIR}"
   cp ${PIP_FILE_PREFIX}LICENSE "${TMPDIR}"
-  cp ${PIP_FILE_PREFIX}VERSION "${TMPDIR}"
   cp ${PIP_FILE_PREFIX}requirements.txt "${TMPDIR}"
-  rsync -avm -L --exclude='*.h' --exclude='*.cc' --exclude='*.o' --exclude='*_test.py' --exclude='__pycache__/*' ${PIP_FILE_PREFIX}tensorflow_mri "${TMPDIR}"
-
-  echo "=== Select Python version"
-  if [ ! -z "${PY_VERSION}" ]; then
-    pyenv global $(pyenv versions | grep -oP "${PY_VERSION}.\d*")
-  fi
+  rsync -avm -L --exclude='*.h' --exclude='*.cc' --exclude='*.o'              \
+    --exclude='*_test.py' --exclude='__pycache__/*'                           \
+    ${PIP_FILE_PREFIX}tensorflow_mri "${TMPDIR}"
 
   pushd ${TMPDIR}
   echo $(date) : "=== Building wheel"
+  ${PYTHON} setup.py bdist_wheel > /dev/null
 
-  python3 setup.py bdist_wheel > /dev/null
+  if [[ "${PLATFORM}" == "linux" ]]; then
+    echo $(date) : "=== Auditing wheel"
+    auditwheel repair --plat manylinux2014_x86_64 dist/*linux_x86_64.whl -w dist/
+    rm -rf dist/*linux_x86_64.whl
+  fi
 
   cp dist/*.whl "${DEST}"
   popd

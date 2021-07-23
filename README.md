@@ -1,5 +1,6 @@
 # TensorFlow MRI
 
+[![PyPI](https://badge.fury.io/py/tensorflow-mri.svg)](https://badge.fury.io/py/tensorflow-mri)
 [![build](https://github.com/mrphys/tensorflow-mri/actions/workflows/build-package.yml/badge.svg)](https://github.com/mrphys/tensorflow-mri/actions/workflows/build-package.yml)
 [![docs](https://readthedocs.org/projects/tensorflow-mri/badge/?version=latest)](https://tensorflow-mri.readthedocs.io/en/latest/?badge=latest)
 

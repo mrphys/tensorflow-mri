@@ -17,38 +17,46 @@ jobs:
     name: Build package
     runs-on: ubuntu-latest
 
+    container:
+      image: ghcr.io/mrphys/tensorflow-manylinux:1.0.0
+
+    strategy:
+      matrix:
+        py_version: [3.6, 3.7, 3.8, 3.9]
+
+    env:
+      PYTHON: python${{ matrix.py_version }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-      
       - name: Lint code
         run: |
-          pip install pylint
-          make lint
+          make lint PY_VERSION=${{ matrix.py_version }}
+
+      - name: Compile shared library
+        run: |
+          make PY_VERSION=${{ matrix.py_version }}
 
       - name: Install required packages
         run: |
-          pip install -r requirements.txt
+          $PYTHON -m pip install -r requirements.txt
 
       - name: Run test suite
         run: |
-          make test
+          make test PY_VERSION=${{ matrix.py_version }}
 
       - name: Build pip package
         run: |
-          make pip_pkg
-    
+          make pip PY_VERSION=${{ matrix.py_version }}
+
       - name: Upload pip package
         uses: actions/upload-artifact@v2
         with:
-          name: pip_pkg
+          name: wheels
           path: ./artifacts/*.whl
-      
+
       - name: Publish to Test PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:

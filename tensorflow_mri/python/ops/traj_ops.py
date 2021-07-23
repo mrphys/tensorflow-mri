@@ -22,6 +22,10 @@ from tensorflow_graphics.geometry.transformation import rotation_matrix_2d
 from tensorflow_graphics.geometry.transformation import rotation_matrix_3d
 
 
+_mri_ops = tf.load_op_library(
+  tf.compat.v1.resource_loader.get_path_to_datafile('_mri_ops.so'))
+
+
 def radial_trajectory(base_resolution,
                       views=1,
                       phases=None,
@@ -33,15 +37,16 @@ def radial_trajectory(base_resolution,
   Args:
     base_resolution: An `int`. The base resolution, or number of pixels in the
       readout dimension.
-    views: An `int`. Number of radial views per k-space.
-    phases: An `int`. Number of phases for cine acquisitions. If `None`, this is
-      assumed to be a non-cine acquisition with no time dimension.
-    spacing: A `string`. Spacing type. Must be one of: `{'linear', 'golden',
+    views: An `int`. The number of radial views per k-space.
+    phases: An `int`. The number of phases for cine acquisitions. If `None`,
+      this is assumed to be a non-cine acquisition with no time dimension.
+    spacing: A `string`. The spacing type. Must be one of: `{'linear', 'golden',
       'tiny', 'sorted'}`.
-    domain: A `string`. Rotation domain. Must be one of: `{'full', 'half'}`. If
-      `domain` is `'full'`, the full circle is included in the rotation domain
-      (`2 * pi`). If `domain` is `'half'`, only half circle is included (`pi`).
-    readout_os: A `float`. Readout oversampling factor.
+    domain: A `string`. The rotation domain. Must be one of: `{'full', 'half'}`.
+      If `domain` is `'full'`, the full circle is included in the rotation
+      domain (`2 * pi`). If `domain` is `'half'`, only half circle is included
+      (`pi`).
+    readout_os: A `float`. The readout oversampling factor. Defaults to 2.0.
 
   Returns:
     A `Tensor` of type `float32` and shape `[views, samples, 2]` if `phases` is
@@ -58,6 +63,74 @@ def radial_trajectory(base_resolution,
                             domain=domain)
 
 
+def spiral_trajectory(base_resolution,
+                      spiral_arms,
+                      field_of_view,
+                      max_grad_ampl,
+                      min_rise_time,
+                      dwell_time,
+                      views=1,
+                      phases=None,
+                      spacing='linear',
+                      domain='full',
+                      readout_os=2.0,
+                      gradient_delay=0.0,
+                      larmor_const=42.577478518):
+  """Calculate a spiral trajectory.
+
+  Args:
+    base_resolution: An `int`. The base resolution, or number of pixels in the
+      readout dimension.
+    spiral_arms: An `int`. The number of spiral arms that a fully sampled
+      k-space should be divided into.
+    field_of_view: A `float`. The field of view, in mm.
+    max_grad_ampl: A `float`. The maximum allowed gradient amplitude, in mT/m.
+    min_rise_time: A `float`. The minimum allowed rise time, in us/(mT/m).
+    dwell_time: A `float`. The digitiser's real dwell time, in us. This does not
+      include oversampling. The effective dwell time (with oversampling) is
+      equal to `dwell_time * readout_os`.
+    views: An `int`. The number of radial views per k-space.
+    phases: An `int`. The number of phases for cine acquisitions. If `None`,
+      this is assumed to be a non-cine acquisition with no time dimension.
+    spacing: A `string`. The spacing type. Must be one of: `{'linear', 'golden',
+      'tiny', 'sorted'}`.
+    domain: A `string`. The rotation domain. Must be one of: `{'full', 'half'}`.
+      If `domain` is `'full'`, the full circle is included in the rotation
+      domain (`2 * pi`). If `domain` is `'half'`, only half circle is included
+      (`pi`).
+    readout_os: A `float`. The readout oversampling factor. Defaults to 2.0.
+    gradient_delay: A `float`. The system's gradient delay relative to the ADC,
+      in us. Defaults to 0.0.
+    larmor_const: A `float`. The Larmor constant of the imaging nucleus, in
+      MHz/T. Defaults to 42.577478518 (the Larmor constant of the 1H nucleus).
+
+  Returns:
+    A `Tensor` of type `float32` and shape `[views, samples, 2]` if `phases` is
+    `None`, or of shape `[phases, views, samples, 2]` if `phases` is not `None`.
+    `samples` is equal to `base_resolution * readout_os`. The units are
+    radians/voxel, ie, values are in the range `[-pi, pi]`.
+
+  References:
+    Pipe, J.G. and Zwart, N.R. (2014), Spiral trajectory design: A flexible
+    numerical algorithm and base analytical equations. Magn. Reson. Med, 71:
+    278-285. https://doi.org/10.1002/mrm.24675
+  """
+  return _kspace_trajectory('spiral',
+                            {'base_resolution': base_resolution,
+                             'spiral_arms': spiral_arms,
+                             'field_of_view': field_of_view,
+                             'max_grad_ampl': max_grad_ampl,
+                             'min_rise_time': min_rise_time,
+                             'dwell_time': dwell_time,
+                             'readout_os': readout_os,
+                             'gradient_delay': gradient_delay,
+                             'larmor_const': larmor_const},
+                            views=views,
+                            phases=phases,
+                            spacing=spacing,
+                            domain=domain)
+
+
 def _kspace_trajectory(traj_type,
                        waveform_params,
                        views=1,
@@ -67,16 +140,20 @@ def _kspace_trajectory(traj_type,
   """Calculate a k-space trajectory.
 
   Args:
-    traj_type: Trajectory type. One of {'radial', 'spiral'}.
-    waveform_params: A Python dict containing the parameters to calculate
-      the view waveform. The accepted parameters depends on the trajectory
-      type: see `radial_waveform` and `spiral_waveform`.
-    views: Number of views per k-space.
-    phases: Number of phases for cine acquisitions. If None, this is assumed
-      to be a non-cine acquisition with no time dimension.
-    spacing: Spacing type. One of {'linear', 'golden', 'tiny', 'sorted'}.
-    domain: Angle domain. One of {'full', 'half'}, to include the full
-      circle (2*pi) or half circle (pi).
+    traj_type: A `string`. The trajectory type. Must be one of: `{'radial',
+      'spiral'}`.
+    waveform_params: A `dict`. Must contain the parameters needed to calculate
+      the view waveform. The accepted parameters depend on the trajectory type:
+      see `radial_waveform` and `spiral_waveform`.
+    views: An `int`. The number of radial views per k-space.
+    phases: An `int`. The number of phases for cine acquisitions. If `None`,
+      this is assumed to be a non-cine acquisition with no time dimension.
+    spacing: A `string`. The spacing type. Must be one of: `{'linear', 'golden',
+      'tiny', 'sorted'}`.
+    domain: A `string`. The rotation domain. Must be one of: `{'full', 'half'}`.
+      If `domain` is `'full'`, the full circle is included in the rotation
+      domain (`2 * pi`). If `domain` is `'half'`, only half circle is included
+      (`pi`).
 
   Returns:
     A k-space trajectory for the given parameters.
@@ -96,7 +173,7 @@ def _kspace_trajectory(traj_type,
   if traj_type == 'radial':
     waveform_func = radial_waveform
   elif traj_type == 'spiral':
-    raise NotImplementedError("Spiral trajectories are not implemented.")
+    waveform_func = spiral_waveform
   waveform = waveform_func(**waveform_params)
 
   # Compute angles.
@@ -109,36 +186,6 @@ def _kspace_trajectory(traj_type,
   traj = _rotate_waveform_2d(waveform, theta)
 
   return traj
-
-
-def radial_waveform(base_resolution, readout_os=2.0):
-  """Calculate a radial readout waveform.
-
-  Args:
-    base_resolution: An `int`. The base resolution, or number of pixels in the
-      readout dimension.
-    readout_os: A `float`. Readout oversampling factor.
-
-  Returns:
-    A `Tensor` of type `float32` and shape `[samples, 2]`, where `samples` is
-    equal to `base_resolution * readout_os`. The units are radians/voxel, ie,
-    values are in the range `[-pi, pi]`.
-  """
-  # Number of samples with oversampling.
-  samples = int(base_resolution * readout_os + 0.5)
-
-  # Compute 1D spoke.
-  waveform = tf.range(-samples // 2, samples // 2, dtype=tf.float32)
-  waveform /= samples
-
-  # Add y dimension.
-  waveform = tf.expand_dims(waveform, axis=1)
-  waveform = tf.concat([waveform, tf.zeros((samples, 1))], axis=1)
-
-  # Scale to [-pi, pi] (radians/voxel).
-  waveform *= 2.0 * math.pi
-
-  return waveform
 
 
 def radial_density(base_resolution,
@@ -186,6 +233,9 @@ def _radial_density_from_theta(samples, theta):
   Returns:
     A `Tensor` of shape `[views, samples]`, where `views = theta.shape`.
   """
+  # See https://github.com/tensorflow/tensorflow/issues/43038
+  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
+
   tf.debugging.assert_rank(theta, 1, message=(
     "`theta` must be of rank 1, but received shape: {}").format(theta.shape))
 
@@ -248,15 +298,55 @@ def _radial_density_from_theta(samples, theta):
   return weights
 
 
+def radial_waveform(base_resolution, readout_os=2.0):
+  """Calculate a radial readout waveform.
+
+  Args:
+    base_resolution: An `int`. The base resolution, or number of pixels in the
+      readout dimension.
+    readout_os: A `float`. The readout oversampling factor. Defaults to 2.0.
+
+  Returns:
+    A `Tensor` of type `float32` and shape `[samples, 2]`, where `samples` is
+    equal to `base_resolution * readout_os`. The units are radians/voxel, ie,
+    values are in the range `[-pi, pi]`.
+  """
+  # See https://github.com/tensorflow/tensorflow/issues/43038
+  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
+
+  # Number of samples with oversampling.
+  samples = int(base_resolution * readout_os + 0.5)
+
+  # Compute 1D spoke.
+  waveform = tf.range(-samples // 2, samples // 2, dtype=tf.float32)
+  waveform /= samples
+
+  # Add y dimension.
+  waveform = tf.expand_dims(waveform, axis=1)
+  waveform = tf.concat([waveform, tf.zeros((samples, 1))], axis=1)
+
+  # Scale to [-pi, pi] (radians/voxel).
+  waveform *= 2.0 * math.pi
+
+  return waveform
+
+
+spiral_waveform = _mri_ops.spiral_waveform
+
+
 def _trajectory_angles(views, phases=None, spacing='linear', domain='full'):
   """Compute angles for k-space trajectory.
 
   Args:
-    views: Number of views.
-    phases: Number of phases. If None, there is no time dimension.
-    spacing: Spacing type. One of {'linear', 'golden', 'tiny', 'sorted'}.
-    domain: Size of domain. One of {'full', 'half'}, to include the full
-      circle (2*pi) or half circle (pi).
+    views: An `int`. The number of radial views per k-space.
+    phases: An `int`. The number of phases for cine acquisitions. If `None`,
+      this is assumed to be a non-cine acquisition with no time dimension.
+    spacing: A `string`. The spacing type. Must be one of: `{'linear', 'golden',
+      'tiny', 'sorted'}`.
+    domain: A `string`. The rotation domain. Must be one of: `{'full', 'half'}`.
+      If `domain` is `'full'`, the full circle is included in the rotation
+      domain (`2 * pi`). If `domain` is `'half'`, only half circle is included
+      (`pi`).
 
   Returns:
     An array of angles of shape (phases, views) if `phases` is not
@@ -331,6 +421,9 @@ def _rotate_waveform_3d(waveform, theta):
   Returns:
     Rotated waveform(s).
   """
+  # See https://github.com/tensorflow/tensorflow/issues/43038
+  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
+
   # Create Euler angle array.
   euler_angles = tf.zeros(theta.shape + (2,))
   theta = tf.expand_dims(theta, -1)
