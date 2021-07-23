@@ -15,6 +15,7 @@
 """Tests for k-space trajectory ops."""
 
 import itertools
+import math
 
 import numpy as np
 import tensorflow as tf
@@ -37,7 +38,7 @@ class TrajOpsTest(tf.test.TestCase): # pylint: disable=missing-class-docstring
                               'dwell_time': 2.6}
 
     # Create a few parameters to test.
-    params = {'traj_type': ('radial',),
+    params = {'traj_type': ('radial', 'spiral'),
               'views': (3, 5),
               'phases': (None, 2),
               'spacing': ('linear', 'golden', 'tiny', 'sorted')}
@@ -59,8 +60,7 @@ class TrajOpsTest(tf.test.TestCase): # pylint: disable=missing-class-docstring
           traj = traj_ops.radial_trajectory(**radial_waveform_params, **p)
           dens = traj_ops.radial_density(**radial_waveform_params, **p)
         elif traj_type == 'spiral':
-          traj = traj_ops.spiral_trajectory(
-            **spiral_waveform_params, **p)
+          traj = traj_ops.spiral_trajectory(**spiral_waveform_params, **p)
 
         # Check shapes.
         if traj_type == 'spiral':
@@ -144,6 +144,12 @@ class TrajOpsTest(tf.test.TestCase): # pylint: disable=missing-class-docstring
             self.assertAllClose(traj, expected_traj)
             if expected_dens is not None:
               self.assertAllClose(dens, expected_dens)
+
+        elif traj_type == 'spiral':
+
+          # TODO: add better tests for spiral. In the meantime, just some
+          # sanity checks.
+          self.assertAllInRange(traj, -math.pi, math.pi)
 
 
 if __name__ == '__main__':

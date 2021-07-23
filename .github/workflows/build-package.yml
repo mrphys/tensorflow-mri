@@ -17,15 +17,13 @@ jobs:
     name: Build package
     runs-on: ubuntu-latest
 
+    container:
+      image: ghcr.io/mrphys/tensorflow-manylinux:1.0.0
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-      
       - name: Lint code
         run: |
           pip install pylint
@@ -41,14 +39,14 @@ jobs:
 
       - name: Build pip package
         run: |
-          make pip_pkg
-    
+          make pip
+
       - name: Upload pip package
         uses: actions/upload-artifact@v2
         with:
-          name: pip_pkg
+          name: wheels
           path: ./artifacts/*.whl
-      
+
       - name: Publish to Test PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
