@@ -73,18 +73,15 @@ jobs:
       - name: Publish docs to GitHub Pages
         if: matrix.py_version == 3.9
         run: |
-          echo $GITHUB_WORKSPACE
-          ls $GITHUB_WORKSPACE
           git config --global user.name mrphys
           git config --global user.email mrphys@users.noreply.github.com
-          git clone --branch docs --single-branch https://github.com/${{ github.repository }}.git ./clone
-          mkdir -p docs
-          cp -r ./clone/.git ./docs/
-          cp -r ./tools/docs/_build/html/* ./docs/
-          touch ./docs/.nojekyll
-          cd docs
+          echo "tmpdir=$(mktemp -d)" >> $GITHUB_ENV
+          cp -r ./tools/docs/_build/html/* ${{ env.tmpdir }}
+          touch ${{ env.tmpdir }}/.nojekyll
           git stash
           git checkout docs
+          rm -r ./*
+          cp -r ${{ env.tmpdir }}/. 
           git add -A
           git commit -m "CI/CD - Update docs"
           git push --force
