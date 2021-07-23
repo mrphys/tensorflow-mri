@@ -54,7 +54,7 @@ jobs:
 
       - name: Build docs
         run: |
-          pip install sphinx
+          pip install sphinx furo
           make docs
 
       # - name: Upload wheel
