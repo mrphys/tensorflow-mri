@@ -37,7 +37,7 @@ jobs:
 
       - name: Install required packages
         run: |
-          $(PYTHON) -m pip install -r requirements.txt
+          $PYTHON -m pip install -r requirements.txt
 
       - name: Run test suite
         run: |
