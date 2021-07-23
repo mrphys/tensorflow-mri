@@ -80,7 +80,9 @@ jobs:
           cp -r ./tools/docs/_build/html/* $TMPDIR/
           touch $TMPDIR/.nojekyll
           git stash
+          echo "Checkout docs"
           git checkout docs
+          echo "Checkout docs done"
           rm -r ./*
           cp -r $TMPDIR/. .
           git add -A
