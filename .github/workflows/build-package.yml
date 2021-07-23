@@ -70,12 +70,22 @@ jobs:
       
       - name: Publish docs to GitHub Pages
         if: matrix.py_version == 3.9
+        env:
+          CLONE_DIR: ${{ $(mktemp -d) }}
+          USER_NAME: github-actions
+          USER_EMAIL: github-actions@github.com
+
         run: |
-          git clone --branch docs --single-branch https://github.com/${{ github.repository }}.git ./docs
-          rm -r ./docs/*
+          git config --global user.name "$USER_NAME"
+          git config --global user.email "$USER_EMAIL"
+          git clone --branch docs --single-branch https://github.com/${{ github.repository }}.git $CLONE_DIR
+          mkdir -p docs
+          cp -r $CLONE_DIR/.git ./docs/
           cp -r ./tools/docs/_build/html/* ./docs/
+          touch ./docs/.nojekyll
+          cd docs
           git add -A
-          git commit -m "Update docs"
+          git commit -m "CI/CD - Update docs"
           git push
 
       - name: Publish to Test PyPI
