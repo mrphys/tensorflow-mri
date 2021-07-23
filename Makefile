@@ -44,7 +44,7 @@ wheel: $(TARGET)
 	./build_pip_pkg.sh make --python $(PYTHON) artifacts
 
 .PHONY: docs
-docs: $(TARGET)
+docs:
 	$(MAKE) -C tools/docs html
 
 .PHONY: clean
