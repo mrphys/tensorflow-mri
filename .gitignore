@@ -1,7 +1,0 @@
-*.pyc
-*.so
-
-__pycache__/
-artifacts/
-third_party/spiral_waveform
-tools/docs/_*
