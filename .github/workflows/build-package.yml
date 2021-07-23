@@ -75,13 +75,14 @@ jobs:
         run: |
           git config --global user.name mrphys
           git config --global user.email mrphys@users.noreply.github.com
-          echo "tmpdir=$(mktemp -d)" >> $GITHUB_ENV
-          cp -r ./tools/docs/_build/html/* ${{ env.tmpdir }}/
-          touch ${{ env.tmpdir }}/.nojekyll
+          TMPDIR=$(mktemp -d)
+          echo "$TMPDIR"
+          cp -r ./tools/docs/_build/html/* $TMPDIR/
+          touch $TMPDIR/.nojekyll
           git stash
           git checkout docs
           rm -r ./*
-          cp -r ${{ env.tmpdir }}/. .
+          cp -r $TMPDIR/. .
           git add -A
           git commit -m "CI/CD - Update docs"
           git push --force
