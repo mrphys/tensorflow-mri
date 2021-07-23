@@ -1,4 +1,4 @@
-PY_VERSION ?=
+PY_VERSION ?= 3.9
 CXX := g++
 PYTHON := python$(PY_VERSION)
 
