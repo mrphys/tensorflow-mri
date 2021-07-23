@@ -47,15 +47,36 @@ jobs:
         run: |
           make test PY_VERSION=${{ matrix.py_version }}
 
-      - name: Build pip package
+      - name: Build wheel
         run: |
-          make pip PY_VERSION=${{ matrix.py_version }}
+          make wheel PY_VERSION=${{ matrix.py_version }}
 
-      - name: Upload pip package
+      - name: Build docs
+        run: |
+          make docs
+
+      - name: Upload wheel
         uses: actions/upload-artifact@v2
         with:
           name: wheels
           path: ./artifacts/*.whl
+
+      - name: Upload docs
+        if: matrix.py_version == 3.9
+        uses: actions/upload-artifact@v2
+        with:
+          name: docs
+          path: ./tools/docs/_build/html
+      
+      - name: Publish docs to GitHub Pages
+        if: matrix.py_version == 3.9
+        run: |
+          git clone --branch docs --single-branch https://github.com/${{ github.repository }}.git ./docs
+          rm -r ./docs/*
+          cp -r ./tools/docs/_build/html/* ./docs/
+          git add -A
+          git commit -m "Update docs"
+          git push
 
       - name: Publish to Test PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

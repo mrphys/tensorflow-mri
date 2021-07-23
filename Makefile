@@ -39,9 +39,13 @@ test: $(wildcard tensorflow_mri/python/ops/*.py)
 lint: $(wildcard tensorflow_mri/python/ops/*.py)
 	pylint --rcfile=pylintrc tensorflow_mri/python
 
-.PHONY: pip
-pip: $(TARGET)
+.PHONY: wheel
+wheel: $(TARGET)
 	./build_pip_pkg.sh make --python $(PYTHON) artifacts
+
+.PHONY: docs
+docs: $(TARGET)
+	$(MAKE) -C tools/docs html
 
 .PHONY: clean
 clean:
