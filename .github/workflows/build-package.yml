@@ -27,7 +27,6 @@ jobs:
 
     env:
       PYTHON: python${{ matrix.py_version }}
-      DOCS_DIR: ${{ mktemp -d }}
 
     steps:
       - name: Checkout code
