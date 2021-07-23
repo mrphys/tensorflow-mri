@@ -105,7 +105,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: docs
-      
+
       - name: Publish docs to GitHub Pages
         run: |
           git config --global user.name mrphys
