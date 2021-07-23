@@ -57,11 +57,11 @@ jobs:
           pip install sphinx
           make docs
 
-      - name: Upload wheel
-        uses: actions/upload-artifact@v2
-        with:
-          name: wheels
-          path: ./artifacts/*.whl
+      # - name: Upload wheel
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     name: wheels
+      #     path: ./artifacts/*.whl
 
       - name: Upload docs
         if: matrix.py_version == 3.9
