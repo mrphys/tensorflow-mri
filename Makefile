@@ -31,6 +31,14 @@ $(SWF_LIB): $(SWF_DIR)
 
 $(SWF_DIR): thirdparty
 
+.PHONY: wheel
+wheel: $(TARGET)
+	./build_pip_pkg.sh make --python $(PYTHON) artifacts
+
+.PHONY: docs
+docs: $(TARGET)
+	$(MAKE) -C tools/docs html
+
 .PHONY: test
 test: $(wildcard tensorflow_mri/python/ops/*.py)
 	$(PYTHON) -m unittest discover -v -p *_test.py
@@ -38,10 +46,6 @@ test: $(wildcard tensorflow_mri/python/ops/*.py)
 .PHONY: lint
 lint: $(wildcard tensorflow_mri/python/ops/*.py)
 	pylint --rcfile=pylintrc tensorflow_mri/python
-
-.PHONY: pip
-pip: $(TARGET)
-	./build_pip_pkg.sh make --python $(PYTHON) artifacts
 
 .PHONY: clean
 clean:
