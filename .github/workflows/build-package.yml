@@ -72,22 +72,23 @@ jobs:
       
       - name: Publish docs to GitHub Pages
         if: matrix.py_version == 3.9
-        env:
-          USER_NAME: github-actions
-          USER_EMAIL: github-actions@github.com
-
         run: |
-          git config --global user.name "$USER_NAME"
-          git config --global user.email "$USER_EMAIL"
+          echo ${{ GITHUB_WORKSPACE }}
+          git config --global user.name mrphys
+          git config --global user.email mrphys@users.noreply.github.com
           git clone --branch docs --single-branch https://github.com/${{ github.repository }}.git ./clone
           mkdir -p docs
           cp -r ./clone/.git ./docs/
           cp -r ./tools/docs/_build/html/* ./docs/
           touch ./docs/.nojekyll
           cd docs
+          git stash
+          git checkout docs
           git add -A
           git commit -m "CI/CD - Update docs"
           git push --force
+          git checkout ${{ github.ref }}
+          git stash pop
 
       - name: Publish to Test PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
