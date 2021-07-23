@@ -55,7 +55,7 @@ jobs:
       - name: Build docs
         run: |
           pip install sphinx furo
-          make docs
+          make docs PY_VERSION=${{ matrix.py_version }}
 
       # - name: Upload wheel
       #   uses: actions/upload-artifact@v2
@@ -76,12 +76,12 @@ jobs:
           git config --global user.name mrphys
           git config --global user.email mrphys@users.noreply.github.com
           echo "tmpdir=$(mktemp -d)" >> $GITHUB_ENV
-          cp -r ./tools/docs/_build/html/* ${{ env.tmpdir }}
+          cp -r ./tools/docs/_build/html/* ${{ env.tmpdir }}/
           touch ${{ env.tmpdir }}/.nojekyll
           git stash
           git checkout docs
           rm -r ./*
-          cp -r ${{ env.tmpdir }}/. 
+          cp -r ${{ env.tmpdir }}/. .
           git add -A
           git commit -m "CI/CD - Update docs"
           git push --force
