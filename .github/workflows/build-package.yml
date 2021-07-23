@@ -81,7 +81,7 @@ jobs:
           touch $TMPDIR/.nojekyll
           git stash
           echo "Checkout docs"
-          git checkout docs
+          git checkout refs/heads/docs
           echo "Checkout docs done"
           rm -r ./*
           cp -r $TMPDIR/. .
