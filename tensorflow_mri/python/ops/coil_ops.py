@@ -37,9 +37,9 @@ def estimate_coil_sens_maps(input_,
     input_: A `Tensor`. Must have type `complex64` or `complex128`. Must have
       shape `[height, width, coils]` for 2D inputs, or `[depth, height,
       width, coils]` for 3D inputs. Alternatively, this function accepts a
-      transposed coil axis by setting the `coil_axis` argument accordingly.
-      Inputs should be images if `method` is `'walsh'` or `'inati'`, and k-space
-      data if `method` is `'espirit'`.
+      transposed array by setting the `coil_axis` argument accordingly. Inputs
+      should be images if `method` is `'walsh'` or `'inati'`, and k-space data
+      if `method` is `'espirit'`.
     coil_axis: An `int`. Defaults to -1.
     method: A `string`. The coil sensitivity estimation algorithm. Must be one
       of: `{'walsh', 'inati', 'espirit'}`. Defaults to `'walsh'`.
@@ -55,27 +55,37 @@ def estimate_coil_sens_maps(input_,
 
     This function accepts the following method-specific keyword arguments:
 
-      - `'walsh'` method:
-        - `filter_size`: An `int`. The size of the smoothing filter.
+      * `'walsh'` method:
 
-      - `'inati'` method:
-        - `filter_size`: An `int`. The size of the smoothing filter.
-        - `max_iter`: An `int`. The maximum number of iterations.
-        - `tol`: A `float`. The convergence tolerance.
+        * `filter_size`: An `int`. The size of the smoothing filter.
 
-      - `'espirit'` method:
-        - `calib_size`: An `int` or a list of `int`s. The size of the
+      * `'inati'` method:
+
+        * `filter_size`: An `int`. The size of the smoothing filter.
+
+        * `max_iter`: An `int`. The maximum number of iterations.
+
+        * `tol`: A `float`. The convergence tolerance.
+
+      * `'espirit'` method:
+
+        * `calib_size`: An `int` or a list of `ints`. The size of the
           calibration region. If `None`, this is set to `input_.shape[:-1]` (ie,
           use full input for calibration). Defaults to 24.
-        - `kernel_size`: An `int` or a list of `int`s. The kernel size. Defaults
+
+        * `kernel_size`: An `int` or a list of `ints`. The kernel size. Defaults
           to 6.
-        - `num_maps`: An `int`. The number of output maps. Defaults to 2.
-        - `null_threshold`: A `float`. The threshold used to determine the size
+
+        * `num_maps`: An `int`. The number of output maps. Defaults to 2.
+
+        * `null_threshold`: A `float`. The threshold used to determine the size
           of the null-space. Defaults to 0.02.
-        - `eigen_threshold`: A `float`. The threshold used to determine the
+
+        * `eigen_threshold`: A `float`. The threshold used to determine the
           locations where coil sensitivity maps should be masked out. Defaults
           to 0.95.
-        - `image_shape`: A `tf.TensorShape` or a list of `int`s. The shape of
+
+        * `image_shape`: A `tf.TensorShape` or a list of `ints`. The shape of
           the output maps. If `None`, this is set to `input_.shape`. Defaults to
           `None`.
 
