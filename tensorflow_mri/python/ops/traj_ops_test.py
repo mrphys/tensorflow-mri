@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#   http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,6 +21,75 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import traj_ops
+from tensorflow_mri.python.utils import io_utils
+
+
+class RadialTrajectoryTest(tf.test.TestCase):
+  """Radial trajectory tests."""
+
+  @classmethod
+  def setUpClass(cls):
+
+    super().setUpClass()
+    cls.data = io_utils.read_hdf5('tests/data/traj_ops_data.h5')
+
+
+  def test_waveform(self):
+    """Test radial waveform."""
+
+    waveform = traj_ops.radial_waveform(base_resolution=128)
+
+    self.assertAllClose(waveform, self.data['radial/waveform'])
+
+
+  def test_trajectory(self):
+    """Test radial trajectory."""
+
+    trajectory = traj_ops.radial_trajectory(base_resolution=128,
+                                            views=8,
+                                            phases=4,
+                                            spacing='golden')
+
+    self.assertAllClose(trajectory, self.data['radial/trajectory/golden'])
+
+
+class SpiralTrajectoryTest(tf.test.TestCase):
+  """Spiral trajectory tests."""
+
+  @classmethod
+  def setUpClass(cls):
+
+    super().setUpClass()
+    cls.data = io_utils.read_hdf5('tests/data/traj_ops_data.h5')
+
+
+  def test_waveform(self):
+    """Test spiral waveform."""
+
+    waveform = traj_ops.spiral_waveform(base_resolution=128,
+                                        spiral_arms=64,
+                                        field_of_view=300.0,
+                                        max_grad_ampl=20.0,
+                                        min_rise_time=10.0,
+                                        dwell_time=2.6)
+
+    self.assertAllClose(waveform, self.data['spiral/waveform'])
+
+
+  def test_trajectory(self):
+    """Test spiral trajectory."""
+
+    trajectory = traj_ops.spiral_trajectory(base_resolution=128,
+                                            spiral_arms=64,
+                                            field_of_view=300.0,
+                                            max_grad_ampl=20.0,
+                                            min_rise_time=10.0,
+                                            dwell_time=2.6,
+                                            views=8,
+                                            phases=4,
+                                            spacing='golden')
+
+    self.assertAllClose(trajectory, self.data['spiral/trajectory/golden'])
 
 
 class TrajOpsTest(tf.test.TestCase): # pylint: disable=missing-class-docstring
@@ -84,18 +153,18 @@ class TrajOpsTest(tf.test.TestCase): # pylint: disable=missing-class-docstring
                                           [0.0, 0.0],
                                           [-1.5707964, 0.0]])
 
-            expected_dens = None
+            expected_weights = None
 
             if phases is None and spacing == 'linear':
               expected_theta = np.array([0.0, 2.0943952, 4.1887903])
-              expected_dens = np.array([[4.0, 2.0, 0.25, 2.0],
+              expected_weights = np.array([[4.0, 2.0, 0.25, 2.0],
                                         [4.0, 2.0, 0.25, 2.0],
                                         [4.0, 2.0, 0.25, 2.0]])
             elif phases is None and spacing == 'golden':
               # phi = 2.0 / (1.0 + tf.sqrt(5.0))
               # expected_theta = (phi * tf.range(3.0) % 1.0) * 2.0 * math.pi
               expected_theta = np.array([0.0, 3.8832223, 1.4832591])
-              expected_dens = np.array([
+              expected_weights = np.array([
                 [4.5835924, 2.2917962, 0.25, 2.2917962],
                 [2.832816, 1.416408, 0.25, 1.416408],
                 [4.583592, 2.291796, 0.25, 2.291796]])
@@ -103,7 +172,7 @@ class TrajOpsTest(tf.test.TestCase): # pylint: disable=missing-class-docstring
               # expected_theta = (
               #   1 / (phi + 7) * tf.range(3.0) % 1.0) * 2.0 * math.pi
               expected_theta = np.array([0.0, 0.8247778, 1.6495556])
-              expected_dens = np.array([
+              expected_weights = np.array([
                 [4.424791, 2.2123954, 0.25, 2.2123954],
                 [3.1504188, 1.5752094, 0.25, 1.5752094],
                 [4.4247904, 2.2123952, 0.25, 2.2123952]])
@@ -121,7 +190,7 @@ class TrajOpsTest(tf.test.TestCase): # pylint: disable=missing-class-docstring
             elif phases == 2 and spacing == 'sorted':
               expected_theta = np.array([[0.0, 1.4832591, 3.8832223],
                                          [0.56655425, 2.9665182, 5.3664813]])
-              expected_dens = np.array([
+              expected_weights = np.array([
                 [[4.583592, 2.291796, 0.25, 2.291796],
                  [4.583592, 2.291796, 0.25, 2.291796],
                  [2.832816, 1.416408, 0.25, 1.416408]],
@@ -142,13 +211,12 @@ class TrajOpsTest(tf.test.TestCase): # pylint: disable=missing-class-docstring
               expected_traj[idx] = expected_waveform @ np.transpose(rot_mat)
 
             self.assertAllClose(traj, expected_traj)
-            if expected_dens is not None:
-              self.assertAllClose(dens, expected_dens)
+            if expected_weights is not None:
+              self.assertAllClose(dens, 1 / expected_weights)
 
         elif traj_type == 'spiral':
 
-          # TODO: add better tests for spiral. In the meantime, just some
-          # sanity checks.
+          # Just a sanity check.
           self.assertAllInRange(traj, -math.pi, math.pi)
 
 
