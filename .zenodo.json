@@ -1,0 +1,15 @@
+{
+    "creators": [
+        {   
+            "orcid": "0000-0003-1956-1409",
+            "affiliation": "University College London",
+            "name": "Montalt-Tordera, Javier"
+        }
+    ],    
+
+    "license": "Apache-2.0",
+
+    "title": "TensorFlow MRI: A Collection of Tools for Computational Magnetic Resonance Imaging",
+
+    "keywords": ["TensorFlow", "MRI"]
+}
