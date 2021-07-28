@@ -1,4 +1,4 @@
-PY_VERSION ?= 3.9
+PY_VERSION ?=
 CXX := g++
 PYTHON := python$(PY_VERSION)
 
@@ -33,7 +33,7 @@ $(SWF_DIR): thirdparty
 
 .PHONY: wheel
 wheel: $(TARGET)
-	./build_pip_pkg.sh make --python $(PYTHON) artifacts
+	./tools/build/build_pip_pkg.sh make --python $(PYTHON) artifacts
 
 .PHONY: docs
 docs: $(TARGET)

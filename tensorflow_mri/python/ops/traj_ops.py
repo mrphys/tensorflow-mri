@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#   http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""K-space trajectory ops."""
+"""Ops for k-space trajectories."""
 
 import math
 
@@ -20,6 +20,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow_graphics.geometry.transformation import rotation_matrix_2d
 from tensorflow_graphics.geometry.transformation import rotation_matrix_3d
+
+from tensorflow_mri.python.utils import check_utils
 
 
 _mri_ops = tf.load_op_library(
@@ -111,9 +113,9 @@ def spiral_trajectory(base_resolution,
     radians/voxel, ie, values are in the range `[-pi, pi]`.
 
   References:
-    Pipe, J.G. and Zwart, N.R. (2014), Spiral trajectory design: A flexible
-    numerical algorithm and base analytical equations. Magn. Reson. Med, 71:
-    278-285. https://doi.org/10.1002/mrm.24675
+    1.  Pipe, J.G. and Zwart, N.R. (2014), Spiral trajectory design: A flexible
+        numerical algorithm and base analytical equations. Magn. Reson. Med, 71:
+        278-285. https://doi.org/10.1002/mrm.24675
   """
   return _kspace_trajectory('spiral',
                             {'base_resolution': base_resolution,
@@ -162,12 +164,12 @@ def _kspace_trajectory(traj_type,
     NotImplementedError: If `traj_type` is `'spiral'`.
   """
   # Check inputs.
-  traj_type = _validate_enum(
-    traj_type, {'radial', 'spiral'}, 'traj_type')
-  spacing = _validate_enum(
-    spacing, {'linear', 'golden', 'tiny', 'sorted'}, 'spacing')
-  domain = _validate_enum(
-    domain, {'full', 'half'}, 'domain')
+  traj_type = check_utils.validate_enum(
+    traj_type, {'radial', 'spiral'}, name='traj_type')
+  spacing = check_utils.validate_enum(
+    spacing, {'linear', 'golden', 'tiny', 'sorted'}, name='spacing')
+  domain = check_utils.validate_enum(
+    domain, {'full', 'half'}, name='domain')
 
   # Calculate waveform.
   if traj_type == 'radial':
@@ -194,7 +196,10 @@ def radial_density(base_resolution,
                    spacing='linear',
                    domain='full',
                    readout_os=2.0):
-  """Calculate density compensation weights for radial trajectories.
+  """Calculate sampling density for radial trajectories.
+
+  This is an exact density calculation method based on geometrical
+  considerations.
 
   For the parameters, see `radial_trajectory`.
 
@@ -220,7 +225,9 @@ def radial_density(base_resolution,
   scale = (samples * views) / (samples ** 2)
   weights *= scale
 
-  return weights
+  density = tf.math.reciprocal(weights)
+
+  return density
 
 
 def _radial_density_from_theta(samples, theta):
@@ -435,25 +442,3 @@ def _rotate_waveform_3d(waveform, theta):
 
   # Apply rotation to trajectory.
   return rotation_matrix_3d.rotate(waveform, rot_matrix)
-
-
-def _validate_enum(value, valid_values, name):
-  """Validates that value is in a list of valid values.
-
-  Args:
-    value: The value to validate.
-    valid_values: The list of valid values.
-    name: The name of the argument being validated. This is only used to
-      format error messages.
-
-  Returns:
-    A valid enum value.
-
-  Raises:
-    ValueError: If a value not in the list of valid values was passed.
-  """
-  if value not in valid_values:
-    raise ValueError((
-      "The `{}` argument must be one of {}. "
-      "Received: {}").format(name, valid_values, value))
-  return value

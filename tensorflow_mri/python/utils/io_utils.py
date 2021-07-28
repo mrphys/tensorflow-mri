@@ -12,15 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"TensorFlow MRI."
+"""Utilities for I/O."""
 
-import os
+import h5py
 
-with open(os.path.join(os.path.dirname(
-    os.path.realpath(__file__)), 'VERSION'), 'r') as version_file:
-  __version__ = version_file.read().strip()
 
-from tensorflow_mri.python.ops.array_ops import *
-from tensorflow_mri.python.ops.coil_ops import *
-from tensorflow_mri.python.ops.fft_ops import *
-from tensorflow_mri.python.ops.traj_ops import *
+def read_hdf5(filename):
+  """Basic reader for HDF5 files.
+
+  This function recursively loads all datasets and returns them as a Python
+  dictionary.
+
+  Args:
+    filename: A `string`. The name of the HDF5 file to read from.
+
+  Returns:
+    A `dict` with one key-value pair for each dataset in the file.
+  """
+  contents = {}
+  def visitor(name, obj):
+    if isinstance(obj, h5py.Dataset):
+      contents[name] = obj[...]
+  with h5py.File(filename, 'r') as f:
+    f.visititems(visitor)
+  return contents

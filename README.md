@@ -5,5 +5,5 @@
 [![docs](https://img.shields.io/badge/api-reference-blue.svg)](https://mrphys.github.io/tensorflow-mri/)
 
 
-TensorFlow MRI is a package implementing functionality relevant to ML in
-Magnetic Resonance Imaging (MRI).
+TensorFlow MRI is a collection of tools for computational magnetic resonance
+imaging.

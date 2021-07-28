@@ -82,5 +82,11 @@ setup(
   ],
   
   license="Apache 2.0",
-  keywords=['tensorflow', 'mri']
+  keywords=[
+    'tensorflow',
+    'mri',
+    'magnetic resonance imaging',
+    'machine learning',
+    'ml'
+  ]
 )
