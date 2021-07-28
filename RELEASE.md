@@ -9,15 +9,16 @@
 
 
 ## Major Features and Improvements
-
-  * Added new ops `tfmr.fftn` and `tfmr.ifftn` for N-D FFT calculation.
-  * Added new op `tfmr.estimate_coil_sens_maps` for coil sensitivity estimation.
-    The op supports Walsh's method, Inati's iterative method and ESPIRiT. The op
-    supports 2D and 3D images. 
-  * Added new op `tfmr.combine_coils` for sum of squares and adaptive coil
-    combination.
-  * Added new ops `tfmr.central_crop` and `tfmr.symmetric_pad_or_crop` for array
-    manipulation.
+  
+  * TFMR Core: 
+    * Added new ops `tfmr.fftn` and `tfmr.ifftn` for N-D FFT calculation.
+    * Added new op `tfmr.estimate_coil_sens_maps` for coil sensitivity estimation.
+      The op supports Walsh's method, Inati's iterative method and ESPIRiT. The op
+      supports 2D and 3D images. 
+    * Added new op `tfmr.combine_coils` for sum of squares and adaptive coil
+      combination.
+    * Added new ops `tfmr.central_crop` and `tfmr.symmetric_pad_or_crop` for array
+      manipulation.
 
 ## Bug Fixes and Other Changes
 
@@ -41,8 +42,10 @@
 ## Major Features and Improvements
 
 *<INSERT MAJOR FEATURE HERE, USING MARKDOWN SYNTAX>
+*<IF RELEASE CONTAINS MULTIPLE FEATURES FROM SAME AREA, GROUP THEM TOGETHER>
 
 ## Bug Fixes and Other Changes
 
 *<SIMILAR TO ABOVE SECTION, BUT FOR OTHER IMPORTANT CHANGES / BUG FIXES>
 *<IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
+*<NOTES SHOULD BE GROUPED PER AREA>
