@@ -90,18 +90,19 @@ def estimate_coil_sens_maps(input_,
           `None`.
 
   References:
-    Walsh, D.O., Gmitro, A.F. and Marcellin, M.W. (2000), Adaptive
-    reconstruction of phased array MR imagery. Magn. Reson. Med., 43: 682-690.
-    https://doi.org/10.1002/(SICI)1522-2594(200005)43:5<682::AID-MRM10>3.0.CO;2-G
+    1.  Walsh, D.O., Gmitro, A.F. and Marcellin, M.W. (2000), Adaptive
+        reconstruction of phased array MR imagery. Magn. Reson. Med., 43:
+        682-690. https://doi.org/10.1002/(SICI)1522-2594(200005)43:5<682::AID-MRM10>3.0.CO;2-G
 
-    Inati, S.J., Hansen, M.S. and Kellman, P. (2014). A fast optimal method for
-    coil sensitivity estimation and adaptive coil combination for complex
-    images. Proceedings of the 2014 Joint Annual Meeting ISMRM-ESMRMB.
+    2.  Inati, S.J., Hansen, M.S. and Kellman, P. (2014). A fast optimal method
+        for coil sensitivity estimation and adaptive coil combination for
+        complex images. Proceedings of the 2014 Joint Annual Meeting
+        ISMRM-ESMRMB.
 
-    Uecker, M., Lai, P., Murphy, M.J., Virtue, P., Elad, M., Pauly, J.M.,
-    Vasanawala, S.S. and Lustig, M. (2014), ESPIRiT—an eigenvalue approach to
-    autocalibrating parallel MRI: Where SENSE meets GRAPPA. Magn. Reson. Med.,
-    71: 990-1001. https://doi.org/10.1002/mrm.24751
+    3.  Uecker, M., Lai, P., Murphy, M.J., Virtue, P., Elad, M., Pauly, J.M.,
+        Vasanawala, S.S. and Lustig, M. (2014), ESPIRiT—an eigenvalue approach
+        to autocalibrating parallel MRI: Where SENSE meets GRAPPA. Magn. Reson.
+        Med., 71: 990-1001. https://doi.org/10.1002/mrm.24751
   """
   # pylint: disable=missing-raises-doc
   input_ = tf.convert_to_tensor(input_)
@@ -136,6 +137,51 @@ def estimate_coil_sens_maps(input_,
     maps = tf.transpose(maps, inv_perm)
 
   return maps
+
+
+def combine_coils(images, maps=None, coil_axis=-1, keepdims=False):
+  """Sum of squares or adaptive coil combination.
+
+  Args:
+    images: A `Tensor`. The input images.
+    maps: A `Tensor`. The coil sensitivity maps. This argument is optional.
+      If `maps` is provided, it must have the same shape and type as
+      `images`. In this case an adaptive coil combination is performed using
+      the specified maps. If `maps` is `None`, a simple estimate of `maps`
+      is used (ie, images are combined using the sum of squares method).
+    coil_axis: An `int`. The coil axis. Defaults to -1.
+    keepdims: A `bool`. If `True`, retains the coil dimension with size 1.
+
+  Returns:
+    A `Tensor`. The combined images.
+
+  References:
+    1.  Roemer, P.B., Edelstein, W.A., Hayes, C.E., Souza, S.P. and
+        Mueller, O.M. (1990), The NMR phased array. Magn Reson Med, 16:
+        192-225. https://doi.org/10.1002/mrm.1910160203
+
+    2.  Bydder, M., Larkman, D. and Hajnal, J. (2002), Combination of signals
+        from array coils using image-based estimation of coil sensitivity
+        profiles. Magn. Reson. Med., 47: 539-548.
+        https://doi.org/10.1002/mrm.10092
+  """
+  images = tf.convert_to_tensor(images)
+  if maps is not None:
+    maps = tf.convert_to_tensor(maps)
+
+  if maps is None:
+    combined = tf.math.sqrt(
+      tf.math.reduce_sum(images * tf.math.conj(images),
+                          axis=coil_axis, keepdims=keepdims))
+
+  else:
+    combined = tf.math.divide_no_nan(
+      tf.math.reduce_sum(images * tf.math.conj(maps),
+                          axis=coil_axis, keepdims=keepdims),
+      tf.math.reduce_sum(maps * tf.math.conj(maps),
+                          axis=coil_axis, keepdims=keepdims))
+
+  return combined
 
 
 def _estimate_coil_sens_maps_walsh(images, filter_size=5):

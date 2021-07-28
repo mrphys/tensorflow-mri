@@ -18,6 +18,7 @@ import tensorflow as tf
 
 from tensorflow_mri.python.ops import coil_ops
 from tensorflow_mri.python.utils import io_utils
+from tensorflow_mri.python.utils import test_utils
 
 
 class SensMapsTest(tf.test.TestCase):
@@ -64,3 +65,60 @@ class SensMapsTest(tf.test.TestCase):
       self.data['kspace'], method='espirit')
 
     self.assertAllClose(maps, self.data['maps/espirit'])
+
+
+class CoilCombineTest(tf.test.TestCase):
+  """Tests for coil combination op."""
+
+  @test_utils.parameterized_test(coil_axis=[0, -1],
+                                 keepdims=[True, False])
+  def test_sos(self, coil_axis, keepdims): # pylint: disable=missing-param-doc
+    """Test sum of squares combination."""
+
+    images = self._random_complex((20, 20, 8))
+
+    combined = coil_ops.combine_coils(
+      images, coil_axis=coil_axis, keepdims=keepdims)
+
+    ref = tf.math.sqrt(
+      tf.math.reduce_sum(images * tf.math.conj(images),
+                         axis=coil_axis, keepdims=keepdims))
+
+    self.assertAllEqual(combined.shape, ref.shape)
+    self.assertAllClose(combined, ref)
+
+
+  @test_utils.parameterized_test(coil_axis=[0, -1],
+                                 keepdims=[True, False])
+  def test_adaptive(self, coil_axis, keepdims): # pylint: disable=missing-param-doc
+    """Test adaptive combination."""
+
+    images = self._random_complex((20, 20, 8))
+    maps = self._random_complex((20, 20, 8))
+
+    combined = coil_ops.combine_coils(
+      images, maps=maps, coil_axis=coil_axis, keepdims=keepdims)
+
+    ref = tf.math.reduce_sum(images * tf.math.conj(maps),
+                             axis=coil_axis, keepdims=keepdims)
+
+    ref /= tf.math.reduce_sum(maps * tf.math.conj(maps),
+                              axis=coil_axis, keepdims=keepdims)
+
+    self.assertAllEqual(combined.shape, ref.shape)
+    self.assertAllClose(combined, ref)
+
+
+  def setUp(self):
+    super().setUp()
+    tf.random.set_seed(0)
+
+
+  def _random_complex(self, shape):
+    return tf.dtypes.complex(
+      tf.random.normal(shape),
+      tf.random.normal(shape))
+
+
+if __name__ == '__main__':
+  tf.test.main()

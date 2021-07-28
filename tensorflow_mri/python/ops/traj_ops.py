@@ -113,9 +113,9 @@ def spiral_trajectory(base_resolution,
     radians/voxel, ie, values are in the range `[-pi, pi]`.
 
   References:
-    Pipe, J.G. and Zwart, N.R. (2014), Spiral trajectory design: A flexible
-    numerical algorithm and base analytical equations. Magn. Reson. Med, 71:
-    278-285. https://doi.org/10.1002/mrm.24675
+    1.  Pipe, J.G. and Zwart, N.R. (2014), Spiral trajectory design: A flexible
+        numerical algorithm and base analytical equations. Magn. Reson. Med, 71:
+        278-285. https://doi.org/10.1002/mrm.24675
   """
   return _kspace_trajectory('spiral',
                             {'base_resolution': base_resolution,
