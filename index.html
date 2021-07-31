@@ -5,8 +5,8 @@
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" />
 
-    <meta name="generator" content="sphinx-4.1.2, furo 2021.07.28.beta39"/>
-        <title>Home - tensorflow-mri documentation</title>
+    <meta name="generator" content="sphinx-4.1.2, furo 2021.07.28.beta40"/>
+        <title>Home - tensorflow-mri 0.2.0a0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css" />
@@ -114,7 +114,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="#"><div class="brand">tensorflow-mri  documentation</div></a>
+      <a href="#"><div class="brand">tensorflow-mri 0.2.0a0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -135,7 +135,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="#">
   
   
-  <span class="sidebar-brand-text">tensorflow-mri  documentation</span>
+  <span class="sidebar-brand-text">tensorflow-mri 0.2.0a0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html">
   <input class="sidebar-search" placeholder=Search name="q">
@@ -165,420 +165,19 @@
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
         </div>
-        <section id="tensorflow-mri-documentation">
-<h1>TensorFlow MRI documentation<a class="headerlink" href="#tensorflow-mri-documentation" title="Permalink to this headline">¶</a></h1>
+        <section id="welcome-to-tensorflow-mri">
+<h1>Welcome to TensorFlow MRI<a class="headerlink" href="#welcome-to-tensorflow-mri" title="Permalink to this headline">¶</a></h1>
+<p>TensorFlow MRI is a collection of TensorFlow add-ons for computational MRI.</p>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>You can install TensorFlow MRI with <code class="docutils literal notranslate"><span class="pre">pip</span></code>:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>pip install tensorflow-mri
+</pre></div>
+</div>
+<p>Note that only Linux wheels are currently being provided.</p>
 <div class="toctree-wrapper compound">
 </div>
-<span class="target" id="module-tensorflow_mri"></span><p>TensorFlow MRI.</p>
-<dl class="py function">
-<dt class="sig sig-object py" id="tensorflow_mri.central_crop">
-<span class="sig-prename descclassname"><span class="pre">tensorflow_mri.</span></span><span class="sig-name descname"><span class="pre">central_crop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_mri.central_crop" title="Permalink to this definition">¶</a></dt>
-<dd><p>Crop the central region of a tensor.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>tensor</strong> – A <cite>Tensor</cite>.</p></li>
-<li><p><strong>shape</strong> – A <cite>Tensor</cite>. The shape of the region to crop. The size of <cite>shape</cite> must
-be equal to the rank of <cite>tensor</cite>. Any component of <cite>shape</cite> can be set to
-the special value -1 to leave the corresponding dimension unchanged.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A <cite>Tensor</cite>. Has the same type as <cite>tensor</cite>. The centrally cropped tensor.</p>
-</dd>
-</dl>
-</dd></dl>
-<dl class="py function">
-<dt class="sig sig-object py" id="tensorflow_mri.combine_coils">
-<span class="sig-prename descclassname"><span class="pre">tensorflow_mri.</span></span><span class="sig-name descname"><span class="pre">combine_coils</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">images</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coil_axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keepdims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_mri.combine_coils" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sum of squares or adaptive coil combination.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>images</strong> – A <cite>Tensor</cite>. The input images.</p></li>
-<li><p><strong>maps</strong> – A <cite>Tensor</cite>. The coil sensitivity maps. This argument is optional.
-If <cite>maps</cite> is provided, it must have the same shape and type as
-<cite>images</cite>. In this case an adaptive coil combination is performed using
-the specified maps. If <cite>maps</cite> is <cite>None</cite>, a simple estimate of <cite>maps</cite>
-is used (ie, images are combined using the sum of squares method).</p></li>
-<li><p><strong>coil_axis</strong> – An <cite>int</cite>. The coil axis. Defaults to -1.</p></li>
-<li><p><strong>keepdims</strong> – A <cite>bool</cite>. If <cite>True</cite>, retains the coil dimension with size 1.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A <cite>Tensor</cite>. The combined images.</p>
-</dd>
-</dl>
-<p class="rubric">References</p>
-<ol class="arabic simple">
-<li><p>Roemer, P.B., Edelstein, W.A., Hayes, C.E., Souza, S.P. and
-Mueller, O.M. (1990), The NMR phased array. Magn Reson Med, 16:
-192-225. <a class="reference external" href="https://doi.org/10.1002/mrm.1910160203">https://doi.org/10.1002/mrm.1910160203</a></p></li>
-<li><p>Bydder, M., Larkman, D. and Hajnal, J. (2002), Combination of signals
-from array coils using image-based estimation of coil sensitivity
-profiles. Magn. Reson. Med., 47: 539-548.
-<a class="reference external" href="https://doi.org/10.1002/mrm.10092">https://doi.org/10.1002/mrm.10092</a></p></li>
-</ol>
-</dd></dl>
-<dl class="py function">
-<dt class="sig sig-object py" id="tensorflow_mri.estimate_coil_sens_maps">
-<span class="sig-prename descclassname"><span class="pre">tensorflow_mri.</span></span><span class="sig-name descname"><span class="pre">estimate_coil_sens_maps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coil_axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'walsh'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_mri.estimate_coil_sens_maps" title="Permalink to this definition">¶</a></dt>
-<dd><p>Estimate coil sensitivity maps.</p>
-<p>This method supports 2D and 3D inputs.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>input</strong> – A <cite>Tensor</cite>. Must have type <cite>complex64</cite> or <cite>complex128</cite>. Must have
-shape <cite>[height, width, coils]</cite> for 2D inputs, or <cite>[depth, height,
-width, coils]</cite> for 3D inputs. Alternatively, this function accepts a
-transposed array by setting the <cite>coil_axis</cite> argument accordingly. Inputs
-should be images if <cite>method</cite> is <cite>‘walsh’</cite> or <cite>‘inati’</cite>, and k-space data
-if <cite>method</cite> is <cite>‘espirit’</cite>.</p></li>
-<li><p><strong>coil_axis</strong> – An <cite>int</cite>. Defaults to -1.</p></li>
-<li><p><strong>method</strong> – A <cite>string</cite>. The coil sensitivity estimation algorithm. Must be one
-of: <cite>{‘walsh’, ‘inati’, ‘espirit’}</cite>. Defaults to <cite>‘walsh’</cite>.</p></li>
-<li><p><strong>**kwargs</strong> – Additional keyword arguments for the coil sensitivity estimation
-algorithm. See Notes.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A <cite>Tensor</cite>. Has the same type as <cite>input_</cite>. Has shape
-<cite>input_.shape + [num_maps]</cite> if <cite>method</cite> is <cite>‘espirit’</cite>, or shape
-<cite>input_.shape</cite> otherwise.</p>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<p>This function accepts the following method-specific keyword arguments:</p>
-<blockquote>
-<div><ul class="simple">
-<li><p><cite>‘walsh’</cite> method:</p>
-<ul>
-<li><p><cite>filter_size</cite>: An <cite>int</cite>. The size of the smoothing filter.</p></li>
-</ul>
-</li>
-<li><p><cite>‘inati’</cite> method:</p>
-<ul>
-<li><p><cite>filter_size</cite>: An <cite>int</cite>. The size of the smoothing filter.</p></li>
-<li><p><cite>max_iter</cite>: An <cite>int</cite>. The maximum number of iterations.</p></li>
-<li><p><cite>tol</cite>: A <cite>float</cite>. The convergence tolerance.</p></li>
-</ul>
-</li>
-<li><p><cite>‘espirit’</cite> method:</p>
-<ul>
-<li><p><cite>calib_size</cite>: An <cite>int</cite> or a list of <cite>ints</cite>. The size of the
-calibration region. If <cite>None</cite>, this is set to <cite>input_.shape[:-1]</cite> (ie,
-use full input for calibration). Defaults to 24.</p></li>
-<li><p><cite>kernel_size</cite>: An <cite>int</cite> or a list of <cite>ints</cite>. The kernel size. Defaults
-to 6.</p></li>
-<li><p><cite>num_maps</cite>: An <cite>int</cite>. The number of output maps. Defaults to 2.</p></li>
-<li><p><cite>null_threshold</cite>: A <cite>float</cite>. The threshold used to determine the size
-of the null-space. Defaults to 0.02.</p></li>
-<li><p><cite>eigen_threshold</cite>: A <cite>float</cite>. The threshold used to determine the
-locations where coil sensitivity maps should be masked out. Defaults
-to 0.95.</p></li>
-<li><p><cite>image_shape</cite>: A <cite>tf.TensorShape</cite> or a list of <cite>ints</cite>. The shape of
-the output maps. If <cite>None</cite>, this is set to <cite>input_.shape</cite>. Defaults to
-<cite>None</cite>.</p></li>
-</ul>
-</li>
-</ul>
-</div></blockquote>
-<p class="rubric">References</p>
-<ol class="arabic simple">
-<li><p>Walsh, D.O., Gmitro, A.F. and Marcellin, M.W. (2000), Adaptive
-reconstruction of phased array MR imagery. Magn. Reson. Med., 43:
-682-690. <a class="reference external" href="https://doi.org/10.1002/(SICI)1522-2594(200005)43">https://doi.org/10.1002/(SICI)1522-2594(200005)43</a>:5&lt;682::AID-MRM10&gt;3.0.CO;2-G</p></li>
-<li><p>Inati, S.J., Hansen, M.S. and Kellman, P. (2014). A fast optimal method
-for coil sensitivity estimation and adaptive coil combination for
-complex images. Proceedings of the 2014 Joint Annual Meeting
-ISMRM-ESMRMB.</p></li>
-<li><p>Uecker, M., Lai, P., Murphy, M.J., Virtue, P., Elad, M., Pauly, J.M.,
-Vasanawala, S.S. and Lustig, M. (2014), ESPIRiT—an eigenvalue approach
-to autocalibrating parallel MRI: Where SENSE meets GRAPPA. Magn. Reson.
-Med., 71: 990-1001. <a class="reference external" href="https://doi.org/10.1002/mrm.24751">https://doi.org/10.1002/mrm.24751</a></p></li>
-</ol>
-</dd></dl>
-<dl class="py function">
-<dt class="sig sig-object py" id="tensorflow_mri.fftn">
-<span class="sig-prename descclassname"><span class="pre">tensorflow_mri.</span></span><span class="sig-name descname"><span class="pre">fftn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'backward'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shift</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_mri.fftn" title="Permalink to this definition">¶</a></dt>
-<dd><p>Compute the N-dimensional discrete Fourier Transform.</p>
-<p>This function computes the <cite>N</cite>-dimensional discrete Fourier Transform over any
-number of axes in an <cite>M</cite>-dimensional array by means of the Fast Fourier
-Transform (FFT).</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><cite>N</cite> is limited to 1, 2 or 3.</p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> – A <cite>Tensor</cite>. Must be one of the following types: <cite>complex64</cite>,
-<cite>complex128</cite>.</p></li>
-<li><p><strong>shape</strong> – Shape (length of each transformed axis) of the output (<cite>s[0]</cite>
-refers to axis 0, <cite>s[1]</cite> to axis 1, etc.). Along any axis, if the
-given shape is smaller than that of the input, the input is cropped.
-If it is larger, the input is padded with zeros. If <cite>shape</cite> is not
-given, the shape of the input along the axes specified by <cite>axes</cite> is
-used.</p></li>
-<li><p><strong>axes</strong> – Axes over which to compute the FFT. If not given, the last
-<cite>len(shape)</cite> axes are used, or all axes if <cite>shape</cite> is also not
-specified.</p></li>
-<li><p><strong>norm</strong> – Normalization mode. Must be one of {‘forward’, ‘backward’,
-‘ortho’}. Default is ‘backward’. Indicates which direction of the
-forward/backward pair of transforms is scaled and with what
-normalization factor.</p></li>
-<li><p><strong>shift</strong> – Whether to shift the zero-frequency components to the center of
-the spectrum.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The truncated or zero-padded input tensor, transformed along the axes
-indicated by <cite>axes</cite>, or by a combination of <cite>shape</cite> and <cite>axes</cite>, as
-explained in the parameters section above.</p>
-</dd>
-<dt class="field-odd">Raises</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>TypeError</strong> – If <cite>x</cite> is not of a complex dtype.</p></li>
-<li><p><strong>InvalidArgumentError</strong> – If length of <cite>shape</cite> is greater than the rank of
-    <cite>x</cite>.</p></li>
-<li><p><strong>InvalidArgumentError</strong> – If length of <cite>axes</cite> is greater than the rank of
-    <cite>x</cite>.</p></li>
-<li><p><strong>InvalidArgumentError</strong> – If any element of <cite>axes</cite> is larger than the number
-    of axes of <cite>x</cite>.</p></li>
-<li><p><strong>InvalidArgumentError</strong> – If <cite>shape</cite> and <cite>axes</cite> have different length.</p></li>
-<li><p><strong>ValueError</strong> – If <cite>norm</cite> is not one of ‘forward’, ‘backward’ or ‘ortho’.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-<dl class="py function">
-<dt class="sig sig-object py" id="tensorflow_mri.ifftn">
-<span class="sig-prename descclassname"><span class="pre">tensorflow_mri.</span></span><span class="sig-name descname"><span class="pre">ifftn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'backward'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shift</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_mri.ifftn" title="Permalink to this definition">¶</a></dt>
-<dd><p>Compute the N-dimensional inverse discrete Fourier Transform.</p>
-<p>This function computes the inverse of the <cite>N</cite>-dimensional discrete Fourier
-Transform over any number of axes in an M-dimensional array by means of
-the Fast Fourier Transform (FFT).</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><cite>N</cite> is limited to 1, 2 or 3.</p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> – A <cite>Tensor</cite>. Must be one of the following types: <cite>complex64</cite>,
-<cite>complex128</cite>.</p></li>
-<li><p><strong>shape</strong> – Shape (length of each transformed axis) of the output (<cite>s[0]</cite>
-refers to axis 0, <cite>s[1]</cite> to axis 1, etc.). Along any axis, if the
-given shape is smaller than that of the input, the input is cropped.
-If it is larger, the input is padded with zeros. If <cite>shape</cite> is not
-given, the shape of the input along the axes specified by <cite>axes</cite> is
-used.</p></li>
-<li><p><strong>axes</strong> – Axes over which to compute the FFT. If not given, the last
-<cite>len(shape)</cite> axes are used, or all axes if <cite>shape</cite> is also not
-specified.</p></li>
-<li><p><strong>norm</strong> – Normalization mode. Must be one of {‘forward’, ‘backward’,
-‘ortho’}. Default is ‘backward’. Indicates which direction of the
-forward/backward pair of transforms is scaled and with what
-normalization factor.</p></li>
-<li><p><strong>shift</strong> – Whether to shift the zero-frequency components to the center of
-the spectrum.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The truncated or zero-padded input tensor, transformed along the axes
-indicated by <cite>axes</cite>, or by a combination of <cite>shape</cite> and <cite>axes</cite>, as
-explained in the parameters section above.</p>
-</dd>
-<dt class="field-odd">Raises</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>TypeError</strong> – If <cite>x</cite> is not of a complex dtype.</p></li>
-<li><p><strong>InvalidArgumentError</strong> – If length of <cite>shape</cite> is greater than the rank of
-    <cite>x</cite>.</p></li>
-<li><p><strong>InvalidArgumentError</strong> – If length of <cite>axes</cite> is greater than the rank of
-    <cite>x</cite>.</p></li>
-<li><p><strong>InvalidArgumentError</strong> – If any element of <cite>axes</cite> is larger than the number
-    of axes of <cite>x</cite>.</p></li>
-<li><p><strong>InvalidArgumentError</strong> – If <cite>shape</cite> and <cite>axes</cite> have different length.</p></li>
-<li><p><strong>ValueError</strong> – If <cite>norm</cite> is not one of ‘forward’, ‘backward’ or ‘ortho’.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-<dl class="py function">
-<dt class="sig sig-object py" id="tensorflow_mri.radial_density">
-<span class="sig-prename descclassname"><span class="pre">tensorflow_mri.</span></span><span class="sig-name descname"><span class="pre">radial_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_resolution</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">views</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phases</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'full'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readout_os</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_mri.radial_density" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate sampling density for radial trajectories.</p>
-<p>This is an exact density calculation method based on geometrical
-considerations.</p>
-<p>For the parameters, see <cite>radial_trajectory</cite>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>A <cite>Tensor</cite> of type <cite>float32</cite> and shape <cite>[views, samples]</cite> if <cite>phases</cite> is
-<cite>None</cite>, or of shape <cite>[phases, views, samples]</cite> if <cite>phases</cite> is not <cite>None</cite>.
-<cite>samples</cite> is equal to <cite>base_resolution * readout_os</cite>.</p>
-</dd>
-</dl>
-</dd></dl>
-<dl class="py function">
-<dt class="sig sig-object py" id="tensorflow_mri.radial_trajectory">
-<span class="sig-prename descclassname"><span class="pre">tensorflow_mri.</span></span><span class="sig-name descname"><span class="pre">radial_trajectory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_resolution</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">views</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phases</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'full'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readout_os</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_mri.radial_trajectory" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate a radial trajectory.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>base_resolution</strong> – An <cite>int</cite>. The base resolution, or number of pixels in the
-readout dimension.</p></li>
-<li><p><strong>views</strong> – An <cite>int</cite>. The number of radial views per k-space.</p></li>
-<li><p><strong>phases</strong> – An <cite>int</cite>. The number of phases for cine acquisitions. If <cite>None</cite>,
-this is assumed to be a non-cine acquisition with no time dimension.</p></li>
-<li><p><strong>spacing</strong> – A <cite>string</cite>. The spacing type. Must be one of: <cite>{‘linear’, ‘golden’,
-‘tiny’, ‘sorted’}</cite>.</p></li>
-<li><p><strong>domain</strong> – A <cite>string</cite>. The rotation domain. Must be one of: <cite>{‘full’, ‘half’}</cite>.
-If <cite>domain</cite> is <cite>‘full’</cite>, the full circle is included in the rotation
-domain (<cite>2 * pi</cite>). If <cite>domain</cite> is <cite>‘half’</cite>, only half circle is included
-(<cite>pi</cite>).</p></li>
-<li><p><strong>readout_os</strong> – A <cite>float</cite>. The readout oversampling factor. Defaults to 2.0.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A <cite>Tensor</cite> of type <cite>float32</cite> and shape <cite>[views, samples, 2]</cite> if <cite>phases</cite> is
-<cite>None</cite>, or of shape <cite>[phases, views, samples, 2]</cite> if <cite>phases</cite> is not <cite>None</cite>.
-<cite>samples</cite> is equal to <cite>base_resolution * readout_os</cite>. The units are
-radians/voxel, ie, values are in the range <cite>[-pi, pi]</cite>.</p>
-</dd>
-</dl>
-</dd></dl>
-<dl class="py function">
-<dt class="sig sig-object py" id="tensorflow_mri.radial_waveform">
-<span class="sig-prename descclassname"><span class="pre">tensorflow_mri.</span></span><span class="sig-name descname"><span class="pre">radial_waveform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_resolution</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readout_os</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_mri.radial_waveform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate a radial readout waveform.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>base_resolution</strong> – An <cite>int</cite>. The base resolution, or number of pixels in the
-readout dimension.</p></li>
-<li><p><strong>readout_os</strong> – A <cite>float</cite>. The readout oversampling factor. Defaults to 2.0.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A <cite>Tensor</cite> of type <cite>float32</cite> and shape <cite>[samples, 2]</cite>, where <cite>samples</cite> is
-equal to <cite>base_resolution * readout_os</cite>. The units are radians/voxel, ie,
-values are in the range <cite>[-pi, pi]</cite>.</p>
-</dd>
-</dl>
-</dd></dl>
-<dl class="py function">
-<dt class="sig sig-object py" id="tensorflow_mri.spiral_trajectory">
-<span class="sig-prename descclassname"><span class="pre">tensorflow_mri.</span></span><span class="sig-name descname"><span class="pre">spiral_trajectory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_resolution</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spiral_arms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_of_view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_grad_ampl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_rise_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwell_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">views</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phases</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'full'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readout_os</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">larmor_const</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">42.577478518</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_mri.spiral_trajectory" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate a spiral trajectory.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>base_resolution</strong> – An <cite>int</cite>. The base resolution, or number of pixels in the
-readout dimension.</p></li>
-<li><p><strong>spiral_arms</strong> – An <cite>int</cite>. The number of spiral arms that a fully sampled
-k-space should be divided into.</p></li>
-<li><p><strong>field_of_view</strong> – A <cite>float</cite>. The field of view, in mm.</p></li>
-<li><p><strong>max_grad_ampl</strong> – A <cite>float</cite>. The maximum allowed gradient amplitude, in mT/m.</p></li>
-<li><p><strong>min_rise_time</strong> – A <cite>float</cite>. The minimum allowed rise time, in us/(mT/m).</p></li>
-<li><p><strong>dwell_time</strong> – A <cite>float</cite>. The digitiser’s real dwell time, in us. This does not
-include oversampling. The effective dwell time (with oversampling) is
-equal to <cite>dwell_time * readout_os</cite>.</p></li>
-<li><p><strong>views</strong> – An <cite>int</cite>. The number of radial views per k-space.</p></li>
-<li><p><strong>phases</strong> – An <cite>int</cite>. The number of phases for cine acquisitions. If <cite>None</cite>,
-this is assumed to be a non-cine acquisition with no time dimension.</p></li>
-<li><p><strong>spacing</strong> – A <cite>string</cite>. The spacing type. Must be one of: <cite>{‘linear’, ‘golden’,
-‘tiny’, ‘sorted’}</cite>.</p></li>
-<li><p><strong>domain</strong> – A <cite>string</cite>. The rotation domain. Must be one of: <cite>{‘full’, ‘half’}</cite>.
-If <cite>domain</cite> is <cite>‘full’</cite>, the full circle is included in the rotation
-domain (<cite>2 * pi</cite>). If <cite>domain</cite> is <cite>‘half’</cite>, only half circle is included
-(<cite>pi</cite>).</p></li>
-<li><p><strong>readout_os</strong> – A <cite>float</cite>. The readout oversampling factor. Defaults to 2.0.</p></li>
-<li><p><strong>gradient_delay</strong> – A <cite>float</cite>. The system’s gradient delay relative to the ADC,
-in us. Defaults to 0.0.</p></li>
-<li><p><strong>larmor_const</strong> – A <cite>float</cite>. The Larmor constant of the imaging nucleus, in
-MHz/T. Defaults to 42.577478518 (the Larmor constant of the 1H nucleus).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A <cite>Tensor</cite> of type <cite>float32</cite> and shape <cite>[views, samples, 2]</cite> if <cite>phases</cite> is
-<cite>None</cite>, or of shape <cite>[phases, views, samples, 2]</cite> if <cite>phases</cite> is not <cite>None</cite>.
-<cite>samples</cite> is equal to <cite>base_resolution * readout_os</cite>. The units are
-radians/voxel, ie, values are in the range <cite>[-pi, pi]</cite>.</p>
-</dd>
-</dl>
-<p class="rubric">References</p>
-<ol class="arabic simple">
-<li><p>Pipe, J.G. and Zwart, N.R. (2014), Spiral trajectory design: A flexible
-numerical algorithm and base analytical equations. Magn. Reson. Med, 71:
-278-285. <a class="reference external" href="https://doi.org/10.1002/mrm.24675">https://doi.org/10.1002/mrm.24675</a></p></li>
-</ol>
-</dd></dl>
-<dl class="py function">
-<dt class="sig sig-object py" id="tensorflow_mri.spiral_waveform">
-<span class="sig-prename descclassname"><span class="pre">tensorflow_mri.</span></span><span class="sig-name descname"><span class="pre">spiral_waveform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_resolution</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spiral_arms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_of_view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_grad_ampl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_rise_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwell_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readout_os</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">larmor_const</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">42.5775</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_mri.spiral_waveform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate a spiral readout waveform.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>base_resolution</strong> – An <cite>int</cite>.
-The base resolution, or number of pixels in the readout
-dimension.</p></li>
-<li><p><strong>spiral_arms</strong> – An <cite>int</cite>.
-The number of spiral arms that a fully sampled k-space should be
-divided into.</p></li>
-<li><p><strong>field_of_view</strong> – A <cite>float</cite>. The field of view, in mm.</p></li>
-<li><p><strong>max_grad_ampl</strong> – A <cite>float</cite>. The maximum allowed gradient amplitude, in mT/m.</p></li>
-<li><p><strong>min_rise_time</strong> – A <cite>float</cite>. The minimum allowed rise time, in us/(mT/m).</p></li>
-<li><p><strong>dwell_time</strong> – A <cite>float</cite>.
-The digitiser’s real dwell time, in us. This does not
-include oversampling. The effective dwell time (with oversampling) is
-equal to <cite>dwell_time * readout_os</cite>.</p></li>
-<li><p><strong>readout_os</strong> – An optional <cite>float</cite>. Defaults to <cite>2</cite>.
-The readout oversampling factor.</p></li>
-<li><p><strong>gradient_delay</strong> – An optional <cite>float</cite>. Defaults to <cite>0</cite>.
-The system’s gradient delay relative to the ADC,
-in us.</p></li>
-<li><p><strong>larmor_const</strong> – An optional <cite>float</cite>. Defaults to <cite>42.5775</cite>.
-The Larmor constant of the imaging nucleus, in
-MHz/T.</p></li>
-<li><p><strong>name</strong> – A name for the operation (optional).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A <cite>Tensor</cite> of type <cite>float32</cite>.</p>
-</dd>
-</dl>
-</dd></dl>
-<dl class="py function">
-<dt class="sig sig-object py" id="tensorflow_mri.symmetric_pad_or_crop">
-<span class="sig-prename descclassname"><span class="pre">tensorflow_mri.</span></span><span class="sig-name descname"><span class="pre">symmetric_pad_or_crop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_mri.symmetric_pad_or_crop" title="Permalink to this definition">¶</a></dt>
-<dd><p>Symmetrically pad or crop a tensor to the specified shape.</p>
-<p>Pads symmetrically or crops centrally the input tensor as necessary to achieve
-the requested shape.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>tensor</strong> – A <cite>Tensor</cite>.</p></li>
-<li><p><strong>shape</strong> – A <cite>Tensor</cite>. The shape of the output tensor. The size of <cite>shape</cite> must
-be equal to the rank of <cite>tensor</cite>. Any component of <cite>shape</cite> can be set to
-the special value -1 to leave the corresponding dimension unchanged.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A <cite>Tensor</cite>. Has the same type as <cite>tensor</cite>. The symmetrically padded/cropped
-tensor.</p>
-</dd>
-</dl>
-</dd></dl>
 </section>
-<section id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
-<ul class="simple">
-<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
-<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
-<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
-</ul>
 </section>
 
       </article>
@@ -590,7 +189,7 @@ tensor.</p>
         </div>
 
         <div class="related-information">
-              Copyright &#169; 2021, University College London
+              Copyright &#169; 2021 University College London
             |
             Built with <a href="https://www.sphinx-doc.org/">Sphinx</a>
               and
@@ -617,8 +216,10 @@ tensor.</p>
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">TensorFlow MRI documentation</a></li>
-<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+<li><a class="reference internal" href="#">Welcome to TensorFlow MRI</a><ul>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+</ul>
+</li>
 </ul>
 
           </div>
