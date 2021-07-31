@@ -71,6 +71,7 @@ function main() {
   cp ${PIP_FILE_PREFIX}setup.py "${TMPDIR}"
   cp ${PIP_FILE_PREFIX}MANIFEST.in "${TMPDIR}"
   cp ${PIP_FILE_PREFIX}LICENSE "${TMPDIR}"
+  cp ${PIP_FILE_PREFIX}README.rst "${TMPDIR}"
   cp ${PIP_FILE_PREFIX}requirements.txt "${TMPDIR}"
   rsync -avm -L --exclude='*.h' --exclude='*.cc' --exclude='*.o'              \
     --exclude='*_test.py' --exclude='__pycache__/*'                           \
@@ -82,7 +83,7 @@ function main() {
 
   if [[ "${PLATFORM}" == "linux" ]]; then
     echo $(date) : "=== Auditing wheel"
-    auditwheel repair --plat manylinux2014_x86_64 dist/*linux_x86_64.whl -w dist/
+    auditwheel repair --plat manylinux2010_x86_64 dist/*linux_x86_64.whl -w dist/
     rm -rf dist/*linux_x86_64.whl
   fi
 

@@ -1,7 +1,7 @@
 {
     "title": "TensorFlow MRI",
 
-    "description": "TensorFlow MRI is a collection of tools for computational magnetic resonance imaging.",
+    "description": "TensorFlow MRI is a collection of TensorFlow add-ons for computational MRI.",
 
     "keywords": ["TensorFlow", "MRI", "Magnetic Resonance Imaging", "Machine Learning", "ML", "Python"],
 
@@ -15,7 +15,7 @@
         {   
             "orcid": "0000-0003-1956-1409",
             "affiliation": "University College London",
-            "name": "Montalt-Tordera, Javier"
+            "name": "Montalt Tordera, Javier"
         }
     ]    
 }

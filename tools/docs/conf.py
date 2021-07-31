@@ -4,23 +4,34 @@
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+from os import path
+import packaging.version
+import sys
+
+
 # -- Path setup --------------------------------------------------------------
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import os
-import sys
-print(os.path.abspath('../..'))
-sys.path.insert(0, os.path.abspath('../..'))
+sys.path.insert(0, path.abspath('../..'))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'tensorflow-mri'
-copyright = '2021, University College London'
-author = 'Javier Montalt-Tordera'
+ROOT = path.abspath(path.join(path.dirname(__file__), '../..'))
+
+ABOUT = {}
+with open(path.join(ROOT, "tensorflow_mri/__about__.py")) as f:
+    exec(f.read(), ABOUT)
+_version = packaging.version.Version(ABOUT['__version__'])
+
+project = ABOUT['__title__']
+copyright = ABOUT['__copyright__']
+author = ABOUT['__author__']
+release = _version.public
+version = '.'.join(map(str, (_version.major, _version.minor)))
 
 
 # -- General configuration ---------------------------------------------------

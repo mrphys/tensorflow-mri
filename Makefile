@@ -1,5 +1,5 @@
-PY_VERSION ?=
 CXX := g++
+PY_VERSION ?= 3.8
 PYTHON := python$(PY_VERSION)
 
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
@@ -8,23 +8,26 @@ SOURCES := $(wildcard tensorflow_mri/cc/kernels/*.cc) $(wildcard tensorflow_mri/
 
 TARGET := tensorflow_mri/python/ops/_mri_ops.so
 
-TF_CCFLAGS := $(shell $(PYTHON) -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_compile_flags()))')
+TF_CFLAGS := $(shell $(PYTHON) -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_compile_flags()))')
 TF_LDFLAGS := $(shell $(PYTHON) -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_link_flags()))')
 
-CCFLAGS := $(TF_CCFLAGS) -fPIC -O2 -std=c++11
-LDFLAGS := $(TF_LDFLAGS) -shared
+CFLAGS := -O3 -march=x86-64 -mtune=generic
+
+CXXFLAGS := $(CFLAGS)
+CXXFLAGS += $(TF_CFLAGS) -fPIC -std=c++11
+CXXFLAGS += -I$(ROOT_DIR)
+
+LDFLAGS := $(TF_LDFLAGS)
 
 SWF_DIR := third_party/spiral_waveform
 SWF_LIB := $(SWF_DIR)/lib/libspiral_waveform.a
 
-CCFLAGS += -I$(ROOT_DIR)
-
-all: lib
+all: lib wheel
 
 lib: $(TARGET)
 
 $(TARGET): $(SOURCES) $(SWF_LIB)
-	$(CXX) $(CCFLAGS) -o $@ $^ ${LDFLAGS}
+	$(CXX) -shared $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 $(SWF_LIB): $(SWF_DIR)
 	$(MAKE) -C $(SWF_DIR)

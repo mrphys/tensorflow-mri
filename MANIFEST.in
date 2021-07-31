@@ -1,2 +1,1 @@
-include tensorflow_mri/VERSION
 recursive-include tensorflow_mri *.so
