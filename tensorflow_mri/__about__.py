@@ -12,11 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"TensorFlow MRI."
 
-from tensorflow_mri.__about__ import *
+__all__ = [
+    "__title__",
+    "__summary__",
+    "__uri__",
+    "__version__",
+    "__author__",
+    "__email__",
+    "__license__",
+    "__copyright__",
+]
 
-from tensorflow_mri.python.ops.array_ops import *
-from tensorflow_mri.python.ops.coil_ops import *
-from tensorflow_mri.python.ops.fft_ops import *
-from tensorflow_mri.python.ops.traj_ops import *
+__title__ = "tensorflow-mri"
+__summary__ = "A collection of TensorFlow add-ons for computational MRI."
+__uri__ = "https://github.com/mrphys/tensorflow-mri"
+
+__version__ = "0.2.0a0"
+
+__author__ = "Javier Montalt Tordera"
+__email__ = "javier.montalt@outlook.com"
+
+__license__ = "Apache 2.0"
+__copyright__ = "2021 University College London"
