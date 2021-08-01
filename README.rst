@@ -4,7 +4,7 @@ TensorFlow MRI
 |pypi| |build| |docs|
 
 .. |pypi| image:: https://badge.fury.io/py/tensorflow-mri.svg
-    :target: https://github.com/mrphys/tensorflow-mri/actions/workflows/build-package.yml
+    :target: https://badge.fury.io/py/tensorflow-mri
 .. |build| image:: https://github.com/mrphys/tensorflow-mri/actions/workflows/build-package.yml/badge.svg
     :target: https://github.com/mrphys/tensorflow-mri/actions/workflows/build-package.yml
 .. |docs| image:: https://img.shields.io/badge/api-reference-blue.svg
