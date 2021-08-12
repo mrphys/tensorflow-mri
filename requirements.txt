@@ -1,4 +1,6 @@
 h5py
+ismrmrd
 numpy
 tensorflow
-tensorflow_graphics
+tensorflow-graphics
+tensorflow-nufft

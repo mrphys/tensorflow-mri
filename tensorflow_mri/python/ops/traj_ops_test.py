@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for k-space trajectory ops."""
+"""Tests for module `traj_ops`."""
 
 import itertools
 import math
@@ -218,6 +218,27 @@ class TrajOpsTest(tf.test.TestCase): # pylint: disable=missing-class-docstring
 
           # Just a sanity check.
           self.assertAllInRange(traj, -math.pi, math.pi)
+
+
+class DensityEstimationTest(tf.test.TestCase):
+  """Test density estimation."""
+
+  @classmethod
+  def setUpClass(cls):
+
+    super().setUpClass()
+    cls.data = io_utils.read_hdf5('tests/data/traj_ops_data.h5')
+
+
+  def test_estimate_density(self):
+
+    traj = self.data['estimate_density/trajectory']
+
+    flat_traj = tf.reshape(traj, [-1, traj.shape[-1]])
+    dens_flat = traj_ops.estimate_density(flat_traj, [128, 128])
+    dens = tf.reshape(dens_flat, traj.shape[:-1])
+
+    self.assertAllClose(dens, self.data['estimate_density/density'])
 
 
 if __name__ == '__main__':

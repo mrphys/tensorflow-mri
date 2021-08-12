@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Ops for array manipulation."""
+"""Array manipulation operations."""
 
 import tensorflow as tf
 

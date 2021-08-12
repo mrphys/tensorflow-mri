@@ -12,16 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Ops for k-space trajectories."""
+"""*k*-space trajectory operations."""
 
 import math
 
 import numpy as np
 import tensorflow as tf
+import tensorflow_nufft as tfft
 from tensorflow_graphics.geometry.transformation import rotation_matrix_2d
 from tensorflow_graphics.geometry.transformation import rotation_matrix_3d
 
 from tensorflow_mri.python.utils import check_utils
+from tensorflow_mri.python.utils import tensor_utils
 
 
 _mri_ops = tf.load_op_library(
@@ -442,3 +444,64 @@ def _rotate_waveform_3d(waveform, theta):
 
   # Apply rotation to trajectory.
   return rotation_matrix_3d.rotate(waveform, rot_matrix)
+
+
+def estimate_density(points, grid_shape):
+  """Estimate the density of an arbitrary set of points.
+
+  Args:
+    points: A `Tensor`. Must be one of the following types: `float32`,
+      `float64`. The coordinates at which the sampling density should be
+      estimated. Must have shape `[..., M, N]`, where `M` is the number of
+      points, `N` is the number of dimensions and `...` is an arbitrary batch
+      shape. `N` must be 1, 2 or 3. The coordinates should be in radians/pixel,
+      ie, in the range `[-pi, pi]`.
+    grid_shape: A `tf.TensorShape` or list of `ints`. The shape of the image
+      corresponding to this *k*-space.
+
+  Returns:
+    A `Tensor` of shape `[..., M]` containing the density of `points`.
+  """
+  # We do not check inputs here, the NUFFT op will do it for us.
+  batch_shape = points.shape[:-2]
+
+  # Calculate an appropriate grid shape.
+  grid_shape = tf.TensorShape(grid_shape) # Canonicalize.
+  grid_shape = [_next_smooth_int(2 * s) for s in grid_shape.as_list()]
+
+  # Create a k-space of ones.
+  ones = tf.ones(batch_shape + points.shape[-2:-1],
+                 dtype=tensor_utils.get_complex_dtype(points.dtype))
+
+  # Spread ones to grid and interpolate back.
+  density = tfft.interp(tfft.spread(ones, points, grid_shape), points)
+
+  return tf.math.real(density)
+
+
+def _next_smooth_int(n):
+  """Find the next even integer with prime factors no larger than 5.
+
+  Args:
+    n: An `int`.
+
+  Returns:
+    The smallest `int` that is larger than or equal to `n`, even and with no
+    prime factors larger than 5.
+  """
+  if n <= 2:
+    return 2
+  if n % 2 == 1:
+    n += 1    # Even.
+  n -= 2      # Cancel out +2 at the beginning of the loop.
+  ndiv = 2    # Dummy value that is >1.
+  while ndiv > 1:
+    n += 2
+    ndiv = n
+    while ndiv % 2 == 0:
+      ndiv /= 2
+    while ndiv % 3 == 0:
+      ndiv /= 3
+    while ndiv % 5 == 0:
+      ndiv /= 5
+  return n

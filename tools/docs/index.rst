@@ -13,6 +13,8 @@ Installation
    :end-before: end-install
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: API Documentation
    :hidden:
+
+   ops

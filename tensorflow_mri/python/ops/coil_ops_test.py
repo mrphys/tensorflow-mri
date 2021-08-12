@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for coil ops."""
+"""Tests for module `coil_ops`."""
 
 import tensorflow as tf
 
@@ -34,7 +34,7 @@ class SensMapsTest(tf.test.TestCase):
   def test_walsh(self):
     """Test Walsh's method."""
 
-    maps = coil_ops.estimate_coil_sens_maps(
+    maps = coil_ops.estimate_coil_sensitivities(
       self.data['images'], method='walsh')
 
     self.assertAllClose(maps, self.data['maps/walsh'])
@@ -43,7 +43,7 @@ class SensMapsTest(tf.test.TestCase):
   def test_walsh_transposed(self):
     """Test Walsh's method with a transposed array."""
 
-    maps = coil_ops.estimate_coil_sens_maps(
+    maps = coil_ops.estimate_coil_sensitivities(
       tf.transpose(self.data['images'], [2, 0, 1]), coil_axis=0, method='walsh')
 
     self.assertAllClose(maps, tf.transpose(self.data['maps/walsh'], [2, 0, 1]))
@@ -52,7 +52,7 @@ class SensMapsTest(tf.test.TestCase):
   def test_inati(self):
     """Test Inati's method."""
 
-    maps = coil_ops.estimate_coil_sens_maps(
+    maps = coil_ops.estimate_coil_sensitivities(
       self.data['images'], method='inati')
 
     self.assertAllClose(maps, self.data['maps/inati'])
@@ -61,10 +61,21 @@ class SensMapsTest(tf.test.TestCase):
   def test_espirit(self):
     """Test ESPIRiT method."""
 
-    maps = coil_ops.estimate_coil_sens_maps(
+    maps = coil_ops.estimate_coil_sensitivities(
       self.data['kspace'], method='espirit')
 
     self.assertAllClose(maps, self.data['maps/espirit'])
+
+
+  def test_espirit_transposed(self):
+    """Test ESPIRiT method with a transposed array."""
+
+    maps = coil_ops.estimate_coil_sensitivities(
+      tf.transpose(self.data['kspace'], [2, 0, 1]),
+      coil_axis=0, method='espirit')
+
+    self.assertAllClose(
+      maps, tf.transpose(self.data['maps/espirit'], [2, 0, 1, 3]))
 
 
 class CoilCombineTest(tf.test.TestCase):

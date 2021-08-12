@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Ops for Fast Fourier transform."""
+"""Fast Fourier transform operations."""
 
 import tensorflow as tf
 
@@ -27,35 +27,36 @@ def fftn(x, shape=None, axes=None, norm='backward', shift=False):
   number of axes in an `M`-dimensional array by means of the Fast Fourier
   Transform (FFT).
 
-  Note:
-    `N` is limited to 1, 2 or 3.
+  .. note::
+    `N` must be 1, 2 or 3.
 
   Args:
     x: A `Tensor`. Must be one of the following types: `complex64`,
       `complex128`.
-    shape: Shape (length of each transformed axis) of the output (`s[0]`
-      refers to axis 0, `s[1]` to axis 1, etc.). Along any axis, if the
-      given shape is smaller than that of the input, the input is cropped.
-      If it is larger, the input is padded with zeros. If `shape` is not
-      given, the shape of the input along the axes specified by `axes` is
-      used.
-    axes: Axes over which to compute the FFT. If not given, the last
-      `len(shape)` axes are used, or all axes if `shape` is also not
-      specified.
-    norm: Normalization mode. Must be one of {'forward', 'backward',
-      'ortho'}. Default is 'backward'. Indicates which direction of the
-      forward/backward pair of transforms is scaled and with what
-      normalization factor.
-    shift: Whether to shift the zero-frequency components to the center of
-      the spectrum.
+    shape: A `Tensor`, a `TensorShape` or a list of `ints`. Shape (length of
+      each transformed axis) of the output (`s[0]` refers to axis 0, `s[1]`
+      to axis 1, etc.). Along any axis, if the given shape is smaller than that
+      of the input, the input is cropped. If it is larger, the input is padded
+      with zeros. If `shape` is not given, the shape of the input along the axes
+      specified by `axes` is used.
+    axes: A `Tensor`, a `TensorShape` or a list of `ints`. Axes over which to
+      compute the FFT. If not given, the last `len(shape)` axes are used, or all
+      axes if `shape` is also not specified.
+    norm: A `string`. The normalization mode. Must be one of `"forward"`,
+      `"backward"` or `"ortho"`. Defaults to `"backward"`. Indicates which
+      direction of the forward/backward pair of transforms is scaled and with
+      what normalization factor.
+    shift: A `bool`. If `True`, perform a "centered" transform by appropriately
+      shifting the inputs/outputs (eg, shifting zero-frequency components to the
+      center of the spectrum).
 
   Returns:
     The truncated or zero-padded input tensor, transformed along the axes
-    indicated by `axes`, or by a combination of `shape` and `axes`, as
-    explained in the parameters section above.
+    indicated by `axes`, or by a combination of `shape` and `axes`, as explained
+    in the parameters section above.
 
   Raises:
-    TypeError: If `x` is not of a complex dtype.
+    TypeError: If `x` is not of a complex type.
     InvalidArgumentError: If length of `shape` is greater than the rank of
       `x`.
     InvalidArgumentError: If length of `axes` is greater than the rank of
@@ -75,35 +76,36 @@ def ifftn(x, shape=None, axes=None, norm='backward', shift=False):
   Transform over any number of axes in an M-dimensional array by means of
   the Fast Fourier Transform (FFT).
 
-  Note:
-    `N` is limited to 1, 2 or 3.
+  .. note::
+    `N` must be 1, 2 or 3.
 
   Args:
     x: A `Tensor`. Must be one of the following types: `complex64`,
       `complex128`.
-    shape: Shape (length of each transformed axis) of the output (`s[0]`
-      refers to axis 0, `s[1]` to axis 1, etc.). Along any axis, if the
-      given shape is smaller than that of the input, the input is cropped.
-      If it is larger, the input is padded with zeros. If `shape` is not
-      given, the shape of the input along the axes specified by `axes` is
-      used.
-    axes: Axes over which to compute the FFT. If not given, the last
-      `len(shape)` axes are used, or all axes if `shape` is also not
-      specified.
-    norm: Normalization mode. Must be one of {'forward', 'backward',
-      'ortho'}. Default is 'backward'. Indicates which direction of the
-      forward/backward pair of transforms is scaled and with what
-      normalization factor.
-    shift: Whether to shift the zero-frequency components to the center of
-      the spectrum.
+    shape: A `Tensor`, a `TensorShape` or a list of `ints`. Shape (length of
+      each transformed axis) of the output (`s[0]` refers to axis 0, `s[1]`
+      to axis 1, etc.). Along any axis, if the given shape is smaller than that
+      of the input, the input is cropped. If it is larger, the input is padded
+      with zeros. If `shape` is not given, the shape of the input along the axes
+      specified by `axes` is used.
+    axes: A `Tensor` or a list of `ints`. Axes over which to compute the FFT.
+      If not given, the last `len(shape)` axes are used, or all axes if `shape`
+      is also not specified.
+    norm: A `string`. The normalization mode. Must be one of `"forward"`,
+      `"backward"` or `"ortho"`. Defaults to `"backward"`. Indicates which
+      direction of the forward/backward pair of transforms is scaled and with
+      what normalization factor.
+    shift: A `bool`. If `True`, perform a "centered" transform by appropriately
+      shifting the inputs/outputs (eg, shifting zero-frequency components to the
+      center of the spectrum).
 
   Returns:
     The truncated or zero-padded input tensor, transformed along the axes
-    indicated by `axes`, or by a combination of `shape` and `axes`, as
-    explained in the parameters section above.
+    indicated by `axes`, or by a combination of `shape` and `axes`, as explained
+    in the parameters section above.
 
   Raises:
-    TypeError: If `x` is not of a complex dtype.
+    TypeError: If `x` is not of a complex type.
     InvalidArgumentError: If length of `shape` is greater than the rank of
       `x`.
     InvalidArgumentError: If length of `axes` is greater than the rank of
@@ -127,13 +129,13 @@ def _fft_internal(x, shape, axes, norm, shift, transform): # pylint: disable=mis
   Returns:
     See `fft` and `ifft`.
   """
-  # Save original inputs for computation of static shape.
-  x_, shape_, axes_ = x, shape, axes
-
   # Convert input to tensor.
   x = tf.convert_to_tensor(x)
-  input_shape = tf.shape(x)
-  input_rank = tf.rank(x)
+  input_shape = x.shape
+  input_rank_tensor = tf.rank(x)
+
+  # Save original inputs for computation of static shape.
+  shape_, axes_ = shape, axes
 
   if not x.dtype.is_complex:
     raise TypeError((
@@ -142,18 +144,18 @@ def _fft_internal(x, shape, axes, norm, shift, transform): # pylint: disable=mis
   # Convert shape and axes to tensors if specified and run some checks.
   if shape is not None:
     shape = tf.convert_to_tensor(shape, dtype=tf.dtypes.int32)
-    tf.debugging.assert_less_equal(tf.size(shape), input_rank, message=(
+    tf.debugging.assert_less_equal(tf.size(shape), input_rank_tensor, message=(
       "Argument `shape` cannot have length greater than the rank of `x`. "
       "Received: {}").format(shape))
   if axes is not None:
     axes = tf.convert_to_tensor(axes, dtype=tf.dtypes.int32)
-    tf.debugging.assert_less_equal(tf.size(axes), input_rank, message=(
+    tf.debugging.assert_less_equal(tf.size(axes), input_rank_tensor, message=(
       "Argument `axes` cannot have length greater than the rank of `x`. "
       "Received: {}").format(axes))
-    tf.debugging.assert_less(axes, input_rank, message=(
+    tf.debugging.assert_less(axes, input_rank_tensor, message=(
       "Argument `axes` contains invalid indices. "
       "Received: {}").format(axes))
-    tf.debugging.assert_greater_equal(axes, -input_rank, message=(
+    tf.debugging.assert_greater_equal(axes, -input_rank_tensor, message=(
       "Argument `axes` contains invalid indices. "
       "Received: {}").format(axes))
   if shape is not None and axes is not None:
@@ -167,12 +169,12 @@ def _fft_internal(x, shape, axes, norm, shift, transform): # pylint: disable=mis
     else:
       axes = tf.range(-tf.size(shape), 0) # pylint: disable=invalid-unary-operand-type
   # Translate negative axes to positive axes.
-  axes = tf.where(tf.math.less(axes, 0), axes + input_rank, axes)
+  axes = tf.where(tf.math.less(axes, 0), axes + input_rank_tensor, axes)
   # Set flags for which parts of computation to perform. This might allow a
   # slight performance improvement.
   perform_padding = shape is not None
   perform_transpose = not tf.math.reduce_all(tf.math.equal(
-    axes, tf.range(input_rank - tf.size(axes), input_rank)))
+    axes, tf.range(input_rank_tensor - tf.size(axes), input_rank_tensor)))
   # Default value for `shape`.
   if shape is None:
     shape = tf.gather(tf.shape(x), axes, axis=0)
@@ -194,7 +196,7 @@ def _fft_internal(x, shape, axes, norm, shift, transform): # pylint: disable=mis
   if perform_padding:
     # `shape` may have less dimensions than input. Fill the remaining outer
     # dimensions with special value -1 to leave those unchanged.
-    pad_shape = -tf.ones([input_rank], dtype=tf.int32)
+    pad_shape = -tf.ones([input_rank_tensor], dtype=tf.int32)
     pad_shape = tf.tensor_scatter_nd_update(
       pad_shape, tf.expand_dims(axes, -1), shape)
     if shift:
@@ -209,7 +211,7 @@ def _fft_internal(x, shape, axes, norm, shift, transform): # pylint: disable=mis
   # Permutation to move op dimensions to the end. The following uses
   # tf.boolean_mask and tf.foldl to get the dimensions which are not in
   # `axes`.
-  all_dims = tf.range(input_rank, dtype=tf.dtypes.int32)
+  all_dims = tf.range(input_rank_tensor, dtype=tf.dtypes.int32)
   perm = tf.concat([
     tf.boolean_mask(
       all_dims,
@@ -266,10 +268,10 @@ def _fft_internal(x, shape, axes, norm, shift, transform): # pylint: disable=mis
     x = tf.signal.fftshift(x, axes=axes)
 
   # Set the static shape.
-  def _static_output_shape(x, shape, axes):
+  def _static_output_shape(input_shape, shape, axes):
 
     # Output shape is equal to input shape, unless `shape` is given.
-    output_shape = x.shape.as_list()
+    output_shape = input_shape.as_list()
     if shape is not None:
       # Get the axes if not given.
       if axes is None:
@@ -292,7 +294,7 @@ def _fft_internal(x, shape, axes, norm, shift, transform): # pylint: disable=mis
           output_shape[ax] = shape[idx]
     return tf.TensorShape(output_shape)
 
-  x = tf.ensure_shape(x, _static_output_shape(x_, shape_, axes_))
+  x = tf.ensure_shape(x, _static_output_shape(input_shape, shape_, axes_))
 
   return x
 
