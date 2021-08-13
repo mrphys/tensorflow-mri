@@ -18,21 +18,14 @@ CXXFLAGS += $(TF_CFLAGS) -fPIC -std=c++11
 CXXFLAGS += -I$(ROOT_DIR)
 
 LDFLAGS := $(TF_LDFLAGS)
-
-SWF_DIR := third_party/spiral_waveform
-SWF_LIB := $(SWF_DIR)/lib/libspiral_waveform.a
+LDFLAGS += -l:libspiral_waveform.a
 
 all: lib wheel
 
 lib: $(TARGET)
 
-$(TARGET): $(SOURCES) $(SWF_LIB)
+$(TARGET): $(SOURCES)
 	$(CXX) -shared $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
-
-$(SWF_LIB): $(SWF_DIR)
-	$(MAKE) -C $(SWF_DIR)
-
-$(SWF_DIR): thirdparty
 
 wheel: $(TARGET)
 	./tools/build/build_pip_pkg.sh make --python $(PYTHON) artifacts
@@ -51,10 +44,6 @@ lint: $(wildcard tensorflow_mri/python/ops/*.py)
 
 clean:
 	rm -rf artifacts/
-	rm -rf $(SWF_DIR)
 	rm -rf $(TARGET)
 
-thirdparty:
-	[ ! -d $(SWF_DIR) ] && git clone https://github.com/mrphys/spiral-waveform.git $(SWF_DIR) || true
-
-.PHONY: all lib wheel test lint docs clean thirdparty
+.PHONY: all lib wheel test lint docs clean

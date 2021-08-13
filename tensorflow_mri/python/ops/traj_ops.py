@@ -19,8 +19,8 @@ import math
 import numpy as np
 import tensorflow as tf
 import tensorflow_nufft as tfft
-from tensorflow_graphics.geometry.transformation import rotation_matrix_2d
-from tensorflow_graphics.geometry.transformation import rotation_matrix_3d
+from tensorflow_graphics.geometry.transformation import rotation_matrix_2d # pylint: disable=wrong-import-order
+from tensorflow_graphics.geometry.transformation import rotation_matrix_3d # pylint: disable=wrong-import-order
 
 from tensorflow_mri.python.utils import check_utils
 from tensorflow_mri.python.utils import tensor_utils
@@ -476,7 +476,14 @@ def estimate_density(points, grid_shape):
   # Spread ones to grid and interpolate back.
   density = tfft.interp(tfft.spread(ones, points, grid_shape), points)
 
-  return tf.math.real(density)
+  # Get real part and make sure there are no (slightly) negative numbers.
+  density = tf.math.abs(tf.math.real(density))
+
+  # For numerical stability: set any value smaller than a threshold to 0.
+  thresh = 1e-3
+  density = tf.where(density < thresh, 0.0, density)
+
+  return density
 
 
 def _next_smooth_int(n):

@@ -226,19 +226,19 @@ class ReconstructTest(tf.test.TestCase):
     # Check batch of k-space data and batch of trajectories.
     image = recon_ops.reconstruct(kspace, traj, sensitivities=sens)
 
-    self.assertAllClose(image, result)
+    self.assertAllClose(image, result, rtol=1e-5, atol=1e-5)
 
     # Check batch of k-space data and batch of sensitivities.
     batch_sens = tf.tile(tf.expand_dims(sens, 0), [19, 1, 1, 1])
     image = recon_ops.reconstruct(kspace, traj, sensitivities=batch_sens)
 
-    self.assertAllClose(image, result)
+    self.assertAllClose(image, result, rtol=1e-5, atol=1e-5)
 
     # Check batch of k-space data without batch of trajectories (trajectory is
     # equal for all frames in this case).
     image = recon_ops.reconstruct(kspace, traj[0, ...], sensitivities=sens)
 
-    self.assertAllClose(image, result)
+    self.assertAllClose(image, result, rtol=1e-3, atol=1e-3)
 
     # Check batch of sensitivities/trajectory without batch of k-space. This is
     # disallowed.
