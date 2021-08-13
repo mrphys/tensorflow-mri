@@ -42,6 +42,18 @@ class SpiralWaveformOp : public OpKernel {
     OP_REQUIRES_OK(ctx, ctx->GetAttr("vd_outer_density", &vd_outer_density_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("vd_type", &vd_type_str));
 
+    OP_REQUIRES(ctx, vd_inner_cutoff_ >= 0.0 && vd_inner_cutoff_ <= 1.0,
+                errors::InvalidArgument(
+                  "Argument `vd_inner_cutoff` must be a float between 0.0 and "
+                  "1.0"));
+    OP_REQUIRES(ctx, vd_outer_cutoff_ >= 0.0 && vd_outer_cutoff_ <= 1.0,
+                errors::InvalidArgument(
+                  "Argument `vd_outer_cutoff` must be a float between 0.0 and "
+                  "1.0"));
+    OP_REQUIRES(ctx, vd_outer_density_ > 0.0,
+                errors::InvalidArgument(
+                  "Argument `vd_outer_density` must be > 0.0"));
+
     if (vd_type_str == "linear") {
       vd_type_ = SpiralWaveform::VDType::Linear;
     } else if (vd_type_str == "quadratic") {

@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     
     container:
-      image: ghcr.io/mrphys/tensorflow-manylinux:1.3.0
+      image: ghcr.io/mrphys/tensorflow-manylinux:1.6.0
 
     strategy:
       matrix:
