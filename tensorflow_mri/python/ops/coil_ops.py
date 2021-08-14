@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Ops for coil operations."""
+"""Coil array operations.
+
+This module contains functions to operate with MR coil arrays, such as
+estimating coil sensitivities and combining multi-coil images.
+"""
 
 import functools
 
@@ -20,15 +24,15 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.experimental.numpy as tnp
 
-from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import fft_ops
+from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.utils import check_utils
 
 
-def estimate_coil_sens_maps(input_,
-                            coil_axis=-1,
-                            method='walsh',
-                            **kwargs):
+def estimate_coil_sensitivities(input_,
+                                coil_axis=-1,
+                                method='walsh',
+                                **kwargs):
   """Estimate coil sensitivity maps.
 
   This method supports 2D and 3D inputs.
@@ -55,54 +59,47 @@ def estimate_coil_sens_maps(input_,
 
     This function accepts the following method-specific keyword arguments:
 
-      * `'walsh'` method:
+    * `'walsh'` method:
 
-        * `filter_size`: An `int`. The size of the smoothing filter.
+      * `filter_size`: An `int`. The size of the smoothing filter.
 
-      * `'inati'` method:
+    * `'inati'` method:
 
-        * `filter_size`: An `int`. The size of the smoothing filter.
+      * `filter_size`: An `int`. The size of the smoothing filter.
+      * `max_iter`: An `int`. The maximum number of iterations.
+      * `tol`: A `float`. The convergence tolerance.
 
-        * `max_iter`: An `int`. The maximum number of iterations.
+    * `'espirit'` method:
 
-        * `tol`: A `float`. The convergence tolerance.
-
-      * `'espirit'` method:
-
-        * `calib_size`: An `int` or a list of `ints`. The size of the
-          calibration region. If `None`, this is set to `input_.shape[:-1]` (ie,
-          use full input for calibration). Defaults to 24.
-
-        * `kernel_size`: An `int` or a list of `ints`. The kernel size. Defaults
-          to 6.
-
-        * `num_maps`: An `int`. The number of output maps. Defaults to 2.
-
-        * `null_threshold`: A `float`. The threshold used to determine the size
-          of the null-space. Defaults to 0.02.
-
-        * `eigen_threshold`: A `float`. The threshold used to determine the
-          locations where coil sensitivity maps should be masked out. Defaults
-          to 0.95.
-
-        * `image_shape`: A `tf.TensorShape` or a list of `ints`. The shape of
-          the output maps. If `None`, this is set to `input_.shape`. Defaults to
-          `None`.
+      * `calib_size`: An `int` or a list of `ints`. The size of the
+        calibration region. If `None`, this is set to `input_.shape[:-1]` (ie,
+        use full input for calibration). Defaults to 24.
+      * `kernel_size`: An `int` or a list of `ints`. The kernel size. Defaults
+        to 6.
+      * `num_maps`: An `int`. The number of output maps. Defaults to 2.
+      * `null_threshold`: A `float`. The threshold used to determine the size
+        of the null-space. Defaults to 0.02.
+      * `eigen_threshold`: A `float`. The threshold used to determine the
+        locations where coil sensitivity maps should be masked out. Defaults
+        to 0.95.
+      * `image_shape`: A `tf.TensorShape` or a list of `ints`. The shape of
+        the output maps. If `None`, this is set to `input_.shape`. Defaults to
+        `None`.
 
   References:
-    1.  Walsh, D.O., Gmitro, A.F. and Marcellin, M.W. (2000), Adaptive
-        reconstruction of phased array MR imagery. Magn. Reson. Med., 43:
-        682-690. https://doi.org/10.1002/(SICI)1522-2594(200005)43:5<682::AID-MRM10>3.0.CO;2-G
+    .. [1] Walsh, D.O., Gmitro, A.F. and Marcellin, M.W. (2000), Adaptive
+      reconstruction of phased array MR imagery. Magn. Reson. Med., 43:
+      682-690. https://doi.org/10.1002/(SICI)1522-2594(200005)43:5<682::AID-MRM10>3.0.CO;2-G
 
-    2.  Inati, S.J., Hansen, M.S. and Kellman, P. (2014). A fast optimal method
-        for coil sensitivity estimation and adaptive coil combination for
-        complex images. Proceedings of the 2014 Joint Annual Meeting
-        ISMRM-ESMRMB.
+    .. [2] Inati, S.J., Hansen, M.S. and Kellman, P. (2014). A fast optimal
+      method for coil sensitivity estimation and adaptive coil combination for
+      complex images. Proceedings of the 2014 Joint Annual Meeting
+      ISMRM-ESMRMB.
 
-    3.  Uecker, M., Lai, P., Murphy, M.J., Virtue, P., Elad, M., Pauly, J.M.,
-        Vasanawala, S.S. and Lustig, M. (2014), ESPIRiT—an eigenvalue approach
-        to autocalibrating parallel MRI: Where SENSE meets GRAPPA. Magn. Reson.
-        Med., 71: 990-1001. https://doi.org/10.1002/mrm.24751
+    .. [3] Uecker, M., Lai, P., Murphy, M.J., Virtue, P., Elad, M., Pauly, J.M.,
+      Vasanawala, S.S. and Lustig, M. (2014), ESPIRiT—an eigenvalue approach
+      to autocalibrating parallel MRI: Where SENSE meets GRAPPA. Magn. Reson.
+      Med., 71: 990-1001. https://doi.org/10.1002/mrm.24751
   """
   # pylint: disable=missing-raises-doc
   input_ = tf.convert_to_tensor(input_)
@@ -123,17 +120,20 @@ def estimate_coil_sens_maps(input_,
     input_ = tf.transpose(input_, perm)
 
   if method == 'walsh':
-    maps = _estimate_coil_sens_maps_walsh(input_, **kwargs)
+    maps = _estimate_coil_sensitivities_walsh(input_, **kwargs)
   elif method == 'inati':
-    maps = _estimate_coil_sens_maps_inati(input_, **kwargs)
+    maps = _estimate_coil_sensitivities_inati(input_, **kwargs)
   elif method == 'espirit':
-    maps = _estimate_coil_sens_maps_espirit(input_, **kwargs)
+    maps = _estimate_coil_sensitivities_espirit(input_, **kwargs)
   else:
     raise RuntimeError("This should never happen.")
 
   # If necessary, move coil axis back to its original location.
   if coil_axis != -1:
     inv_perm = tf.math.invert_permutation(perm)
+    if method == 'espirit':
+      # When using ESPIRiT method, output has an additional `maps` dimension.
+      inv_perm = tf.concat([inv_perm, [tf.shape(inv_perm)[0]]], 0)
     maps = tf.transpose(maps, inv_perm)
 
   return maps
@@ -156,14 +156,14 @@ def combine_coils(images, maps=None, coil_axis=-1, keepdims=False):
     A `Tensor`. The combined images.
 
   References:
-    1.  Roemer, P.B., Edelstein, W.A., Hayes, C.E., Souza, S.P. and
-        Mueller, O.M. (1990), The NMR phased array. Magn Reson Med, 16:
-        192-225. https://doi.org/10.1002/mrm.1910160203
+    .. [1] Roemer, P.B., Edelstein, W.A., Hayes, C.E., Souza, S.P. and
+      Mueller, O.M. (1990), The NMR phased array. Magn Reson Med, 16:
+      192-225. https://doi.org/10.1002/mrm.1910160203
 
-    2.  Bydder, M., Larkman, D. and Hajnal, J. (2002), Combination of signals
-        from array coils using image-based estimation of coil sensitivity
-        profiles. Magn. Reson. Med., 47: 539-548.
-        https://doi.org/10.1002/mrm.10092
+    .. [2] Bydder, M., Larkman, D. and Hajnal, J. (2002), Combination of signals
+      from array coils using image-based estimation of coil sensitivity
+      profiles. Magn. Reson. Med., 47: 539-548.
+      https://doi.org/10.1002/mrm.10092
   """
   images = tf.convert_to_tensor(images)
   if maps is not None:
@@ -172,22 +172,22 @@ def combine_coils(images, maps=None, coil_axis=-1, keepdims=False):
   if maps is None:
     combined = tf.math.sqrt(
       tf.math.reduce_sum(images * tf.math.conj(images),
-                          axis=coil_axis, keepdims=keepdims))
+                         axis=coil_axis, keepdims=keepdims))
 
   else:
     combined = tf.math.divide_no_nan(
       tf.math.reduce_sum(images * tf.math.conj(maps),
-                          axis=coil_axis, keepdims=keepdims),
+                         axis=coil_axis, keepdims=keepdims),
       tf.math.reduce_sum(maps * tf.math.conj(maps),
-                          axis=coil_axis, keepdims=keepdims))
+                         axis=coil_axis, keepdims=keepdims))
 
   return combined
 
 
-def _estimate_coil_sens_maps_walsh(images, filter_size=5):
+def _estimate_coil_sensitivities_walsh(images, filter_size=5):
   """Estimate coil sensitivity maps using Walsh's method.
 
-  For the parameters, see `estimate_coil_sens_maps`.
+  For the parameters, see `estimate_coil_sensitivities`.
   """
   rank = images.shape.rank - 1
   image_shape = images.shape[:-1].as_list()
@@ -221,13 +221,13 @@ def _estimate_coil_sens_maps_walsh(images, filter_size=5):
   return maps
 
 
-def _estimate_coil_sens_maps_inati(images,
-                                   filter_size=5,
-                                   max_iter=5,
-                                   tol=1e-3):
+def _estimate_coil_sensitivities_inati(images,
+                                       filter_size=5,
+                                       max_iter=5,
+                                       tol=1e-3):
   """Estimate coil sensitivity maps using Inati's fast method.
 
-  For the parameters, see `estimate_coil_sens_maps`.
+  For the parameters, see `estimate_coil_sensitivities`.
   """
   rank = images.shape.rank - 1
   spatial_axes = list(range(rank))
@@ -292,16 +292,16 @@ def _estimate_coil_sens_maps_inati(images,
   return maps
 
 
-def _estimate_coil_sens_maps_espirit(kspace,
-                                     calib_size=24,
-                                     kernel_size=6,
-                                     num_maps=2,
-                                     null_threshold=0.02,
-                                     eigen_threshold=0.95,
-                                     image_shape=None):
+def _estimate_coil_sensitivities_espirit(kspace,
+                                         calib_size=24,
+                                         kernel_size=6,
+                                         num_maps=2,
+                                         null_threshold=0.02,
+                                         eigen_threshold=0.95,
+                                         image_shape=None):
   """Estimate coil sensitivity maps using the ESPIRiT method.
 
-  For the parameters, see `estimate_coil_sens_maps`.
+  For the parameters, see `estimate_coil_sensitivities`.
   """
   kspace = tf.convert_to_tensor(kspace)
   rank = kspace.shape.rank - 1
@@ -322,7 +322,7 @@ def _estimate_coil_sens_maps_espirit(kspace,
     f"{calib_size} and {kernel_size}"))
 
   # Get calibration region.
-  calib = array_ops.central_crop(kspace, calib_size + [-1])
+  calib = image_ops.central_crop(kspace, calib_size + [-1])
 
   # Construct the calibration block Hankel matrix.
   conv_size = [cs - ks + 1 for cs, ks in zip(calib_size, kernel_size)]

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for k-space trajectory ops."""
+"""Tests for module `traj_ops`."""
 
 import itertools
 import math
@@ -22,6 +22,7 @@ import tensorflow as tf
 
 from tensorflow_mri.python.ops import traj_ops
 from tensorflow_mri.python.utils import io_utils
+from tensorflow_mri.python.utils import test_utils
 
 
 class RadialTrajectoryTest(tf.test.TestCase):
@@ -74,6 +75,24 @@ class SpiralTrajectoryTest(tf.test.TestCase):
                                         dwell_time=2.6)
 
     self.assertAllClose(waveform, self.data['spiral/waveform'])
+
+
+  @test_utils.parameterized_test(vd_type=['linear', 'quadratic', 'hanning'])
+  def test_waveform_vd(self, vd_type): # pylint: disable=missing-param-doc
+    """Test variable-density spiral waveform."""
+
+    waveform = traj_ops.spiral_waveform(base_resolution=256,
+                                        spiral_arms=32,
+                                        field_of_view=400.0,
+                                        max_grad_ampl=28.0,
+                                        min_rise_time=6.0,
+                                        dwell_time=1.4,
+                                        vd_inner_cutoff=0.5,
+                                        vd_outer_cutoff=0.8,
+                                        vd_outer_density=0.5,
+                                        vd_type=vd_type)
+
+    self.assertAllClose(waveform, self.data['spiral/waveform_vd/' + vd_type])
 
 
   def test_trajectory(self):
@@ -218,6 +237,28 @@ class TrajOpsTest(tf.test.TestCase): # pylint: disable=missing-class-docstring
 
           # Just a sanity check.
           self.assertAllInRange(traj, -math.pi, math.pi)
+
+
+class DensityEstimationTest(tf.test.TestCase):
+  """Test density estimation."""
+
+  @classmethod
+  def setUpClass(cls):
+
+    super().setUpClass()
+    cls.data = io_utils.read_hdf5('tests/data/traj_ops_data.h5')
+
+
+  def test_estimate_density(self):
+
+    traj = self.data['estimate_density/trajectory']
+
+    flat_traj = tf.reshape(traj, [-1, traj.shape[-1]])
+    dens_flat = traj_ops.estimate_density(flat_traj, [128, 128])
+    dens = tf.reshape(dens_flat, traj.shape[:-1])
+
+    self.assertAllClose(dens, self.data['estimate_density/density'],
+                        rtol=1e-5, atol=1e-5)
 
 
 if __name__ == '__main__':

@@ -14,6 +14,8 @@
 # ==============================================================================
 """Utilities for argument validation."""
 
+import tensorflow as tf
+
 
 def validate_enum(value, valid_values, name=None):
   """Validates that value is in a list of valid values.
@@ -50,11 +52,11 @@ def validate_type(value, type_, name=None):
     A valid value of type `type_`.
 
   Raises:
-    ValueError: If `value` does not have type `type_`.
+    TypeError: If `value` does not have type `type_`.
   """
   if not isinstance(value, type_):
-    raise ValueError(
-      f"Argument `{name}` must have type {type_}, "
+    raise TypeError(
+      f"Argument `{name}` must be of type {type_}, "
       f"but received type: {type(value)}")
   return value
 
@@ -123,3 +125,44 @@ def validate_list(value,
           f"`{element_type}`, but received type: `{type(element)}`")
 
   return value
+
+
+def validate_tensor_dtype(tensor, dtypes, name):
+  """Validates that a tensor has one of the specified types.
+
+  Args:
+    tensor: The tensor to validate.
+    dtypes: A `tf.DType`, a list of `tf.DTypes`, or one of the following
+      `strings`: `"bool"`, `"complex"`, `"floating"`, `"integer"`,
+      `"numpy_compatible"`, `"quantized"` or `"unsigned"`.
+    name: The name of the argument being validated. This is only used to format
+      error messages.
+
+  Returns:
+    A tensor with asserted data type.
+
+  Raises:
+    TypeError: If `tensor` is not a `Tensor` or does not have a valid type.
+  """
+  is_attr = {
+    'bool': tensor.dtype.is_bool,
+    'complex': tensor.dtype.is_complex,
+    'floating': tensor.dtype.is_floating,
+    'integer': tensor.dtype.is_integer,
+    'numpy_compatible': tensor.dtype.is_numpy_compatible,
+    'quantized': tensor.dtype.is_quantized,
+    'unsigned': tensor.dtype.is_unsigned
+  }
+  if isinstance(dtypes, str):
+    if is_attr[dtypes]:
+      return tensor
+    raise TypeError(
+      f"Argument `{name}` must have a {dtypes} data type, "
+      f"but received data type: {tensor.dtype.name}")
+  if isinstance(dtypes, tf.DType):
+    dtypes = (dtypes,)
+  if tensor.dtype not in dtypes:
+    raise TypeError(
+      f"Argument `{name}` must have data type {(dt.name for dt in dtypes)}, "
+      f"but received data type: {tensor.dtype.name}")
+  return tensor

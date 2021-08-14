@@ -3,8 +3,9 @@
 
 # You can set these variables from the command line, and also
 # from the environment for the first two.
+PY_VERSION 	  ?= 3.8
 SPHINXOPTS    ?=
-SPHINXBUILD   ?= sphinx-build
+SPHINXBUILD   ?= python$(PY_VERSION) -m sphinx
 SOURCEDIR     = .
 BUILDDIR      = _build
 

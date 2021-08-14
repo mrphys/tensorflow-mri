@@ -12,16 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Ops for k-space trajectories."""
+"""*k*-space trajectory operations.
+
+This module contains functions to operate with *k*-space trajectories, such as
+calculation of trajectories and sampling density.
+"""
 
 import math
 
 import numpy as np
 import tensorflow as tf
-from tensorflow_graphics.geometry.transformation import rotation_matrix_2d
-from tensorflow_graphics.geometry.transformation import rotation_matrix_3d
+import tensorflow_nufft as tfft
+from tensorflow_graphics.geometry.transformation import rotation_matrix_2d # pylint: disable=wrong-import-order
+from tensorflow_graphics.geometry.transformation import rotation_matrix_3d # pylint: disable=wrong-import-order
 
 from tensorflow_mri.python.utils import check_utils
+from tensorflow_mri.python.utils import tensor_utils
 
 
 _mri_ops = tf.load_op_library(
@@ -77,7 +83,11 @@ def spiral_trajectory(base_resolution,
                       domain='full',
                       readout_os=2.0,
                       gradient_delay=0.0,
-                      larmor_const=42.577478518):
+                      larmor_const=42.577478518,
+                      vd_inner_cutoff=1.0,
+                      vd_outer_cutoff=1.0,
+                      vd_outer_density=1.0,
+                      vd_type='linear'):
   """Calculate a spiral trajectory.
 
   Args:
@@ -105,6 +115,22 @@ def spiral_trajectory(base_resolution,
       in us. Defaults to 0.0.
     larmor_const: A `float`. The Larmor constant of the imaging nucleus, in
       MHz/T. Defaults to 42.577478518 (the Larmor constant of the 1H nucleus).
+    vd_inner_cutoff: Defines the inner, high-density portion of *k*-space.
+      Must be between 0.0 and 1.0, where 0.0 is the center of *k*-space and 1.0
+      is the edge. Between 0.0 and `vd_inner_cutoff`, *k*-space will be sampled
+      at the Nyquist rate.
+    vd_outer_cutoff: Defines the outer, low-density portion of *k*-space. Must
+      be between 0.0 and 1.0, where 0.0 is the center of *k*-space and 1.0 is
+      the edge. Between `vd_outer_cutoff` and 1.0, *k*-space will be sampled at
+      a rate `vd_outer_density` times the Nyquist rate.
+    vd_outer_density: Defines the sampling density in the outer portion of
+      *k*-space. Must be > 0.0. Higher means more densely sampled. Multiplies
+      the Nyquist rate: 1.0 means sampling at the Nyquist rate, < 1.0 means
+      undersampled and > 1.0 means oversampled.
+    vd_type: Defines the rate of variation of the sampling density the
+      variable-density portion of *k*-space, i.e., between `vd_inner_cutoff`
+      and `vd_outer_cutoff`. Must be one of `'linear'`, `'quadratic'` or
+      `'hanning'`.
 
   Returns:
     A `Tensor` of type `float32` and shape `[views, samples, 2]` if `phases` is
@@ -126,7 +152,11 @@ def spiral_trajectory(base_resolution,
                              'dwell_time': dwell_time,
                              'readout_os': readout_os,
                              'gradient_delay': gradient_delay,
-                             'larmor_const': larmor_const},
+                             'larmor_const': larmor_const,
+                             'vd_inner_cutoff': vd_inner_cutoff,
+                             'vd_outer_cutoff': vd_outer_cutoff,
+                             'vd_outer_density': vd_outer_density,
+                             'vd_type': vd_type},
                             views=views,
                             phases=phases,
                             spacing=spacing,
@@ -442,3 +472,71 @@ def _rotate_waveform_3d(waveform, theta):
 
   # Apply rotation to trajectory.
   return rotation_matrix_3d.rotate(waveform, rot_matrix)
+
+
+def estimate_density(points, grid_shape):
+  """Estimate the density of an arbitrary set of points.
+
+  Args:
+    points: A `Tensor`. Must be one of the following types: `float32`,
+      `float64`. The coordinates at which the sampling density should be
+      estimated. Must have shape `[..., M, N]`, where `M` is the number of
+      points, `N` is the number of dimensions and `...` is an arbitrary batch
+      shape. `N` must be 1, 2 or 3. The coordinates should be in radians/pixel,
+      ie, in the range `[-pi, pi]`.
+    grid_shape: A `tf.TensorShape` or list of `ints`. The shape of the image
+      corresponding to this *k*-space.
+
+  Returns:
+    A `Tensor` of shape `[..., M]` containing the density of `points`.
+  """
+  # We do not check inputs here, the NUFFT op will do it for us.
+  batch_shape = points.shape[:-2]
+
+  # Calculate an appropriate grid shape.
+  grid_shape = tf.TensorShape(grid_shape) # Canonicalize.
+  grid_shape = [_next_smooth_int(2 * s) for s in grid_shape.as_list()]
+
+  # Create a k-space of ones.
+  ones = tf.ones(batch_shape + points.shape[-2:-1],
+                 dtype=tensor_utils.get_complex_dtype(points.dtype))
+
+  # Spread ones to grid and interpolate back.
+  density = tfft.interp(tfft.spread(ones, points, grid_shape), points)
+
+  # Get real part and make sure there are no (slightly) negative numbers.
+  density = tf.math.abs(tf.math.real(density))
+
+  # For numerical stability: set any value smaller than a threshold to 0.
+  thresh = 1e-3
+  density = tf.where(density < thresh, 0.0, density)
+
+  return density
+
+
+def _next_smooth_int(n):
+  """Find the next even integer with prime factors no larger than 5.
+
+  Args:
+    n: An `int`.
+
+  Returns:
+    The smallest `int` that is larger than or equal to `n`, even and with no
+    prime factors larger than 5.
+  """
+  if n <= 2:
+    return 2
+  if n % 2 == 1:
+    n += 1    # Even.
+  n -= 2      # Cancel out +2 at the beginning of the loop.
+  ndiv = 2    # Dummy value that is >1.
+  while ndiv > 1:
+    n += 2
+    ndiv = n
+    while ndiv % 2 == 0:
+      ndiv /= 2
+    while ndiv % 3 == 0:
+      ndiv /= 3
+    while ndiv % 5 == 0:
+      ndiv /= 5
+  return n

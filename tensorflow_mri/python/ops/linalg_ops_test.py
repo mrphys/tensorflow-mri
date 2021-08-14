@@ -12,26 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""Tests for module `linalg_ops`."""
 
-__all__ = [
-    "__title__",
-    "__summary__",
-    "__uri__",
-    "__version__",
-    "__author__",
-    "__email__",
-    "__license__",
-    "__copyright__",
-]
+import tensorflow as tf
 
-__title__ = "tensorflow-mri"
-__summary__ = "A collection of TensorFlow add-ons for computational MRI."
-__uri__ = "https://github.com/mrphys/tensorflow-mri"
+# TODO: Add tests. Much of `linalg_ops` is tested indirectly by recon ops, but
+# specific tests should be added here.
 
-__version__ = "0.3.0"
 
-__author__ = "Javier Montalt Tordera"
-__email__ = "javier.montalt@outlook.com"
-
-__license__ = "Apache 2.0"
-__copyright__ = "2021 University College London"
+if __name__ == '__main__':
+  tf.test.main()
