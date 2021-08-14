@@ -19,6 +19,42 @@ import tensorflow as tf
 from tensorflow_mri.python.utils import check_utils
 
 
+def extract_from_complex(tensor, part, name='extract_from_complex'):
+  """Extract parts from a complex tensor.
+
+  Args:
+    tensor: A `Tensor`. Must have type `float32`, `float64`, `complex64` or
+      `complex128`.
+    part: A `string`. The part of the complex number to extract. Must be one of
+      `"real"`, `"imag"`, `"magnitude"`, `"phase"`.
+    name: An optional `string`. The name of the op.
+
+  Returns:
+    A `Tensor`. The extracted part. Has the same shape as `tensor` and type
+    `tensor.dtype.real_dtype`.
+  """
+  with tf.name_scope(name):
+    tensor = check_utils.validate_tensor_dtype(
+      tf.convert_to_tensor(tensor),
+      (tf.float32, tf.float64, tf.complex64, tf.complex128),
+      name='tensor')
+    part = check_utils.validate_enum(
+      part, ('magnitude', 'mag', 'phase', 'phs', 'real', 'imaginary', 'imag'),
+      'part')
+
+    # Extract the relevant part.
+    if part in ('mag', 'magnitude'):
+      tensor = tf.math.abs(tensor)
+    elif part in ('phs', 'phase'):
+      tensor = tf.math.angle(tensor)
+    elif part in ('real',):
+      tensor = tf.math.real(tensor)
+    elif part in ('imag', 'imaginary'):
+      tensor = tf.math.imag(tensor)
+
+    return tensor
+
+
 def scale_by_min_max(tensor,
                      output_min=0.0,
                      output_max=1.0,
@@ -65,41 +101,5 @@ def scale_by_min_max(tensor,
         tf.math.exp(tf.dtypes.complex(0., tf.math.angle(tensor))))
     else:
       tensor = do_rescale(tensor)
-
-    return tensor
-
-
-def extract(tensor, part, name='extract'):
-  """Extract parts from a complex tensor.
-
-  Args:
-    tensor: A `Tensor`. Must have type `float32`, `float64`, `complex64` or
-      `complex128`.
-    part: A `string`. The part of the complex number to extract. Must be one of
-      `"real"`, `"imag"`, `"magnitude"`, `"phase"`.
-    name: An optional `string`. The name of the op.
-
-  Returns:
-    A `Tensor`. The extracted part. Has the same shape as `tensor` and type
-    `tensor.dtype.real_dtype`.
-  """
-  with tf.name_scope(name):
-    tensor = check_utils.validate_tensor_dtype(
-      tf.convert_to_tensor(tensor),
-      (tf.float32, tf.float64, tf.complex64, tf.complex128),
-      name='tensor')
-    part = check_utils.validate_enum(
-      part, ('magnitude', 'mag', 'phase', 'phs', 'real', 'imaginary', 'imag'),
-      'part')
-
-    # Extract the relevant part.
-    if part in ('mag', 'magnitude'):
-      tensor = tf.math.abs(tensor)
-    elif part in ('phs', 'phase'):
-      tensor = tf.math.angle(tensor)
-    elif part in ('real',):
-      tensor = tf.math.real(tensor)
-    elif part in ('imag', 'imaginary'):
-      tensor = tf.math.imag(tensor)
 
     return tensor
