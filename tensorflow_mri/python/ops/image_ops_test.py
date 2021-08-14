@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for module `array_ops`."""
+"""Tests for module `image_ops`."""
 
 import numpy as np
 import tensorflow as tf
 
-from tensorflow_mri.python.ops import array_ops
+from tensorflow_mri.python.ops import image_ops
 
 
 class CentralCropTest(tf.test.TestCase):
@@ -33,7 +33,7 @@ class CentralCropTest(tf.test.TestCase):
                      [13, 14, 15, 16]])
     y_np = np.array([[6, 7], [10, 11]])
 
-    y_tf = array_ops.central_crop(x_np, shape)
+    y_tf = image_ops.central_crop(x_np, shape)
 
     self.assertAllEqual(y_tf, y_np)
 
@@ -47,7 +47,7 @@ class CentralCropTest(tf.test.TestCase):
                      [13, 14, 15, 16]])
     y_np = np.array([[2, 3], [6, 7], [10, 11], [14, 15]])
 
-    y_tf = array_ops.central_crop(x_np, shape)
+    y_tf = image_ops.central_crop(x_np, shape)
 
     self.assertAllEqual(y_tf, y_np)
 
@@ -65,7 +65,7 @@ class SymmetricPadOrCropTest(tf.test.TestCase):
                      [13, 14, 15, 16]])
     y_np = np.array([[6, 7], [10, 11]])
 
-    y_tf = array_ops.symmetric_pad_or_crop(x_np, shape)
+    y_tf = image_ops.resize_with_crop_or_pad(x_np, shape)
 
     self.assertAllEqual(y_tf, y_np)
 
@@ -79,7 +79,7 @@ class SymmetricPadOrCropTest(tf.test.TestCase):
                      [0, 3, 4, 0],
                      [0, 0, 0, 0]])
 
-    y_tf = array_ops.symmetric_pad_or_crop(x_np, shape)
+    y_tf = image_ops.resize_with_crop_or_pad(x_np, shape)
 
     self.assertAllEqual(y_tf, y_np)
 
@@ -92,7 +92,7 @@ class SymmetricPadOrCropTest(tf.test.TestCase):
                      [7, 8, 9]])
     y_np = np.array([[0, 4, 5, 6, 0]])
 
-    y_tf = array_ops.symmetric_pad_or_crop(x_np, shape)
+    y_tf = image_ops.resize_with_crop_or_pad(x_np, shape)
 
     self.assertAllEqual(y_tf, y_np)
 
@@ -105,7 +105,7 @@ class SymmetricPadOrCropTest(tf.test.TestCase):
                      [7, 8, 9]])
     y_np = np.array([[4, 5, 6]])
 
-    y_tf = array_ops.symmetric_pad_or_crop(x_np, shape)
+    y_tf = image_ops.resize_with_crop_or_pad(x_np, shape)
 
     self.assertAllEqual(y_tf, y_np)
 

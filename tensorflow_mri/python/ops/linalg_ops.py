@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Linear algebra operations."""
+"""Linear algebra operations.
+
+This module contains linear algebra operators and solvers.
+"""
 
 import abc
 import collections
@@ -118,12 +121,12 @@ class LinearOperatorImaging(tf.linalg.LinearOperator):
 
 class LinearOperatorFFT(LinearOperatorImaging):
   """Linear operator acting like an FFT matrix."""
-  def __init__(self, domain_shape):
+  def __init__(self, domain_shape): # pylint: disable=super-init-not-called
     raise NotImplementedError(
       "`LinearOperatorFFT` is not implemented.")
 
 
-class LinearOperatorNUFFT(LinearOperatorImaging):
+class LinearOperatorNUFFT(LinearOperatorImaging): # pylint: disable=abstract-method
   """Linear operator acting like an NUFFT matrix.
 
   Args:
@@ -214,7 +217,13 @@ class LinearOperatorNUFFT(LinearOperatorImaging):
 
   @property
   def rank(self):
-    """Rank (in the sense of spatial dimensionality) of this operator."""
+    """Rank (in the sense of spatial dimensionality) of this operator.
+
+    The number of spatial dimensions in the images that this operator acts on.
+
+    Returns:
+      An `int`.
+    """
     return self._rank
 
   @property
@@ -223,7 +232,7 @@ class LinearOperatorNUFFT(LinearOperatorImaging):
     return self._points
 
 
-class LinearOperatorSensitivityModulation(LinearOperatorImaging):
+class LinearOperatorSensitivityModulation(LinearOperatorImaging): # pylint: disable=abstract-method
   """Linear operator acting like a sensitivity modulation matrix.
 
   Args:
@@ -294,26 +303,50 @@ class LinearOperatorSensitivityModulation(LinearOperatorImaging):
 
   @property
   def rank(self):
-    """Rank (in the sense of spatial dimensionality) of this operator."""
+    """Rank (in the sense of spatial dimensionality) of this operator.
+
+    The number of spatial dimensions in the images that this operator acts on.
+
+    Returns:
+      An `int`.
+    """
     return self._rank
 
   @property
   def image_shape(self):
-    """Image shape."""
+    """Image shape.
+
+    The shape of the images that this operator acts on.
+
+    Returns:
+      A `TensorShape`.
+    """
     return self._image_shape
 
   @property
   def num_coils(self):
-    """Number of coils."""
+    """Number of coils.
+
+    The number of coils in the arrays that this operator acts on.
+
+    Returns:
+      An `int`.
+    """
     return self._num_coils
 
   @property
   def sensitivities(self):
-    """Coil sensitivity maps."""
+    """Coil sensitivity maps.
+
+    The coil sensitivity maps used by this linear operator.
+
+    Returns:
+      A `Tensor` of type `self.dtype`.
+    """
     return self._sensitivities
 
 
-class LinearOperatorParallelMRI(tf.linalg.LinearOperatorComposition):
+class LinearOperatorParallelMRI(tf.linalg.LinearOperatorComposition): # pylint: disable=abstract-method
   """Linear operator acting like a parallel MRI matrix.
 
   Args:
@@ -357,7 +390,7 @@ class LinearOperatorParallelMRI(tf.linalg.LinearOperatorComposition):
     else: # Cartesian
       self._rank = rank
       self._is_cartesian = True
-      linop_fourier = LinearOperatorFFT(sensitivities.shape[-self.rank-1:]) # pylint: disable=invalid-unary-operand-type
+      linop_fourier = LinearOperatorFFT(sensitivities.shape[-self.rank-1:]) # pylint: disable=abstract-class-instantiated,invalid-unary-operand-type
 
     # Prepare the coil sensitivity operator.
     linop_sens = LinearOperatorSensitivityModulation(
@@ -367,51 +400,107 @@ class LinearOperatorParallelMRI(tf.linalg.LinearOperatorComposition):
 
   @property
   def rank(self):
-    """Rank (in the sense of spatial dimensionality) of this operator."""
+    """Rank (in the sense of spatial dimensionality) of this operator.
+
+    The number of spatial dimensions in the images that this operator acts on.
+
+    Returns:
+      An `int`.
+    """
     return self._rank
 
   @property
   def image_shape(self):
-    """Image shape."""
+    """Image shape.
+
+    The shape of the images that this operator acts on.
+
+    Returns:
+      A `TensorShape`.
+    """
     return self.linop_sens.image_shape
 
   @property
   def num_coils(self):
-    """Number of coils."""
+    """Number of coils.
+
+    The number of coils in the arrays that this operator acts on.
+
+    Returns:
+      An `int`.
+    """
     return self.linop_sens.num_coils
 
   @property
   def is_cartesian(self):
-    """Whether this is a Cartesian MRI operator."""
+    """Whether this is a Cartesian MRI operator.
+
+    Returns `True` if this operator acts on a Cartesian *k*-space.
+
+    Returns:
+      A `bool`.
+    """
     return self._is_cartesian
 
   @property
   def is_non_cartesian(self):
-    """Whether this is a non-Cartesian MRI operator."""
+    """Whether this is a non-Cartesian MRI operator.
+
+    Returns `True` if this operator acts on a non-Cartesian *k*-space.
+
+    Returns:
+      A `bool`.
+    """
     return not self._is_cartesian
 
   @property
   def sensitivities(self):
-    """Coil sensitivity maps."""
+    """Coil sensitivity maps.
+
+    The coil sensitivity maps used by this linear operator.
+
+    Returns:
+      A `Tensor` of type `self.dtype`.
+    """
     return self.linop_sens.sensitivities
 
   @property
   def trajectory(self):
-    """*k*-space trajectory."""
+    """*k*-space trajectory.
+
+    The *k*-space trajectory used by this linear operator. Only valid if
+    this operator acts on a non-Cartesian *k*-space.
+
+    Returns:
+      A `Tensor` if `self.is_non_cartesian` is `True`, `None` otherwise.
+    """
     return self.linop_fourier.points if self.is_non_cartesian else None
 
   @property
   def linop_fourier(self):
-    """Fourier linear operator."""
+    """Fourier linear operator.
+
+    The Fourier operator used by this linear operator.
+
+    Returns:
+      A `LinearOperatorFFT` is `self.is_cartesian` is `True`, or a
+      `LinearOperatorNUFFT` if `self.is_non_cartesian` is `True`.
+    """
     return self.operators[0]
 
   @property
   def linop_sens(self):
-    """Sensitivity modulation linear operator."""
+    """Sensitivity modulation linear operator.
+
+    The sensitivity modulation operator used by this linear operator.
+
+    Returns:
+      A `LinearOperatorSensitivityModulation`.
+    """
     return self.operators[1]
 
 
-class LinearOperatorRealWeighting(LinearOperatorImaging):
+class LinearOperatorRealWeighting(LinearOperatorImaging): # pylint: disable=abstract-method
   """Linear operator acting like a real weighting matrix.
 
   This is a square, self-adjoint operator.
@@ -607,8 +696,7 @@ def conjugate_gradient(operator,
           broadcast_shape,
           preconditioner.batch_shape_tensor()
       )
-    broadcast_rhs_shape = tf.concat([
-        broadcast_shape, [tf.shape(rhs)[-1]]], axis=-1)
+    broadcast_rhs_shape = tf.concat([broadcast_shape, [tf.shape(rhs)[-1]]], -1)
     r0 = tf.broadcast_to(rhs, broadcast_rhs_shape)
     tol *= tf.norm(r0, axis=-1)
 

@@ -16,9 +16,9 @@
 
 from tensorflow_mri.__about__ import *
 
-from tensorflow_mri.python.ops.array_ops import *
 from tensorflow_mri.python.ops.coil_ops import *
 from tensorflow_mri.python.ops.fft_ops import *
+from tensorflow_mri.python.ops.image_ops import *
 from tensorflow_mri.python.ops.linalg_ops import *
 from tensorflow_mri.python.ops.math_ops import *
 from tensorflow_mri.python.ops.recon_ops import *

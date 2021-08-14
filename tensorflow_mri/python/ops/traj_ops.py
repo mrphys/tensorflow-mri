@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""*k*-space trajectory operations."""
+"""*k*-space trajectory operations.
+
+This module contains functions to operate with *k*-space trajectories, such as
+calculation of trajectories and sampling density.
+"""
 
 import math
 
@@ -79,7 +83,11 @@ def spiral_trajectory(base_resolution,
                       domain='full',
                       readout_os=2.0,
                       gradient_delay=0.0,
-                      larmor_const=42.577478518):
+                      larmor_const=42.577478518,
+                      vd_inner_cutoff=1.0,
+                      vd_outer_cutoff=1.0,
+                      vd_outer_density=1.0,
+                      vd_type='linear'):
   """Calculate a spiral trajectory.
 
   Args:
@@ -107,6 +115,22 @@ def spiral_trajectory(base_resolution,
       in us. Defaults to 0.0.
     larmor_const: A `float`. The Larmor constant of the imaging nucleus, in
       MHz/T. Defaults to 42.577478518 (the Larmor constant of the 1H nucleus).
+    vd_inner_cutoff: Defines the inner, high-density portion of *k*-space.
+      Must be between 0.0 and 1.0, where 0.0 is the center of *k*-space and 1.0
+      is the edge. Between 0.0 and `vd_inner_cutoff`, *k*-space will be sampled
+      at the Nyquist rate.
+    vd_outer_cutoff: Defines the outer, low-density portion of *k*-space. Must
+      be between 0.0 and 1.0, where 0.0 is the center of *k*-space and 1.0 is
+      the edge. Between `vd_outer_cutoff` and 1.0, *k*-space will be sampled at
+      a rate `vd_outer_density` times the Nyquist rate.
+    vd_outer_density: Defines the sampling density in the outer portion of
+      *k*-space. Must be > 0.0. Higher means more densely sampled. Multiplies
+      the Nyquist rate: 1.0 means sampling at the Nyquist rate, < 1.0 means
+      undersampled and > 1.0 means oversampled.
+    vd_type: Defines the rate of variation of the sampling density the
+      variable-density portion of *k*-space, i.e., between `vd_inner_cutoff`
+      and `vd_outer_cutoff`. Must be one of `'linear'`, `'quadratic'` or
+      `'hanning'`.
 
   Returns:
     A `Tensor` of type `float32` and shape `[views, samples, 2]` if `phases` is
@@ -128,7 +152,11 @@ def spiral_trajectory(base_resolution,
                              'dwell_time': dwell_time,
                              'readout_os': readout_os,
                              'gradient_delay': gradient_delay,
-                             'larmor_const': larmor_const},
+                             'larmor_const': larmor_const,
+                             'vd_inner_cutoff': vd_inner_cutoff,
+                             'vd_outer_cutoff': vd_outer_cutoff,
+                             'vd_outer_density': vd_outer_density,
+                             'vd_type': vd_type},
                             views=views,
                             phases=phases,
                             spacing=spacing,

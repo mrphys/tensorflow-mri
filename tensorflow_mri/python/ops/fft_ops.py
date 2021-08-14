@@ -16,7 +16,7 @@
 
 import tensorflow as tf
 
-from tensorflow_mri.python.ops import array_ops
+from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.utils import check_utils
 
 
@@ -200,7 +200,7 @@ def _fft_internal(x, shape, axes, norm, shift, transform): # pylint: disable=mis
     pad_shape = tf.tensor_scatter_nd_update(
       pad_shape, tf.expand_dims(axes, -1), shape)
     if shift:
-      x = array_ops.symmetric_pad_or_crop(x, pad_shape)
+      x = image_ops.resize_with_crop_or_pad(x, pad_shape)
     else:
       x = _right_pad_or_crop(x, pad_shape)
 

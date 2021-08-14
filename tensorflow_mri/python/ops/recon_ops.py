@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Image reconstruction operations."""
+"""Image reconstruction operations.
+
+This module contains functions for MR image reconstruction.
+"""
 
 import tensorflow as tf
 import tensorflow_nufft as tfft

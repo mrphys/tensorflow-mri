@@ -1,0 +1,12 @@
+Image reconstruction
+====================
+
+.. automodule:: tensorflow_mri.python.ops.recon_ops
+
+.. currentmodule:: tfmr
+
+.. autosummary::
+    :toctree: _recon_ops
+    :nosignatures:
+
+    reconstruct

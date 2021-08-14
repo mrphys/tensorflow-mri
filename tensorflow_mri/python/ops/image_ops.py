@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Array manipulation operations."""
+"""Image operations.
+
+This module contains functions for N-dimensional image processing.
+"""
 
 import tensorflow as tf
 
@@ -68,8 +71,8 @@ def central_crop(tensor, shape):
   return tensor
 
 
-def symmetric_pad_or_crop(tensor, shape):
-  """Symmetrically pad or crop a tensor to the specified shape.
+def resize_with_crop_or_pad(tensor, shape):
+  """Crops and/or pads a tensor to a target shape.
 
   Pads symmetrically or crops centrally the input tensor as necessary to achieve
   the requested shape.

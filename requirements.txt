@@ -1,6 +1,6 @@
 h5py
 ismrmrd
 numpy
-tensorflow
+tensorflow>=2.6.0
 tensorflow-graphics
 tensorflow-nufft

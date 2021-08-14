@@ -17,4 +17,9 @@ Installation
    :caption: API Documentation
    :hidden:
 
-   ops
+   coil_ops
+   fft_ops
+   image_ops
+   linalg_ops
+   recon_ops
+   traj_ops

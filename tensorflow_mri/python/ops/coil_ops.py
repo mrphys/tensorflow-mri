@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Coil operations."""
+"""Coil array operations.
+
+This module contains functions to operate with MR coil arrays, such as
+estimating coil sensitivities and combining multi-coil images.
+"""
 
 import functools
 
@@ -20,8 +24,8 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.experimental.numpy as tnp
 
-from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import fft_ops
+from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.utils import check_utils
 
 
@@ -318,7 +322,7 @@ def _estimate_coil_sensitivities_espirit(kspace,
     f"{calib_size} and {kernel_size}"))
 
   # Get calibration region.
-  calib = array_ops.central_crop(kspace, calib_size + [-1])
+  calib = image_ops.central_crop(kspace, calib_size + [-1])
 
   # Construct the calibration block Hankel matrix.
   conv_size = [cs - ks + 1 for cs, ks in zip(calib_size, kernel_size)]

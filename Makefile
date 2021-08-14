@@ -33,7 +33,7 @@ wheel: $(TARGET)
 docs: $(TARGET)
 	ln -sf tensorflow_mri tfmr
 	rm -rf tools/docs/_*
-	$(MAKE) -C tools/docs html
+	$(MAKE) -C tools/docs html PY_VERSION=$(PY_VERSION)
 	rm tfmr
 
 test: $(wildcard tensorflow_mri/python/ops/*.py)

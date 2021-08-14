@@ -66,3 +66,16 @@ html_theme = 'furo'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = []
+
+
+def process_docstring(app, what, name, obj, options, lines):
+    """Process autodoc docstrings."""
+
+    # Replace markdown literal markers (`) by ReST literal markers (``).
+    myst = '\n'.join(lines)
+    text = myst.replace('`', '``')
+    lines[:] = text.splitlines()
+
+
+def setup(app):
+    app.connect('autodoc-process-docstring', process_docstring)
