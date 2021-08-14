@@ -1,0 +1,8 @@
+﻿tfmr.LinearOperatorSensitivityModulation
+========================================
+  
+.. currentmodule:: tfmr
+
+.. autoclass:: LinearOperatorSensitivityModulation
+   :members:
+   :inherited-members:

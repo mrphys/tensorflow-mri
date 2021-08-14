@@ -13,6 +13,14 @@ Installation
    :end-before: end-install
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: API Documentation
    :hidden:
+
+   coil_ops
+   fft_ops
+   image_ops
+   linalg_ops
+   math_ops
+   recon_ops
+   traj_ops

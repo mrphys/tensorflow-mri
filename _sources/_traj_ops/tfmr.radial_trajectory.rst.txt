@@ -1,0 +1,6 @@
+﻿tfmr.radial\_trajectory
+=======================
+
+.. currentmodule:: tfmr
+
+.. autofunction:: radial_trajectory

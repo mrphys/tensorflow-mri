@@ -1,0 +1,6 @@
+﻿tfmr.reconstruct
+================
+
+.. currentmodule:: tfmr
+
+.. autofunction:: reconstruct

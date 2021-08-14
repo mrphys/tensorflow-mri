@@ -1,0 +1,6 @@
+﻿tfmr.conjugate\_gradient
+========================
+
+.. currentmodule:: tfmr
+
+.. autofunction:: conjugate_gradient

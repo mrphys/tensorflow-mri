@@ -1,0 +1,6 @@
+﻿tfmr.estimate\_coil\_sensitivities
+==================================
+
+.. currentmodule:: tfmr
+
+.. autofunction:: estimate_coil_sensitivities

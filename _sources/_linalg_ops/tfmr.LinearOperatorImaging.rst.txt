@@ -1,0 +1,8 @@
+﻿tfmr.LinearOperatorImaging
+==========================
+  
+.. currentmodule:: tfmr
+
+.. autoclass:: LinearOperatorImaging
+   :members:
+   :inherited-members:

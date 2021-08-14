@@ -1,0 +1,6 @@
+﻿tfmr.combine\_coils
+===================
+
+.. currentmodule:: tfmr
+
+.. autofunction:: combine_coils

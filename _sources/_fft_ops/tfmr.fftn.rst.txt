@@ -1,0 +1,6 @@
+﻿tfmr.fftn
+=========
+
+.. currentmodule:: tfmr
+
+.. autofunction:: fftn
