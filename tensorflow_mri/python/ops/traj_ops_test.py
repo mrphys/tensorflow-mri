@@ -250,7 +250,7 @@ class DensityEstimationTest(tf.test.TestCase):
 
 
   def test_estimate_density(self):
-
+    """Test density estimation."""
     traj = self.data['estimate_density/trajectory']
 
     flat_traj = tf.reshape(traj, [-1, traj.shape[-1]])
@@ -259,6 +259,14 @@ class DensityEstimationTest(tf.test.TestCase):
 
     self.assertAllClose(dens, self.data['estimate_density/density'],
                         rtol=1e-5, atol=1e-5)
+
+
+  def test_estimate_density_3d_many_points(self):
+    """Test 3D density estimation with a large points array."""
+    # Here we are just checking this runs without causing a seg fault.
+    rng = tf.random.Generator.from_seed(0)
+    flat_traj = rng.uniform([2560000, 3], minval=-np.pi, maxval=np.pi)
+    traj_ops.estimate_density(flat_traj, [128, 128, 128])
 
 
 if __name__ == '__main__':

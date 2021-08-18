@@ -14,6 +14,9 @@
 # ==============================================================================
 """Tests for module `coil_ops`."""
 
+import itertools
+
+import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import coil_ops
@@ -140,6 +143,102 @@ class CoilCombineTest(tf.test.TestCase):
     return tf.dtypes.complex(
       tf.random.normal(shape),
       tf.random.normal(shape))
+
+
+class CoilCompressionTest(tf.test.TestCase):
+  """Tests for coil compression op."""
+
+  @classmethod
+  def setUpClass(cls):
+
+    super().setUpClass()
+    cls.data = io_utils.read_hdf5('tests/data/coil_ops_data.h5')
+
+
+  def test_coil_compression_svd(self):
+    """Test SVD coil compression."""
+
+    kspace = self.data['cc/kspace']
+    result = self.data['cc/result/svd']
+
+    cc_kspace = coil_ops.compress_coils(kspace)
+
+    self.assertAllClose(cc_kspace, result)
+
+
+  def test_coil_compression_svd_two_step(self):
+    """Test SVD coil compression using two-step API."""
+
+    kspace = self.data['cc/kspace']
+    result = self.data['cc/result/svd']
+
+    matrix = coil_ops.coil_compression_matrix(kspace, num_output_coils=16)
+    self.assertEqual(matrix.shape, [32, 16])
+
+    cc_kspace = coil_ops.compress_coils(kspace, matrix=matrix)
+    self.assertAllClose(cc_kspace, result[..., :16])
+
+
+  def test_coil_compression_svd_transposed(self):
+    """Test SVD coil compression using two-step API."""
+
+    kspace = self.data['cc/kspace']
+    result = self.data['cc/result/svd']
+
+    kspace = tf.transpose(kspace, [2, 0, 1])
+    cc_kspace = coil_ops.compress_coils(kspace, coil_axis=0)
+    cc_kspace = tf.transpose(cc_kspace, [1, 2, 0])
+
+    self.assertAllClose(cc_kspace, result)
+
+
+  def test_coil_compression_svd_basic(self):
+    """Test coil compression using SVD method with basic arrays."""
+    shape = (20, 20, 8)
+    data = tf.dtypes.complex(
+      tf.random.normal(shape),
+      tf.random.normal(shape))
+
+    params = {
+      'num_output_coils': [None, 4],
+      'tol': [None, 0.05]}
+
+    values = itertools.product(*params.values())
+    params = [dict(zip(params.keys(), v)) for v in values]
+
+    for p in params:
+      with self.subTest(**p):
+
+        # Test op.
+        compressed_data = coil_ops.compress_coils(data, **p)
+
+        # Flatten input data.
+        encoding_dims = data.shape[:-1]
+        input_coils = data.shape[-1]
+        data = np.reshape(data, (-1, data.shape[-1]))
+        samples = data.shape[0]
+
+        # Calculate compression matrix.
+        # This should be equivalent to TF line below. Not sure why
+        # not. Giving up.
+        # u, s, vh = np.linalg.svd(data, full_matrices=False)
+        # v = vh.T.conj()
+        s, u, v = tf.linalg.svd(data, full_matrices=False)
+        matrix = v.numpy() if samples > input_coils else u.numpy()
+
+        num_output_coils = input_coils
+        if p['tol'] and not p['num_output_coils']:
+          num_output_coils = np.count_nonzero(
+            np.abs(s) / np.abs(s[0]) > p['tol'])
+        if p['num_output_coils']:
+          num_output_coils = p['num_output_coils']
+        matrix = matrix[:, :num_output_coils]
+
+        ref_data = np.matmul(data, matrix)
+        ref_data = np.reshape(ref_data,
+                    encoding_dims + (num_output_coils,))
+
+        self.assertAllClose(compressed_data, ref_data)
 
 
 if __name__ == '__main__':
