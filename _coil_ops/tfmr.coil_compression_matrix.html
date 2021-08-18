@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="tfmr.estimate_coil_sensitivities" href="tfmr.estimate_coil_sensitivities.html" /><link rel="prev" title="Coil arrays" href="../coil_ops.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Fourier transform" href="../fft_ops.html" /><link rel="prev" title="tfmr.compress_coils" href="tfmr.compress_coils.html" />
 
     <meta name="generator" content="sphinx-4.1.2, furo 2021.08.11.beta42"/>
-        <title>tfmr.combine_coils - tensorflow-mri 0.4.0 documentation</title>
+        <title>tfmr.coil_compression_matrix - tensorflow-mri 0.4.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=197f00461d56902ea7ca048ec6e6ba026f62c97b" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=93475b62d1c3bc01323a0eefdc14a62d77b12690" />
@@ -155,10 +155,10 @@
   <p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
 <ul class="current">
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../coil_ops.html">Coil arrays</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">tfmr.combine_coils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tfmr.combine_coils.html">tfmr.combine_coils</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tfmr.estimate_coil_sensitivities.html">tfmr.estimate_coil_sensitivities</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tfmr.compress_coils.html">tfmr.compress_coils</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tfmr.coil_compression_matrix.html">tfmr.coil_compression_matrix</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">tfmr.coil_compression_matrix</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../fft_ops.html">Fourier transform</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -224,41 +224,49 @@
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
         </div>
-        <section id="tfmr-combine-coils">
-<h1>tfmr.combine_coils<a class="headerlink" href="#tfmr-combine-coils" title="Permalink to this headline">¶</a></h1>
+        <section id="tfmr-coil-compression-matrix">
+<h1>tfmr.coil_compression_matrix<a class="headerlink" href="#tfmr-coil-compression-matrix" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
-<dt class="sig sig-object py" id="tfmr.combine_coils">
-<span class="sig-prename descclassname"><span class="pre">tfmr.</span></span><span class="sig-name descname"><span class="pre">combine_coils</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">images</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coil_axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keepdims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tfmr.combine_coils" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sum of squares or adaptive coil combination.</p>
+<dt class="sig sig-object py" id="tfmr.coil_compression_matrix">
+<span class="sig-prename descclassname"><span class="pre">tfmr.</span></span><span class="sig-name descname"><span class="pre">coil_compression_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kspace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_output_coils</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'svd'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tfmr.coil_compression_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate a coil compression matrix.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For more information, see also <code class="docutils literal notranslate"><span class="pre">tfmr.compress_coils</span></code>.</p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>images</strong> – A <code class="docutils literal notranslate"><span class="pre">Tensor</span></code>. The input images.</p></li>
-<li><p><strong>maps</strong> – A <code class="docutils literal notranslate"><span class="pre">Tensor</span></code>. The coil sensitivity maps. This argument is optional.
-If <code class="docutils literal notranslate"><span class="pre">maps</span></code> is provided, it must have the same shape and type as
-<code class="docutils literal notranslate"><span class="pre">images</span></code>. In this case an adaptive coil combination is performed using
-the specified maps. If <code class="docutils literal notranslate"><span class="pre">maps</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code>, a simple estimate of <code class="docutils literal notranslate"><span class="pre">maps</span></code>
-is used (ie, images are combined using the sum of squares method).</p></li>
-<li><p><strong>coil_axis</strong> – An <code class="docutils literal notranslate"><span class="pre">int</span></code>. The coil axis. Defaults to -1.</p></li>
-<li><p><strong>keepdims</strong> – A <code class="docutils literal notranslate"><span class="pre">bool</span></code>. If <code class="docutils literal notranslate"><span class="pre">True</span></code>, retains the coil dimension with size 1.</p></li>
+<li><p><strong>kspace</strong> – A <code class="docutils literal notranslate"><span class="pre">Tensor</span></code>. The multi-coil <em>k</em>-space data. Must have type
+<code class="docutils literal notranslate"><span class="pre">complex64</span></code> or <code class="docutils literal notranslate"><span class="pre">complex128</span></code>. Must have shape <code class="docutils literal notranslate"><span class="pre">[...,</span> <span class="pre">Cin]</span></code>, where <code class="docutils literal notranslate"><span class="pre">...</span></code> are
+the encoding dimensions and <code class="docutils literal notranslate"><span class="pre">Cin</span></code> is the number of coils. Alternatively,
+the position of the coil axis may be different as long as the <code class="docutils literal notranslate"><span class="pre">coil_axis</span></code>
+argument is set accordingly. If <code class="docutils literal notranslate"><span class="pre">method</span></code> is <code class="docutils literal notranslate"><span class="pre">"svd"</span></code>, <code class="docutils literal notranslate"><span class="pre">kspace</span></code> can be
+Cartesian or non-Cartesian. If <code class="docutils literal notranslate"><span class="pre">method</span></code> is <code class="docutils literal notranslate"><span class="pre">"geometric"</span></code> or <code class="docutils literal notranslate"><span class="pre">"espirit"</span></code>,
+<code class="docutils literal notranslate"><span class="pre">kspace</span></code> must be Cartesian.</p></li>
+<li><p><strong>num_output_coils</strong> – An <code class="docutils literal notranslate"><span class="pre">int</span></code>. The number of desired virtual output coils. If
+<code class="docutils literal notranslate"><span class="pre">None</span></code>, the number of output coils is automatically determined based on
+<code class="docutils literal notranslate"><span class="pre">tol</span></code>. If <code class="docutils literal notranslate"><span class="pre">tol</span></code> is also <code class="docutils literal notranslate"><span class="pre">None</span></code>, all virtual coils are returned.</p></li>
+<li><p><strong>tol</strong> – A <code class="docutils literal notranslate"><span class="pre">float</span></code> between 0.0 and 1.0. Virtual coils whose singular value is
+less than <code class="docutils literal notranslate"><span class="pre">tol</span></code> times the first singular value are discarded. <code class="docutils literal notranslate"><span class="pre">tol</span></code> is
+ignored if <code class="docutils literal notranslate"><span class="pre">num_output_coils</span></code> is also specified.</p></li>
+<li><p><strong>method</strong> – A <code class="docutils literal notranslate"><span class="pre">string</span></code>. The coil compression algorithm. Must be <code class="docutils literal notranslate"><span class="pre">"svd"</span></code>.</p></li>
+<li><p><strong>**kwargs</strong> – Additional method-specific keyword arguments. See Notes for more
+details.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A <code class="docutils literal notranslate"><span class="pre">Tensor</span></code>. The combined images.</p>
-</dd>
 </dl>
-<p class="rubric">References</p>
-<dl class="footnote brackets">
-<dt class="label" id="id1"><span class="brackets">1</span></dt>
-<dd><p>Roemer, P.B., Edelstein, W.A., Hayes, C.E., Souza, S.P. and
-Mueller, O.M. (1990), The NMR phased array. Magn Reson Med, 16:
-192-225. <a class="reference external" href="https://doi.org/10.1002/mrm.1910160203">https://doi.org/10.1002/mrm.1910160203</a></p>
+<p class="rubric">Notes</p>
+<p>This function also accepts the following method-specific keyword arguments:</p>
+<ul class="simple">
+<li><p>For <code class="docutils literal notranslate"><span class="pre">method="svd"</span></code>, no additional keyword arguments are accepted.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A coil compression matrix with shape <code class="docutils literal notranslate"><span class="pre">(Cin,</span> <span class="pre">Cout)</span></code>.</p>
 </dd>
-<dt class="label" id="id2"><span class="brackets">2</span></dt>
-<dd><p>Bydder, M., Larkman, D. and Hajnal, J. (2002), Combination of signals
-from array coils using image-based estimation of coil sensitivity
-profiles. Magn. Reson. Med., 47: 539-548.
-<a class="reference external" href="https://doi.org/10.1002/mrm.10092">https://doi.org/10.1002/mrm.10092</a></p>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">method</span></code> is not one of <code class="docutils literal notranslate"><span class="pre">"svd"</span></code>, <code class="docutils literal notranslate"><span class="pre">"geometric"</span></code> or <code class="docutils literal notranslate"><span class="pre">"espirit"</span></code>.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -268,23 +276,23 @@ profiles. Magn. Reson. Med., 47: 539-548.
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="tfmr.estimate_coil_sensitivities.html">
+          <a class="next-page" href="../fft_ops.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">tfmr.estimate_coil_sensitivities</div>
+                <div class="title">Fourier transform</div>
               </div>
               <svg><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="../coil_ops.html">
+          <a class="prev-page" href="tfmr.compress_coils.html">
               <svg><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Coil arrays</div>
+                <div class="title">tfmr.compress_coils</div>
                 
               </div>
             </a>
@@ -298,7 +306,7 @@ profiles. Magn. Reson. Med., 47: 539-548.
               <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
               <a href="https://github.com/pradyunsg/furo">Furo theme</a>.
             |
-            <a class="muted-link" href="../_sources/_coil_ops/tfmr.combine_coils.rst.txt"
+            <a class="muted-link" href="../_sources/_coil_ops/tfmr.coil_compression_matrix.rst.txt"
                rel="nofollow">
               Show Source
             </a>

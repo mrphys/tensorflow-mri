@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="tfmr.combine_coils" href="tfmr.combine_coils.html" /><link rel="prev" title="Coil arrays" href="../coil_ops.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="tfmr.compress_coils" href="tfmr.compress_coils.html" /><link rel="prev" title="tfmr.combine_coils" href="tfmr.combine_coils.html" />
 
     <meta name="generator" content="sphinx-4.1.2, furo 2021.08.11.beta42"/>
-        <title>tfmr.estimate_coil_sensitivities - tensorflow-mri 0.3.0 documentation</title>
+        <title>tfmr.estimate_coil_sensitivities - tensorflow-mri 0.4.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=197f00461d56902ea7ca048ec6e6ba026f62c97b" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=93475b62d1c3bc01323a0eefdc14a62d77b12690" />
@@ -121,7 +121,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">tensorflow-mri 0.3.0 documentation</div></a>
+      <a href="../index.html"><div class="brand">tensorflow-mri 0.4.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -144,7 +144,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
   
   
-  <span class="sidebar-brand-text">tensorflow-mri 0.3.0 documentation</span>
+  <span class="sidebar-brand-text">tensorflow-mri 0.4.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder=Search name="q" aria-label="Search">
@@ -155,8 +155,10 @@
   <p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
 <ul class="current">
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../coil_ops.html">Coil arrays</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">tfmr.estimate_coil_sensitivities</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tfmr.combine_coils.html">tfmr.combine_coils</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">tfmr.estimate_coil_sensitivities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tfmr.compress_coils.html">tfmr.compress_coils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tfmr.coil_compression_matrix.html">tfmr.coil_compression_matrix</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../fft_ops.html">Fourier transform</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -254,32 +256,32 @@ algorithm. See Notes.</p></li>
 <p class="rubric">Notes</p>
 <p>This function accepts the following method-specific keyword arguments:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">'walsh'</span></code> method:</p>
+<li><p>For <code class="docutils literal notranslate"><span class="pre">method="walsh"</span></code>:</p>
 <ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">filter_size</span></code>: An <code class="docutils literal notranslate"><span class="pre">int</span></code>. The size of the smoothing filter.</p></li>
+<li><p><strong>filter_size</strong>: An <code class="docutils literal notranslate"><span class="pre">int</span></code>. The size of the smoothing filter.</p></li>
 </ul>
 </li>
-<li><p><code class="docutils literal notranslate"><span class="pre">'inati'</span></code> method:</p>
+<li><p>For <code class="docutils literal notranslate"><span class="pre">method="inati"</span></code>:</p>
 <ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">filter_size</span></code>: An <code class="docutils literal notranslate"><span class="pre">int</span></code>. The size of the smoothing filter.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">max_iter</span></code>: An <code class="docutils literal notranslate"><span class="pre">int</span></code>. The maximum number of iterations.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">tol</span></code>: A <code class="docutils literal notranslate"><span class="pre">float</span></code>. The convergence tolerance.</p></li>
+<li><p><strong>filter_size</strong>: An <code class="docutils literal notranslate"><span class="pre">int</span></code>. The size of the smoothing filter.</p></li>
+<li><p><strong>max_iter</strong>: An <code class="docutils literal notranslate"><span class="pre">int</span></code>. The maximum number of iterations.</p></li>
+<li><p><strong>tol</strong>: A <code class="docutils literal notranslate"><span class="pre">float</span></code>. The convergence tolerance.</p></li>
 </ul>
 </li>
-<li><p><code class="docutils literal notranslate"><span class="pre">'espirit'</span></code> method:</p>
+<li><p>For <code class="docutils literal notranslate"><span class="pre">method="espirit"</span></code>:</p>
 <ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">calib_size</span></code>: An <code class="docutils literal notranslate"><span class="pre">int</span></code> or a list of <code class="docutils literal notranslate"><span class="pre">ints</span></code>. The size of the
+<li><p><strong>calib_size</strong>: An <code class="docutils literal notranslate"><span class="pre">int</span></code> or a list of <code class="docutils literal notranslate"><span class="pre">ints</span></code>. The size of the
 calibration region. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, this is set to <code class="docutils literal notranslate"><span class="pre">input_.shape[:-1]</span></code> (ie,
 use full input for calibration). Defaults to 24.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">kernel_size</span></code>: An <code class="docutils literal notranslate"><span class="pre">int</span></code> or a list of <code class="docutils literal notranslate"><span class="pre">ints</span></code>. The kernel size. Defaults
+<li><p><strong>kernel_size</strong>: An <code class="docutils literal notranslate"><span class="pre">int</span></code> or a list of <code class="docutils literal notranslate"><span class="pre">ints</span></code>. The kernel size. Defaults
 to 6.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">num_maps</span></code>: An <code class="docutils literal notranslate"><span class="pre">int</span></code>. The number of output maps. Defaults to 2.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">null_threshold</span></code>: A <code class="docutils literal notranslate"><span class="pre">float</span></code>. The threshold used to determine the size
+<li><p><strong>num_maps</strong>: An <code class="docutils literal notranslate"><span class="pre">int</span></code>. The number of output maps. Defaults to 2.</p></li>
+<li><p><strong>null_threshold</strong>: A <code class="docutils literal notranslate"><span class="pre">float</span></code>. The threshold used to determine the size
 of the null-space. Defaults to 0.02.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">eigen_threshold</span></code>: A <code class="docutils literal notranslate"><span class="pre">float</span></code>. The threshold used to determine the
+<li><p><strong>eigen_threshold</strong>: A <code class="docutils literal notranslate"><span class="pre">float</span></code>. The threshold used to determine the
 locations where coil sensitivity maps should be masked out. Defaults
 to 0.95.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">image_shape</span></code>: A <code class="docutils literal notranslate"><span class="pre">tf.TensorShape</span></code> or a list of <code class="docutils literal notranslate"><span class="pre">ints</span></code>. The shape of
+<li><p><strong>image_shape</strong>: A <code class="docutils literal notranslate"><span class="pre">tf.TensorShape</span></code> or a list of <code class="docutils literal notranslate"><span class="pre">ints</span></code>. The shape of
 the output maps. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, this is set to <code class="docutils literal notranslate"><span class="pre">input_.shape</span></code>. Defaults to
 <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
 </ul>
@@ -312,23 +314,23 @@ Med., 71: 990-1001. <a class="reference external" href="https://doi.org/10.1002/
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="tfmr.combine_coils.html">
+          <a class="next-page" href="tfmr.compress_coils.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">tfmr.combine_coils</div>
+                <div class="title">tfmr.compress_coils</div>
               </div>
               <svg><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="../coil_ops.html">
+          <a class="prev-page" href="tfmr.combine_coils.html">
               <svg><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Coil arrays</div>
+                <div class="title">tfmr.combine_coils</div>
                 
               </div>
             </a>

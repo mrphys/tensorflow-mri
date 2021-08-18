@@ -1,0 +1,6 @@
+﻿tfmr.compress\_coils
+====================
+
+.. currentmodule:: tfmr
+
+.. autofunction:: compress_coils
