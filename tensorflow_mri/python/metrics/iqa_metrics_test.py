@@ -16,23 +16,38 @@
 
 import tensorflow as tf
 
-    # import scipy.io as sio
-    # data = sio.loadmat('tests/data/psnr.mat')
-    
-    # import h5py
-    # with h5py.File('tests/data/image_ops_data.h5', 'r+') as f:
-    #   f.create_dataset('psnr/2d/batch/img1', data=img1)
-    #   f.create_dataset('psnr/2d/batch/img2', data=img2)
+from tensorflow_mri.python.metrics import iqa_metrics
+from tensorflow_mri.python.ops import image_ops
+from tensorflow_mri.python.utils import test_utils
 
 
-class StructuralSimilarityTest(tf.test.TestCase):
-  """Tests for SSIM metric."""
+class IQAMetricTest(tf.test.TestCase):
+  """Tests for IQA metrics."""
 
-  def test_ssim_2d(self):
+  pairs = [
+    (iqa_metrics.PeakSignalToNoiseRatio, image_ops.psnr),
+    (iqa_metrics.StructuralSimilarity, image_ops.ssim),
+    (iqa_metrics.MultiscaleStructuralSimilarity, image_ops.ssim_multiscale)
+  ]
 
-    pass
-    
-    
+  @test_utils.parameterized_test(pair=pairs)
+  def test_mean_metric(self, pair):
+    """Test mean metric."""
+    metric, fn = pair
+    y_true, y_pred = self._random_images()
+    m = metric()
+    m.update_state(y_true, y_pred)
+    self.assertAllClose(m.result(),
+                        tf.math.reduce_mean(fn(y_true, y_pred)))
+
+
+  def _random_images(self):
+
+    rng = tf.random.Generator.from_seed(0)
+    y_true = rng.uniform((4, 192, 192, 8))
+    y_pred = rng.uniform((4, 192, 192, 8))
+    return y_true, y_pred
+
 
 if __name__ == '__main__':
   tf.test.main()

@@ -117,7 +117,7 @@ def psnr2d(img1, img2, max_val=None, name='psnr2d'):
 
 
 def psnr3d(img1, img2, max_val, name='psnr3d'):
-  """Computes the peak signal-to-noise ratio (PSNR) between two 2D images.
+  """Computes the peak signal-to-noise ratio (PSNR) between two 3D images.
 
   This function operates on batches of multi-channel inputs and returns a PSNR
   value for each image in the batch.
@@ -747,7 +747,7 @@ def _ssim_per_channel(img1,
     img1, img2, reducer, max_val, compensation, k1, k2)
 
   # Average over the spatial dimensions.
-  axes = tf.constant(list(range(-(rank + 1), -1)), dtype=tf.int32)
+  axes = tf.constant(tf.range(-(rank + 1), -1), dtype=tf.int32)
   ssim_val = tf.math.reduce_mean(luminance * cs, axes)
   cs = tf.math.reduce_mean(cs, axes)
   return ssim_val, cs
