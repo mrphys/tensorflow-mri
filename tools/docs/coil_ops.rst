@@ -8,6 +8,8 @@ Coil arrays
 .. autosummary::
     :toctree: _coil_ops
     :nosignatures:
-
-    estimate_coil_sensitivities
+    
     combine_coils
+    estimate_coil_sensitivities
+    compress_coils
+    coil_compression_matrix
