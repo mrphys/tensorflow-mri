@@ -18,6 +18,77 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import image_ops
+from tensorflow_mri.python.utils import io_utils
+
+
+class PeakSignalToNoiseRatioTest(tf.test.TestCase):
+
+  @classmethod
+  def setUpClass(cls):
+    """Prepare tests."""
+    super().setUpClass()
+    cls.data = io_utils.read_hdf5('tests/data/image_ops_data.h5')
+
+
+  def test_psnr_2d_scalar(self):
+    """Test 2D PSNR with scalar batch."""
+    img1 = self.data['psnr/2d/img1']
+    img2 = self.data['psnr/2d/img2']
+
+    img1 = tf.expand_dims(img1, -1)
+    img2 = tf.expand_dims(img2, -1)
+
+    result = image_ops.psnr(img1, img2, 255, rank=2)
+
+    self.assertAllClose(result, 22.73803845)
+
+
+  def test_psnr_2d_trivial_batch(self):
+    """Test 2D PSNR with trivial batch of size 1."""
+    img1 = self.data['psnr/2d/img1']
+    img2 = self.data['psnr/2d/img2']
+
+    img1 = tf.expand_dims(img1, -1)
+    img2 = tf.expand_dims(img2, -1)
+    img1 = tf.expand_dims(img1, 0)
+    img2 = tf.expand_dims(img2, 0)
+
+    result = image_ops.psnr(img1, img2, 255, rank=2)
+
+    self.assertAllClose(result, [22.73803845])
+
+
+  def test_psnr_2d_batch_multichannel(self):
+    """Test 2D PSNR with multichannel batch of images."""
+    img1 = self.data['psnr/2d/batch/img1']
+    img2 = self.data['psnr/2d/batch/img2']
+
+    result = image_ops.psnr(img1, img2, 255)
+    ref = [16.35598558,
+           16.96981631,
+           17.80788841,
+           18.1842858,
+           18.06558658,
+           17.16817389]
+
+    self.assertAllClose(result, ref)
+
+
+  def test_psnr_invalid_rank(self):
+    """Test PSNR with an invalid rank."""
+    img1 = self.data['psnr/2d/img1']
+    img2 = self.data['psnr/2d/img2']
+
+    with self.assertRaisesRegex(tf.errors.InvalidArgumentError,
+                                "`rank` must be >= 2"):
+      image_ops.psnr(img1, img2, 255)
+
+    img1 = tf.expand_dims(img1, -1)
+    img2 = tf.expand_dims(img2, -1)
+
+    with self.assertRaisesRegex(tf.errors.InvalidArgumentError,
+                                "`rank` must be >= 2"):
+      image_ops.psnr(img1, img2, 255)
 
 
 class CentralCropTest(tf.test.TestCase):

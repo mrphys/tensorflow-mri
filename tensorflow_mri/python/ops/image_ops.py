@@ -17,7 +17,155 @@
 This module contains functions for N-dimensional image processing.
 """
 
+import numpy as np
 import tensorflow as tf
+
+
+def psnr(img1, img2, max_val, rank=None, name='psnr'):
+  """Computes the peak signal-to-noise ratio (PSNR) between two N-D images.
+
+  This function operates on batches of multi-channel inputs and returns a PSNR
+  value for each image in the batch.
+
+  Arguments:
+    img1: A `Tensor`. First batch of images. For 2D images, must have rank >= 3
+      with shape `batch_shape + [height, width, channels]`. For 3D images, must
+      have rank >= 4 with shape
+      `batch_shape + [depth, height, width, channels]`.
+    img2: A `Tensor`. First batch of images. For 2D images, must have rank >= 3
+      with shape `batch_shape + [height, width, channels]`. For 3D images, must
+      have rank >= 4 with shape
+      `batch_shape + [depth, height, width, channels]`.
+    max_val: The dynamic range of the images (i.e., the difference between
+      the maximum the and the minimum allowed values).
+    rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
+      to `tf.rank(img1) - 2`. In other words, if rank is not explicitly set,
+      `img1` and `img2` should have shape `[batch, height, width, channels]`
+      if processing 2D images or `[batch, depth, height, width, channels]` if
+      processing 3D images.
+    name: Namespace to embed the computation in.
+
+  Returns:
+    The scalar PSNR between `img1` and `img2`. The returned tensor has type
+    `tf.float32` and shape `batch_shape`.
+  """
+  with tf.name_scope(name):
+    # Need to convert the images to float32. Scale max_val accordingly so that
+    # PSNR is computed correctly.
+    max_val = tf.cast(max_val, img1.dtype)
+    max_val = tf.image.convert_image_dtype(max_val, tf.float32)
+    img1 = tf.image.convert_image_dtype(img1, tf.float32)
+    img2 = tf.image.convert_image_dtype(img2, tf.float32)
+
+    # Infer the number of spatial dimensions if not specified by the user, then
+    # check that the value is valid.
+    if rank is None:
+      rank = tf.rank(img1) - 2
+    tf.debugging.assert_greater_equal(
+        rank, 2,
+        message=f"`rank` must be >= 2, but got: {rank}")
+    tf.debugging.assert_less_equal(
+        rank, 3,
+        message=f"`rank` must be <= 3, but got: {rank}")
+
+    mse = tf.math.reduce_mean(
+      tf.math.squared_difference(img1, img2), tf.range(-rank-1, 0))
+
+    psnr_val = tf.math.subtract(
+      20 * tf.math.log(max_val) / tf.math.log(10.0),
+      np.float32(10 / np.log(10)) * tf.math.log(mse),
+      name='psnr')
+
+    _, _, checks = _verify_compatible_image_shapes(img1, img2, rank)
+    with tf.control_dependencies(checks):
+      return tf.identity(psnr_val)
+
+
+def psnr2d(img1, img2, max_val, name='psnr2d'):
+  """Computes the peak signal-to-noise ratio (PSNR) between two 2D images.
+
+  Arguments:
+    img1: A `Tensor`. First batch of images. Must have rank >= 3 with shape
+      `batch_shape + [height, width, channels]`.
+    img2: A `Tensor`. First batch of images. Must have rank >= 3 with shape
+      `batch_shape + [height, width, channels]`.
+    max_val: The dynamic range of the images (i.e., the difference between
+      the maximum the and the minimum allowed values).
+    name: Namespace to embed the computation in.
+
+  Returns:
+    The scalar PSNR between `img1` and `img2`. The returned tensor has type
+    `tf.float32` and shape `batch_shape`.
+  """
+  return psnr(img1, img2, max_val=max_val, rank=2, name=name)
+
+
+def psnr3d(img1, img2, max_val, name='psnr3d'):
+  """Computes the peak signal-to-noise ratio (PSNR) between two 2D images.
+
+  Arguments:
+    img1: A `Tensor`. First batch of images. Must have rank >= 4 with shape
+      `batch_shape + [height, width, channels]`.
+    img2: A `Tensor`. First batch of images. Must have rank >= 4 with shape
+      `batch_shape + [height, width, channels]`.
+    max_val: The dynamic range of the images (i.e., the difference between
+      the maximum the and the minimum allowed values).
+    name: Namespace to embed the computation in.
+
+  Returns:
+    The scalar PSNR between `img1` and `img2`. The returned tensor has type
+    `tf.float32` and shape `batch_shape`.
+  """
+  return psnr(img1, img2, max_val=max_val, rank=3, name=name)
+
+
+def _verify_compatible_image_shapes(img1, img2, rank):
+  """Checks if two image tensors are compatible for the given rank.
+
+  Checks if two sets of images have rank at least `rank + 1` (spatial
+  dimensions plus channel dimension) and if the last `rank + 1` dimensions
+  match.
+
+  Args:
+    rank: Rank of the images (number of spatial dimensions).
+    img1: Tensor containing the first image batch.
+    img2: Tensor containing the second image batch.
+
+  Returns:
+    A tuple containing: the first tensor shape, the second tensor shape, and
+    a list of tf.debugging.Assert() ops implementing the checks.
+
+  Raises:
+    ValueError: When static shape check fails.
+  """
+  rank_p1 = rank + 1
+
+  shape1 = img1.get_shape().with_rank_at_least(rank_p1)
+  shape2 = img2.get_shape().with_rank_at_least(rank_p1)
+  shape1[-rank_p1:].assert_is_compatible_with(shape2[-rank_p1:])
+
+  if shape1.ndims is not None and shape2.ndims is not None:
+    for dim1, dim2 in zip(reversed(shape1.dims[:-rank_p1]),
+                          reversed(shape2.dims[:-rank_p1])):
+      if not (dim1 == 1 or dim2 == 1 or dim1.is_compatible_with(dim2)):
+        raise ValueError(f"Incompatible image shapes: {shape1} and {shape2}")
+
+  # Now assign shape tensors.
+  shape1, shape2 = tf.shape_n([img1, img2])
+
+  checks = []
+  checks.append(
+      tf.debugging.Assert(
+          tf.math.greater_equal(tf.size(shape1), rank_p1), [shape1, shape2],
+          summarize=10))
+  checks.append(
+      tf.debugging.Assert(
+          tf.math.reduce_all(
+              tf.math.equal(shape1[-rank_p1:], shape2[-rank_p1:])),
+          [shape1, shape2],
+          summarize=10))
+
+  return shape1, shape2, checks
 
 
 def central_crop(tensor, shape):
