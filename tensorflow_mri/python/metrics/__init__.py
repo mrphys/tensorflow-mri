@@ -17,4 +17,5 @@
 This module contains metrics for use in Keras models.
 """
 
+from tensorflow_mri.python.metrics.confusion_metrics import *
 from tensorflow_mri.python.metrics.iqa_metrics import *
