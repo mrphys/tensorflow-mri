@@ -24,62 +24,23 @@ import tensorflow as tf
 
 
 _CONFUSION_METRIC_INTRO_DOCTRING = """
-Inputs `y_true` and `y_pred` are expected to have shape `[..., num_classes]`,
-with channel `i` containing labels/predictions for class `i`. `y_true[..., i]`
-is 1 if the element represented by `y_true[...]` is a member of class `i` and
-0 otherwise. `y_pred[..., i]` is the predicted probability, in the range
-`[0.0, 1.0]`, that the element represented by `y_pred[...]` is a member of
-class `i`.
+  This metric works for binary, multiclass and multilabel classification. In
+  multiclass/multilabel problems, this metric can be used to measure performance
+  globally or for a specific class.
 
-The predictions are weighted by `sample_weight`. If `sample_weight` is
-`None`, weights default to 1. Use a `sample_weight` of 0 to mask values.
+  With the default configuration, this metric will:
 
-This metric works for binary, multiclass and multilabel classification. In
-multiclass/multilabel problems, this metric can be used to measure performance
-globally or for a specific class.
+  * If `num_classes == 1`, assume a binary classification problem with a
+    threshold of 0.5 and return the confusion metric.
+  * If `num_classes >= 2`, assume a multiclass classification problem where
+    the class with the highest probability is selected as the prediction,
+    compute the confusion metric for each class and return the unweighted mean.
 
-With the default configuration, this metric will:
+  See the Parameters and Notes for other configurations.
 
-* If `num_classes == 1`, assume a binary classification problem with a
-  threshold of 0.5 and return the confusion metric.
-* If `num_classes >= 2`, assume a multiclass classification problem where
-  the class with the highest probability is selected as the prediction,
-  compute the confusion metric for each class and return the unweighted mean.
-
-See the Parameters and Notes for other configurations.
 """
 
-
-class ConfusionMetric(tf.keras.metrics.Metric): # pylint: disable=abstract-method
-  """Abstract base class for metrics derived from the confusion matrix.
-
-  This class maintains a confusion matrix in its state and updates it with every
-  call to `update_state`. Subclasses must implement the `calculate` method to
-  calculate the desired metric. `calculate` is called during `result`.
-
-  This implementation is partly inspired by the TF addons and scikit-learn
-  packages.
-
-  Args:
-    num_classes: Number of unique classes in the dataset. If this value is not
-      specified, it will be inferred during the first call to `update_state`
-      as `y_pred.shape[-1]`.
-    class_id: Integer class ID for which metrics should be reported. This must
-      be in the half-open interval [0, num_classes). If `None`, a global average
-      metric is returned as defined by `average`. Defaults to `None`.
-    average: Type of averaging to be performed on data. Valid values are `None`,
-      `'micro'`, `'macro'` and `'weighted'`. Defaults to `'macro'`. See Notes
-      for details on the different modes. This parameter is ignored if
-      `class_id` is not `None`.
-    threshold: Elements of `y_pred` above threshold are considered to be 1, and
-      the rest 0. A list of length `num_classes` may be provided to specify a
-      threshold for each class. If threshold is `None`, the argmax is converted
-      to 1, and the rest 0. Defaults to `None` if `num_classes >= 2` (multiclass
-      classification) and 0.5 if `num_classes == 1` (binary classification).
-      This parameter is required for multilabel classification.
-    name: String name of the metric instance.
-    dtype: Data type of the metric result.
-
+_CONFUSION_METRIC_NOTES_DOCTRING = """
   Notes:
     This metric works for binary, multiclass and multilabel classification.
 
@@ -108,6 +69,36 @@ class ConfusionMetric(tf.keras.metrics.Metric): # pylint: disable=abstract-metho
     * `'weighted'`: Calculate metrics for each label, and find their average
       weighted by support (the number of true instances for each label). This
       alters 'macro' to account for label imbalance.
+
+"""
+
+
+class ConfusionMetric(tf.keras.metrics.Metric): # pylint: disable=abstract-method
+  """Abstract base class for metrics derived from the confusion matrix.
+
+  This class maintains a confusion matrix in its state and updates it with every
+  call to `update_state`. Subclasses must implement the `_result` method to
+  compute the desired metric. `_result` is called during `result`.
+
+  Args:
+    num_classes: Number of unique classes in the dataset. If this value is not
+      specified, it will be inferred during the first call to `update_state`
+      as `y_pred.shape[-1]`.
+    class_id: Integer class ID for which metrics should be reported. This must
+      be in the half-open interval [0, num_classes). If `None`, a global average
+      metric is returned as defined by `average`. Defaults to `None`.
+    average: Type of averaging to be performed on data. Valid values are `None`,
+      `'micro'`, `'macro'` and `'weighted'`. Defaults to `'macro'`. See Notes
+      for details on the different modes. This parameter is ignored if
+      `class_id` is not `None`.
+    threshold: Elements of `y_pred` above threshold are considered to be 1, and
+      the rest 0. A list of length `num_classes` may be provided to specify a
+      threshold for each class. If threshold is `None`, the argmax is converted
+      to 1, and the rest 0. Defaults to `None` if `num_classes >= 2` (multiclass
+      classification) and 0.5 if `num_classes == 1` (binary classification).
+      This parameter is required for multilabel classification.
+    name: String name of the metric instance.
+    dtype: Data type of the metric result.
   """
   def __init__(self,
                num_classes=None,
@@ -191,8 +182,24 @@ class ConfusionMetric(tf.keras.metrics.Metric): # pylint: disable=abstract-metho
     self.true_instances = _zero_wt_init('true_instances')
     self._built = True
 
-  def update_state(self, y_true, y_pred, sample_weight=None): # pylint: disable=arguments-differ,missing-param-doc
-    """Update confusion matrix entries."""
+  def update_state(self, y_true, y_pred, sample_weight=None):
+    """Update confusion matrix entries.
+
+    Args:
+      y_true: The ground truth labels. Must have shape `[..., num_classes]`,
+        where `y_true[..., i]` is 1 if the element represented by `y_true[...]`
+        is a member of class `i` and 0 otherwise.
+      y_pred: The predictions. Must have shape `[..., num_classes]`, where
+        `y_pred[..., i]` is the predicted probability, in the range
+        `[0.0, 1.0]`, that the element represented by `y_pred[...]` is a member
+        of class `i`.
+      sample_weight: The predictions are weighted by `sample_weight`. If
+        `sample_weight` is `None`, weights default to 1. Use a `sample_weight`
+        of 0 to mask values.
+    """
+    y_true = tf.convert_to_tensor(y_true)
+    y_pred = tf.convert_to_tensor(y_pred)
+
     # Build layer if not built yet.
     if not self._built:
       self._build(tf.TensorShape(y_pred.shape))
@@ -233,19 +240,23 @@ class ConfusionMetric(tf.keras.metrics.Metric): # pylint: disable=abstract-metho
 
   def result(self):
     # Compute metric. This must be implemented by subclasses.
-    value = self.calculate()
+    value = self._result()
     # Average values.
     if self.average == 'weighted':
       weights = tf.math.divide_no_nan(
         self.true_instances,
         tf.reduce_sum(self.true_instances))
-      value = tf.reduce_sum(value * weights)
+      value = tf.math.reduce_sum(value * weights)
     elif self.average in ('micro', 'macro'):
-      value = tf.reduce_mean(value)
+      value = tf.math.reduce_mean(value)
     return value
 
   @abc.abstractmethod
-  def calculate(self):
+  def _result(self):
+    """Compute the desired metric from the state variables.
+
+    This method must be implemented by subclasses.
+    """
     raise NotImplementedError("Must be implemented in subclasses.")
 
   def get_config(self):
@@ -258,7 +269,6 @@ class ConfusionMetric(tf.keras.metrics.Metric): # pylint: disable=abstract-metho
     return {**base_config, **config}
 
   def reset_state(self):
-    """Reset confusion matrix entries."""
     reset_value = tf.zeros(self.init_shape, dtype=self.dtype)
     self.true_positives.assign(reset_value)
     self.true_negatives.assign(reset_value)
@@ -266,10 +276,350 @@ class ConfusionMetric(tf.keras.metrics.Metric): # pylint: disable=abstract-metho
     self.false_negatives.assign(reset_value)
     self.true_instances.assign(reset_value)
 
+
+@tf.keras.utils.register_keras_serializable(package="MRI")
+class Accuracy(ConfusionMetric):
+  r"""Computes accuracy.
+
+  Estimates how often predictions match labels.
+
+  .. math::
+    \textrm{accuracy} = \frac{\textrm{TP} + \textrm{TN}}{\textrm{TP} + \textrm{TN} + \textrm{FP} + \textrm{FN}}
+
+  Args:
+    num_classes: Number of unique classes in the dataset.
+    class_id: Integer class ID for which we want binary metrics. This must
+      be in the half-open interval [0, num_classes). If None, the returned
+      value depends on `average`. Default is None.
+    average: Type of averaging to be performed on data. Acceptable values
+      are `None`, `micro`, `macro` and `weighted`. Default is 'macro'.
+    threshold: Elements of `y_pred` above threshold are considered to be 1,
+      and the rest 0. If threshold is None, the argmax is converted to 1,
+      and the rest 0.
+    name: String name of the metric instance.
+    dtype: Data type of the metric result.
+  """
+  def __init__(self,
+               num_classes=None,
+               class_id=None,
+               average='macro',
+               threshold=None,
+               name='accuracy',
+               dtype=None):
+    super().__init__(num_classes=num_classes,
+                     class_id=class_id,
+                     average=average,
+                     threshold=threshold,
+                     name=name,
+                     dtype=dtype)
+
+  def _result(self):
+    """Computes accuracy from confusion matrix state variables."""
+    return tf.math.divide_no_nan(
+        self.true_positives + self.true_negatives,
+        self.true_positives + self.true_negatives + \
+        self.false_positives + self.false_negatives)
+
+
+@tf.keras.utils.register_keras_serializable(package="MRI")
+class Precision(ConfusionMetric):
+  r"""Computes precision.
+
+  .. math::
+    \textrm{precision} = \frac{\textrm{TP}}{\textrm{TP} + \textrm{FP}}
+
+  Args:
+    num_classes: Number of unique classes in the dataset.
+    class_id: Integer class ID for which we want binary metrics. This must
+      be in the half-open interval [0, num_classes). If None, the returned
+      value depends on `average`. Default is None.
+    average: Type of averaging to be performed on data. Acceptable values
+      are `None`, `micro`, `macro` and `weighted`. Default is 'macro'.
+    threshold: Elements of `y_pred` above threshold are considered to be 1,
+      and the rest 0. If threshold is None, the argmax is converted to 1,
+      and the rest 0.
+    name: String name of the metric instance.
+    dtype: Data type of the metric result.
+  """
+  def __init__(self,
+               num_classes=None,
+               class_id=None,
+               average='macro',
+               threshold=None,
+               name='precision',
+               dtype=None):
+    super().__init__(num_classes=num_classes,
+                     class_id=class_id,
+                     average=average,
+                     threshold=threshold,
+                     name=name,
+                     dtype=dtype)
+
+  def _result(self):
+    """Computes precision from confusion matrix state variables."""
+    return tf.math.divide_no_nan(
+      self.true_positives,
+      self.true_positives + self.false_positives)
+
+
+@tf.keras.utils.register_keras_serializable(package="MRI")
+class Recall(ConfusionMetric):
+  r"""Computes recall.
+
+  .. math::
+    \textrm{recall} = \frac{\textrm{TP}}{\textrm{TP} + \textrm{FN}}
+
+  Args:
+    num_classes: Number of unique classes in the dataset.
+    class_id: Integer class ID for which we want binary metrics. This must
+      be in the half-open interval [0, num_classes). If None, the returned
+      value depends on `average`. Default is None.
+    average: Type of averaging to be performed on data. Acceptable values
+      are `None`, `micro`, `macro` and `weighted`. Default is 'macro'.
+    threshold: Elements of `y_pred` above threshold are considered to be 1,
+      and the rest 0. If threshold is None, the argmax is converted to 1,
+      and the rest 0.
+    name: String name of the metric instance.
+    dtype: Data type of the metric result.
+  """
+  def __init__(self,
+         num_classes=None,
+         class_id=None,
+         average='macro',
+         threshold=None,
+         name='recall',
+         dtype=None):
+    super().__init__(num_classes=num_classes,
+                     class_id=class_id,
+                     average=average,
+                     threshold=threshold,
+                     name=name,
+                     dtype=dtype)
+
+  def _result(self):
+    """Computes recall from confusion matrix state variables."""
+    return tf.math.divide_no_nan(
+      self.true_positives,
+      self.true_positives + self.false_negatives)
+
+
+@tf.keras.utils.register_keras_serializable(package="MRI")
+class TverskyIndex(ConfusionMetric):
+  r"""Computes Tversky index.
+
+  The Tversky index is an asymmetric similarity measure [1]_. It is a
+  generalization of the F-beta family of scores and the IoU.
+
+  .. math::
+    \textrm{TI} = \frac{\textrm{TP}}{\textrm{TP} + \alpha * \textrm{FP} + \beta * \textrm{FN}}
+
+  Args:
+    num_classes: Number of unique classes in the dataset.
+    class_id: Integer class ID for which we want binary metrics. This must
+      be in the half-open interval [0, num_classes). If None, the returned
+      value depends on `average`. Default is None.
+    average: Type of averaging to be performed on data. Acceptable values
+      are `None`, `micro`, `macro` and `weighted`. Default is 'macro'.
+    threshold: Elements of `y_pred` above threshold are considered to be 1,
+      and the rest 0. If threshold is None, the argmax is converted to 1,
+      and the rest 0.
+    alpha: A `float`. The weight given to false positives. Defaults to 0.5.
+    beta: A `float`. The weight given to false negatives. Defaults to 0.5.
+    name: String name of the metric instance.
+    dtype: Data type of the metric result.
+
+  References:
+    .. [1] Tversky, A. (1977). Features of similarity. Psychological review,
+      84(4), 327.
+  """
+  def __init__(self,
+               num_classes=None,
+               class_id=None,
+               average='macro',
+               threshold=None,
+               alpha=0.5,
+               beta=0.5,
+               name='tversky_index',
+               dtype=None):
+    super().__init__(num_classes=num_classes,
+                     class_id=class_id,
+                     average=average,
+                     threshold=threshold,
+                     name=name,
+                     dtype=dtype)
+
+    if alpha < 0.0 or alpha > 1.0:
+      raise ValueError("`alpha` must be in range [0, 1].")
+    if beta < 0.0 or beta > 1.0:
+      raise ValueError("`beta` must be in range [0, 1].")
+    self.alpha = alpha
+    self.beta = beta
+
+  def _result(self):
+    """Computes Tversky index from confusion matrix state variables."""
+    return tf.math.divide_no_nan(
+      self.true_positives,
+      self.true_positives + \
+      self.alpha * self.false_positives + \
+      self.beta * self.false_negatives)
+
+  def get_config(self):
+    config = {
+      'alpha': self.alpha,
+      'beta': self.beta}
+    base_config = super().get_config()
+    return {**base_config, **config}
+
+
+@tf.keras.utils.register_keras_serializable(package="MRI")
+class FBetaScore(TverskyIndex):
+  r"""Computes F-beta score.
+
+  The F-beta score is the weighted harmonic mean of precision and recall.
+
+  .. math::
+    F_{\beta} = (1 + \beta^2) * \frac{\textrm{precision} * \textrm{precision}}{(\beta^2 \cdot \textrm{precision}) + \textrm{recall}}
+
+  Args:
+    num_classes: Number of unique classes in the dataset.
+    class_id: Integer class ID for which we want binary metrics. This must
+      be in the half-open interval [0, num_classes). If None, the returned
+      value depends on `average`. Default is None.
+    average: Type of averaging to be performed on data. Acceptable values
+      are `None`, `micro`, `macro` and `weighted`. Default is 'macro'.
+    threshold: Elements of `y_pred` above threshold are considered to be 1,
+      and the rest 0. If threshold is None, the argmax is converted to 1,
+      and the rest 0.
+    beta: A `float`. Determines the weight of precision and recall in harmonic
+      mean, such that recall is `beta` times as important as precision. 
+    name: String name of the metric instance.
+    dtype: Data type of the metric result.
+  """
+  def __init__(self,
+               num_classes=None,
+               class_id=None,
+               average='macro',
+               threshold=None,
+               beta=1.0,
+               name='fbeta_score',
+               dtype=None):
+    if beta <= 0.0:
+      raise ValueError("`beta` value should be greater than zero.")
+    super().__init__(num_classes=num_classes,
+                     class_id=class_id,
+                     average=average,
+                     threshold=threshold,
+                     alpha=1.0 / (1.0 + beta ** 2),
+                     beta=beta ** 2 / (1.0 + beta ** 2),
+                     name=name,
+                     dtype=dtype)
+    # We add underscore to avoid conflict with parent's beta.
+    self.beta_ = beta
+
+  def get_config(self):
+    config = {
+      'beta': self.beta_}
+    base_config = super().get_config()
+    base_config.pop('alpha')
+    base_config.pop('beta')
+    return {**base_config, **config}
+
+
+@tf.keras.utils.register_keras_serializable(package="MRI")
+class F1Score(FBetaScore):
+  r"""Computes F-1 score.
+
+  The F-1 score is the harmonic mean of precision and recall.
+
+  .. math::
+    F_1 = 2 \cdot \frac{\textrm{precision} \cdot \textrm{recall}}{\textrm{precision} + \textrm{recall}}
+
+  Args:
+    num_classes: Number of unique classes in the dataset.
+    class_id: Integer class ID for which we want binary metrics. This must
+      be in the half-open interval [0, num_classes). If None, the returned
+      value depends on `average`. Default is None.
+    average: Type of averaging to be performed on data. Acceptable values
+      are `None`, `micro`, `macro` and `weighted`. Default is 'macro'.
+    threshold: Elements of `y_pred` above threshold are considered to be 1,
+      and the rest 0. If threshold is None, the argmax is converted to 1,
+      and the rest 0.
+    name: String name of the metric instance.
+    dtype: Data type of the metric result.
+  """
+  def __init__(self,
+               num_classes=None,
+               class_id=None,
+               average='macro',
+               threshold=None,
+               name='f1_score',
+               dtype=None):
+    super().__init__(num_classes=num_classes,
+                     class_id=class_id,
+                     average=average,
+                     threshold=threshold,
+                     beta=1.0,
+                     name=name,
+                     dtype=dtype)
+
+  def get_config(self):
+    base_config = super().get_config()
+    base_config.pop('beta')
+    return base_config
+
+
+@tf.keras.utils.register_keras_serializable(package="MRI")
+class IoU(TverskyIndex):
+  """Computes the intersection-over-union (IoU) metric.
+
+  Also known as Jaccard index.
+
+  .. math::
+    \textrm{IoU} = \frac{\textrm{TP}}{\textrm{TP} + \textrm{FP} + \textrm{FN}}
+
+  Args:
+    num_classes: Number of unique classes in the dataset.
+    class_id: Integer class ID for which we want binary metrics. This must
+      be in the half-open interval [0, num_classes). If None, the returned
+      value depends on `average`. Default is None.
+    average: Type of averaging to be performed on data. Acceptable values
+      are `None`, `micro`, `macro` and `weighted`. Default is 'macro'.
+    threshold: Elements of `y_pred` above threshold are considered to be 1,
+      and the rest 0. If threshold is None, the argmax is converted to 1,
+      and the rest 0.
+    name: String name of the metric instance.
+    dtype: Data type of the metric result.
+  """
+  def __init__(self,
+         num_classes=None,
+         class_id=None,
+         average='macro',
+         threshold=None,
+         name='iou',
+         dtype=None):
+    super().__init__(num_classes=num_classes,
+             class_id=class_id,
+             average=average,
+             threshold=threshold,
+             alpha=1.0,
+             beta=1.0,
+             name=name,
+             dtype=dtype)
+
+  def get_config(self):
+    base_config = super().get_config()
+    base_config.pop('alpha')
+    base_config.pop('beta')
+    return base_config
+
+
 def _update_confusion_metric_docstring(docstring):
   doclines = docstring.splitlines()
-  doclines[1:1] = _CONFUSION_METRIC_INTRO_DOCTRING
+  intro_index = doclines.index("  Args:")
+  doclines[intro_index-1:intro_index-1] = _CONFUSION_METRIC_INTRO_DOCTRING.splitlines()
+  doclines.extend(_CONFUSION_METRIC_NOTES_DOCTRING.splitlines())
   return '\n'.join(doclines)
+
 
 ConfusionMetric.__doc__ = _update_confusion_metric_docstring(
   ConfusionMetric.__doc__)

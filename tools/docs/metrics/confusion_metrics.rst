@@ -10,3 +10,9 @@ Confusion
     :nosignatures:
     
     ConfusionMetric
+    Accuracy
+    Precision
+    Recall
+    TverskyIndex
+    FBetaScore
+    F1Score
