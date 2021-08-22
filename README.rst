@@ -29,7 +29,22 @@ You can install TensorFlow MRI with ``pip``:
 
     $ pip install tensorflow-mri
 
-Note that only Linux wheels are currently being provided.
+.. note::
+    Currently, only Linux is supported.
+
+TensorFlow Compatibility
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Each TensorFlow MRI release is compiled against a specific version of
+TensorFlow. Please see the compatibility table below to see what versions of
+each package you can expect to work together.
+
+==============  ==========
+TensorFlow MRI  TensorFlow
+==============  ==========
+v0.4.0          v2.6.0
+v0.5.0          v2.6.0
+==============  ==========
 
 .. end-install
 

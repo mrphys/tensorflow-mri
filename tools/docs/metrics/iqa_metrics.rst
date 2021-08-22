@@ -1,4 +1,4 @@
-Image quality assessment
+Image Quality Assessment
 ========================
 
 .. automodule:: tensorflow_mri.python.metrics.iqa_metrics

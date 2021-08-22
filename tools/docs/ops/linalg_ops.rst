@@ -1,4 +1,4 @@
-Linear algebra
+Linear Algebra
 ==============
 
 .. automodule:: tensorflow_mri.python.ops.linalg_ops

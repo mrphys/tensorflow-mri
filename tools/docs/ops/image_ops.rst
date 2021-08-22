@@ -1,4 +1,4 @@
-Image processing
+Image Processing
 ================
 
 .. automodule:: tensorflow_mri.python.ops.image_ops
