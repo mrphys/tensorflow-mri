@@ -9,9 +9,12 @@ Major Features and Improvements
 
 * `tfmr.metrics`:
 
-  * Added new confusion metrics module with binary/multiclass/multilabel metrics
-    `Accuracy`, `Precision`, `Recall`, `IoU`, `F1Score`, `FBetaScore` and
-    `TverskyIndex`. This module also exposes abstract base class
-    `ConfusionMetric`, which does most of the work.
-  * Added new image quality assessment metrics `PeakSignalToNoiseRatio`,
-    `StructuralSimilarity` and `MultiscaleStructuralSimilarity`.
+  * Added new confusion metrics module with multiple binary, multiclass and
+    multilabel metrics: `Accuracy`, `TruePositiveRate`, `TrueNegativeRate`,
+    `PositivePredictiveValue`, `NegativePredictiveValue`, `Precision`, `Recall`,
+    `Sensitivity`, `Specificity`, `Selectivity`, `TverskyIndex`, `FBetaScore`,
+    `F1Score` and `IoU`. This module also exposes the abstract base class
+    `ConfusionMetric`.
+  * Added new image quality assessment metrics module with 2D/3D
+    `PeakSignalToNoiseRatio`, `StructuralSimilarity` and
+    `MultiscaleStructuralSimilarity`.

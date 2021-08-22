@@ -11,8 +11,16 @@ Confusion
     
     ConfusionMetric
     Accuracy
+    TruePositiveRate
+    TrueNegativeRate
+    PositivePredictiveValue
+    NegativePredictiveValue
     Precision
     Recall
+    Sensitivity
+    Specificity
+    Selectivity
     TverskyIndex
     FBetaScore
     F1Score
+    IoU

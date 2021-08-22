@@ -167,10 +167,10 @@ class PeakSignalToNoiseRatioTest(tf.test.TestCase):
     img2 = tf.reshape(img2, (3, 2) + img2.shape[1:])
 
     result = image_ops.psnr(img1, img2, max_val=255, rank=3)
-    self.assertAllClose(result, ref)
+    self.assertAllClose(result, ref, rtol=1e-3, atol=1e-3)
 
     result = image_ops.psnr3d(img1, img2, max_val=255)
-    self.assertAllClose(result, ref)
+    self.assertAllClose(result, ref, rtol=1e-3, atol=1e-3)
 
 
   def test_psnr_3d_multichannel(self):
@@ -256,12 +256,12 @@ class StructuralSimilarityTest(tf.test.TestCase):
            0.366342]
 
     result = image_ops.ssim(img1, img2, max_val=255)
-    self.assertAllClose(result, ref)
+    self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
 
     # Test without specifying dynamic range, which should default to 255 for
     # `tf.uint8`.
     result = image_ops.ssim(img1, img2)
-    self.assertAllClose(result, ref)
+    self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
 
 
   def test_ssim_2d_nd_batch(self):

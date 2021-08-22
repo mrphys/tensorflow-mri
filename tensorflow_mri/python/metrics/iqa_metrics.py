@@ -90,10 +90,9 @@ class StructuralSimilarity(tf.keras.metrics.MeanMetricWrapper):
       processing 3D images.
 
   References:
-    .. [1] Zhou Wang, A. C. Bovik, H. R. Sheikh and E. P. Simoncelli, "Image
-      quality assessment: from error visibility to structural similarity," in
-      IEEE Transactions on Image Processing, vol. 13, no. 4, pp. 600-612, April
-      2004, doi: 10.1109/TIP.2003.819861.
+    .. [1] Wang, Z., Bovik, A. C., Sheikh, H. R., & Simoncelli, E. P. (2004).
+      Image quality assessment: from error visibility to structural similarity.
+      IEEE transactions on image processing, 13(4), 600-612.
   """
   def __init__(self,
                max_val=None,
@@ -141,10 +140,10 @@ class MultiscaleStructuralSimilarity(tf.keras.metrics.MeanMetricWrapper):
     dtype: Data type of the metric result.
 
   References:
-    .. [1] Z. Wang, E. P. Simoncelli and A. C. Bovik, "Multiscale structural
-      similarity for image quality assessment," The Thrity-Seventh Asilomar
-      Conference on Signals, Systems & Computers, 2003, 2003, pp. 1398-1402
-      Vol.2, doi: 10.1109/ACSSC.2003.1292216.
+    .. [1] Wang, Z., Simoncelli, E. P., & Bovik, A. C. (2003, November).
+      Multiscale structural similarity for image quality assessment. In The
+      Thrity-Seventh Asilomar Conference on Signals, Systems & Computers, 2003
+      (Vol. 2, pp. 1398-1402). Ieee.
   """
   def __init__(self,
                max_val=None,

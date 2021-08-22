@@ -14,7 +14,6 @@
 # ==============================================================================
 """Tests for module `confusion_metrics`."""
 
-from numpy.lib.function_base import average
 import tensorflow as tf
 
 from tensorflow_mri.python.metrics import confusion_metrics
@@ -24,18 +23,28 @@ from tensorflow_mri.python.utils import test_utils
 class ConfusionMetricTest(tf.test.TestCase):
   """Tests for confusion metrics."""
 
-  metrics = [
-    confusion_metrics.Accuracy,
-    confusion_metrics.Precision,
-    confusion_metrics.Recall,
-    confusion_metrics.TverskyIndex,
-    confusion_metrics.FBetaScore,
-    confusion_metrics.F1Score
+  names = [
+    'Accuracy',
+    'TruePositiveRate',
+    'TrueNegativeRate',
+    'PositivePredictiveValue',
+    'NegativePredictiveValue',
+    'Precision',
+    'Recall',
+    'Sensitivity',
+    'Specificity',
+    'Selectivity',
+    'TverskyIndex',
+    'FBetaScore',
+    'F1Score',
+    'IoU'
   ]
 
-  @test_utils.parameterized_test(metric=metrics)
-  def test_binary_metric(self, metric):
+  @test_utils.parameterized_test(name=names)
+  def test_binary_metric(self, name): # pylint: disable=missing-param-doc
     """Test binary metric."""
+    metric = getattr(confusion_metrics, name)
+
     y_true = [[1, 1, 0],
               [1, 0, 0],
               [0, 1, 0],
@@ -49,16 +58,23 @@ class ConfusionMetricTest(tf.test.TestCase):
     y_true = tf.expand_dims(y_true, -1)
 
     tp, tn, fp, fn = 4, 5, 2, 1
-    result = self._compute_result(metric.__name__, tp, tn, fp, fn)
+    result = self._compute_result(name, tp, tn, fp, fn)
 
-    kwargs = self._get_kwargs(metric.__name__)
+    kwargs = self._get_kwargs(name)
     m = metric(**kwargs)
     m.update_state(y_true, y_pred)
     self.assertAllClose(m.result(), result)
-  
-  @test_utils.parameterized_test(metric=metrics)
-  def test_binary_metric_custom_threshold(self, metric):
+
+    # Check serialization.
+    m = metric.from_config(m.get_config())
+    m.update_state(y_true, y_pred)
+    self.assertAllClose(m.result(), result)
+
+  @test_utils.parameterized_test(name=names)
+  def test_binary_metric_custom_threshold(self, name): # pylint: disable=missing-param-doc
     """Test binary metric with a custom threshold."""
+    metric = getattr(confusion_metrics, name)
+
     y_true = [[1, 1, 0],
               [1, 0, 0],
               [0, 1, 0],
@@ -78,10 +94,19 @@ class ConfusionMetricTest(tf.test.TestCase):
     m = metric(threshold=0.75, **kwargs)
     m.update_state(y_true, y_pred)
     self.assertAllClose(m.result(), result)
-  
-  @test_utils.parameterized_test(metric=metrics, average=[None, 'macro', 'micro'])
-  def test_multiclass_metric(self, metric, average):
+
+    # Check serialization.
+    m = metric.from_config(m.get_config())
+    m.update_state(y_true, y_pred)
+    self.assertAllClose(m.result(), result)
+
+  @test_utils.parameterized_test(name=names,
+                                 class_id=[None, 0, 1, 2],
+                                 average=[None, 'macro', 'micro'])
+  def test_multiclass_metric(self, name, class_id, average): # pylint: disable=missing-param-doc
     """Test multiclass metric."""
+    metric = getattr(confusion_metrics, name)
+
     y_true = [[1, 0, 0],
               [1, 0, 0],
               [0, 1, 0],
@@ -100,38 +125,68 @@ class ConfusionMetricTest(tf.test.TestCase):
               [0.1, 0.4, 0.5]]
 
     tps, tns, fps, fns = (3, 1, 2), (4, 5, 5), (0, 1, 1), (1, 1, 0)
-    if average in (None, 'macro', 'weighted'):
-      result = tuple(
-          self._compute_result(
-              metric.__name__, tp, tn, fp, fn) for tp, tn, fp, fn in zip(
-                  tps, tns, fps, fns))
-      if average == 'macro':
-        result = sum(result) / len(result)
-      if average == 'weighted':
-        pass
-    elif average == 'micro':
-      tp, tn, fp, fn = map(sum, (tps, tns, fps, fns))
-      result = self._compute_result(metric.__name__, tp, tn, fp, fn)
+    if class_id is None:
+      if average in (None, 'macro', 'weighted'):
+        result = tuple(
+            self._compute_result(
+                name, tp, tn, fp, fn) for tp, tn, fp, fn in zip(
+                    tps, tns, fps, fns))
+        if average == 'macro':
+          result = sum(result) / len(result)
+        if average == 'weighted':
+          pass
+      elif average == 'micro':
+        tp, tn, fp, fn = map(sum, (tps, tns, fps, fns))
+        result = self._compute_result(name, tp, tn, fp, fn)
+    else:
+      result = self._compute_result(name,
+                                    tps[class_id], tns[class_id],
+                                    fps[class_id], fns[class_id])
 
-    kwargs = self._get_kwargs(metric.__name__)
-    m = metric(num_classes=3, average=average, **kwargs)
+    kwargs = self._get_kwargs(name)
+    m = metric(num_classes=3, class_id=class_id, average=average, **kwargs)
     m.update_state(y_true, y_pred)
     self.assertAllClose(m.result(), result)
 
-  def _get_kwargs(self, metric_name):
+    # Check serialization.
+    m = metric.from_config(m.get_config())
+    m.update_state(y_true, y_pred)
+    self.assertAllClose(m.result(), result)
+
+  @test_utils.parameterized_test(name=names)
+  def test_metric_reset(self, name): # pylint: disable=missing-param-doc
+    """Test metric reset."""
+    metric = getattr(confusion_metrics, name)
+    y_true = tf.concat([tf.ones([4, 1]), tf.zeros([4, 1])], 0)
+    y_pred = y_true
+    m = metric()
+    m.update_state(y_true, y_pred)
+    self.assertAllClose(m.result(), 1.0)
+    m.reset_state()
+    self.assertAllClose(m.result(), 0.0)
+
+  def _get_kwargs(self, name):
     kwargs = {}
-    if metric_name == 'TverskyIndex':
+    if name == 'TverskyIndex':
       kwargs.update({'alpha': 0.3, 'beta': 0.7})
-    if metric_name == 'FBetaScore':
+    if name == 'FBetaScore':
       kwargs.update({'beta': 0.5})
     return kwargs
 
-  def _compute_result(self, metric_name, tp, tn, fp, fn):
+  def _compute_result(self, name, tp, tn, fp, fn):
     return {
       'Accuracy': (tp + tn) / (tp + tn + fp + fn),
+      'TruePositiveRate': tp / (tp + fn),
+      'TrueNegativeRate': tn / (tn + fp),
+      'PositivePredictiveValue': tp / (tp + fp),
+      'NegativePredictiveValue': tn / (tn + fn),
       'Precision': tp / (tp + fp),
       'Recall': tp / (tp + fn),
+      'Sensitivity': tp / (tp + fn),
+      'Specificity': tn / (tn + fp),
+      'Selectivity': tn / (tn + fp),
       'TverskyIndex': tp / (tp + 0.3 * fp + 0.7 * fn),
       'FBetaScore': 1.25 * tp / (1.25 * tp + fp + 0.25 * fn),
-      'F1Score': tp / (tp + 0.5 * fp + 0.5 * fn)
-    }[metric_name]
+      'F1Score': tp / (tp + 0.5 * fp + 0.5 * fn),
+      'IoU': tp / (tp + fp + fn)
+    }[name]
