@@ -1,4 +1,4 @@
-Coil arrays
+Coil Arrays
 ===========
 
 .. automodule:: tensorflow_mri.python.ops.coil_ops

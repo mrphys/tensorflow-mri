@@ -1,4 +1,4 @@
-Fourier transform
+Fourier Transform
 =================
 
 .. automodule:: tensorflow_mri.python.ops.fft_ops

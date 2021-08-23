@@ -1,4 +1,4 @@
-Image reconstruction
+Image Reconstruction
 ====================
 
 .. automodule:: tensorflow_mri.python.ops.recon_ops

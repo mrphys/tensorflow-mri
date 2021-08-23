@@ -1,4 +1,4 @@
-*k*-space trajectories
+*k*-space Trajectories
 ======================
 
 .. automodule:: tensorflow_mri.python.ops.traj_ops
