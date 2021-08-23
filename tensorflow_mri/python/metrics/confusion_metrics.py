@@ -1,4 +1,5 @@
 # Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,6 +18,9 @@
 This module contains metrics derived from the confusion matrix for
 classification problems.
 """
+# Some of the code in this file is adapted from
+# tensorflow_addons/metrics/f_scores.py, to support a much wider range of uses
+# and metrics.
 
 import abc
 

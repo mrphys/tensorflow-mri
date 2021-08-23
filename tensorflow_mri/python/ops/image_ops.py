@@ -1,4 +1,5 @@
 # Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2015 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,6 +17,8 @@
 
 This module contains functions for N-dimensional image processing.
 """
+# Some of the code in this file is adapted from
+# tensorflow/python/ops/image_ops_impl.py to support 2D and 3D processing.
 
 import numpy as np
 import tensorflow as tf
