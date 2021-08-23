@@ -317,16 +317,15 @@ class StructuralSimilarityTest(tf.test.TestCase):
 
 
   def test_ssim_3d_batch(self):
-    """Test 3D SSIM with scalar batch."""
+    """Test 3D SSIM with batch."""
     img1 = self.data['psnr/3d/img1']
     img2 = self.data['psnr/3d/img2']
 
     ref = [0.93111473,
-           0.90337730,
-           0.90820014,
-           0.92448730,
-           0.90630510,
-           0.92143655]
+           0.90337730]
+
+    img1 = img1[:2, ...]
+    img2 = img2[:2, ...]
 
     img1 = tf.expand_dims(img1, -1)
     img2 = tf.expand_dims(img2, -1)
@@ -341,14 +340,16 @@ class StructuralSimilarityTest(tf.test.TestCase):
     img2 = self.data['psnr/3d/img2']
 
     ref = [[0.93111473, 0.90337730],
-           [0.90820014, 0.92448730],
-           [0.90630510, 0.92143655]]
+           [0.90820014, 0.92448730]]
+
+    img1 = img1[:4, ...]
+    img2 = img2[:4, ...]
 
     img1 = tf.expand_dims(img1, -1)
     img2 = tf.expand_dims(img2, -1)
 
-    img1 = tf.reshape(img1, (3, 2) + img1.shape[1:])
-    img2 = tf.reshape(img2, (3, 2) + img2.shape[1:])
+    img1 = tf.reshape(img1, (2, 2) + img1.shape[1:])
+    img2 = tf.reshape(img2, (2, 2) + img2.shape[1:])
 
     result = image_ops.ssim(img1, img2, max_val=255, rank=3)
     self.assertAllClose(result, ref)
