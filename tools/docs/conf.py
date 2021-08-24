@@ -5,8 +5,12 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 from os import path
+import inspect
+import operator
 import packaging.version
 import sys
+import types
+
 
 
 # -- Path setup --------------------------------------------------------------
@@ -43,6 +47,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'sphinx.ext.autosummary',
+    'sphinx.ext.linkcode',
     'nbsphinx'
 ]
 
@@ -68,9 +73,71 @@ html_theme = 'furo'
 html_static_path = []
 
 
+import tfmr
+
+
+def linkcode_resolve(domain, info):
+    """Find the GitHub URL where an object is defined.
+    
+    Args:
+        domain: The language domain. This is always `py`.
+        info: A `dict` with keys `module` and `fullname`.
+    
+    Returns:
+        The GitHub URL to the object, or `None` if not relevant.
+    """
+    # Split `tfmr` part of module from submodules.
+    module = info['module'].split('.', maxsplit=1)
+    if len(module) == 2:
+        # If length two, we have `tfmr` followed by submodule name.
+        module, submodule = module
+    else:
+        # Otherwise, we have just `tfmr` without submodule.
+        module = module[0]
+        submodule = None
+    # Hopefully we're not documenting anything outside the TFMR package!
+    if module != 'tfmr':
+        raise ValueError(f"Unexpected module: {module}")
+    # If there is a submodule, add to the object name.
+    objname = info['fullname']
+    if submodule is not None:
+        objname = submodule + '.' + objname
+
+    # Get the object.
+    obj = operator.attrgetter(objname)(tfmr)
+    # We only add links to classes (type `type`) and functions
+    # (type `types.FunctionType`).
+    if not isinstance(obj, (type, types.FunctionType)):
+        return None
+
+    # Get the file name of the current object.
+    file = inspect.getsourcefile(obj)
+    # If no file, we're done. This happens for C++ ops.
+    if file is None:
+        return None
+    # Crop anything before `tensorflow_mri\python`. This path is system
+    # dependent and we don't care about it.
+    index = file.index('tensorflow_mri/python')
+    file = file[index:]
+
+    # Get first and last line numbers.
+    lines, start = inspect.getsourcelines(obj)
+    stop = start + len(lines) - 1
+
+    # Base URL.
+    url = 'https://github.com/mrphys/tensorflow-mri'
+    # Add version blob.
+    url += '/blob/v' + release
+    # Add file.
+    url += '/' + file
+    # Add line numbers.
+    url += '#L' + str(start) + '-L' + str(stop)
+
+    return url
+
+
 def process_docstring(app, what, name, obj, options, lines):
     """Process autodoc docstrings."""
-
     # Replace markdown literal markers (`) by ReST literal markers (``).
     myst = '\n'.join(lines)
     text = myst.replace('`', '``')
