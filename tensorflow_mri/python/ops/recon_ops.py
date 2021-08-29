@@ -17,11 +17,15 @@
 This module contains functions for MR image reconstruction.
 """
 
+import collections
+
 import tensorflow as tf
 import tensorflow_nufft as tfft
 
+from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import coil_ops
 from tensorflow_mri.python.ops import fft_ops
+from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.ops import traj_ops
 from tensorflow_mri.python.utils import check_utils
@@ -32,6 +36,8 @@ def reconstruct(kspace,
                 trajectory=None,
                 density=None,
                 sensitivities=None,
+                calib=None,
+                mask=None,
                 method=None,
                 **kwargs):
   """MR image reconstruction gateway.
@@ -57,6 +63,9 @@ def reconstruct(kspace,
   * **cg_sense**: Conjugate gradient SENSE (CG-SENSE) [2]_ reconstruction for
     non-Cartesian *k*-space data. This is the default method if `kspace`,
     `trajectory`, `sensitivities` and (optionally) `density` are given.
+  * **grappa**: Generalized autocalibrating partially parallel acquisitions [3]_
+    reconstruction for Cartesian *k*-space data. This is the default method if
+    `kspace`, `calib` and (optionally) `sensitivities` are given.
 
   .. note::
     This function supports CPU and GPU computation.
@@ -64,12 +73,6 @@ def reconstruct(kspace,
   .. note::
     This function supports batches of inputs, which are processed in parallel
     whenever possible.
-
-  .. warning::
-    In graph mode, some methods may fail if static shapes are unknown. Support
-    for this is a work in progress. In the meantime, check out `tf.ensure_shape`
-    to set the static shapes of the input arguments before calling this
-    function.
 
   See also `tfmr.estimate_coil_sensitivities` and `tfmr.combine_coils`.
 
@@ -103,6 +106,20 @@ def reconstruct(kspace,
       batch shape of `kspace`. `sensitivities` is required when `method` is
       `"sense"` or `"cg_sense"`. For other methods, this parameter is not
       relevant.
+    calib: A `Tensor`. The calibration data. Must have type `complex64` or
+      `complex128`. Must have shape `[..., C, *R]`, where `R` is the shape of
+      the calibration region, `C` is the number of coils and `...` is the batch
+      shape, which can have any rank and must be broadcastable to the batch
+      shape of `kspace`. `calib` is required when `method` is `"grappa"`. For
+      other methods, this parameter is not relevant.
+    mask: A `Tensor`. The sampling mask. Must have type `bool`. Must have shape
+      `S`, where `S` is the shape of the spatial dimensions. In other words,
+      `mask` should have the shape of a fully sampled *k*-space. For each point,
+      `mask` should be `True` if the corresponding *k*-space sample was measured
+      and `False` otherwise. `True` entries should correspond to the data in
+      `kspace`, and the result of dropping all `False` entries from `mask`
+      should have shape `K`. `mask` is required when `method` is `"grappa"`. For
+      other methods, this parameter is not relevant.
     method: A `string`. The reconstruction method. Must be one of `"fft"`,
       `"nufft"`, `"sense"` or `"cg_sense"`.
     **kwargs: Additional method-specific keyword arguments. See Notes for the
@@ -181,6 +198,26 @@ def reconstruct(kspace,
         state of the CG iteration. For more details about the CG state, see
         `tfmr.conjugate_gradient`. If `False`, only the image is returned.
 
+    * For `method="grappa"`, provide `kspace` and `calib`. Optionally, you can
+      also provide `sensitivities` (note that `sensitivities` are not used for
+      the GRAPPA computation, but they are used for adaptive coil combination).
+      If `sensitivities` are not provided, coil combination will be performed
+      using the sum of squares method.
+
+      * **kernel_size**: An `int` or list of `ints`. The size of the GRAPPA
+        kernel. Must have length equal to the image rank or number of spatial
+        dimensions. If a scalar `int` is provided, the same size is used in all
+        dimensions.
+      * **weights_l2_regularizer**: An optional `float`. The regularization
+        factor for the L2 regularization term used to fit the GRAPPA weights.
+        If 0.0, no regularization is applied.
+      * **combine_coils**: An optional `bool`. If `True`, multi-coil images
+        are combined. Otherwise, the uncombined images are returned. Defaults to
+        `True`.
+      * **return_kspace**: An optional `bool`. If `True`, returns the filled
+        *k*-space without performing the Fourier transform. In this case, coils
+        are not combined regardless of the value of `combine_coils`.
+
   Returns:
     A `Tensor`. The reconstructed images. Has the same type as `kspace`. Has
     shape `[..., S]`, where `...` is the batch shape of `kspace` and `S` is the
@@ -195,13 +232,20 @@ def reconstruct(kspace,
     .. [2] Pruessmann, K.P., Weiger, M., Börnert, P. and Boesiger, P. (2001),
       Advances in sensitivity encoding with arbitrary k-space trajectories.
       Magn. Reson. Med., 46: 638-651. https://doi.org/10.1002/mrm.1241
+
+    .. [3] Griswold, M.A., Jakob, P.M., Heidemann, R.M., Nittka, M., Jellus, V.,
+      Wang, J., Kiefer, B. and Haase, A. (2002), Generalized autocalibrating
+      partially parallel acquisitions (GRAPPA). Magn. Reson. Med., 47:
+      1202-1210. https://doi.org/10.1002/mrm.10171
   """
   method = _select_reconstruction_method(
-    kspace, trajectory, density, sensitivities, method)
+    kspace, trajectory, density, sensitivities, calib, mask, method)
 
   args = {'trajectory': trajectory,
           'density': density,
-          'sensitivities': sensitivities}
+          'sensitivities': sensitivities,
+          'calib': calib,
+          'mask': mask}
 
   args = {name: arg for name, arg in args.items() if arg is not None}
 
@@ -540,10 +584,270 @@ def _cg_sense(kspace,
   return (image, result) if return_cg_state else image
 
 
+def _grappa(kspace,
+            sensitivities=None,
+            calib=None,
+            mask=None,
+            kernel_size=5,
+            weights_l2_regularizer=0.0,
+            combine_coils=True,
+            return_kspace=False):
+  """MR image reconstruction using GRAPPA.
+
+  For the parameters, see `tfmr.reconstruct`.
+  """
+  if calib is None:
+    raise ValueError("Argument `calib` must be provided.")
+  if mask is None:
+    raise ValueError("Argument `mask` must be provided.")
+
+  kspace = tf.convert_to_tensor(kspace)
+  calib = tf.convert_to_tensor(calib)
+  mask = tf.convert_to_tensor(mask)
+
+  # If mask has no holes, there is nothing to do.
+  if tf.math.count_nonzero(tf.math.logical_not(mask)) == 0:
+    return kspace
+
+  # Use `mask` to infer rank.
+  rank = mask.shape.rank
+
+  # If an `int` was given for the kernel size, use isotropic kernel in all
+  # dimensions.
+  if isinstance(kernel_size, int):
+    kernel_size = [kernel_size] * rank
+
+  # Get multi-dimensional and flat indices for kernel center, e.g. [2, 2]
+  # (multi), 12 (flat) for [5, 5] kernel. `kernel_center` is also used as half
+  # the size of the kernel.
+  kernel_center = [ks // 2 for ks in kernel_size]
+  kernel_center_index = array_ops.ravel_multi_index(kernel_center, kernel_size)
+
+  # Save batch shape for later, broadcast `calib` to match `kspace` and reshape
+  # inputs to a single batch axis (except `mask`, which should have no batch
+  # dimensions).
+  kspace_shape = tf.shape(kspace)[-rank-1:] # No batch dims.
+  calib_shape = tf.shape(calib)[-rank-1:] # No batch dims.
+  batch_shape = tf.shape(kspace)[:-rank-1]
+  if tf.math.reduce_prod(tf.shape(calib)[:-rank-1]) == 1:
+    # Shared calibration. Do not broadcast, but maybe add batch dimension.
+    calib = tf.reshape(calib, tf.concat([[1], calib_shape], 0))
+  else:
+    # General case. Calibration may not be shared for all inputs.
+    calib = tf.broadcast_to(calib, tf.concat([batch_shape, calib_shape], 0))
+  kspace = tf.reshape(kspace, tf.concat([[-1], kspace_shape], 0))
+  calib = tf.reshape(calib, tf.concat([[-1], calib_shape], 0))
+  batch_size = tf.shape(kspace)[0]
+  num_coils = tf.shape(kspace)[1]
+
+  # Move coil axis to the end, i.e. [batch, coil, *dims] -> [batch, *dims, coil]
+  perm = [0, *list(range(2, rank + 2)), 1]
+  kspace = tf.transpose(kspace, perm)
+  calib = tf.transpose(calib, perm)
+
+  # Initialize output tensor and fill with the measured values.
+  full_shape = tf.concat([[batch_size], tf.shape(mask), [num_coils]], 0)
+  measured_indices = tf.cast(tf.where(mask), tf.int32)
+  measured_indices = _insert_batch_indices(measured_indices, batch_size)
+  full_kspace = tf.scatter_nd(measured_indices,
+                              tf.reshape(kspace, [-1, num_coils]),
+                              full_shape)
+
+  # Pad arrays so we can slide the kernel in the edges.
+  paddings = tf.concat([[0], kernel_center, [0]], 0)
+  paddings = tf.expand_dims(paddings, -1)
+  paddings = tf.tile(paddings, [1, 2])
+  full_kspace = tf.pad(full_kspace, paddings) # pylint:disable=no-value-for-parameter
+  calib = tf.pad(calib, paddings) # pylint:disable=no-value-for-parameter
+  mask = tf.pad(mask, paddings[1:-1, :], constant_values=False)
+
+  # Extract all patches from the mask. We cast to `float32` because `bool` is
+  # not currently supported in all devices for `_extract_patches` (TF v2.6).
+  mask_patches = _extract_patches(
+      tf.cast(mask[tf.newaxis, ..., tf.newaxis], tf.float32), kernel_size) > 0.5
+
+  # Find the unique patterns among all the mask patches. `unique_inverse` are
+  # the indices that reconstruct `mask_patches` from `unique_patches`.
+  patch_array_shape = tf.shape(mask_patches, out_type=tf.int64)[1:-1]
+  mask_patches = tf.reshape(
+      mask_patches, [-1, tf.math.reduce_prod(kernel_size)])
+  unique_patches, unique_inverse = tf.raw_ops.UniqueV2(x=mask_patches, axis=[0])
+  unique_inverse = tf.cast(unique_inverse, tf.int64)
+  unique_inverse = tf.reshape(unique_inverse, patch_array_shape)
+
+  # Select only patches that:
+  # - Have a hole in the center. Otherwise job is done!
+  # - Are not empty. Otherwise there is nothing we can do!
+  valid_patch_indices = tf.where(tf.math.logical_and(
+      tf.math.logical_not(unique_patches[:, kernel_center_index]),
+      tf.math.reduce_any(unique_patches, axis=-1)))
+  valid_patch_indices = tf.squeeze(valid_patch_indices, axis=-1)
+
+  # Get all overlapping patches of ACS.
+  calib_patches = _extract_patches(calib, kernel_size)
+  calib_patches = _flatten_spatial_axes(calib_patches)
+  calib_patches = _split_last_dimension(calib_patches, num_coils)
+
+  # For each geometry.
+  for patch_index in valid_patch_indices:
+
+    # Estimate the GRAPPA weights for current geometry. Get all possible
+    # calibration patches with current geometry: sources (available data) and
+    # targets (holes to fill). Given known sources and targets, estimate weights
+    # using (possibly regularized) least squares.
+    sources = tf.boolean_mask(calib_patches,
+                              unique_patches[patch_index, :], axis=-2)
+    sources = _flatten_last_dimensions(sources)
+    targets = calib_patches[..., kernel_center_index, :]
+    weights = tf.linalg.lstsq(sources, targets,
+                              l2_regularizer=weights_l2_regularizer)
+
+    # Now find all patch offsets (upper-left corners) and centers for current
+    # geometry.
+    patch_offsets = tf.where(unique_inverse == patch_index)
+    patch_centers = tf.cast(patch_offsets + kernel_center, tf.int32)
+    patch_centers = _insert_batch_indices(patch_centers, batch_size)
+
+    # Collect all sources from partially measured `kspace` (all patches with
+    # current geometry are pulled at the same time here).
+    sources = image_ops.extract_glimpses(
+        full_kspace, kernel_size, patch_offsets)
+    sources = _split_last_dimension(sources, num_coils)
+    sources = tf.boolean_mask(sources, unique_patches[patch_index, :], axis=-2)
+    sources = _flatten_last_dimensions(sources)
+
+    # Compute targets using the previously estimated weights.
+    targets = tf.linalg.matmul(sources, weights)
+    targets = tf.reshape(targets, [-1, num_coils])
+
+    # Fill the holes.
+    full_kspace = tf.tensor_scatter_nd_update(full_kspace,
+                                              patch_centers,
+                                              targets)
+
+  # `full_kspace` was zero-padded at the beginning. Crop it to correct shape.
+  full_kspace = image_ops.central_crop(
+      full_kspace, tf.concat([[-1], full_shape[1:-1], [-1]], 0))
+
+  # Move coil axis back. [batch, *dims, coil] -> [batch, coil, *dims]
+  inv_perm = tf.math.invert_permutation(perm)
+  full_kspace = tf.transpose(full_kspace, inv_perm)
+
+  # Restore batch shape.
+  result = tf.reshape(
+      full_kspace, tf.concat([batch_shape, tf.shape(full_kspace)[1:]], 0))
+
+  if return_kspace:
+    return result
+
+  # Inverse FFT to image domain.
+  result = fft_ops.ifftn(result, axes=list(range(-rank, 0)), shift=True)
+
+  # Combine coils if requested.
+  if combine_coils:
+    result = coil_ops.combine_coils(result,
+                                    maps=sensitivities,
+                                    coil_axis=-rank-1)
+
+  return result
+
+
+def _extract_patches(images, sizes):
+  """Extract patches from N-D image.
+
+  Args:
+    images: A `Tensor` of shape `[batch_size, *spatial_dims, channels]`.
+      `spatial_dims` must have rank 2 or 3.
+    sizes: A list of `ints`. The size of the patches. Must have the same length
+      as `spatial_dims`.
+
+  Returns:
+    A `Tensor` containing the extracted patches.
+
+  Raises:
+    ValueError: If rank is not 2 or 3.
+  """
+  rank = len(sizes)
+  if rank == 2:
+    patches = tf.image.extract_patches(
+        images,
+        sizes=[1, *sizes, 1],
+        strides=[1, 1, 1, 1],
+        rates=[1, 1, 1, 1],
+        padding='VALID')
+  elif rank == 3:
+    # `tf.extract_volume_patches` does not support complex tensors, so we do the
+    # extraction for real and imaginary separately and then combine.
+    if images.dtype.is_complex:
+      patches_real = tf.extract_volume_patches(
+          tf.math.real(images),
+          ksizes=[1, *sizes, 1],
+          strides=[1, 1, 1, 1, 1],
+          padding='VALID')
+      patches_imag = tf.extract_volume_patches(
+          tf.math.imag(images),
+          ksizes=[1, *sizes, 1],
+          strides=[1, 1, 1, 1, 1],
+          padding='VALID')
+      patches = tf.dtypes.complex(patches_real, patches_imag)
+    else:
+      patches = tf.extract_volume_patches(
+          images,
+          ksizes=[1, *sizes, 1],
+          strides=[1, 1, 1, 1, 1],
+          padding='VALID')
+  else:
+    raise ValueError(f"Unsupported rank: {rank}")
+  return patches
+
+
+def _insert_batch_indices(indices, batch_size): # pylint: disable=missing-param-doc
+  """Inserts batch indices into an array of indices.
+
+  Given an array of indices with shape `[M, N]` which indexes into a tensor `x`,
+  returns a new array with shape `[batch_size * M, N + 1]` which indexes into a
+  tensor of shape `[batch_size] + x.shape`.
+  """
+  batch_indices = tf.expand_dims(tf.repeat(
+      tf.range(batch_size), tf.shape(indices)[0]), -1)
+  indices = tf.tile(indices, [batch_size, 1])
+  indices = tf.concat([batch_indices, indices], -1)
+  return indices
+
+
+def _flatten_spatial_axes(images): # pylint: disable=missing-param-doc
+  """Flatten the spatial axes of an image.
+
+  If `images` has shape `[batch_size, *spatial_dims, channels]`, returns a
+  `Tensor` with shape `[batch_size, prod(spatial_dims), channels]`.
+  """
+  shape = tf.shape(images)
+  return tf.reshape(images, [shape[0], -1, shape[-1]])
+
+
+def _split_last_dimension(x, size):
+  """Splits the last dimension into two dimensions.
+
+  Returns an array of rank `tf.rank(x) + 1` whose last dimension has size
+  `size`.
+  """
+  return tf.reshape(x, tf.concat([tf.shape(x)[:-1], [-1, size]], 0))
+
+
+def _flatten_last_dimensions(x):
+  """Flattens the last two dimensions.
+
+  Returns an array of rank `tf.rank(x) - 1`.
+  """
+  return tf.reshape(x, tf.concat([tf.shape(x)[:-2], [-1]], 0))
+
+
 def _select_reconstruction_method(kspace, # pylint: disable=unused-argument
                                   trajectory,
                                   density,
                                   sensitivities,
+                                  calib,
+                                  mask,
                                   method):
   """Select an appropriate reconstruction method based on user inputs.
 
@@ -558,17 +862,37 @@ def _select_reconstruction_method(kspace, # pylint: disable=unused-argument
     return method
 
   # No method was specified: choose a default one.
-  if sensitivities is None and trajectory is None and density is None:
+  if (sensitivities is None and
+      trajectory is None and
+      density is None and
+      calib is None and
+      mask is None):
     return 'fft'
 
-  if sensitivities is None and trajectory is not None:
+  if (sensitivities is None and
+      trajectory is not None and
+      calib is None and
+      mask is None):
     return 'nufft'
 
-  if sensitivities is not None and trajectory is None and density is None:
+  if (sensitivities is not None and
+      trajectory is None and
+      density is None and
+      calib is None and
+      mask is None):
     return 'sense'
 
-  if sensitivities is not None and trajectory is not None:
+  if (sensitivities is not None and
+      trajectory is not None and
+      calib is None and
+      mask is None):
     return 'cg_sense'
+
+  if (trajectory is None and
+      density is None and
+      calib is not None and
+      mask is not None):
+    return 'grappa'
 
   # Nothing worked.
   raise ValueError(
@@ -576,9 +900,257 @@ def _select_reconstruction_method(kspace, # pylint: disable=unused-argument
     "combination of inputs.")
 
 
+def reconstruct_partial_kspace(kspace,
+                               factors,
+                               return_complex=False,
+                               return_kspace=False,
+                               method='zerofill',
+                               **kwargs):
+  """Partial Fourier image reconstruction.
+
+  Args:
+    kspace: A `Tensor`. The *k*-space data. Must have type `complex64` or
+      `complex128`. Must have shape `[..., *K]`, where `K` are the spatial
+      frequency dimensions. `kspace` should only contain the observed data,
+      without zero-filling of any kind.
+    factors: A list of `floats`. The partial Fourier factors. There must be a
+      factor for each spatial frequency dimension. Each factor must be between
+      0.5 and 1.0 and indicates the proportion of observed *k*-space values
+      along the specified dimensions.
+    return_complex: A `bool`. If `True`, returns complex instead of real-valued
+      images. Note that partial Fourier reconstruction assumes that images are
+      real, and the returned complex values may not be valid in all contexts.
+    return_kspace: A `bool`. If `True`, returns the filled *k*-space instead of
+      the reconstructed images. This is always complex-valued.
+    method: A `string`. The partial Fourier reconstruction algorithm. Must be
+      one of `"zerofill"`, `"homodyne"` (homodyne detection method) or `"pocs"`
+      (projection onto convex sets method).
+    **kwargs: Additional method-specific keyword arguments. See Notes for
+    details.
+
+  Returns:
+    A `Tensor` with shape `[..., *S]` where `S = K / factors`. Has type
+    `kspace.dtype` if either `return_complex` or `return_kspace` is `True`, and
+    type `kspace.dtype.real_dtype` otherwise.
+
+  Notes:
+    This function accepts some method-specific arguments:
+
+    * `method="zerofill"` accepts no additional arguments.
+
+    * `method="homodyne"` accepts the following additional keyword arguments:
+
+      * **weighting_fn**: An optional `string`. The weighting function. Must be
+        one of `"step"`, `"ramp"`. Defaults to `"ramp"`. `"ramp"` helps
+        mitigate Gibbs artifact, while `"step"` has better SNR properties.
+
+    * `method="pocs"` accepts the following additional keyword arguments:
+
+      * **tol**: An optional `float`. The convergence tolerance. Defaults to
+        `1e-5`.
+      * **max_iter**: An optional `int`. The maximum number of iterations of the
+        POCS algorithm. Defaults to `10`.
+
+  References:
+    .. [1] Noll, D. C., Nishimura, D. G., & Macovski, A. (1991). Homodyne
+      detection in magnetic resonance imaging. IEEE transactions on medical
+      imaging, 10(2), 154-163.
+    .. [2] Haacke, E. M., Lindskogj, E. D., & Lin, W. (1991). A fast, iterative,
+      partial-Fourier technique capable of local phase recovery. Journal of
+      Magnetic Resonance (1969), 92(1), 126-145.
+  """
+  kspace = tf.convert_to_tensor(kspace)
+  factors = tf.convert_to_tensor(factors)
+
+  # Validate inputs.
+  method = check_utils.validate_enum(method, {'zerofill', 'homodyne', 'pocs'})
+  tf.debugging.assert_greater_equal(factors, 0.5, message=(
+    f"`factors` must be greater than or equal to 0.5, but got: {factors}"))
+  tf.debugging.assert_less_equal(factors, 1.0, message=(
+    f"`factors` must be less than or equal to 1.0, but got: {factors}"))
+
+  func = {'zerofill': _pf_zerofill,
+          'homodyne': _pf_homodyne,
+          'pocs': _pf_pocs}
+
+  return func[method](kspace, factors,
+                      return_complex=return_complex,
+                      return_kspace=return_kspace,
+                      **kwargs)
+
+
+def _pf_zerofill(kspace, factors, return_complex=False, return_kspace=False):
+  """Partial Fourier reconstruction using zero-filling.
+
+  For the parameters, see `reconstruct_partial_kspace`.
+  """
+  output_shape = _scale_shape(tf.shape(kspace), 1.0 / factors)
+  paddings = tf.expand_dims(output_shape - tf.shape(kspace), -1)
+  paddings = tf.pad(paddings, [[0, 0], [1, 0]]) # pylint: disable=no-value-for-parameter
+  full_kspace = tf.pad(kspace, paddings) # pylint: disable=no-value-for-parameter
+
+  if return_kspace:
+    return full_kspace
+  image = _ifftn(full_kspace, tf.size(factors))
+  if return_complex:
+    return image
+  return tf.math.abs(image)
+
+
+def _pf_homodyne(kspace,
+                 factors,
+                 return_complex=False,
+                 return_kspace=False,
+                 weighting_fn='ramp'):
+  """Partial Fourier reconstruction using homodyne detection.
+
+  For the parameters, see `reconstruct_partial_kspace`.
+  """
+  # Rank of this operation.
+  dtype = kspace.dtype
+
+  # Create zero-filled k-space.
+  full_kspace = _pf_zerofill(kspace, factors, return_kspace=True)
+  full_shape = tf.shape(full_kspace)
+
+  # Shape of the symmetric region.
+  shape_sym = _scale_shape(full_shape, 2.0 * (factors - 0.5))
+
+  # Compute weighting function. Weighting function is:
+  # - 2.0 for the asymmetric part of the measured k-space.
+  # - A ramp from 2.0 to 0.0 for the symmetric part of the measured k-space.
+  # - 0.0 for the part of k-space that was not measured.
+  weights = tf.constant(1.0, dtype=kspace.dtype)
+  for i in range(len(factors)): #reverse_axis, factor in enumerate(tf.reverse(factors, [0])):
+    dim_sym = shape_sym[-i-1]
+    dim_asym = (full_shape[-i-1] - dim_sym) // 2
+    # Weighting for symmetric part of k-space.
+    if weighting_fn == 'step':
+      weights_sym = tf.ones([dim_sym], dtype=dtype)
+    elif weighting_fn == 'ramp':
+      weights_sym = tf.cast(tf.linspace(2.0, 0.0, dim_sym), dtype)
+    else:
+      raise ValueError(f"Unknown `weighting_fn`: {weighting_fn}")
+    weights *= tf.reshape(tf.concat(
+        [2.0 * tf.ones([dim_asym], dtype=dtype),
+         weights_sym,
+         tf.zeros([dim_asym], dtype=dtype)], 0), [-1] + [1] * i)
+
+  # Phase correction. Estimate a phase modulator from low resolution image using
+  # symmetric part of k-space.
+  phase_modulator = _estimate_phase_modulator(full_kspace, factors)
+
+  # Compute image with following steps.
+  # 1. Apply weighting function.
+  # 2. Convert to image domain.
+  # 3. Apply phase correction.
+  full_kspace *= weights
+  image = _ifftn(full_kspace, tf.size(factors))
+  image *= tf.math.conj(phase_modulator)
+
+  if return_kspace:
+    return _fftn(image, tf.size(factors))
+  if return_complex:
+    return image
+  return _real_non_negative(image)
+
+
+def _pf_pocs(kspace,
+             factors,
+             return_complex=False,
+             return_kspace=False,
+             max_iter=10,
+             tol=1e-5):
+  """Partial Fourier reconstruction using projection onto convex sets (POCS).
+
+  For the parameters, see `reconstruct_partial_kspace`.
+  """
+  # Zero-filled k-space.
+  full_kspace = _pf_zerofill(kspace, factors, return_kspace=True)
+
+  # Generate a k-space mask which is True for measured samples, False otherwise.
+  kspace_mask = tf.constant(True)
+  # for i, factor in enumerate(tf.reverse(factors, [0])):
+  for i in tf.range(tf.size(factors)):
+    dim_partial = kspace.shape[-i-1]
+    dim_full = full_kspace.shape[-i-1]
+    kspace_mask = tf.math.logical_and(kspace_mask, tf.reshape(tf.concat(
+        [tf.fill([dim_partial], True),
+         tf.fill([dim_full - dim_partial], False)], 0),
+            tf.concat([[-1], tf.repeat([1], [i])], 0)))
+
+  # Estimate the phase modulator from central symmetric region of k-space.
+  phase_modulator = _estimate_phase_modulator(full_kspace, factors)
+
+  # Initial estimate of the solution.
+  image = tf.zeros_like(full_kspace)
+
+  # Type to hold state of the iteration.
+  pocs_state = collections.namedtuple('pocs_state', ['i', 'x', 'r'])
+
+  def stopping_criterion(i, state):
+    return tf.math.logical_and(i < max_iter,
+                               state.r > tol)
+
+  def pocs_step(i, state):
+    prev = state.x
+    # Set the estimated phase.
+    image = tf.cast(tf.math.abs(prev), prev.dtype) * phase_modulator
+    # Data consistency. Replace estimated k-space values by measured ones if
+    # available.
+    kspace = _fftn(image, tf.size(factors))
+    kspace = tf.where(kspace_mask, full_kspace, kspace)
+    image = _ifftn(kspace, tf.size(factors))
+    # Phase demodulation.
+    image *= tf.math.conj(phase_modulator)
+    # Calculate the relative difference.
+    diff = tf.math.abs(tf.norm(image - prev) / tf.norm(prev))
+    return i + 1, pocs_state(i=i + 1, x=image, r=diff)
+
+  i = tf.constant(0, dtype=tf.int32)
+  state = pocs_state(i=0, x=image, r=1.0)
+  _, state = tf.while_loop(stopping_criterion, pocs_step, [i, state])
+
+  image = state.x
+  if return_kspace:
+    return _fftn(image, tf.size(factors))
+  if return_complex:
+    return image
+  return _real_non_negative(image)
+
+
+def _estimate_phase_modulator(full_kspace, factors): # pylint: disable=missing-param-doc
+  """Estimate a phase modulator from central region of k-space."""
+  shape_sym = _scale_shape(tf.shape(full_kspace), 2.0 * (factors - 0.5))
+  paddings = tf.expand_dims((tf.shape(full_kspace) - shape_sym) // 2, -1)
+  paddings = tf.tile(paddings, [1, 2])
+  symmetric_mask = tf.pad(tf.ones(shape_sym, dtype=full_kspace.dtype), paddings) # pylint: disable=no-value-for-parameter
+  symmetric_kspace = full_kspace * symmetric_mask
+  ref_image = _ifftn(symmetric_kspace, tf.size(factors))
+  phase_modulator = tf.math.exp(tf.dtypes.complex(
+      tf.constant(0.0, dtype=ref_image.dtype.real_dtype),
+      tf.math.angle(ref_image)))
+  return phase_modulator
+
+
+def _scale_shape(shape, factors):
+  """Scale the last dimensions of `shape` by `factors`."""
+  factors = tf.pad(factors, [[tf.size(shape) - tf.size(factors), 0]],
+                   constant_values=1.0)
+  return tf.cast(tf.cast(shape, tf.float32) * factors + 0.5, tf.int32)
+
+
+_real_non_negative = lambda x: tf.math.maximum(0.0, tf.math.real(x))
+
+
+_fftn = lambda x, rank: fft_ops.fftn(x, axes=tf.range(-rank, 0), shift=True)
+_ifftn = lambda x, rank: fft_ops.ifftn(x, axes=tf.range(-rank, 0), shift=True)
+
+
 _MR_RECON_METHODS = {
   'fft': _fft,
   'nufft': _nufft,
   'sense': _sense,
-  'cg_sense': _cg_sense
+  'cg_sense': _cg_sense,
+  'grappa': _grappa
 }

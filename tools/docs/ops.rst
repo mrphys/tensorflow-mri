@@ -5,7 +5,8 @@ Operations
     :maxdepth: 2
     :caption: Operations
     :hidden:
- 
+    
+    ops/array_ops
     ops/coil_ops
     ops/fft_ops
     ops/image_ops
