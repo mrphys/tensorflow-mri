@@ -299,7 +299,7 @@ class ReconstructTest(tf.test.TestCase):
       if combine_coils:
         ref = tf.math.sqrt(tf.math.reduce_sum(ref * tf.math.conj(ref), 0))
 
-    self.assertAllClose(result, ref)
+    self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
 
 
   def test_grappa_2d_batch(self):
@@ -335,7 +335,8 @@ class ReconstructTest(tf.test.TestCase):
     result = recon_ops.reconstruct(kspace, calib=calib, mask=mask,
                                    weights_l2_regularizer=0.0,
                                    return_kspace=True)
-    self.assertAllClose(result, self.data['grappa/2d_cine/result'])
+    self.assertAllClose(result, self.data['grappa/2d_cine/result'],
+                        rtol=1e-4, atol=1e-4)
 
 
 class ReconstructPartialKSpaceTest(tf.test.TestCase):
