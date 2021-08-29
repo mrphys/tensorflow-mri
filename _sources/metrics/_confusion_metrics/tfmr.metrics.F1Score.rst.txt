@@ -1,0 +1,8 @@
+﻿tfmr.metrics.F1Score
+====================
+  
+.. currentmodule:: tfmr
+
+.. autoclass:: tfmr.metrics.F1Score
+   :members:
+   :show-inheritance:

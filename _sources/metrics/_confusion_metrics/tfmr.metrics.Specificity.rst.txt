@@ -1,0 +1,8 @@
+﻿tfmr.metrics.Specificity
+========================
+  
+.. currentmodule:: tfmr
+
+.. autoclass:: tfmr.metrics.Specificity
+   :members:
+   :show-inheritance:

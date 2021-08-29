@@ -1,0 +1,6 @@
+﻿tfmr.ssim3d\_multiscale
+=======================
+
+.. currentmodule:: tfmr
+
+.. autofunction:: ssim3d_multiscale

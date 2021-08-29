@@ -1,0 +1,8 @@
+﻿tfmr.LinearOperatorParallelMRI
+==============================
+  
+.. currentmodule:: tfmr
+
+.. autoclass:: tfmr.LinearOperatorParallelMRI
+   :members:
+   :show-inheritance:

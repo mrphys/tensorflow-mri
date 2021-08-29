@@ -1,0 +1,6 @@
+﻿tfmr.ravel\_multi\_index
+========================
+
+.. currentmodule:: tfmr
+
+.. autofunction:: ravel_multi_index

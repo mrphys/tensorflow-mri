@@ -1,0 +1,8 @@
+﻿tfmr.metrics.NegativePredictiveValue
+====================================
+  
+.. currentmodule:: tfmr
+
+.. autoclass:: tfmr.metrics.NegativePredictiveValue
+   :members:
+   :show-inheritance:

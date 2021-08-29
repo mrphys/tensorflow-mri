@@ -1,0 +1,8 @@
+﻿tfmr.LinearOperatorFFT
+======================
+  
+.. currentmodule:: tfmr
+
+.. autoclass:: tfmr.LinearOperatorFFT
+   :members:
+   :show-inheritance:

@@ -1,0 +1,8 @@
+﻿tfmr.metrics.PositivePredictiveValue
+====================================
+  
+.. currentmodule:: tfmr
+
+.. autoclass:: tfmr.metrics.PositivePredictiveValue
+   :members:
+   :show-inheritance:

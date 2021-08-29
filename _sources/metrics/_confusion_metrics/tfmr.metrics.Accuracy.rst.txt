@@ -1,0 +1,8 @@
+﻿tfmr.metrics.Accuracy
+=====================
+  
+.. currentmodule:: tfmr
+
+.. autoclass:: tfmr.metrics.Accuracy
+   :members:
+   :show-inheritance:

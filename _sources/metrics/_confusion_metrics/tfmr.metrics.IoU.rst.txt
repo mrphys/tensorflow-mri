@@ -1,0 +1,8 @@
+﻿tfmr.metrics.IoU
+================
+  
+.. currentmodule:: tfmr
+
+.. autoclass:: tfmr.metrics.IoU
+   :members:
+   :show-inheritance:

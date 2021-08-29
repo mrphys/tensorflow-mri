@@ -1,0 +1,8 @@
+﻿tfmr.metrics.StructuralSimilarity
+=================================
+  
+.. currentmodule:: tfmr
+
+.. autoclass:: tfmr.metrics.StructuralSimilarity
+   :members:
+   :show-inheritance:

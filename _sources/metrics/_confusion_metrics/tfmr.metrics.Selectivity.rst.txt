@@ -1,0 +1,8 @@
+﻿tfmr.metrics.Selectivity
+========================
+  
+.. currentmodule:: tfmr
+
+.. autoclass:: tfmr.metrics.Selectivity
+   :members:
+   :show-inheritance:

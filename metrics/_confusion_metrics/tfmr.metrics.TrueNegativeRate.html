@@ -1,0 +1,413 @@
+<!doctype html>
+<html class="no-js">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="tfmr.metrics.PositivePredictiveValue" href="tfmr.metrics.PositivePredictiveValue.html" /><link rel="prev" title="tfmr.metrics.TruePositiveRate" href="tfmr.metrics.TruePositiveRate.html" />
+
+    <meta name="generator" content="sphinx-4.1.2, furo 2021.08.17.beta43"/>
+        <title>tfmr.metrics.TrueNegativeRate - tensorflow-mri 0.5.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=910ac4ccc9d7c023151c34010d7b500fb9777a51" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?digest=16fb25fabf47304eee183a5e9af80b1ba98259b1" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f8f8f8;
+  --color-code-foreground: black;
+  
+  }
+  body[data-theme="dark"] {
+    --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+  }
+  @media (prefers-color-scheme: dark) {
+    body:not([data-theme="light"]) {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+  }
+</style>
+    <link media="(prefers-color-scheme: dark)" rel="stylesheet" href="../../_static/pygments_dark.css"></head>
+  <body>
+    
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path stroke="none" d="M0 0h24v24H0z" />
+      <line x1="4" y1="6" x2="20" y2="6" />
+      <line x1="10" y1="12" x2="20" y2="12" />
+      <line x1="6" y1="18" x2="20" y2="18" />
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../index.html"><div class="brand">tensorflow-mri 0.5.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
+  
+  
+  <span class="sidebar-brand-text">tensorflow-mri 0.5.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
+  <input class="sidebar-search" placeholder=Search name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../../metrics.html">Metrics</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2 current has-children"><a class="reference internal" href="../confusion_metrics.html">Confusion</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="tfmr.metrics.ConfusionMetric.html">tfmr.metrics.ConfusionMetric</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tfmr.metrics.Accuracy.html">tfmr.metrics.Accuracy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tfmr.metrics.TruePositiveRate.html">tfmr.metrics.TruePositiveRate</a></li>
+<li class="toctree-l3 current current-page"><a class="current reference internal" href="#">tfmr.metrics.TrueNegativeRate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tfmr.metrics.PositivePredictiveValue.html">tfmr.metrics.PositivePredictiveValue</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tfmr.metrics.NegativePredictiveValue.html">tfmr.metrics.NegativePredictiveValue</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tfmr.metrics.Precision.html">tfmr.metrics.Precision</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tfmr.metrics.Recall.html">tfmr.metrics.Recall</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tfmr.metrics.Sensitivity.html">tfmr.metrics.Sensitivity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tfmr.metrics.Specificity.html">tfmr.metrics.Specificity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tfmr.metrics.Selectivity.html">tfmr.metrics.Selectivity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tfmr.metrics.TverskyIndex.html">tfmr.metrics.TverskyIndex</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tfmr.metrics.FBetaScore.html">tfmr.metrics.FBetaScore</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tfmr.metrics.F1Score.html">tfmr.metrics.F1Score</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tfmr.metrics.IoU.html">tfmr.metrics.IoU</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../iqa_metrics.html">Image Quality Assessment</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../_iqa_metrics/tfmr.metrics.PeakSignalToNoiseRatio.html">tfmr.metrics.PeakSignalToNoiseRatio</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../_iqa_metrics/tfmr.metrics.StructuralSimilarity.html">tfmr.metrics.StructuralSimilarity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../_iqa_metrics/tfmr.metrics.MultiscaleStructuralSimilarity.html">tfmr.metrics.MultiscaleStructuralSimilarity</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../ops.html">Operations</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../ops/array_ops.html">Array Manipulation</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_array_ops/tfmr.ravel_multi_index.html">tfmr.ravel_multi_index</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../ops/coil_ops.html">Coil Arrays</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_coil_ops/tfmr.combine_coils.html">tfmr.combine_coils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_coil_ops/tfmr.estimate_coil_sensitivities.html">tfmr.estimate_coil_sensitivities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_coil_ops/tfmr.compress_coils.html">tfmr.compress_coils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_coil_ops/tfmr.coil_compression_matrix.html">tfmr.coil_compression_matrix</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../ops/fft_ops.html">Fourier Transform</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_fft_ops/tfmr.fftn.html">tfmr.fftn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_fft_ops/tfmr.ifftn.html">tfmr.ifftn</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../ops/image_ops.html">Image Processing</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_image_ops/tfmr.psnr.html">tfmr.psnr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_image_ops/tfmr.psnr2d.html">tfmr.psnr2d</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_image_ops/tfmr.psnr3d.html">tfmr.psnr3d</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_image_ops/tfmr.ssim.html">tfmr.ssim</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_image_ops/tfmr.ssim2d.html">tfmr.ssim2d</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_image_ops/tfmr.ssim3d.html">tfmr.ssim3d</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_image_ops/tfmr.ssim_multiscale.html">tfmr.ssim_multiscale</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_image_ops/tfmr.ssim2d_multiscale.html">tfmr.ssim2d_multiscale</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_image_ops/tfmr.ssim3d_multiscale.html">tfmr.ssim3d_multiscale</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_image_ops/tfmr.central_crop.html">tfmr.central_crop</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_image_ops/tfmr.resize_with_crop_or_pad.html">tfmr.resize_with_crop_or_pad</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../ops/linalg_ops.html">Linear Algebra</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_linalg_ops/tfmr.LinearOperatorImaging.html">tfmr.LinearOperatorImaging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_linalg_ops/tfmr.LinearOperatorFFT.html">tfmr.LinearOperatorFFT</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_linalg_ops/tfmr.LinearOperatorNUFFT.html">tfmr.LinearOperatorNUFFT</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_linalg_ops/tfmr.LinearOperatorSensitivityModulation.html">tfmr.LinearOperatorSensitivityModulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_linalg_ops/tfmr.LinearOperatorParallelMRI.html">tfmr.LinearOperatorParallelMRI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_linalg_ops/tfmr.LinearOperatorRealWeighting.html">tfmr.LinearOperatorRealWeighting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_linalg_ops/tfmr.conjugate_gradient.html">tfmr.conjugate_gradient</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../ops/math_ops.html">Math</a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_math_ops/tfmr.extract_from_complex.html">tfmr.extract_from_complex</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_math_ops/tfmr.scale_by_min_max.html">tfmr.scale_by_min_max</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../ops/recon_ops.html">Image Reconstruction</a><input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_recon_ops/tfmr.reconstruct.html">tfmr.reconstruct</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_recon_ops/tfmr.reconstruct_partial_kspace.html">tfmr.reconstruct_partial_kspace</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../ops/traj_ops.html"><em>k</em>-space Trajectories</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_traj_ops/tfmr.radial_trajectory.html">tfmr.radial_trajectory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_traj_ops/tfmr.spiral_trajectory.html">tfmr.spiral_trajectory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_traj_ops/tfmr.radial_waveform.html">tfmr.radial_waveform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_traj_ops/tfmr.spiral_waveform.html">tfmr.spiral_waveform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_traj_ops/tfmr.radial_density.html">tfmr.radial_density</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ops/_traj_ops/tfmr.estimate_density.html">tfmr.estimate_density</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <article role="main">
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <section id="tfmr-metrics-truenegativerate">
+<h1>tfmr.metrics.TrueNegativeRate<a class="headerlink" href="#tfmr-metrics-truenegativerate" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="tfmr.metrics.TrueNegativeRate">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">tfmr.metrics.</span></span><span class="sig-name descname"><span class="pre">TrueNegativeRate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.5.0/tensorflow_mri/python/metrics/confusion_metrics.py#L363-L395"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.metrics.TrueNegativeRate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="tfmr.metrics.ConfusionMetric.html#tfmr.metrics.ConfusionMetric" title="tensorflow_mri.python.metrics.confusion_metrics.ConfusionMetric"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflow_mri.python.metrics.confusion_metrics.ConfusionMetric</span></code></a></p>
+<p>Computes the true negative rate (TNR).</p>
+<p>The true negative rate (TNR), also called specificity or selectivity, is the
+proportion of correctly predicted negatives among all negative instances.</p>
+<div class="math-wrapper"><div class="math notranslate nohighlight">
+\[\textrm{TNR} = \frac{\textrm{TN}}{\textrm{TN} + \textrm{FP}}\]</div></div>
+<p>Inputs <code class="docutils literal notranslate"><span class="pre">y_true</span></code> and <code class="docutils literal notranslate"><span class="pre">y_pred</span></code> are expected to have shape <code class="docutils literal notranslate"><span class="pre">[...,</span> <span class="pre">num_classes]</span></code>,
+with channel <code class="docutils literal notranslate"><span class="pre">i</span></code> containing labels/predictions for class <code class="docutils literal notranslate"><span class="pre">i</span></code>. <code class="docutils literal notranslate"><span class="pre">y_true[...,</span> <span class="pre">i]</span></code>
+is 1 if the element represented by <code class="docutils literal notranslate"><span class="pre">y_true[...]</span></code> is a member of class <code class="docutils literal notranslate"><span class="pre">i</span></code> and
+0 otherwise. <code class="docutils literal notranslate"><span class="pre">y_pred[...,</span> <span class="pre">i]</span></code> is the predicted probability, in the range
+<code class="docutils literal notranslate"><span class="pre">[0.0,</span> <span class="pre">1.0]</span></code>, that the element represented by <code class="docutils literal notranslate"><span class="pre">y_pred[...]</span></code> is a member of
+class <code class="docutils literal notranslate"><span class="pre">i</span></code>.</p>
+<p>This metric works for binary, multiclass and multilabel classification. In
+multiclass/multilabel problems, this metric can be used to measure performance
+globally or for a specific class.</p>
+<p>With the default configuration, this metric will:</p>
+<ul class="simple">
+<li><p>If <code class="docutils literal notranslate"><span class="pre">num_classes</span> <span class="pre">==</span> <span class="pre">1</span></code>, assume a binary classification problem with a
+threshold of 0.5 and return the confusion metric.</p></li>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">num_classes</span> <span class="pre">&gt;=</span> <span class="pre">2</span></code>, assume a multiclass classification problem where
+the class with the highest probability is selected as the prediction,
+compute the confusion metric for each class and return the unweighted mean.</p></li>
+</ul>
+<p>See the Parameters and Notes for other configurations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_classes</strong> – Number of unique classes in the dataset. If this value is not
+specified, it will be inferred during the first call to <code class="docutils literal notranslate"><span class="pre">update_state</span></code>
+as <code class="docutils literal notranslate"><span class="pre">y_pred.shape[-1]</span></code>.</p></li>
+<li><p><strong>class_id</strong> – Integer class ID for which metrics should be reported. This must
+be in the half-open interval [0, num_classes). If <code class="docutils literal notranslate"><span class="pre">None</span></code>, a global average
+metric is returned as defined by <code class="docutils literal notranslate"><span class="pre">average</span></code>. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>average</strong> – Type of averaging to be performed on data. Valid values are <code class="docutils literal notranslate"><span class="pre">None</span></code>,
+<code class="docutils literal notranslate"><span class="pre">'micro'</span></code>, <code class="docutils literal notranslate"><span class="pre">'macro'</span></code> and <code class="docutils literal notranslate"><span class="pre">'weighted'</span></code>. Defaults to <code class="docutils literal notranslate"><span class="pre">'macro'</span></code>. See Notes
+for details on the different modes. This parameter is ignored if
+<code class="docutils literal notranslate"><span class="pre">class_id</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>threshold</strong> – Elements of <code class="docutils literal notranslate"><span class="pre">y_pred</span></code> above threshold are considered to be 1, and
+the rest 0. A list of length <code class="docutils literal notranslate"><span class="pre">num_classes</span></code> may be provided to specify a
+threshold for each class. If threshold is <code class="docutils literal notranslate"><span class="pre">None</span></code>, the argmax is converted
+to 1, and the rest 0. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code> if <code class="docutils literal notranslate"><span class="pre">num_classes</span> <span class="pre">&gt;=</span> <span class="pre">2</span></code> (multiclass
+classification) and 0.5 if <code class="docutils literal notranslate"><span class="pre">num_classes</span> <span class="pre">==</span> <span class="pre">1</span></code> (binary classification).
+This parameter is required for multilabel classification.</p></li>
+<li><p><strong>name</strong> – String name of the metric instance.</p></li>
+<li><p><strong>dtype</strong> – Data type of the metric result.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This metric works for binary, multiclass and multilabel classification.</p>
+<ul class="simple">
+<li><p>For <strong>binary</strong> tasks, set <code class="docutils literal notranslate"><span class="pre">num_classes</span></code> to 1, and optionally, <code class="docutils literal notranslate"><span class="pre">threshold</span></code>
+to the desired value (default is 0.5 if unspecified). The value of
+<code class="docutils literal notranslate"><span class="pre">average</span></code> is irrelevant.</p></li>
+<li><p>For <strong>multiclass</strong> tasks, set <code class="docutils literal notranslate"><span class="pre">num_classes</span></code> to the number of possible
+labels and set <code class="docutils literal notranslate"><span class="pre">average</span></code> to the desired mode. <code class="docutils literal notranslate"><span class="pre">threshold</span></code> should be left
+as <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p>For <strong>multilabel</strong> tasks, set <code class="docutils literal notranslate"><span class="pre">num_classes</span></code> to the number of possible
+labels, set <code class="docutils literal notranslate"><span class="pre">threshold</span></code> to the desired value in the range <code class="docutils literal notranslate"><span class="pre">(0.0,</span> <span class="pre">1.0)</span></code> (or
+provide a list of length <code class="docutils literal notranslate"><span class="pre">num_classes</span></code> to specify a different threshold
+value for each class), and set <code class="docutils literal notranslate"><span class="pre">average</span></code> to the desired mode.</p></li>
+</ul>
+<p>In multiclass/multilabel problems, this metric can be used to measure
+performance globally or for a specific class. For a specific class, set
+<code class="docutils literal notranslate"><span class="pre">class_id</span></code> to the desired value. For a global measure, set <code class="docutils literal notranslate"><span class="pre">class_id</span></code> to
+<code class="docutils literal notranslate"><span class="pre">None</span></code> and <code class="docutils literal notranslate"><span class="pre">average</span></code> to the desired averaging method. <code class="docutils literal notranslate"><span class="pre">average</span></code> can take
+the following values:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">None</span></code>: Scores for each class are returned.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'micro'</span></code>: Calculate metrics globally by counting the total true
+positives, true negatives, false positives and false negatives.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'macro'</span></code>: Calculate metrics for each label, and return their unweighted
+mean. This does not take label imbalance into account.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'weighted'</span></code>: Calculate metrics for each label, and find their average
+weighted by support (the number of true instances for each label). This
+alters ‘macro’ to account for label imbalance.</p></li>
+</ul>
+</dd></dl>
+</section>
+
+      </article>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="tfmr.metrics.PositivePredictiveValue.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">tfmr.metrics.PositivePredictiveValue</div>
+              </div>
+              <svg><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="tfmr.metrics.TruePositiveRate.html">
+              <svg><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">tfmr.metrics.TruePositiveRate</div>
+                
+              </div>
+            </a>
+        </div>
+
+        <div class="related-information">
+              Copyright &#169; 2021 University College London
+            |
+            Built with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+              and
+              <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+              <a href="https://github.com/pradyunsg/furo">Furo theme</a>.
+            |
+            <a class="muted-link" href="../../_sources/metrics/_confusion_metrics/tfmr.metrics.TrueNegativeRate.rst.txt"
+               rel="nofollow">
+              Show Source
+            </a>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/scripts/main.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    </body>
+</html>

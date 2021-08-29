@@ -1,0 +1,6 @@
+﻿tfmr.ssim2d
+===========
+
+.. currentmodule:: tfmr
+
+.. autofunction:: ssim2d

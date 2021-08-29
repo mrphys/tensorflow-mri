@@ -1,0 +1,8 @@
+﻿tfmr.metrics.ConfusionMetric
+============================
+  
+.. currentmodule:: tfmr
+
+.. autoclass:: tfmr.metrics.ConfusionMetric
+   :members:
+   :show-inheritance:

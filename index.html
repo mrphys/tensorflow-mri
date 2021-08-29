@@ -3,13 +3,13 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Coil arrays" href="coil_ops.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Metrics" href="metrics.html" />
 
-    <meta name="generator" content="sphinx-4.1.2, furo 2021.08.11.beta42"/>
-        <title>tensorflow-mri 0.4.0 documentation</title>
+    <meta name="generator" content="sphinx-4.1.2, furo 2021.08.17.beta43"/>
+        <title>tensorflow-mri 0.5.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=197f00461d56902ea7ca048ec6e6ba026f62c97b" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=93475b62d1c3bc01323a0eefdc14a62d77b12690" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=910ac4ccc9d7c023151c34010d7b500fb9777a51" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=16fb25fabf47304eee183a5e9af80b1ba98259b1" />
     
     
 
@@ -121,7 +121,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="#"><div class="brand">tensorflow-mri 0.4.0 documentation</div></a>
+      <a href="#"><div class="brand">tensorflow-mri 0.5.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -144,7 +144,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="#">
   
   
-  <span class="sidebar-brand-text">tensorflow-mri 0.4.0 documentation</span>
+  <span class="sidebar-brand-text">tensorflow-mri 0.5.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder=Search name="q" aria-label="Search">
@@ -154,49 +154,93 @@
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
 <ul>
-<li class="toctree-l1 has-children"><a class="reference internal" href="coil_ops.html">Coil arrays</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="_coil_ops/tfmr.combine_coils.html">tfmr.combine_coils</a></li>
-<li class="toctree-l2"><a class="reference internal" href="_coil_ops/tfmr.estimate_coil_sensitivities.html">tfmr.estimate_coil_sensitivities</a></li>
-<li class="toctree-l2"><a class="reference internal" href="_coil_ops/tfmr.compress_coils.html">tfmr.compress_coils</a></li>
-<li class="toctree-l2"><a class="reference internal" href="_coil_ops/tfmr.coil_compression_matrix.html">tfmr.coil_compression_matrix</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="metrics.html">Metrics</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="metrics/confusion_metrics.html">Confusion</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="metrics/_confusion_metrics/tfmr.metrics.ConfusionMetric.html">tfmr.metrics.ConfusionMetric</a></li>
+<li class="toctree-l3"><a class="reference internal" href="metrics/_confusion_metrics/tfmr.metrics.Accuracy.html">tfmr.metrics.Accuracy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="metrics/_confusion_metrics/tfmr.metrics.TruePositiveRate.html">tfmr.metrics.TruePositiveRate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="metrics/_confusion_metrics/tfmr.metrics.TrueNegativeRate.html">tfmr.metrics.TrueNegativeRate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="metrics/_confusion_metrics/tfmr.metrics.PositivePredictiveValue.html">tfmr.metrics.PositivePredictiveValue</a></li>
+<li class="toctree-l3"><a class="reference internal" href="metrics/_confusion_metrics/tfmr.metrics.NegativePredictiveValue.html">tfmr.metrics.NegativePredictiveValue</a></li>
+<li class="toctree-l3"><a class="reference internal" href="metrics/_confusion_metrics/tfmr.metrics.Precision.html">tfmr.metrics.Precision</a></li>
+<li class="toctree-l3"><a class="reference internal" href="metrics/_confusion_metrics/tfmr.metrics.Recall.html">tfmr.metrics.Recall</a></li>
+<li class="toctree-l3"><a class="reference internal" href="metrics/_confusion_metrics/tfmr.metrics.Sensitivity.html">tfmr.metrics.Sensitivity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="metrics/_confusion_metrics/tfmr.metrics.Specificity.html">tfmr.metrics.Specificity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="metrics/_confusion_metrics/tfmr.metrics.Selectivity.html">tfmr.metrics.Selectivity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="metrics/_confusion_metrics/tfmr.metrics.TverskyIndex.html">tfmr.metrics.TverskyIndex</a></li>
+<li class="toctree-l3"><a class="reference internal" href="metrics/_confusion_metrics/tfmr.metrics.FBetaScore.html">tfmr.metrics.FBetaScore</a></li>
+<li class="toctree-l3"><a class="reference internal" href="metrics/_confusion_metrics/tfmr.metrics.F1Score.html">tfmr.metrics.F1Score</a></li>
+<li class="toctree-l3"><a class="reference internal" href="metrics/_confusion_metrics/tfmr.metrics.IoU.html">tfmr.metrics.IoU</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="fft_ops.html">Fourier transform</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="_fft_ops/tfmr.fftn.html">tfmr.fftn</a></li>
-<li class="toctree-l2"><a class="reference internal" href="_fft_ops/tfmr.ifftn.html">tfmr.ifftn</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="metrics/iqa_metrics.html">Image Quality Assessment</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="metrics/_iqa_metrics/tfmr.metrics.PeakSignalToNoiseRatio.html">tfmr.metrics.PeakSignalToNoiseRatio</a></li>
+<li class="toctree-l3"><a class="reference internal" href="metrics/_iqa_metrics/tfmr.metrics.StructuralSimilarity.html">tfmr.metrics.StructuralSimilarity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="metrics/_iqa_metrics/tfmr.metrics.MultiscaleStructuralSimilarity.html">tfmr.metrics.MultiscaleStructuralSimilarity</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="image_ops.html">Image processing</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="_image_ops/tfmr.central_crop.html">tfmr.central_crop</a></li>
-<li class="toctree-l2"><a class="reference internal" href="_image_ops/tfmr.resize_with_crop_or_pad.html">tfmr.resize_with_crop_or_pad</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="linalg_ops.html">Linear algebra</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="_linalg_ops/tfmr.LinearOperatorImaging.html">tfmr.LinearOperatorImaging</a></li>
-<li class="toctree-l2"><a class="reference internal" href="_linalg_ops/tfmr.LinearOperatorFFT.html">tfmr.LinearOperatorFFT</a></li>
-<li class="toctree-l2"><a class="reference internal" href="_linalg_ops/tfmr.LinearOperatorNUFFT.html">tfmr.LinearOperatorNUFFT</a></li>
-<li class="toctree-l2"><a class="reference internal" href="_linalg_ops/tfmr.LinearOperatorSensitivityModulation.html">tfmr.LinearOperatorSensitivityModulation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="_linalg_ops/tfmr.LinearOperatorParallelMRI.html">tfmr.LinearOperatorParallelMRI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="_linalg_ops/tfmr.LinearOperatorRealWeighting.html">tfmr.LinearOperatorRealWeighting</a></li>
-<li class="toctree-l2"><a class="reference internal" href="_linalg_ops/tfmr.conjugate_gradient.html">tfmr.conjugate_gradient</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="ops.html">Operations</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="ops/array_ops.html">Array Manipulation</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="ops/_array_ops/tfmr.ravel_multi_index.html">tfmr.ravel_multi_index</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="math_ops.html">Math</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="_math_ops/tfmr.extract_from_complex.html">tfmr.extract_from_complex</a></li>
-<li class="toctree-l2"><a class="reference internal" href="_math_ops/tfmr.scale_by_min_max.html">tfmr.scale_by_min_max</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="ops/coil_ops.html">Coil Arrays</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="ops/_coil_ops/tfmr.combine_coils.html">tfmr.combine_coils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_coil_ops/tfmr.estimate_coil_sensitivities.html">tfmr.estimate_coil_sensitivities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_coil_ops/tfmr.compress_coils.html">tfmr.compress_coils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_coil_ops/tfmr.coil_compression_matrix.html">tfmr.coil_compression_matrix</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="recon_ops.html">Image reconstruction</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="_recon_ops/tfmr.reconstruct.html">tfmr.reconstruct</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="ops/fft_ops.html">Fourier Transform</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="ops/_fft_ops/tfmr.fftn.html">tfmr.fftn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_fft_ops/tfmr.ifftn.html">tfmr.ifftn</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="traj_ops.html"><em>k</em>-space trajectories</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="_traj_ops/tfmr.radial_trajectory.html">tfmr.radial_trajectory</a></li>
-<li class="toctree-l2"><a class="reference internal" href="_traj_ops/tfmr.spiral_trajectory.html">tfmr.spiral_trajectory</a></li>
-<li class="toctree-l2"><a class="reference internal" href="_traj_ops/tfmr.radial_waveform.html">tfmr.radial_waveform</a></li>
-<li class="toctree-l2"><a class="reference internal" href="_traj_ops/tfmr.spiral_waveform.html">tfmr.spiral_waveform</a></li>
-<li class="toctree-l2"><a class="reference internal" href="_traj_ops/tfmr.radial_density.html">tfmr.radial_density</a></li>
-<li class="toctree-l2"><a class="reference internal" href="_traj_ops/tfmr.estimate_density.html">tfmr.estimate_density</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="ops/image_ops.html">Image Processing</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="ops/_image_ops/tfmr.psnr.html">tfmr.psnr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_image_ops/tfmr.psnr2d.html">tfmr.psnr2d</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_image_ops/tfmr.psnr3d.html">tfmr.psnr3d</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_image_ops/tfmr.ssim.html">tfmr.ssim</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_image_ops/tfmr.ssim2d.html">tfmr.ssim2d</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_image_ops/tfmr.ssim3d.html">tfmr.ssim3d</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_image_ops/tfmr.ssim_multiscale.html">tfmr.ssim_multiscale</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_image_ops/tfmr.ssim2d_multiscale.html">tfmr.ssim2d_multiscale</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_image_ops/tfmr.ssim3d_multiscale.html">tfmr.ssim3d_multiscale</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_image_ops/tfmr.central_crop.html">tfmr.central_crop</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_image_ops/tfmr.resize_with_crop_or_pad.html">tfmr.resize_with_crop_or_pad</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="ops/linalg_ops.html">Linear Algebra</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="ops/_linalg_ops/tfmr.LinearOperatorImaging.html">tfmr.LinearOperatorImaging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_linalg_ops/tfmr.LinearOperatorFFT.html">tfmr.LinearOperatorFFT</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_linalg_ops/tfmr.LinearOperatorNUFFT.html">tfmr.LinearOperatorNUFFT</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_linalg_ops/tfmr.LinearOperatorSensitivityModulation.html">tfmr.LinearOperatorSensitivityModulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_linalg_ops/tfmr.LinearOperatorParallelMRI.html">tfmr.LinearOperatorParallelMRI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_linalg_ops/tfmr.LinearOperatorRealWeighting.html">tfmr.LinearOperatorRealWeighting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_linalg_ops/tfmr.conjugate_gradient.html">tfmr.conjugate_gradient</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="ops/math_ops.html">Math</a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="ops/_math_ops/tfmr.extract_from_complex.html">tfmr.extract_from_complex</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_math_ops/tfmr.scale_by_min_max.html">tfmr.scale_by_min_max</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="ops/recon_ops.html">Image Reconstruction</a><input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="ops/_recon_ops/tfmr.reconstruct.html">tfmr.reconstruct</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_recon_ops/tfmr.reconstruct_partial_kspace.html">tfmr.reconstruct_partial_kspace</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="ops/traj_ops.html"><em>k</em>-space Trajectories</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="ops/_traj_ops/tfmr.radial_trajectory.html">tfmr.radial_trajectory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_traj_ops/tfmr.spiral_trajectory.html">tfmr.spiral_trajectory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_traj_ops/tfmr.radial_waveform.html">tfmr.radial_waveform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_traj_ops/tfmr.spiral_waveform.html">tfmr.spiral_waveform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_traj_ops/tfmr.radial_density.html">tfmr.radial_density</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ops/_traj_ops/tfmr.estimate_density.html">tfmr.estimate_density</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -227,15 +271,60 @@
         <section id="welcome-to-tensorflow-mri">
 <h1>Welcome to TensorFlow MRI<a class="headerlink" href="#welcome-to-tensorflow-mri" title="Permalink to this headline">¶</a></h1>
 <p>TensorFlow MRI is a collection of TensorFlow add-ons for computational MRI.</p>
+<p>It contains functionality including:</p>
+<ul class="simple">
+<li><p>Estimation of coil sensitivity maps: Walsh’s method, Inati’s fast method and
+ESPIRiT.</p></li>
+<li><p>Coil compression using singular value decomposition (SVD).</p></li>
+<li><p>Image reconstruction operations: basic (FFT, NUFFT), parallel imaging
+(SENSE, GRAPPA, CG-SENSE) and partial Fourier (zero-filling, homodyne
+detection, projection onto convex sets).</p></li>
+<li><p>Calculation of radial and spiral trajectories and sampling densities.</p></li>
+<li><p>Keras metrics for image quality assessment, classification and segmentation.</p></li>
+<li><p>Helper operations for array manipulation, image processing and linear algebra.</p></li>
+</ul>
+<p>All operations are performed using a TensorFlow/Keras backend. This has several
+key advantages:</p>
+<ul class="simple">
+<li><p>Seamless integration in machine learning applications.</p></li>
+<li><p>Runs on heterogeneous systems, with most operations supporting CPU and
+GPU-accelerated paths.</p></li>
+<li><p>Code is easy to understand, with most of this package written in Python.</p></li>
+</ul>
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 <p>You can install TensorFlow MRI with <code class="docutils literal notranslate"><span class="pre">pip</span></code>:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>pip install tensorflow-mri
 </pre></div>
 </div>
-<p>Note that only Linux wheels are currently being provided.</p>
+<p>Note that only Linux is currently supported.</p>
+<section id="tensorflow-compatibility">
+<h3>TensorFlow Compatibility<a class="headerlink" href="#tensorflow-compatibility" title="Permalink to this headline">¶</a></h3>
+<p>Each TensorFlow MRI release is compiled against a specific version of
+TensorFlow. Please see the compatibility table below to see what versions of
+each package you can expect to work together.</p>
+<div class="table-wrapper"><table class="docutils align-default">
+<colgroup>
+<col style="width: 58%"/>
+<col style="width: 42%"/>
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>TensorFlow MRI</p></th>
+<th class="head"><p>TensorFlow</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>v0.4.0</p></td>
+<td><p>v2.6.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>v0.5.0</p></td>
+<td><p>v2.6.0</p></td>
+</tr>
+</tbody>
+</table></div>
 <div class="toctree-wrapper compound">
 </div>
+</section>
 </section>
 </section>
 
@@ -243,12 +332,12 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="coil_ops.html">
+          <a class="next-page" href="metrics.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Coil arrays</div>
+                <div class="title">Metrics</div>
               </div>
               <svg><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -284,7 +373,10 @@
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Welcome to TensorFlow MRI</a><ul>
-<li><a class="reference internal" href="#installation">Installation</a></li>
+<li><a class="reference internal" href="#installation">Installation</a><ul>
+<li><a class="reference internal" href="#tensorflow-compatibility">TensorFlow Compatibility</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

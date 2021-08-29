@@ -1,0 +1,8 @@
+﻿tfmr.metrics.Sensitivity
+========================
+  
+.. currentmodule:: tfmr
+
+.. autoclass:: tfmr.metrics.Sensitivity
+   :members:
+   :show-inheritance:
