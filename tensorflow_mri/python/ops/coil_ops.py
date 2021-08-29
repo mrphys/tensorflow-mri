@@ -500,6 +500,7 @@ def compress_coils(kspace,
 def coil_compression_matrix(kspace,
                             num_output_coils=None,
                             tol=None,
+                            coil_axis=-1,
                             method='svd',
                             **kwargs):
   """Calculate a coil compression matrix.
@@ -521,6 +522,7 @@ def coil_compression_matrix(kspace,
     tol: A `float` between 0.0 and 1.0. Virtual coils whose singular value is
       less than `tol` times the first singular value are discarded. `tol` is
       ignored if `num_output_coils` is also specified.
+    coil_axis: An `int`. Defaults to -1.
     method: A `string`. The coil compression algorithm. Must be `"svd"`.
     **kwargs: Additional method-specific keyword arguments. See Notes for more
         details.
@@ -536,8 +538,18 @@ def coil_compression_matrix(kspace,
   Raises:
     ValueError: If `method` is not one of `"svd"`, `"geometric"` or `"espirit"`.
   """
+  kspace = tf.convert_to_tensor(kspace)
   method = check_utils.validate_enum(
     method, {'svd', 'geometric', 'espirit'}, 'method')
+
+  # Move coil axis to innermost dimension if not already there.
+  if coil_axis != -1:
+    rank = kspace.shape.rank
+    canonical_coil_axis = coil_axis + rank if coil_axis < 0 else coil_axis
+    perm = (
+      [ax for ax in range(rank) if not ax == canonical_coil_axis] +
+      [canonical_coil_axis])
+    kspace = tf.transpose(kspace, perm)
 
   if method == 'svd':
     return _coil_compression_matrix_svd(kspace,
@@ -548,6 +560,7 @@ def coil_compression_matrix(kspace,
     return _coil_compression_matrix_geometric(kspace)
   if method == 'espirit':
     return _coil_compression_matrix_espirit(kspace)
+
   raise ValueError(f"Unexpected coil compression method: {method}")
 
 

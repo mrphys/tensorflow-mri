@@ -32,6 +32,7 @@ class ReconstructTest(tf.test.TestCase):
     """Prepare tests."""
     super().setUpClass()
     cls.data = io_utils.read_hdf5('tests/data/recon_ops_data.h5')
+    cls.data.update(io_utils.read_hdf5('tests/data/recon_ops_data_2.h5'))
 
 
   def test_fft(self):
@@ -250,6 +251,132 @@ class ReconstructTest(tf.test.TestCase):
       image = recon_ops.reconstruct(kspace[0, ...],
                                     traj,
                                     sensitivities=sens)
+
+
+  @test_utils.parameterized_test(combine_coils=[True, False],
+                                 return_kspace=[True, False])
+  def test_grappa_2d(self, combine_coils, return_kspace): # pylint:disable=missing-param-doc
+    """Test GRAPPA reconstruction (2D, scalar batch)."""
+    data = io_utils.read_hdf5('tests/data/brain_2d_multicoil_kspace.h5')
+    full_kspace = data['kspace']
+    full_kspace = tf.transpose(full_kspace, [2, 0, 1]) # [coils, x, y]
+
+    # Undersampling factor and size of calibration region.
+    factor = 2
+    calib_size = 24
+
+    # Generate a 1D sampling mask (true means sampled, false means not sampled).
+    mask_1d = tf.range(full_kspace.shape[1]) % factor == 0
+
+    # Add ACS region to mask.
+    calib_slice = slice(96 - calib_size // 2, 96 + calib_size // 2)
+    mask_1d = mask_1d.numpy()
+    mask_1d[calib_slice] = True
+    mask_1d = tf.convert_to_tensor(mask_1d)
+
+    # Repeat the 1D mask to create a 2D mask.
+    mask = tf.reshape(mask_1d, [1, full_kspace.shape[2]])
+    mask = tf.tile(mask, [full_kspace.shape[1], 1])
+
+    # Create an undersampled k-space.
+    kspace = tf.boolean_mask(full_kspace, mask_1d, axis=2)
+
+    # Create a calibration region.
+    calib = full_kspace[:, :, calib_slice]
+
+    # Test op.
+    result = recon_ops.reconstruct(kspace,
+                                   calib=calib,
+                                   mask=mask,
+                                   weights_l2_regularizer=0.01,
+                                   combine_coils=combine_coils,
+                                   return_kspace=return_kspace)
+
+    # Reference result.
+    ref = self.data['grappa/2d/result']
+    if not return_kspace:
+      ref = fft_ops.ifftn(ref, axes=[-2, -1], shift=True)
+      if combine_coils:
+        ref = tf.math.sqrt(tf.math.reduce_sum(ref * tf.math.conj(ref), 0))
+
+    self.assertAllClose(result, ref)
+
+
+  def test_grappa_2d_batch(self):
+    """Test GRAPPA reconstruction (2D, 1D batch)."""
+    data = io_utils.read_hdf5('tests/data/cardiac_cine_2d_multicoil_kspace.h5')
+    full_kspace = data['kspace']
+
+    # Undersampling factor and size of calibration region.
+    factor = 4
+    calib_size = 24
+
+    # Generate a 1D sampling mask (true means sampled, false means not sampled).
+    mask_1d = tf.range(full_kspace.shape[-2]) % factor == 0
+
+    # Add ACS region to mask.
+    calib_slice = slice(104 - calib_size // 2, 104 + calib_size // 2)
+    mask_1d = mask_1d.numpy()
+    mask_1d[calib_slice] = True
+    mask_1d = tf.convert_to_tensor(mask_1d)
+
+    # Repeat the 1D mask to create a 2D mask.
+    mask = tf.reshape(mask_1d, [full_kspace.shape[-2], 1])
+    mask = tf.tile(mask, [1, full_kspace.shape[-1]])
+
+    # Create an undersampled k-space.
+    kspace = tf.boolean_mask(full_kspace, mask_1d, axis=-2)
+
+    # Create a calibration region. Use the time average.
+    calib = full_kspace[:, :, calib_slice, :]
+    calib = tf.math.reduce_mean(calib, axis=0)
+
+    # Test op.
+    result = recon_ops.reconstruct(kspace, calib=calib, mask=mask,
+                                   weights_l2_regularizer=0.0,
+                                   return_kspace=True)
+    self.assertAllClose(result, self.data['grappa/2d_cine/result'])
+
+
+class ReconstructPartialKSpaceTest(tf.test.TestCase):
+  """Tests for `reconstruct_partial_kspace` operation."""
+
+  @classmethod
+  def setUpClass(cls):
+    """Prepare tests."""
+    super().setUpClass()
+    cls.data = io_utils.read_hdf5('tests/data/recon_ops_data.h5')
+    cls.data.update(io_utils.read_hdf5('tests/data/recon_ops_data_2.h5'))
+
+  @test_utils.parameterized_test(method=['zerofill', 'homodyne', 'pocs'],
+                                 return_complex=[True, False],
+                                 return_kspace=[True, False])
+  def test_pf(self, method, return_complex, return_kspace): # pylint:disable=missing-param-doc
+    """Test PF reconstruction."""
+    data = io_utils.read_hdf5('tests/data/brain_2d_multicoil_kspace.h5')
+    full_kspace = data['kspace']
+    full_kspace = tf.transpose(full_kspace, [2, 0, 1]) # [coils, x, y]
+
+    # PF subsampling with PF factor = 9/16.
+    factors = [1.0, 9 / 16]
+    kspace = full_kspace[:, :, :(192 * 9 // 16)]
+
+    result = recon_ops.reconstruct_partial_kspace(kspace,
+                                                  factors,
+                                                  return_complex=return_complex,
+                                                  return_kspace=return_kspace,
+                                                  method=method)
+
+    ref = self.data['pf/' + method + '/result']
+
+    if return_kspace:
+      ref = fft_ops.fftn(ref, axes=[-2, -1], shift=True)
+    elif not return_complex:
+      if method == 'zerofill':
+        ref = tf.math.abs(ref)
+      else:
+        ref = tf.math.maximum(0.0, tf.math.real(ref))
+    self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
 
 
 if __name__ == '__main__':

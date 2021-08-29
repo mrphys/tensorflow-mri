@@ -1025,3 +1025,51 @@ def resize_with_crop_or_pad(tensor, shape):
   tensor = tf.pad(tensor, tf.transpose(tf.stack([pad_left, pad_right]))) # pylint: disable=no-value-for-parameter
 
   return tensor
+
+
+def extract_glimpses(images, sizes, offsets):
+  """Extract glimpses (patches) from a tensor at the given offsets.
+
+  Args:
+    images: A `Tensor`. Must have shape `[batch_size, ..., channels]`, where
+      `...` are the `N` spatial dimensions.
+    sizes: A list of `ints` of length `N`.
+    offsets: A `Tensor` of shape `[M, N]` containing indices into the upper-left
+      corners of the patches to be extracted.
+
+  Returns:
+    A `Tensor` with shape `[batch_size, M, prod(sizes) * channels]`,
+    where the last dimension are the flattened glimpses.
+  """
+  images = tf.convert_to_tensor(images)
+  offsets = tf.convert_to_tensor(offsets)
+
+  # Infer rank from kernel size, then check that `images` and `offsets` are
+  # consistent.
+  rank = len(sizes)
+  tf.debugging.assert_rank(images, rank + 2, message=(
+    f"`images` must have rank `len(sizes) + 2`, but got: {tf.rank(images)}"))
+  tf.debugging.assert_equal(tf.shape(offsets)[-1], rank, message=(
+    f"The last dimension of `offsets` must be equal to `len(sizes)`, "
+    f"but got: {tf.shape(offsets)[-1]}"))
+
+  # Get batch size and the number of patches.
+  batch_size = tf.shape(images)[0]
+  num_patches = tf.shape(offsets)[-2]
+
+  # Generate an array of indices into a tensor of shape `[batch_size] + sizes`.
+  indices = tf.transpose(tf.reshape(tf.stack(
+      tf.meshgrid(*[tf.range(ks) for ks in [batch_size] + sizes],
+                  indexing='ij')), [rank + 1, -1]))
+  indices = tf.reshape(indices, [batch_size, -1, rank + 1])
+
+  # Replicate (via broadcasting) and offset the indices array.
+  offsets = tf.pad(offsets, [[0, 0], [1, 0]]) # pylint:disable=no-value-for-parameter
+  offsets = tf.expand_dims(offsets, -2)
+  indices = tf.expand_dims(indices, -3)
+  indices = indices + tf.cast(offsets, indices.dtype)
+
+  # Gather all patches.
+  patches = tf.gather_nd(images, indices)
+  patches = tf.reshape(patches, [batch_size, num_patches, -1])
+  return patches

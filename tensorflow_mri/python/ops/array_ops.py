@@ -12,17 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"TensorFlow MRI."
+"""Array manipulation operations."""
 
-from tensorflow_mri.__about__ import *
+import tensorflow as tf
 
-from tensorflow_mri.python.ops.array_ops import *
-from tensorflow_mri.python.ops.coil_ops import *
-from tensorflow_mri.python.ops.fft_ops import *
-from tensorflow_mri.python.ops.image_ops import *
-from tensorflow_mri.python.ops.linalg_ops import *
-from tensorflow_mri.python.ops.math_ops import *
-from tensorflow_mri.python.ops.recon_ops import *
-from tensorflow_mri.python.ops.traj_ops import *
 
-from tensorflow_mri.python import metrics
+def ravel_multi_index(multi_index, dims):
+  """Converts an array of multi-indices into an array of flat indices.
+
+  Args:
+    multi_index: A `Tensor` of shape `[..., N]` containing multi-indices into
+      an `N`-dimensional tensor.
+    dims: A `Tensor` of shape `[N]`. The shape of the tensor that `multi_index`
+      indexes into.
+
+  Returns:
+    A `Tensor` of shape `[...]` containing flat indices equivalent to
+    `multi_index`.
+  """
+  strides = tf.math.cumprod(dims, exclusive=True, reverse=True) # pylint:disable=no-value-for-parameter
+  return tf.math.reduce_sum(multi_index * strides, axis=-1)

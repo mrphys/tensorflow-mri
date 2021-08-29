@@ -331,7 +331,7 @@ class StructuralSimilarityTest(tf.test.TestCase):
     img2 = tf.expand_dims(img2, -1)
 
     result = image_ops.ssim(img1, img2, max_val=255)
-    self.assertAllClose(result, ref)
+    self.assertAllClose(result, ref, rtol=1e-5, atol=1e-5)
 
 
   def test_ssim_3d_mdbatch(self):
@@ -622,6 +622,21 @@ class SymmetricPadOrCropTest(tf.test.TestCase):
     y_tf = image_ops.resize_with_crop_or_pad(x_np, shape)
 
     self.assertAllEqual(y_tf, y_np)
+
+
+class ExtractGlimpsesTest(tf.test.TestCase):
+  """Tests for the `extract_glimpses` operation."""
+
+  def test_extract_glimpses(self):
+    """Test `extract_glimpses` operation."""
+    images = tf.reshape(tf.range(40), [1, 4, 5, 2])
+    sizes = [2, 3]
+    offsets = [[2, 2], [0, 1]]
+    expected = [[[24, 25, 26, 27, 28, 29, 34, 35, 36, 37, 38, 39],
+                 [2, 3, 4, 5, 6, 7, 12, 13, 14, 15, 16, 17]]]
+
+    patches = image_ops.extract_glimpses(images, sizes, offsets)
+    self.assertAllEqual(patches, expected)
 
 
 if __name__ == '__main__':

@@ -16,6 +16,25 @@ TensorFlow MRI
 
 TensorFlow MRI is a collection of TensorFlow add-ons for computational MRI.
 
+It contains functionality including:
+
+* Estimation of coil sensitivity maps: Walsh's method, Inati's fast method and
+  ESPIRiT.
+* Coil compression using singular value decomposition (SVD).
+* Image reconstruction operations: basic (FFT, NUFFT) and parallel imaging
+  (SENSE, GRAPPA, CG-SENSE).
+* Calculation of radial and spiral trajectories and sampling densities.
+* Keras metrics for image quality assessment, classification and segmentation.
+* Helper operations for array manipulation, image processing and linear algebra.
+
+All operations are performed using a TensorFlow/Keras backend. This has several
+key advantages:
+
+* Integrates seamlessly in machine learning applications.
+* Runs on heterogeneous systems, with most operations supporting CPU and
+  GPU-accelerated paths.
+* Code is easy to understand, with most of this package written in Python.
+
 .. end-intro
 
 Installation
@@ -29,8 +48,7 @@ You can install TensorFlow MRI with ``pip``:
 
     $ pip install tensorflow-mri
 
-.. note::
-    Currently, only Linux is supported.
+Note that only Linux is currently supported.
 
 TensorFlow Compatibility
 ^^^^^^^^^^^^^^^^^^^^^^^^
