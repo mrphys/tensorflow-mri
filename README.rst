@@ -1,5 +1,10 @@
-TensorFlow MRI
-==============
+.. raw:: html
+
+  <div align="center">
+    <img src="https://raw.githubusercontent.com/mrphys/tensorflow-mri/develop/tools/assets/tfmr_logo.svg?sanitize=true" width="70%">
+  </div>
+
+|
 
 |pypi| |build| |docs| |doi|
 
@@ -61,8 +66,8 @@ each package you can expect to work together.
 ==============  ==========
 TensorFlow MRI  TensorFlow
 ==============  ==========
-v0.4.0          v2.6.0
-v0.5.0          v2.6.0
+v0.4            v2.6
+v0.5            v2.6
 ==============  ==========
 
 .. end-install
