@@ -33,11 +33,11 @@ from tensorflow_mri.python.utils import tensor_utils
 
 
 def reconstruct(kspace,
+                mask=None,
                 trajectory=None,
                 density=None,
-                sensitivities=None,
                 calib=None,
-                mask=None,
+                sensitivities=None,
                 method=None,
                 **kwargs):
   """MR image reconstruction gateway.
@@ -66,6 +66,15 @@ def reconstruct(kspace,
   * **grappa**: Generalized autocalibrating partially parallel acquisitions [3]_
     reconstruction for Cartesian *k*-space data. This is the default method if
     `kspace`, `calib` and (optionally) `sensitivities` are given.
+  * **cs**:  Compressed sensing (CS) reconstruction. Accepts Cartesian and
+    non-Cartesian *k*-space data. Supply `mask` in combination with a Cartesian
+    `kspace`, or `trajectory` and (optionally) `density` in combination with
+    a non-Cartesian `kspace`. This method is never selected by default.
+  * **pics**: Combined parallel imaging and compressed sensing (PICS)
+    reconstruction. Accepts Cartesian and non-Cartesian *k*-space data. Supply
+    `mask` and `sensitivities` in combination with a Cartesian `kspace`, or
+    `trajectory`, `sensitivities` and (optionally) `density` in combination with
+    a non-Cartesian `kspace`. This method is never selected by default.
 
   .. note::
     This function supports CPU and GPU computation.
@@ -86,25 +95,31 @@ def reconstruct(kspace,
       included. A non-Cartesian `kspace` must have shape `[..., C, M]`, where
       `M` is the number of samples, `C` is the number of coils and `...` is the
       batch shape, which can have any rank.
+    mask: A `Tensor`. The sampling mask. Must have type `bool`. Must have shape
+      `S`, where `S` is the shape of the spatial dimensions. In other words,
+      `mask` should have the shape of a fully sampled *k*-space. For each point,
+      `mask` should be `True` if the corresponding *k*-space sample was measured
+      and `False` otherwise. `True` entries should correspond to the data in
+      `kspace`, and the result of dropping all `False` entries from `mask`
+      should have shape `K`. `mask` is required if `method` is `"grappa"`, or
+      if `method` is `"cs"` or `"pics"` and `kspace` is Cartesian. For other
+      methods or for non-Cartesian `kspace`, this parameter is not relevant.
     trajectory: A `Tensor`. The *k*-space trajectory. Must have type `float32`
       or `float64`. Must have shape `[..., M, N]`, where `N` is the number of
       spatial dimensions, `N` is the number of *k*-space samples and `...` is
       the batch shape, which can have any rank and must be broadcastable to the
       batch shape of `kspace`. `trajectory` is required when `method` is
-      `"nufft"` or `"cg_sense"`. For other methods, this parameter is not
-      relevant.
+      `"nufft"` or `"cg_sense"`, or if `method` is `"cs"` or `"pics"` and
+      `kspace` is non-Cartesian. For other methods or for Cartesian `kspace`,
+      this parameter is not relevant.
     density: A `Tensor`. The sampling density. Must have type `float32` or
       `float64`. Must have shape `[..., M]`, where `M` is the number of
       *k*-space samples and `...` is the batch shape, which can have any rank
       and must be broadcastable to the batch shape of `kspace`. `density` is
-      optional when `method` is `"nufft"` or `"cg_sense"`. For other methods,
-      this parameter is not relevant.
-    sensitivities: A `Tensor`. The coil sensitivity maps. Must have type
-      `complex64` or `complex128`. Must have shape `[..., C, *S]`, where `S` is
-      shape of the spatial dimensions, `C` is the number of coils and `...` is
-      the batch shape, which can have any rank and must be broadcastable to the
-      batch shape of `kspace`. `sensitivities` is required when `method` is
-      `"sense"` or `"cg_sense"`. For other methods, this parameter is not
+      optional when `method` is `"nufft"` or `"cg_sense"`, or if `method` is
+      `"cs"` or `"pics"` and `kspace` is non-Cartesian. In these cases,
+      `density` will be estimated from the given `trajectory` if not provided.
+      For other methods or for Cartesian `kspace`, this parameter is not
       relevant.
     calib: A `Tensor`. The calibration data. Must have type `complex64` or
       `complex128`. Must have shape `[..., C, *R]`, where `R` is the shape of
@@ -112,16 +127,15 @@ def reconstruct(kspace,
       shape, which can have any rank and must be broadcastable to the batch
       shape of `kspace`. `calib` is required when `method` is `"grappa"`. For
       other methods, this parameter is not relevant.
-    mask: A `Tensor`. The sampling mask. Must have type `bool`. Must have shape
-      `S`, where `S` is the shape of the spatial dimensions. In other words,
-      `mask` should have the shape of a fully sampled *k*-space. For each point,
-      `mask` should be `True` if the corresponding *k*-space sample was measured
-      and `False` otherwise. `True` entries should correspond to the data in
-      `kspace`, and the result of dropping all `False` entries from `mask`
-      should have shape `K`. `mask` is required when `method` is `"grappa"`. For
-      other methods, this parameter is not relevant.
+    sensitivities: A `Tensor`. The coil sensitivity maps. Must have type
+      `complex64` or `complex128`. Must have shape `[..., C, *S]`, where `S` is
+      shape of the spatial dimensions, `C` is the number of coils and `...` is
+      the batch shape, which can have any rank and must be broadcastable to the
+      batch shape of `kspace`. `sensitivities` is required when `method` is
+      `"sense"` or `"cg_sense"`. For other methods, this parameter is not
+      relevant.
     method: A `string`. The reconstruction method. Must be one of `"fft"`,
-      `"nufft"`, `"sense"` or `"cg_sense"`.
+      `"nufft"`, `"sense"`, `"cg_sense"`, `"grappa"`, `"cs"` or `"pics"`.
     **kwargs: Additional method-specific keyword arguments. See Notes for the
       method-specific arguments.
 
@@ -198,11 +212,11 @@ def reconstruct(kspace,
         state of the CG iteration. For more details about the CG state, see
         `tfmr.conjugate_gradient`. If `False`, only the image is returned.
 
-    * For `method="grappa"`, provide `kspace` and `calib`. Optionally, you can
-      also provide `sensitivities` (note that `sensitivities` are not used for
-      the GRAPPA computation, but they are used for adaptive coil combination).
-      If `sensitivities` are not provided, coil combination will be performed
-      using the sum of squares method.
+    * For `method="grappa"`, provide `kspace`, `mask` and `calib`. Optionally,
+      you can also provide `sensitivities` (note that `sensitivities` are not
+      used for the GRAPPA computation, but they are used for adaptive coil
+      combination). If `sensitivities` are not provided, coil combination will
+      be performed using the sum of squares method.
 
       * **kernel_size**: An `int` or list of `ints`. The size of the GRAPPA
         kernel. Must have length equal to the image rank or number of spatial
@@ -239,13 +253,13 @@ def reconstruct(kspace,
       1202-1210. https://doi.org/10.1002/mrm.10171
   """
   method = _select_reconstruction_method(
-    kspace, trajectory, density, sensitivities, calib, mask, method)
+    kspace, mask, trajectory, density, calib, sensitivities, method)
 
-  args = {'trajectory': trajectory,
+  args = {'mask': mask,
+          'trajectory': trajectory,
           'density': density,
-          'sensitivities': sensitivities,
           'calib': calib,
-          'mask': mask}
+          'sensitivities': sensitivities}
 
   args = {name: arg for name, arg in args.items() if arg is not None}
 
@@ -585,9 +599,9 @@ def _cg_sense(kspace,
 
 
 def _grappa(kspace,
-            sensitivities=None,
-            calib=None,
             mask=None,
+            calib=None,
+            sensitivities=None,
             kernel_size=5,
             weights_l2_regularizer=0.0,
             combine_coils=True,
@@ -596,10 +610,10 @@ def _grappa(kspace,
 
   For the parameters, see `tfmr.reconstruct`.
   """
-  if calib is None:
-    raise ValueError("Argument `calib` must be provided.")
   if mask is None:
     raise ValueError("Argument `mask` must be provided.")
+  if calib is None:
+    raise ValueError("Argument `calib` must be provided.")
 
   kspace = tf.convert_to_tensor(kspace)
   calib = tf.convert_to_tensor(calib)
@@ -752,6 +766,31 @@ def _grappa(kspace,
   return result
 
 
+def _cs(kspace,
+        mask=None,
+        trajectory=None,
+        density=None,
+        sensitivities=None,
+        regularizers=None,
+        solver=None):
+  """MR image reconstruction using compressed sensing.
+
+  For the parameters, see `tfmr.reconstruct`.
+  """
+
+
+def _pics(kspace,
+          mask=None,
+          trajectory=None,
+          density=None,
+          sensitivities=None,
+          solver=None):
+  """MR image reconstruction using parallel imaging and compressed sensing.
+
+  For the parameters, see `tfmr.reconstruct`.
+  """
+
+
 def _extract_patches(images, sizes):
   """Extract patches from N-D image.
 
@@ -843,11 +882,11 @@ def _flatten_last_dimensions(x):
 
 
 def _select_reconstruction_method(kspace, # pylint: disable=unused-argument
+                                  mask,
                                   trajectory,
                                   density,
-                                  sensitivities,
                                   calib,
-                                  mask,
+                                  sensitivities,
                                   method):
   """Select an appropriate reconstruction method based on user inputs.
 
@@ -1152,5 +1191,7 @@ _MR_RECON_METHODS = {
   'nufft': _nufft,
   'sense': _sense,
   'cg_sense': _cg_sense,
-  'grappa': _grappa
+  'grappa': _grappa,
+  'cs': _cs,
+  'pics': _pics
 }

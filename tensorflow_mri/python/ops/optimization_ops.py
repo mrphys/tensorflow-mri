@@ -1,4 +1,5 @@
 # Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,18 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"TensorFlow MRI."
+"""Function optimization operations.
 
-from tensorflow_mri.__about__ import *
+This module contains solvers for nonlinear optimization problems.
+"""
 
-from tensorflow_mri.python.ops.array_ops import *
-from tensorflow_mri.python.ops.coil_ops import *
-from tensorflow_mri.python.ops.fft_ops import *
-from tensorflow_mri.python.ops.image_ops import *
-from tensorflow_mri.python.ops.linalg_ops import *
-from tensorflow_mri.python.ops.math_ops import *
-from tensorflow_mri.python.ops.optimization_ops import *
-from tensorflow_mri.python.ops.recon_ops import *
-from tensorflow_mri.python.ops.traj_ops import *
+import tensorflow as tf
 
-from tensorflow_mri.python import metrics
+
+def nlcg_minimize():
+  r"""Applies the NLCG algorithm to minimize a differentiable function.
+
+  """
