@@ -20,8 +20,12 @@ This module contains functions for N-dimensional image processing.
 # Some of the code in this file is adapted from
 # tensorflow/python/ops/image_ops_impl.py to support 2D and 3D processing.
 
+import collections
+
 import numpy as np
 import tensorflow as tf
+
+from tensorflow_mri.python.utils import check_utils
 
 
 def psnr(img1, img2, max_val=None, rank=None, name='psnr'):
@@ -1129,3 +1133,50 @@ def extract_glimpses(images, sizes, offsets):
   patches = tf.gather_nd(images, indices)
   patches = tf.reshape(patches, [batch_size, num_patches, -1])
   return patches
+
+
+def phantom(phantom_type='modified_shepp_logan', shape=[256, 256]):
+  """Generate a phantom image."""
+
+  phantom_type = check_utils.validate_enum(
+      phantom_type,
+      {'shepp_logan', 'modified_shepp_logan'},
+      name='phantom_type')
+  shape = check_utils.validate_list(
+      shape, element_type=int, length=2, name='shape')
+
+  Ellipse2D = collections.namedtuple(
+      'Ellipse2D', ['rho', 'size', 'pos', 'phi']) 
+
+  phantom_objects = {
+      'shepp_logan': [
+          Ellipse2D(rho=1, size=(.69, .92), pos=(0, 0), phi=0),
+          Ellipse2D(rho=-.98, size=(.6624, .8740), pos=(0, -.0184), phi=0),
+          Ellipse2D(rho=-.02, size=(.1100, .3100), pos=(.22, 0), phi=-18 / 180. * np.pi),
+          Ellipse2D(rho=-.02, size=(.1600, .4100), pos=(-.22, 0), phi=18 / 180. * np.pi),
+          Ellipse2D(rho=.01, size=(.2100, .2500), pos=(0, .35), phi=0),
+          Ellipse2D(rho=.01, size=(.0460, .0460), pos=(0, .1), phi=0),
+          Ellipse2D(rho=.01, size=(.0460, .0460), pos=(0, -.1), phi=0),
+          Ellipse2D(rho=.01, size=(.0460, .0230), pos=(-.08, -.605), phi=0),
+          Ellipse2D(rho=.01, size=(.0230, .0230), pos=(0, -.606), phi=0),
+          Ellipse2D(rho=.01, size=(.0230, .0460), pos=(.06, -.605), phi=0)],
+      'modified_shepp_logan': [
+          Ellipse2D(rho=1, size=(.69, .92), pos=(0, 0), phi=0),
+          Ellipse2D(rho=-.8, size=(.6624, .8740), pos=(0, -.0184), phi=0),
+          Ellipse2D(rho=-.2, size=(.1100, .3100), pos=(.22, 0), phi=-18 / 180. * np.pi),
+          Ellipse2D(rho=-.2, size=(.1600, .4100), pos=(-.22, 0), phi=18 / 180. * np.pi),
+          Ellipse2D(rho=.1, size=(.2100, .2500), pos=(0, .35), phi=0),
+          Ellipse2D(rho=.1, size=(.0460, .0460), pos=(0, .1), phi=0),
+          Ellipse2D(rho=.1, size=(.0460, .0460), pos=(0, -.1), phi=0),
+          Ellipse2D(rho=.1, size=(.0460, .0230), pos=(-.08, -.605), phi=0),
+          Ellipse2D(rho=.1, size=(.0230, .0230), pos=(0, -.606), phi=0),
+          Ellipse2D(rho=.1, size=(.0230, .0460), pos=(.06, -.605), phi=0)]
+  }
+
+  # Initialize image.
+  image = tf.zeros(shape)
+
+  for obj in phantom_objects[phantom_type]:
+    pass
+
+  return image
