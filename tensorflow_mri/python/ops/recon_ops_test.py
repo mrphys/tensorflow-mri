@@ -316,9 +316,9 @@ class ReconstructTest(tf.test.TestCase):
 
     # Add ACS region to mask.
     calib_slice = slice(104 - calib_size // 2, 104 + calib_size // 2)
-    mask_1d = mask_1d.numpy()
-    mask_1d[calib_slice] = True
-    mask_1d = tf.convert_to_tensor(mask_1d)
+    mask_1d = tf.concat([mask_1d[:104 - calib_size // 2],
+                         tf.fill([calib_size], True),
+                         mask_1d[104 + calib_size // 2:]], 0)
 
     # Repeat the 1D mask to create a 2D mask.
     mask = tf.reshape(mask_1d, [full_kspace.shape[-2], 1])

@@ -17,6 +17,60 @@
 import functools
 import itertools
 
+import tensorflow as tf
+
+
+def run_in_graph_and_eager_modes(func=None, config=None, use_gpu=True):
+  """Execute the decorated test in both graph mode and eager mode.
+
+  This function returns a decorator intended to be applied to test methods in
+  a `test_case.TestCase` class. Doing so will cause the contents of the test
+  method to be executed twice - once in graph mode, and once with eager
+  execution enabled. This allows unittests to confirm the equivalence between
+  eager and graph execution.
+
+  .. note::
+    This decorator can only be used when executing eagerly in the outer scope.
+
+  Args:
+    func: function to be annotated. If `func` is None, this method returns a
+      decorator the can be applied to a function. If `func` is not None this
+      returns the decorator applied to `func`.
+    config: An optional config_pb2.ConfigProto to use to configure the session
+      when executing graphs.
+    use_gpu: If `True`, attempt to run as many operations as possible on GPU.
+
+  Returns:
+    Returns a decorator that will run the decorated test method twice:
+    once by constructing and executing a graph in a session and once with
+    eager execution enabled.
+  """
+  def decorator(f):
+    """Decorator for a method."""
+
+    def decorated(self, *args, **kwargs):
+      """Run the decorated test method."""
+      if not tf.executing_eagerly():
+        raise ValueError('Must be executing eagerly when using the '
+                         'run_in_graph_and_eager_modes decorator.')
+
+      # Run eager block
+      f(self, *args, **kwargs)
+      self.tearDown()
+
+      # Run in graph mode block
+      with tf.Graph().as_default():
+        self.setUp()
+        with self.test_session(use_gpu=use_gpu, config=config):
+          f(self, *args, **kwargs)
+
+    return decorated
+
+  if func is not None:
+    return decorator(func)
+
+  return decorator
+
 
 def parameterized_test(**params):
   """Decorates a test to run with multiple parameter combinations.
