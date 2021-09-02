@@ -28,3 +28,5 @@ Bug Fixes and Other Changes
 * `tfmr`:
 
   * Fixed a bug that caused `fftn` and `ifftn` to fail in graph mode.
+  * Fixed a bug that caused `psnr`, `ssim` and `ssim_multiscale` to fail in
+    graph mode.

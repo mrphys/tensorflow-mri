@@ -72,13 +72,7 @@ def psnr(img1, img2, max_val=None, rank=None, name='psnr'):
     # Infer the number of spatial dimensions if not specified by the user, then
     # check that the value is valid.
     if rank is None:
-      rank = tf.rank(img1) - 2
-    tf.debugging.assert_greater_equal(
-        rank, 2,
-        message=f"`rank` must be >= 2, but got: {rank}")
-    tf.debugging.assert_less_equal(
-        rank, 3,
-        message=f"`rank` must be <= 3, but got: {rank}")
+      rank = img1.shape.rank - 2 # Rank must be defined statically.
 
     mse = tf.math.reduce_mean(
       tf.math.squared_difference(img1, img2), tf.range(-rank-1, 0)) # pylint: disable=invalid-unary-operand-type
@@ -220,13 +214,8 @@ def ssim(img1,
     # Infer the number of spatial dimensions if not specified by the user, then
     # check that the value is valid.
     if rank is None:
-      rank = tf.rank(img1) - 2
-    tf.debugging.assert_greater_equal(
-        rank, 2,
-        message=f"`rank` must be >= 2, but got: {rank}")
-    tf.debugging.assert_less_equal(
-        rank, 3,
-        message=f"`rank` must be <= 3, but got: {rank}")
+      rank = img1.shape.rank - 2 # Rank must be defined statically.
+
     # Check shapes.
     _, _, checks = _verify_compatible_image_shapes(img1, img2, rank)
     with tf.control_dependencies(checks):
@@ -444,26 +433,22 @@ def ssim_multiscale(img1,
     # check that the value is valid.
     if rank is None:
       rank = img1.shape.rank - 2
-    tf.debugging.assert_greater_equal(
-        rank, 2,
-        message=f"`rank` must be >= 2, but got: {rank}")
-    tf.debugging.assert_less_equal(
-        rank, 3,
-        message=f"`rank` must be <= 3, but got: {rank}")
+
     # Shape checking.
     shape1, shape2, checks = _verify_compatible_image_shapes(img1, img2, rank)
-    with tf.control_dependencies(checks):
-      img1 = tf.identity(img1)
 
     # Check that spatial dimensions are big enough.
     min_dim_size = (filter_size - 1) * 2 ** (len(power_factors) - 1) + 1
-    tf.debugging.assert_greater_equal(
+    checks.append(tf.debugging.assert_greater_equal(
         shape1[-rank-1:-1], min_dim_size, # pylint: disable=invalid-unary-operand-type
         message=(
           f"All spatial dimensions must have size of at least {min_dim_size}, "
           f"but got shape: {shape1[-rank-1:-1]}. Try upsampling the image, " # pylint: disable=invalid-unary-operand-type
           f"using a smaller `filter_size` or a smaller number of "
-          f"`power_factors`."))
+          f"`power_factors`.")))
+
+    with tf.control_dependencies(checks):
+      img1 = tf.identity(img1)
 
     imgs = [img1, img2]
     shapes = [shape1, shape2]
@@ -750,7 +735,7 @@ def _ssim_per_channel(img1,
     img1, img2, reducer, max_val, compensation, k1, k2)
 
   # Average over the spatial dimensions.
-  axes = tf.constant(tf.range(-(rank + 1), -1), dtype=tf.int32)
+  axes = tf.range(-(rank + 1), -1)
   ssim_val = tf.math.reduce_mean(luminance * cs, axes)
   cs = tf.math.reduce_mean(cs, axes)
   return ssim_val, cs
@@ -874,33 +859,28 @@ def _verify_compatible_image_shapes(img1, img2, rank):
   match.
 
   Args:
-    rank: Rank of the images (number of spatial dimensions).
     img1: Tensor containing the first image batch.
     img2: Tensor containing the second image batch.
+    rank: Rank of the images (number of spatial dimensions).
 
   Returns:
     A tuple containing: the first tensor shape, the second tensor shape, and
     a list of tf.debugging.Assert() ops implementing the checks.
-
-  Raises:
-    ValueError: When static shape check fails.
   """
   rank_p1 = rank + 1
-
-  shape1 = img1.get_shape().with_rank_at_least(rank_p1)
-  shape2 = img2.get_shape().with_rank_at_least(rank_p1)
-  shape1[-rank_p1:].assert_is_compatible_with(shape2[-rank_p1:])
-
-  if shape1.ndims is not None and shape2.ndims is not None:
-    for dim1, dim2 in zip(reversed(shape1.dims[:-rank_p1]),
-                          reversed(shape2.dims[:-rank_p1])):
-      if not (dim1 == 1 or dim2 == 1 or dim1.is_compatible_with(dim2)):
-        raise ValueError(f"Incompatible image shapes: {shape1} and {shape2}")
 
   # Now assign shape tensors.
   shape1, shape2 = tf.shape_n([img1, img2])
 
   checks = []
+  checks.append(
+      tf.debugging.assert_greater_equal(
+          rank, 2,
+          message=f"`rank` must be >= 2, but got: {rank}"))
+  checks.append(
+      tf.debugging.assert_less_equal(
+          rank, 3,
+          message=f"`rank` must be <= 3, but got: {rank}"))
   checks.append(
       tf.debugging.Assert(
           tf.math.greater_equal(tf.size(shape1), rank_p1), [shape1, shape2],
@@ -970,7 +950,9 @@ def central_crop(tensor, shape):
   shape = tf.convert_to_tensor(shape)
 
   # Check that ranks are consistent.
-  tf.debugging.assert_equal(tf.rank(tensor), tf.size(shape))
+  with tf.control_dependencies([tf.debugging.assert_equal(tf.rank(tensor),
+                                                          tf.size(shape))]):
+    tensor = tf.identity(tensor)
 
   # Crop the tensor.
   slice_begin = tf.where(
@@ -983,8 +965,9 @@ def central_crop(tensor, shape):
     -1)
   tensor = tf.slice(tensor, slice_begin, slice_size)
 
-  # Set static shape.
-  tensor = tf.ensure_shape(tensor, static_shape)
+  # Set static shape, if possible.
+  if static_shape is not None:
+    tensor = tf.ensure_shape(tensor, static_shape)
 
   return tensor
 
@@ -1047,11 +1030,14 @@ def extract_glimpses(images, sizes, offsets):
   # Infer rank from kernel size, then check that `images` and `offsets` are
   # consistent.
   rank = len(sizes)
-  tf.debugging.assert_rank(images, rank + 2, message=(
-    f"`images` must have rank `len(sizes) + 2`, but got: {tf.rank(images)}"))
-  tf.debugging.assert_equal(tf.shape(offsets)[-1], rank, message=(
-    f"The last dimension of `offsets` must be equal to `len(sizes)`, "
-    f"but got: {tf.shape(offsets)[-1]}"))
+  checks = []
+  checks.append(tf.debugging.assert_rank(images, rank + 2, message=(
+      f"`images` must have rank `len(sizes) + 2`, but got: {tf.rank(images)}")))
+  checks.append(tf.debugging.assert_equal(tf.shape(offsets)[-1], rank, message=(
+      f"The last dimension of `offsets` must be equal to `len(sizes)`, "
+      f"but got: {tf.shape(offsets)[-1]}")))
+  with tf.control_dependencies(checks):
+    images = tf.identity(images)
 
   # Get batch size and the number of patches.
   batch_size = tf.shape(images)[0]

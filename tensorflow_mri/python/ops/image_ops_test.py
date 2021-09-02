@@ -19,6 +19,7 @@ import tensorflow as tf
 
 from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.utils import io_utils
+from tensorflow_mri.python.utils import test_utils
 
 
 class PeakSignalToNoiseRatioTest(tf.test.TestCase):
@@ -30,7 +31,7 @@ class PeakSignalToNoiseRatioTest(tf.test.TestCase):
     super().setUpClass()
     cls.data = io_utils.read_hdf5('tests/data/image_ops_data.h5')
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_psnr_2d_scalar(self):
     """Test 2D PSNR with scalar batch."""
     img1 = self.data['psnr/2d/img1']
@@ -45,7 +46,7 @@ class PeakSignalToNoiseRatioTest(tf.test.TestCase):
     result = image_ops.psnr2d(img1, img2, max_val=255)
     self.assertAllClose(result, 22.73803845)
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_psnr_2d_trivial_batch(self):
     """Test 2D PSNR with trivial batch of size 1."""
     img1 = self.data['psnr/2d/img1']
@@ -59,7 +60,7 @@ class PeakSignalToNoiseRatioTest(tf.test.TestCase):
     result = image_ops.psnr(img1, img2, max_val=255, rank=2)
     self.assertAllClose(result, [22.73803845])
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_psnr_2d_batch_multichannel(self):
     """Test 2D PSNR with multichannel batch of images."""
     img1 = self.data['psnr/2d/batch/img1']
@@ -79,7 +80,7 @@ class PeakSignalToNoiseRatioTest(tf.test.TestCase):
     result = image_ops.psnr(img1, img2)
     self.assertAllClose(result, ref)
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_psnr_2d_nd_batch(self):
     """Test 2D PSNR with N-D batch of images."""
     img1 = self.data['psnr/2d/batch/img1']
@@ -93,7 +94,7 @@ class PeakSignalToNoiseRatioTest(tf.test.TestCase):
     result = image_ops.psnr(img1, img2, max_val=255, rank=2)
     self.assertAllClose(result, ref)
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_psnr_2d_batch_multichannel_float(self):
     """Test 2D PSNR with multichannel batch of floating point images."""
     img1 = self.data['psnr/2d/batch/img1']
@@ -116,7 +117,7 @@ class PeakSignalToNoiseRatioTest(tf.test.TestCase):
     result = image_ops.psnr(img1, img2)
     self.assertAllClose(result, ref)
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_psnr_3d_scalar(self):
     """Test 3D PSNR with scalar batch."""
     img1 = self.data['psnr/3d/img1']
@@ -131,7 +132,7 @@ class PeakSignalToNoiseRatioTest(tf.test.TestCase):
     result = image_ops.psnr(img1, img2, rank=3)
     self.assertAllClose(result, 32.3355765)
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_psnr_3d_batch(self):
     """Test 3D PSNR with scalar batch."""
     img1 = self.data['psnr/3d/img1']
@@ -150,7 +151,7 @@ class PeakSignalToNoiseRatioTest(tf.test.TestCase):
     result = image_ops.psnr(img1, img2, max_val=255)
     self.assertAllClose(result, ref, rtol=1e-5, atol=1e-5)
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_psnr_3d_mdbatch(self):
     """Test 3D PSNR with multidimensional batch."""
     img1 = self.data['psnr/3d/img1']
@@ -172,7 +173,7 @@ class PeakSignalToNoiseRatioTest(tf.test.TestCase):
     result = image_ops.psnr3d(img1, img2, max_val=255)
     self.assertAllClose(result, ref, rtol=1e-3, atol=1e-3)
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_psnr_3d_multichannel(self):
     """Test 3D PSNR with multichannel inputs."""
     img1 = self.data['psnr/3d/img1']
@@ -188,7 +189,6 @@ class PeakSignalToNoiseRatioTest(tf.test.TestCase):
 
     result = image_ops.psnr(img1, img2, max_val=255, rank=3)
     self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
-
 
   def test_psnr_invalid_rank(self):
     """Test PSNR with an invalid rank."""
@@ -216,7 +216,7 @@ class StructuralSimilarityTest(tf.test.TestCase):
     super().setUpClass()
     cls.data = io_utils.read_hdf5('tests/data/image_ops_data.h5')
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_ssim_2d_scalar(self):
     """Test 2D SSIM with scalar batch."""
     img1 = self.data['psnr/2d/img1']
@@ -229,7 +229,7 @@ class StructuralSimilarityTest(tf.test.TestCase):
 
     self.assertAllClose(result, 0.5250339, rtol=1e-5, atol=1e-5)
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_ssim_2d_trivial_batch(self):
     """Test 2D SSIM with trivial batch of size 1."""
     img1 = self.data['psnr/2d/img1']
@@ -243,7 +243,7 @@ class StructuralSimilarityTest(tf.test.TestCase):
     result = image_ops.ssim(img1, img2, max_val=255, rank=2)
     self.assertAllClose(result, [0.5250339], rtol=1e-5, atol=1e-5)
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_ssim_2d_batch_multichannel(self):
     """Test 2D SSIM with multichannel batch of images."""
     img1 = self.data['psnr/2d/batch/img1']
@@ -263,7 +263,7 @@ class StructuralSimilarityTest(tf.test.TestCase):
     result = image_ops.ssim(img1, img2)
     self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_ssim_2d_nd_batch(self):
     """Test 2D SSIM with N-D batch of images."""
     img1 = self.data['psnr/2d/batch/img1']
@@ -277,7 +277,7 @@ class StructuralSimilarityTest(tf.test.TestCase):
     result = image_ops.ssim(img1, img2, max_val=255, rank=2)
     self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_ssim_2d_batch_multichannel_float(self):
     """Test 2D SSIM with multichannel batch of floating point images."""
     img1 = self.data['psnr/2d/batch/img1']
@@ -300,7 +300,7 @@ class StructuralSimilarityTest(tf.test.TestCase):
     result = image_ops.ssim(img1, img2)
     self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_ssim_3d_scalar(self):
     """Test 3D SSIM with scalar batch."""
     img1 = self.data['psnr/3d/img1']
@@ -315,7 +315,7 @@ class StructuralSimilarityTest(tf.test.TestCase):
     result = image_ops.ssim(img1, img2, rank=3)
     self.assertAllClose(result, 0.93111473)
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_ssim_3d_batch(self):
     """Test 3D SSIM with batch."""
     img1 = self.data['psnr/3d/img1']
@@ -333,7 +333,7 @@ class StructuralSimilarityTest(tf.test.TestCase):
     result = image_ops.ssim(img1, img2, max_val=255)
     self.assertAllClose(result, ref, rtol=1e-5, atol=1e-5)
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_ssim_3d_mdbatch(self):
     """Test 3D SSIM with multidimensional batch."""
     img1 = self.data['psnr/3d/img1']
@@ -354,7 +354,7 @@ class StructuralSimilarityTest(tf.test.TestCase):
     result = image_ops.ssim(img1, img2, max_val=255, rank=3)
     self.assertAllClose(result, ref)
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_ssim_3d_multichannel(self):
     """Test 3D SSIM with multichannel inputs."""
     # Does not work on CPU currently - GPU only.
@@ -374,7 +374,6 @@ class StructuralSimilarityTest(tf.test.TestCase):
 
     # result = image_ops.ssim(img1, img2, max_val=255, rank=3)
     # self.assertAllClose(result, tf.math.reduce_mean(ref, axis=1))
-
 
   def test_ssim_invalid_rank(self):
     """Test SSIM with an invalid rank."""
@@ -402,7 +401,7 @@ class MultiscaleStructuralSimilarityTest(tf.test.TestCase):
     super().setUpClass()
     cls.data = io_utils.read_hdf5('tests/data/image_ops_data.h5')
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_msssim_2d_scalar(self):
     """Test 2D MS-SSIM with scalar batch."""
     img1 = self.data['psnr/2d/img1']
@@ -417,7 +416,7 @@ class MultiscaleStructuralSimilarityTest(tf.test.TestCase):
     result = image_ops.ssim2d_multiscale(img1, img2, max_val=255)
     self.assertAllClose(result, 0.8270784)
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_msssim_2d_trivial_batch(self):
     """Test 2D MS-SSIM with trivial batch of size 1."""
     img1 = self.data['psnr/2d/img1']
@@ -431,7 +430,7 @@ class MultiscaleStructuralSimilarityTest(tf.test.TestCase):
     result = image_ops.ssim_multiscale(img1, img2, max_val=255, rank=2)
     self.assertAllClose(result, [0.8270784])
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_msssim_2d_batch_multichannel(self):
     """Test 2D MS-SSIM with multichannel batch of images."""
     img1 = self.data['psnr/2d/batch/img1']
@@ -451,7 +450,7 @@ class MultiscaleStructuralSimilarityTest(tf.test.TestCase):
     result = image_ops.ssim_multiscale(img1, img2)
     self.assertAllClose(result, ref, rtol=1e-5, atol=1e-5)
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_msssim_2d_nd_batch(self):
     """Test 2D MS-SSIM with N-D batch of images."""
     img1 = self.data['psnr/2d/batch/img1']
@@ -468,7 +467,7 @@ class MultiscaleStructuralSimilarityTest(tf.test.TestCase):
     result = image_ops.ssim2d_multiscale(img1, img2, max_val=255)
     self.assertAllClose(result, ref, rtol=1e-5, atol=1e-5)
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_msssim_2d_batch_multichannel_float(self):
     """Test 2D MS-SSIM with multichannel batch of floating point images."""
     img1 = self.data['psnr/2d/batch/img1']
@@ -491,7 +490,7 @@ class MultiscaleStructuralSimilarityTest(tf.test.TestCase):
     result = image_ops.ssim_multiscale(img1, img2)
     self.assertAllClose(result, ref, rtol=1e-5, atol=1e-5)
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_msssim_3d_scalar(self):
     """Test 3D MS-SSIM with scalar batch."""
     # Kills testing hardware.
@@ -517,7 +516,6 @@ class MultiscaleStructuralSimilarityTest(tf.test.TestCase):
 
     # self.assertAllClose(result, 0.96301770)
 
-
   def test_msssim_input_size_error(self):
     """Test MS-SSIM with an invalid rank."""
     img1 = tf.zeros((4, 160, 160, 1))
@@ -538,8 +536,9 @@ class CentralCropTest(tf.test.TestCase):
   """Tests for central cropping operation."""
   # pylint: disable=missing-function-docstring
 
+  @test_utils.run_in_graph_and_eager_modes
   def test_cropping(self):
-
+    """Test cropping."""
     shape = [2, 2]
     x_np = np.array([[1, 2, 3, 4],
                      [5, 6, 7, 8],
@@ -551,9 +550,9 @@ class CentralCropTest(tf.test.TestCase):
 
     self.assertAllEqual(y_tf, y_np)
 
-
-  def test_cropping_2(self):
-
+  @test_utils.run_in_graph_and_eager_modes
+  def test_cropping_unknown_dim(self):
+    """Test cropping with an unknown dimension."""
     shape = [-1, 2]
     x_np = np.array([[1, 2, 3, 4],
                      [5, 6, 7, 8],
@@ -570,8 +569,9 @@ class SymmetricPadOrCropTest(tf.test.TestCase):
   """Tests for symmetric padding/cropping operation."""
   # pylint: disable=missing-function-docstring
 
+  @test_utils.run_in_graph_and_eager_modes
   def test_cropping(self):
-
+    """Test cropping."""
     shape = [2, 2]
     x_np = np.array([[1, 2, 3, 4],
                      [5, 6, 7, 8],
@@ -583,9 +583,9 @@ class SymmetricPadOrCropTest(tf.test.TestCase):
 
     self.assertAllEqual(y_tf, y_np)
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_padding(self):
-
+    """Test padding."""
     shape = [4, 4]
     x_np = np.array([[1, 2], [3, 4]])
     y_np = np.array([[0, 0, 0, 0],
@@ -597,9 +597,9 @@ class SymmetricPadOrCropTest(tf.test.TestCase):
 
     self.assertAllEqual(y_tf, y_np)
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_padding_cropping(self):
-
+    """Test combined cropping and padding."""
     shape = [1, 5]
     x_np = np.array([[1, 2, 3],
                      [4, 5, 6],
@@ -610,9 +610,9 @@ class SymmetricPadOrCropTest(tf.test.TestCase):
 
     self.assertAllEqual(y_tf, y_np)
 
-
-  def test_padding_cropping_2(self):
-
+  @test_utils.run_in_graph_and_eager_modes
+  def test_padding_cropping_unknown_dimension(self):
+    """Test combined cropping and padding with an unknown dimension."""
     shape = [1, -1]
     x_np = np.array([[1, 2, 3],
                      [4, 5, 6],
@@ -627,6 +627,7 @@ class SymmetricPadOrCropTest(tf.test.TestCase):
 class ExtractGlimpsesTest(tf.test.TestCase):
   """Tests for the `extract_glimpses` operation."""
 
+  @test_utils.run_in_graph_and_eager_modes
   def test_extract_glimpses(self):
     """Test `extract_glimpses` operation."""
     images = tf.reshape(tf.range(40), [1, 4, 5, 2])
