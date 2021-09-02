@@ -1010,6 +1010,76 @@ def resize_with_crop_or_pad(tensor, shape):
   return tensor
 
 
+def total_variation(tensor,
+                    axis=None,
+                    keepdims=False,
+                    name='total_variation'):
+  """Calculate and return the total variation along the specified axes.
+
+  The total variation is the sum of the absolute differences for neighboring
+  values in the input tensor. This is a measure of the noise present.
+
+  This implements the anisotropic N-D version of the formula described here:
+
+  https://en.wikipedia.org/wiki/Total_variation_denoising
+
+  Args:
+    tensor: A `Tensor`. Can have any shape.
+    axis: An `int` or a list of `ints`. The axes along which the differences are
+      taken. Defaults to `list(range(1, tensor.shape.rank - 1))`, i.e.
+      differences are taken along all axes except the first and the last, which
+      are assumed to be the batch and channel axes, respectively.
+    keepdims: A `bool`. If `True`, keeps the singleton reduced dimensions.
+      Defaults to `False`.
+    name: A name for the operation (optional).
+
+  Returns:
+    The total variation of `images`.
+  """
+  with tf.name_scope(name):
+
+    tensor = tf.convert_to_tensor(tensor)
+    rank = tensor.shape.rank
+
+    if rank is None:
+      raise ValueError(
+          "`total_variation` requires known rank for input `tensor`")
+
+    # If `axis` was not specified, compute along all axes.
+    if axis is None:
+      axis = list(range(rank))
+    if isinstance(axis, int):
+      axis = [axis]
+    for ax in axis:
+      if ax < -rank or ax >= rank:
+        raise ValueError(
+            f"axis {ax} is out of bounds for tensor of rank {rank}")
+
+    # Total variation.
+    tot_var = tf.constant(0, dtype=tensor.dtype)
+    
+    for ax in axis:
+      slice1 = [slice(None)] * rank
+      slice2 = [slice(None)] * rank
+      slice1[ax] = slice(1, None)
+      slice2[ax] = slice(None, -1)
+
+      # Calculate the difference of neighboring values.
+      pixel_diff = tensor[slice1] - tensor[slice2]
+
+      # Add the difference for the current axis to total. Use `keepdims=True`
+      # to enable broadcasting.
+      tot_var += tf.math.reduce_sum(tf.math.abs(pixel_diff),
+                                    axis=axis,
+                                    keepdims=True)
+    
+    # Squeeze the TV dimensions.
+    if not keepdims:
+      tot_var = tf.squeeze(tot_var, axis=axis)
+
+    return tot_var
+
+
 def extract_glimpses(images, sizes, offsets):
   """Extract glimpses (patches) from a tensor at the given offsets.
 

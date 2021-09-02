@@ -19,8 +19,9 @@ Known Caveats
 Major Features and Improvements
 -------------------------------
 
-* <INSERT MAJOR FEATURE HERE, USING MARKDOWN SYNTAX>
-* <IF RELEASE CONTAINS MULTIPLE FEATURES FROM SAME AREA, GROUP THEM TOGETHER>
+* `tfmr`:
+
+  * Added new op `total_variation`.
 
 Bug Fixes and Other Changes
 ---------------------------

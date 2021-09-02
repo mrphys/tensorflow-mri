@@ -624,6 +624,48 @@ class SymmetricPadOrCropTest(tf.test.TestCase):
     self.assertAllEqual(y_tf, y_np)
 
 
+class TotalVariationTest(tf.test.TestCase):
+  """Tests for operation `total_variation`."""
+
+  @test_utils.run_in_graph_and_eager_modes
+  def test_total_variation(self):
+    """Test total variation."""
+    # Example image.
+    img = [[1, 2, 4, 4],
+           [4, 7, 2, 1],
+           [8, 2, 4, 3],
+           [2, 2, 1, 6]]
+    # The following are the sum of absolute differences between the pixels.
+    # sum row dif = (4-1) + (8-4) + (8-2) + (7-2) + (7-2) + (2-2)
+    #             + (4-2) + (4-2) + (4-1) + (4-1) + (3-1) + (6-3)
+    #             = (3 + 4 + 6) + (5 + 5 + 0) + (2 + 2 + 3) + (3 + 2 + 3)
+    #             = 13 + 10 + 7 + 8 = 38
+    # sum col dif = (2-1) + (4-2) + (4-4) + (7-4) + (7-2) + (2-1)
+    #             + (8-2) + (4-2) + (4-3) + (2-2) + (2-1) + (6-1)
+    #             = (1 + 2 + 0) + (3 + 5 + 1) + (6 + 2 + 1) + 0 + 1 + 5 =
+    #             = 3 + 9 + 9 + 6
+
+    result = image_ops.total_variation(img)
+    self.assertAllClose(result, 65)
+
+    result = image_ops.total_variation(img, axis=0)
+    self.assertAllClose(result, [13, 10, 7, 8])
+
+    result = image_ops.total_variation(img, axis=1)
+    self.assertAllClose(result, [3, 9, 9, 6])
+
+    # Test with `keepdims=True`.
+    result = image_ops.total_variation(img, axis=0, keepdims=True)
+    self.assertAllClose(result, tf.reshape([13, 10, 7, 8], [1, 4]))
+
+    result = image_ops.total_variation(img, axis=1, keepdims=True)
+    self.assertAllClose(result, tf.reshape([3, 9, 9, 6], [4, 1]))
+
+    # Test float by scaling pixel values. Total variation scales as well.
+    result = image_ops.total_variation(1.25 * np.array(img))
+    self.assertAllClose(result, 1.25 * 65)
+
+
 class ExtractGlimpsesTest(tf.test.TestCase):
   """Tests for the `extract_glimpses` operation."""
 
