@@ -21,7 +21,8 @@ Major Features and Improvements
 
 * `tfmr`:
 
-  * Added new op `total_variation`.
+  * Added new image op `total_variation`.
+  * Addew new array ops `meshgrid` and `cartesian_product`.
 
 Bug Fixes and Other Changes
 ---------------------------
