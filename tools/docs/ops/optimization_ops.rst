@@ -6,7 +6,7 @@ Optimization
 .. currentmodule:: tfmr
 
 .. autosummary::
-    :toctree: _optimization_ops
+    :toctree: optimization_ops
     :nosignatures:
 
     nlcg_minimize

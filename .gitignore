@@ -7,5 +7,7 @@ __pycache__/
 artifacts/
 third_party/spiral_waveform
 tools/docs/_*
-tools/docs/metrics/_*
-tools/docs/ops/_*
+tools/docs/metrics/*
+!tools/docs/metrics/*.rst
+tools/docs/ops/*
+!tools/docs/ops/*.rst

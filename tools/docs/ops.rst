@@ -9,6 +9,7 @@ Operations
     ops/array_ops
     ops/coil_ops
     ops/fft_ops
+    ops/geom_ops
     ops/image_ops
     ops/linalg_ops
     ops/math_ops

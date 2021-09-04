@@ -6,7 +6,7 @@ Image Reconstruction
 .. currentmodule:: tfmr
 
 .. autosummary::
-    :toctree: _recon_ops
+    :toctree: recon_ops
     :nosignatures:
 
     reconstruct

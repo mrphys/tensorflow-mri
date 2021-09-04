@@ -21,8 +21,9 @@ Major Features and Improvements
 
 * `tfmr`:
 
-  * Added new image op `total_variation`.
+  * Added new image ops `total_variation` and `phantom`.
   * Addew new array ops `meshgrid` and `cartesian_product`.
+  * Added new geometry module with ops `rotate_2d` and `rotate_3d`.
 
 Bug Fixes and Other Changes
 ---------------------------

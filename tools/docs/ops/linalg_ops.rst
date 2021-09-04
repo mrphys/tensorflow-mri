@@ -6,7 +6,7 @@ Linear Algebra
 .. currentmodule:: tfmr
 
 .. autosummary::
-    :toctree: _linalg_ops
+    :toctree: linalg_ops
     :nosignatures:
 
     LinearOperatorImaging

@@ -12,19 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"TensorFlow MRI."
-
-from tensorflow_mri.__about__ import *
-
-from tensorflow_mri.python.ops.array_ops import *
-from tensorflow_mri.python.ops.coil_ops import *
-from tensorflow_mri.python.ops.fft_ops import *
-from tensorflow_mri.python.ops.geom_ops import *
-from tensorflow_mri.python.ops.image_ops import *
-from tensorflow_mri.python.ops.linalg_ops import *
-from tensorflow_mri.python.ops.math_ops import *
-from tensorflow_mri.python.ops.optimization_ops import *
-from tensorflow_mri.python.ops.recon_ops import *
-from tensorflow_mri.python.ops.traj_ops import *
-
-from tensorflow_mri.python import metrics
+"""Tests for module `geom_ops`."""

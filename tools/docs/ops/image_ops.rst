@@ -6,7 +6,7 @@ Image Processing
 .. currentmodule:: tfmr
 
 .. autosummary::
-    :toctree: _image_ops
+    :toctree: image_ops
     :nosignatures:
     
     psnr

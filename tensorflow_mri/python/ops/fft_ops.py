@@ -176,7 +176,7 @@ def _fft_internal(x, shape, axes, norm, shift, transform): # pylint: disable=mis
           "Received: {}, {}").format(shape, axes)))
     with tf.control_dependencies(checks):
       shape, axes = tf.identity_n([shape, axes])
-  
+
   # Default value for `axes`.
   if axes is None:
     if shape is None:

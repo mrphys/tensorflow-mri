@@ -24,9 +24,9 @@ import collections
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.python.ops.gen_math_ops import mat_mul
 
 from tensorflow_mri.python.ops import array_ops
+from tensorflow_mri.python.ops import geom_ops
 from tensorflow_mri.python.utils import check_utils
 
 
@@ -448,7 +448,7 @@ def ssim_multiscale(img1,
     checks.append(tf.debugging.assert_greater_equal(
         shape1[-rank-1:-1], min_dim_size, # pylint: disable=invalid-unary-operand-type
         message=(
-          f"All spatial dimensions must have size of at least {min_dim_size}, "
+          f"All spatial dimensions must have size of at least {min_dim_size}, " # pylint: disable=invalid-unary-operand-type
           f"but got shape: {shape1[-rank-1:-1]}. Try upsampling the image, " # pylint: disable=invalid-unary-operand-type
           f"using a smaller `filter_size` or a smaller number of "
           f"`power_factors`.")))
@@ -1041,6 +1041,9 @@ def total_variation(tensor,
 
   Returns:
     The total variation of `images`.
+
+  Raises:
+    ValueError: If `tensor` has unknown static rank or `axis` is out of bounds.
   """
   with tf.name_scope(name):
 
@@ -1063,7 +1066,7 @@ def total_variation(tensor,
 
     # Total variation.
     tot_var = tf.constant(0, dtype=tensor.dtype)
-    
+
     for ax in axis:
       slice1 = [slice(None)] * rank
       slice2 = [slice(None)] * rank
@@ -1078,7 +1081,7 @@ def total_variation(tensor,
       tot_var += tf.math.reduce_sum(tf.math.abs(pixel_diff),
                                     axis=axis,
                                     keepdims=True)
-    
+
     # Squeeze the TV dimensions.
     if not keepdims:
       tot_var = tf.squeeze(tot_var, axis=axis)
@@ -1137,11 +1140,42 @@ def extract_glimpses(images, sizes, offsets):
   return patches
 
 
-def phantom(phantom_type='modified_shepp_logan',
+def phantom(phantom_type='modified_shepp_logan', # pylint: disable=dangerous-default-value
             shape=[256, 256],
             dtype=tf.dtypes.float32):
   """Generate a phantom image.
-  
+
+  Available 2D phantoms are:
+
+    * **shepp_logan**: The original Shepp-Logan phantom [1]_.
+    * **modified_shepp_logan**: A variant of the Shepp-Logan phantom in which
+      the contrast is improved for better visual perception [2]_.
+
+  Available 3D phantoms are:
+
+    * **kak_roberts**: A simplified 3D extension of the Shepp-Logan phantom
+      [3]_.
+    * **modified_kak_roberts**: A variant of the Kak-Roberts phantom in which
+      the contrast is improved for better visual perception [4]_.
+    * **koay_sarlls_ozarslan**: Same as `modified_kak_roberts`.
+
+  Args:
+    phantom_type: A `string`. If 2D, must be one of
+      `{'shepp_logan', 'modified_shepp_logan'}`. If 3D, must be one of
+      `{'kak_roberts', 'modified_kak_roberts', 'koay_sarlls_ozarslan'}`.
+      Defaults to `modified_shepp_logan` for 2D phantoms and
+      `modified_kak_roberts` for 3D phantoms.
+    shape: A list of `ints`. The shape of the generated phantom. Must have
+      length 2 or 3.
+    dtype: A `string` or `tf.DType`. The data type of the generated phantom.
+
+  Returns:
+    A `Tensor` of shape `shape` and type `dtype` containing the generated
+    phantom.
+
+  Raises:
+    ValueError: If the requested ND phantom is not defined.
+
   References:
     .. [1] Shepp, L. A., & Logan, B. F. (1974). The Fourier reconstruction of a
       head section. IEEE Transactions on nuclear science, 21(3), 21-43.
@@ -1155,72 +1189,25 @@ def phantom(phantom_type='modified_shepp_logan',
   """
   phantom_type = check_utils.validate_enum(
       phantom_type,
-      {'shepp_logan', 'modified_shepp_logan'},
+      {'shepp_logan', 'modified_shepp_logan',
+       'kak_roberts', 'modified_kak_roberts', 'koay_sarlls_ozarslan'},
       name='phantom_type')
   if isinstance(shape, tf.TensorShape):
     shape = shape.as_list()
   shape = check_utils.validate_list(
       shape, element_type=int, name='shape')
 
-  Ellipse = collections.namedtuple(
-      'Ellipse', ['rho', 'size', 'pos', 'phi'])
-  Ellipsoid = collections.namedtuple(
-      'Ellipsoid', ['rho', 'size', 'pos', 'phi'])
-
-  phantom_objects_2d = {
-      'shepp_logan': [
-          Ellipse(rho=1, size=(.9200, .6900), pos=(0, 0), phi=0),
-          Ellipse(rho=-.98, size=(.8740, .6624), pos=(.0184, 0), phi=0),
-          Ellipse(rho=-.02, size=(.3100, .1100), pos=(0, .22), phi=18 / 180. * np.pi),
-          Ellipse(rho=-.02, size=(.4100, .1600), pos=(0, -.22), phi=-18 / 180. * np.pi),
-          Ellipse(rho=.01, size=(.2500, .2100), pos=(-.35, 0), phi=0),
-          Ellipse(rho=.01, size=(.0460, .0460), pos=(-.1, 0), phi=0),
-          Ellipse(rho=.01, size=(.0460, .0460), pos=(.1, 0), phi=0),
-          Ellipse(rho=.01, size=(.0230, .0460), pos=(.605, -.08), phi=0),
-          Ellipse(rho=.01, size=(.0230, .0230), pos=(.606, 0), phi=0),
-          Ellipse(rho=.01, size=(.0460, .0230), pos=(.605, .06), phi=0)],
-      'modified_shepp_logan': [
-          Ellipse(rho=1, size=(.9200, .6900), pos=(0, 0), phi=0),
-          Ellipse(rho=-.8, size=(.8740, .6624), pos=(.0184, 0), phi=0),
-          Ellipse(rho=-.2, size=(.3100, .1100), pos=(0, .22), phi=18 / 180. * np.pi),
-          Ellipse(rho=-.2, size=(.4100, .1600), pos=(0, -.22), phi=-18 / 180. * np.pi),
-          Ellipse(rho=.1, size=(.2500, .2100), pos=(-.35, 0), phi=0),
-          Ellipse(rho=.1, size=(.0460, .0460), pos=(-.1, 0), phi=0),
-          Ellipse(rho=.1, size=(.0460, .0460), pos=(.1, 0), phi=0),
-          Ellipse(rho=.1, size=(.0230, .0460), pos=(.605, -.08), phi=0),
-          Ellipse(rho=.1, size=(.0230, .0230), pos=(.606, 0), phi=0),
-          Ellipse(rho=.1, size=(.0460, .0230), pos=(.605, .06), phi=0)]
-  }
-
-  phantom_objects_3d = {
-      'shepp_logan': [
-          Ellipsoid(rho=1, size=(.9000, .9200, .6900), pos=(0, 0, 0), phi=0),
-          Ellipsoid(rho=-.98, size=(.8800, .8740, .6624), pos=(0, 0, 0), phi=0),
-          Ellipsoid(rho=-.02, size=(.2100, .1600, .4100), pos=(-.250, 0, -.220), phi=108 / 180. * np.pi),
-          Ellipsoid(rho=-.02, size=(.2200, .1100, .3100), pos=(-.250, 0, .220), phi=72 / 180. * np.pi),
-          Ellipsoid(rho=.02, size=(.5000, .2500, .2100), pos=(-.250, .350, 0), phi=0),
-          Ellipsoid(rho=.02, size=(.0460, .0460, .0460), pos=(-.250, .100, 0), phi=0),
-          Ellipsoid(rho=.01, size=(.0200, .0230, .0460), pos=(-.250, -.650, -.080), phi=0),
-          Ellipsoid(rho=.01, size=(.0200, .0230, .0460), pos=(-.250, -.650, .060), phi=90 / 180. * np.pi),
-          Ellipsoid(rho=.02, size=(.1000, .0400, .0560), pos=(.625, -.105, .060), phi=90 / 180. * np.pi),
-          Ellipsoid(rho=-.02, size=(.1000, .0560, .0560), pos=(.625, .100, 0), phi=0)],
-      'modified_shepp_logan': [
-          Ellipsoid(rho=1, size=(.9000, .9200, .6900), pos=(0, 0, 0), phi=0),
-          Ellipsoid(rho=-.8, size=(.8800, .8740, .6624), pos=(0, 0, 0), phi=0),
-          Ellipsoid(rho=-.2, size=(.2100, .1600, .4100), pos=(-.250, 0, -.220), phi=108 / 180. * np.pi),
-          Ellipsoid(rho=-.2, size=(.2200, .1100, .3100), pos=(-.250, 0, .220), phi=72 / 180. * np.pi),
-          Ellipsoid(rho=.2, size=(.5000, .2500, .2100), pos=(-.250, .350, 0), phi=0),
-          Ellipsoid(rho=.2, size=(.0460, .0460, .0460), pos=(-.250, .100, 0), phi=0),
-          Ellipsoid(rho=.1, size=(.0200, .0230, .0460), pos=(-.250, -.650, -.080), phi=0),
-          Ellipsoid(rho=.1, size=(.0200, .0230, .0460), pos=(-.250, -.650, .060), phi=90 / 180. * np.pi),
-          Ellipsoid(rho=.2, size=(.1000, .0400, .0560), pos=(.625, -.105, .060), phi=90 / 180. * np.pi),
-          Ellipsoid(rho=-.2, size=(.1000, .0560, .0560), pos=(.625, .100, 0), phi=0)]
-  }
+  # If a Shepp-Logan 3D phantom was requested, by default we use the Kak-Roberts
+  # 3D extension of the Shepp-Logan phantom.
+  if len(shape) == 3 and phantom_type == 'shepp_logan':
+    phantom_type = 'kak_roberts'
+  elif len(shape) == 3 and phantom_type == 'modified_shepp_logan':
+    phantom_type = 'modified_kak_roberts'
 
   if len(shape) == 2:
-    phantom_objects = phantom_objects_2d
+    phantom_objects = _PHANTOMS_2D
   elif len(shape) == 3:
-    phantom_objects = phantom_objects_3d
+    phantom_objects = _PHANTOMS_3D
   else:
     raise ValueError(
         f"`shape` must have rank 2 or 3, but got: {shape}")
@@ -1228,25 +1215,111 @@ def phantom(phantom_type='modified_shepp_logan',
     phantom_objects = phantom_objects[phantom_type]
   else:
     raise ValueError(
-        f"No definition for {len(shape)}D phantom of type {phantom_type}")
+        f"No definition for {len(shape)}D phantom of type: {phantom_type}")
 
   # Initialize image and coordinates arrays.
   image = tf.zeros(shape, dtype=dtype)
   x = array_ops.meshgrid(*[tf.linspace(-1.0, 1.0, s) for s in shape])
 
-  for obj in phantom_objects[phantom_type]:
-    # Apply translation and rotation to coordinates.
-    tx = _rotate_2d(x - obj.pos, tf.cast(obj.phi, dtype))
-    # Use object equation to generate a mask.
-    mask = tf.math.reduce_sum((tx ** 2) / (tf.convert_to_tensor(obj.size) ** 2), -1) <= 1.
-    # Add current object to image.
-    image = tf.where(mask, image + obj.rho, image)
+  for obj in phantom_objects:
+
+    if isinstance(obj, Ellipse):
+      # Apply translation and rotation to coordinates.
+      tx = geom_ops.rotate_2d(x - obj.pos, tf.cast(obj.phi, dtype))
+      # Use object equation to generate a mask.
+      mask = tf.math.reduce_sum(
+          (tx ** 2) / (tf.convert_to_tensor(obj.size) ** 2), -1) <= 1.0
+      # Add current object to image.
+      image = tf.where(mask, image + obj.rho, image)
+    elif isinstance(obj, Ellipsoid):
+      # Apply translation and rotation to coordinates.
+      tx = geom_ops.rotate_3d(x - obj.pos, tf.cast(obj.phi, dtype))
+      # Use object equation to generate a mask.
+      mask = tf.math.reduce_sum(
+          (tx ** 2) / (tf.convert_to_tensor(obj.size) ** 2), -1) <= 1.0
+      # Add current object to image.
+      image = tf.where(mask, image + obj.rho, image)
 
   return image
 
 
-def _rotate_2d(x, phi):
-  """Rotate a 2D coordinates array."""
-  rot_mat = [[ tf.cos(phi), tf.sin(phi)],
-             [-tf.sin(phi), tf.cos(phi)]]
-  return x @ rot_mat
+Ellipse = collections.namedtuple(
+    'Ellipse', ['rho', 'size', 'pos', 'phi'])
+Ellipsoid = collections.namedtuple(
+    'Ellipsoid', ['rho', 'size', 'pos', 'phi'])
+
+
+_PHANTOMS_2D = {
+    'shepp_logan': [
+        Ellipse(rho=1, size=(.9200, .6900), pos=(0, 0), phi=(0,)),
+        Ellipse(rho=-.98, size=(.8740, .6624), pos=(.0184, 0), phi=(0,)),
+        Ellipse(rho=-.02, size=(.3100, .1100),
+                pos=(0, .22), phi=(.1 * np.pi,)),
+        Ellipse(rho=-.02, size=(.4100, .1600),
+                pos=(0, -.22), phi=(-.1 * np.pi,)),
+        Ellipse(rho=.01, size=(.2500, .2100), pos=(-.35, 0), phi=(0,)),
+        Ellipse(rho=.01, size=(.0460, .0460), pos=(-.1, 0), phi=(0,)),
+        Ellipse(rho=.01, size=(.0460, .0460), pos=(.1, 0), phi=(0,)),
+        Ellipse(rho=.01, size=(.0230, .0460), pos=(.605, -.08), phi=(0,)),
+        Ellipse(rho=.01, size=(.0230, .0230), pos=(.606, 0), phi=(0,)),
+        Ellipse(rho=.01, size=(.0460, .0230), pos=(.605, .06), phi=(0,))],
+    'modified_shepp_logan': [
+        Ellipse(rho=1, size=(.9200, .6900), pos=(0, 0), phi=(0,)),
+        Ellipse(rho=-.8, size=(.8740, .6624), pos=(.0184, 0), phi=(0,)),
+        Ellipse(rho=-.2, size=(.3100, .1100),
+                pos=(0, .22), phi=(.1 * np.pi,)),
+        Ellipse(rho=-.2, size=(.4100, .1600),
+                pos=(0, -.22), phi=(-.1 * np.pi,)),
+        Ellipse(rho=.1, size=(.2500, .2100), pos=(-.35, 0), phi=(0,)),
+        Ellipse(rho=.1, size=(.0460, .0460), pos=(-.1, 0), phi=(0,)),
+        Ellipse(rho=.1, size=(.0460, .0460), pos=(.1, 0), phi=(0,)),
+        Ellipse(rho=.1, size=(.0230, .0460), pos=(.605, -.08), phi=(0,)),
+        Ellipse(rho=.1, size=(.0230, .0230), pos=(.606, 0), phi=(0,)),
+        Ellipse(rho=.1, size=(.0460, .0230), pos=(.605, .06), phi=(0,))]
+}
+
+
+_PHANTOMS_3D = {
+    'kak_roberts': [
+        Ellipsoid(rho=2, size=(.9000, .9200, .6900),
+                  pos=(0, 0, 0), phi=(0, 0, 0)),
+        Ellipsoid(rho=-.98, size=(.8800, .8740, .6624),
+                  pos=(0, 0, 0), phi=(0, 0, 0)),
+        Ellipsoid(rho=-.02, size=(.2100, .1600, .4100),
+                  pos=(-.250, 0, -.220), phi=(-.6 * np.pi, 0, 0)),
+        Ellipsoid(rho=-.02, size=(.2200, .1100, .3100),
+                  pos=(-.250, 0, .220), phi=(-.4 * np.pi, 0, 0)),
+        Ellipsoid(rho=.02, size=(.5000, .2500, .2100),
+                  pos=(-.250, -.350, 0), phi=(0, 0, 0)),
+        Ellipsoid(rho=.02, size=(.0460, .0460, .0460),
+                  pos=(-.250, -.100, 0), phi=(0, 0, 0)),
+        Ellipsoid(rho=.01, size=(.0200, .0230, .0460),
+                  pos=(-.250, .650, -.080), phi=(0, 0, 0)),
+        Ellipsoid(rho=.01, size=(.0200, .0230, .0460),
+                  pos=(-.250, .650, .060), phi=(-.5 * np.pi, 0, 0)),
+        Ellipsoid(rho=.02, size=(.1000, .0400, .0560),
+                  pos=(.625, .105, .060), phi=(-.5 * np.pi, 0, 0)),
+        Ellipsoid(rho=-.02, size=(.1000, .0560, .0560),
+                  pos=(.625, -.100, 0), phi=(0, 0, 0))],
+    'modified_kak_roberts': [
+        Ellipsoid(rho=2, size=(.9000, .9200, .6900),
+                  pos=(0, 0, 0), phi=(0, 0, 0)),
+        Ellipsoid(rho=-.8, size=(.8800, .8740, .6624),
+                  pos=(0, 0, 0), phi=(0, 0, 0)),
+        Ellipsoid(rho=-.2, size=(.2100, .1600, .4100),
+                  pos=(-.250, 0, -.220), phi=(-.6 * np.pi, 0, 0)),
+        Ellipsoid(rho=-.2, size=(.2200, .1100, .3100),
+                  pos=(-.250, 0, .220), phi=(-.4 * np.pi, 0, 0)),
+        Ellipsoid(rho=.2, size=(.5000, .2500, .2100),
+                  pos=(-.250, -.350, 0), phi=(0, 0, 0)),
+        Ellipsoid(rho=.2, size=(.0460, .0460, .0460),
+                  pos=(-.250, -.100, 0), phi=(0, 0, 0)),
+        Ellipsoid(rho=.1, size=(.0200, .0230, .0460),
+                  pos=(-.250, .650, -.080), phi=(0, 0, 0)),
+        Ellipsoid(rho=.1, size=(.0200, .0230, .0460),
+                  pos=(-.250, .650, .060), phi=(-.5 * np.pi, 0, 0)),
+        Ellipsoid(rho=.2, size=(.1000, .0400, .0560),
+                  pos=(.625, .105, .060), phi=(-.5 * np.pi, 0, 0)),
+        Ellipsoid(rho=-.2, size=(.1000, .0560, .0560),
+                  pos=(.625, -.100, 0), phi=(0, 0, 0))]
+}

@@ -6,7 +6,9 @@ Array Manipulation
 .. currentmodule:: tfmr
 
 .. autosummary::
-    :toctree: _array_ops
+    :toctree: array_ops
     :nosignatures:
     
+    cartesian_product
+    meshgrid
     ravel_multi_index

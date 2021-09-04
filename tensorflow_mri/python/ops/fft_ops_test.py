@@ -38,7 +38,7 @@ class FFTOpsTest(tf.test.TestCase):
     """Test inverse FFT."""
     self._test_fftn_internal('backward')
 
-  def _test_fftn_internal(self, transform):
+  def _test_fftn_internal(self, transform): # pylint: disable=missing-param-doc
     """All FFT tests.
 
     Checks that FFT results match those of NumPy.

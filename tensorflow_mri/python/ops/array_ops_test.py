@@ -20,6 +20,43 @@ from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.utils import test_utils
 
 
+class CartesianProductTest(tf.test.TestCase):
+  """Tests for the `cartesian_product` op."""
+
+  @test_utils.run_in_graph_and_eager_modes
+  def test_cartesian_product(self):
+    """Test `cartesian_product` op."""
+    vec1 = [1, 2, 3]
+    vec2 = [4, 5]
+
+    ref = [[1, 4],
+           [1, 5],
+           [2, 4],
+           [2, 5],
+           [3, 4],
+           [3, 5]]
+
+    result = array_ops.cartesian_product(vec1, vec2)
+    self.assertAllEqual(result, ref)
+
+
+class MeshgridTest(tf.test.TestCase):
+  """Tests for the `meshgrid` op."""
+
+  @test_utils.run_in_graph_and_eager_modes
+  def test_meshgrid(self):
+    """Test `meshgrid` op."""
+    vec1 = [1, 2, 3]
+    vec2 = [4, 5]
+
+    ref = [[[1, 4], [1, 5]],
+           [[2, 4], [2, 5]],
+           [[3, 4], [3, 5]]]
+
+    result = array_ops.meshgrid(vec1, vec2)
+    self.assertAllEqual(result, ref)
+
+
 class RavelMultiIndexTest(tf.test.TestCase):
   """Tests for the `ravel_multi_index` op."""
 
@@ -69,43 +106,6 @@ class RavelMultiIndexTest(tf.test.TestCase):
 
     result = array_ops.ravel_multi_index(indices, [4, 4, 4])
     self.assertAllEqual(result, expected)
-
-
-class MeshgridTest(tf.test.TestCase):
-  """Tests for the `meshgrid` op."""
-
-  @test_utils.run_in_graph_and_eager_modes
-  def test_meshgrid(self):
-    """Test `meshgrid` op."""
-    vec1 = [1, 2, 3]
-    vec2 = [4, 5]
-
-    ref = [[[1, 4], [1, 5]],
-           [[2, 4], [2, 5]],
-           [[3, 4], [3, 5]]]
-
-    result = array_ops.meshgrid(vec1, vec2)
-    self.assertAllEqual(result, ref)
-
-
-class CartesianProductTest(tf.test.TestCase):
-  """Tests for the `cartesian_product` op."""
-
-  @test_utils.run_in_graph_and_eager_modes
-  def test_cartesian_product(self):
-    """Test `cartesian_product` op."""
-    vec1 = [1, 2, 3]
-    vec2 = [4, 5]
-
-    ref = [[1, 4],
-           [1, 5],
-           [2, 4],
-           [2, 5],
-           [3, 4],
-           [3, 5]]
-
-    result = array_ops.cartesian_product(vec1, vec2)
-    self.assertAllEqual(result, ref)
 
 
 if __name__ == '__main__':

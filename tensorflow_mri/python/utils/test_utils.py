@@ -17,7 +17,12 @@
 import functools
 import itertools
 
+from absl.testing import parameterized
 import tensorflow as tf
+
+
+class TestCase(tf.test.TestCase, parameterized.TestCase):
+  """Class to provide TensorFlow MRI specific test features."""
 
 
 def run_in_graph_and_eager_modes(func=None, config=None, use_gpu=True):
@@ -45,10 +50,10 @@ def run_in_graph_and_eager_modes(func=None, config=None, use_gpu=True):
     once by constructing and executing a graph in a session and once with
     eager execution enabled.
   """
-  def decorator(f):
+  def decorator(f): # pylint: disable=missing-param-doc
     """Decorator for a method."""
 
-    def decorated(self, *args, **kwargs):
+    def decorated(self, *args, **kwargs): # pylint: disable=missing-param-doc
       """Run the decorated test method."""
       if not tf.executing_eagerly():
         raise ValueError('Must be executing eagerly when using the '

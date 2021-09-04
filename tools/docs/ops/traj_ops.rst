@@ -6,7 +6,7 @@
 .. currentmodule:: tfmr
 
 .. autosummary::
-    :toctree: _traj_ops
+    :toctree: traj_ops
     :nosignatures:
 
     radial_trajectory

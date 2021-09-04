@@ -6,7 +6,7 @@ Math
 .. currentmodule:: tfmr
 
 .. autosummary::
-    :toctree: _math_ops
+    :toctree: math_ops
     :nosignatures:
 
     extract_from_complex

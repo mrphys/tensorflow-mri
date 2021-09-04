@@ -17,6 +17,39 @@
 import tensorflow as tf
 
 
+def cartesian_product(*args):
+  """Cartesian product of input tensors.
+
+  Args:
+    *args: `Tensors` with rank 1.
+
+  Returns:
+    A `Tensor` of shape `[M, N]`, where `N` is the number of tensors in `args`
+    and `M` is the product of the sizes of all the tensors in `args`.
+  """
+  return tf.reshape(meshgrid(*args), [-1, len(args)])
+
+
+def meshgrid(*args):
+  """Return coordinate matrices from coordinate vectors.
+
+  Make N-D coordinate arrays for vectorized evaluations of N-D scalar/vector
+  fields over N-D grids, given one-dimensional coordinate arrays `x1, x2,…, xn`.
+
+  .. note::
+    Similar to `tf.meshgrid`, but uses matrix indexing and returns a stacked
+    tensor (along axis -1) instead of a list of tensors.
+
+  Args:
+    *args: `Tensors` with rank 1.
+
+  Returns:
+    A `Tensor` of shape `[M1, M2, ..., Mn, N]`, where `N` is the number of
+    tensors in `args` and `Mi = tf.size(args[i])`.
+  """
+  return tf.stack(tf.meshgrid(*args, indexing='ij'), axis=-1)
+
+
 def ravel_multi_index(multi_index, dims):
   """Converts an array of multi-indices into an array of flat indices.
 
@@ -32,36 +65,3 @@ def ravel_multi_index(multi_index, dims):
   """
   strides = tf.math.cumprod(dims, exclusive=True, reverse=True) # pylint:disable=no-value-for-parameter
   return tf.math.reduce_sum(multi_index * strides, axis=-1)
-
-
-def meshgrid(*args):
-  """Return coordinate matrices from coordinate vectors.
-
-  Make N-D coordinate arrays for vectorized evaluations of N-D scalar/vector
-  fields over N-D grids, given one-dimensional coordinate arrays `x1, x2,…, xn`.
-
-  .. note::
-    Similar to `tf.meshgrid`, but uses matrix indexing and returns a stacked
-    tensor (along axis -1) instead of a list of tensors.
-
-  Args:
-    *args: `Tensors` with rank 1.
-  
-  Returns:
-    A `Tensor` of shape `[M1, M2, ..., Mn, N]`, where `N` is the number of
-    tensors in `args` and `Mi = tf.size(args[i])`.
-  """
-  return tf.stack(tf.meshgrid(*args, indexing='ij'), axis=-1)
-
-
-def cartesian_product(*args):
-  """Cartesian product of input tensors.
-
-  Args:
-    *args: `Tensors` with rank 1.
-
-  Returns:
-    A `Tensor` of shape `[M, N]`, where `N` is the number of tensors in `args`
-    and `M` is the product of the sizes of all the tensors in `args`.
-  """
-  return tf.reshape(meshgrid(*args), [-1, len(args)])
