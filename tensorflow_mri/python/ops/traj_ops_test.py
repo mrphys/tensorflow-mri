@@ -17,6 +17,7 @@
 import itertools
 import math
 
+from absl.testing import parameterized
 import numpy as np
 import tensorflow as tf
 
@@ -25,62 +26,53 @@ from tensorflow_mri.python.utils import io_utils
 from tensorflow_mri.python.utils import test_utils
 
 
-class RadialTrajectoryTest(tf.test.TestCase):
+class RadialTrajectoryTest(test_utils.TestCase):
   """Radial trajectory tests."""
 
   @classmethod
   def setUpClass(cls):
-
     super().setUpClass()
     cls.data = io_utils.read_hdf5('tests/data/traj_ops_data.h5')
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_waveform(self):
     """Test radial waveform."""
-
     waveform = traj_ops.radial_waveform(base_resolution=128)
-
     self.assertAllClose(waveform, self.data['radial/waveform'])
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_trajectory(self):
     """Test radial trajectory."""
-
     trajectory = traj_ops.radial_trajectory(base_resolution=128,
                                             views=8,
                                             phases=4,
                                             spacing='golden')
-
     self.assertAllClose(trajectory, self.data['radial/trajectory/golden'])
 
 
-class SpiralTrajectoryTest(tf.test.TestCase):
+class SpiralTrajectoryTest(test_utils.TestCase):
   """Spiral trajectory tests."""
 
   @classmethod
   def setUpClass(cls):
-
     super().setUpClass()
     cls.data = io_utils.read_hdf5('tests/data/traj_ops_data.h5')
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_waveform(self):
     """Test spiral waveform."""
-
     waveform = traj_ops.spiral_waveform(base_resolution=128,
                                         spiral_arms=64,
                                         field_of_view=300.0,
                                         max_grad_ampl=20.0,
                                         min_rise_time=10.0,
                                         dwell_time=2.6)
-
     self.assertAllClose(waveform, self.data['spiral/waveform'])
 
-
-  @test_utils.parameterized_test(vd_type=['linear', 'quadratic', 'hanning'])
+  @parameterized.product(vd_type=['linear', 'quadratic', 'hanning'])
+  @test_utils.run_in_graph_and_eager_modes
   def test_waveform_vd(self, vd_type): # pylint: disable=missing-param-doc
     """Test variable-density spiral waveform."""
-
     waveform = traj_ops.spiral_waveform(base_resolution=256,
                                         spiral_arms=32,
                                         field_of_view=400.0,
@@ -91,13 +83,11 @@ class SpiralTrajectoryTest(tf.test.TestCase):
                                         vd_outer_cutoff=0.8,
                                         vd_outer_density=0.5,
                                         vd_type=vd_type)
-
     self.assertAllClose(waveform, self.data['spiral/waveform_vd/' + vd_type])
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_trajectory(self):
     """Test spiral trajectory."""
-
     trajectory = traj_ops.spiral_trajectory(base_resolution=128,
                                             spiral_arms=64,
                                             field_of_view=300.0,
@@ -107,12 +97,12 @@ class SpiralTrajectoryTest(tf.test.TestCase):
                                             views=8,
                                             phases=4,
                                             spacing='golden')
-
     self.assertAllClose(trajectory, self.data['spiral/trajectory/golden'])
 
 
-class TrajOpsTest(tf.test.TestCase): # pylint: disable=missing-class-docstring
+class TrajOpsTest(test_utils.TestCase): # pylint: disable=missing-class-docstring
 
+  @test_utils.run_in_graph_and_eager_modes
   def test_kspace_trajectory_shapes(self):
     """Test k-space trajectory."""
 
@@ -159,10 +149,10 @@ class TrajOpsTest(tf.test.TestCase): # pylint: disable=missing-class-docstring
         expected_shape = (views,) + expected_shape
         if phases:
           expected_shape = (phases,) + expected_shape
-        self.assertEqual(traj.shape, expected_shape)
+        self.assertAllEqual(tf.shape(traj), expected_shape)
 
         if traj_type == 'radial':
-          self.assertEqual(dens.shape, traj.shape[:-1])
+          self.assertAllEqual(tf.shape(dens), tf.shape(traj)[:-1])
 
           if views == 3: # We'll check the exact results for this subset.
 
@@ -239,16 +229,15 @@ class TrajOpsTest(tf.test.TestCase): # pylint: disable=missing-class-docstring
           self.assertAllInRange(traj, -math.pi, math.pi)
 
 
-class DensityEstimationTest(tf.test.TestCase):
+class DensityEstimationTest(test_utils.TestCase):
   """Test density estimation."""
 
   @classmethod
   def setUpClass(cls):
-
     super().setUpClass()
     cls.data = io_utils.read_hdf5('tests/data/traj_ops_data.h5')
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_estimate_density(self):
     """Test density estimation."""
     traj = self.data['estimate_density/trajectory']
@@ -260,7 +249,7 @@ class DensityEstimationTest(tf.test.TestCase):
     self.assertAllClose(dens, self.data['estimate_density/density'],
                         rtol=1e-5, atol=1e-5)
 
-
+  @test_utils.run_in_graph_and_eager_modes
   def test_estimate_density_3d_many_points(self):
     """Test 3D density estimation with a large points array."""
     # Here we are just checking this runs without causing a seg fault.

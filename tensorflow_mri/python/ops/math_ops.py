@@ -35,12 +35,12 @@ def extract_from_complex(tensor, part, name='extract_from_complex'):
   """
   with tf.name_scope(name):
     tensor = check_utils.validate_tensor_dtype(
-      tf.convert_to_tensor(tensor),
-      (tf.float32, tf.float64, tf.complex64, tf.complex128),
-      name='tensor')
+        tf.convert_to_tensor(tensor),
+        (tf.float32, tf.float64, tf.complex64, tf.complex128),
+        name='tensor')
     part = check_utils.validate_enum(
-      part, ('magnitude', 'mag', 'phase', 'phs', 'real', 'imaginary', 'imag'),
-      'part')
+        part, ('magnitude', 'mag', 'phase', 'phs', 'real', 'imaginary', 'imag'),
+        'part')
 
     # Extract the relevant part.
     if part in ('mag', 'magnitude'):
@@ -84,12 +84,14 @@ def scale_by_min_max(tensor,
     output_max = tf.cast(output_max, tensor.dtype.real_dtype)
     scale = output_max - output_min
 
-    tf.debugging.assert_greater(output_max, output_min)
+    checks = [tf.debugging.assert_greater(output_max, output_min)]
+    with tf.control_dependencies(checks):
+      tensor = tf.identity(tensor)
 
     def do_rescale(x):
       x = tf.math.divide(
-        x - tf.math.reduce_min(x),
-        tf.math.reduce_max(x) - tf.math.reduce_min(x))
+          x - tf.math.reduce_min(x),
+          tf.math.reduce_max(x) - tf.math.reduce_min(x))
       x *= scale
       x += output_min
       return x
@@ -97,8 +99,8 @@ def scale_by_min_max(tensor,
     if tensor.dtype.is_complex:
       # Rescale magnitude, phase remains unmodified.
       tensor = tf.math.multiply(
-        tf.cast(do_rescale(tf.math.abs(tensor)), tensor.dtype),
-        tf.math.exp(tf.dtypes.complex(0., tf.math.angle(tensor))))
+          tf.cast(do_rescale(tf.math.abs(tensor)), tensor.dtype),
+          tf.math.exp(tf.dtypes.complex(0., tf.math.angle(tensor))))
     else:
       tensor = do_rescale(tensor)
 

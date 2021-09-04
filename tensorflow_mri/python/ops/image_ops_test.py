@@ -24,7 +24,7 @@ from tensorflow_mri.python.utils import io_utils
 from tensorflow_mri.python.utils import test_utils
 
 
-class PeakSignalToNoiseRatioTest(tf.test.TestCase):
+class PeakSignalToNoiseRatioTest(test_utils.TestCase):
   """Tests for PSNR op."""
 
   @classmethod
@@ -209,7 +209,7 @@ class PeakSignalToNoiseRatioTest(tf.test.TestCase):
       image_ops.psnr(img1, img2, 255)
 
 
-class StructuralSimilarityTest(tf.test.TestCase):
+class StructuralSimilarityTest(test_utils.TestCase):
   """Tests for SSIM op."""
 
   @classmethod
@@ -394,7 +394,7 @@ class StructuralSimilarityTest(tf.test.TestCase):
       image_ops.ssim(img1, img2, 255)
 
 
-class MultiscaleStructuralSimilarityTest(tf.test.TestCase):
+class MultiscaleStructuralSimilarityTest(test_utils.TestCase):
   """Tests for MS-SSIM op."""
 
   @classmethod
@@ -534,7 +534,7 @@ class MultiscaleStructuralSimilarityTest(tf.test.TestCase):
     image_ops.ssim_multiscale(img1, img2)
 
 
-class CentralCropTest(tf.test.TestCase):
+class CentralCropTest(test_utils.TestCase):
   """Tests for central cropping operation."""
   # pylint: disable=missing-function-docstring
 
@@ -567,7 +567,7 @@ class CentralCropTest(tf.test.TestCase):
     self.assertAllEqual(y_tf, y_np)
 
 
-class SymmetricPadOrCropTest(tf.test.TestCase):
+class SymmetricPadOrCropTest(test_utils.TestCase):
   """Tests for symmetric padding/cropping operation."""
   # pylint: disable=missing-function-docstring
 
@@ -626,7 +626,7 @@ class SymmetricPadOrCropTest(tf.test.TestCase):
     self.assertAllEqual(y_tf, y_np)
 
 
-class TotalVariationTest(tf.test.TestCase):
+class TotalVariationTest(test_utils.TestCase):
   """Tests for operation `total_variation`."""
 
   @test_utils.run_in_graph_and_eager_modes
@@ -668,7 +668,7 @@ class TotalVariationTest(tf.test.TestCase):
     self.assertAllClose(result, 1.25 * 65)
 
 
-class ExtractGlimpsesTest(tf.test.TestCase):
+class ExtractGlimpsesTest(test_utils.TestCase):
   """Tests for the `extract_glimpses` operation."""
 
   @test_utils.run_in_graph_and_eager_modes

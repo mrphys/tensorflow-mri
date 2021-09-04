@@ -139,9 +139,9 @@ def spiral_trajectory(base_resolution,
     radians/voxel, ie, values are in the range `[-pi, pi]`.
 
   References:
-    1.  Pipe, J.G. and Zwart, N.R. (2014), Spiral trajectory design: A flexible
-        numerical algorithm and base analytical equations. Magn. Reson. Med, 71:
-        278-285. https://doi.org/10.1002/mrm.24675
+    .. [1] Pipe, J.G. and Zwart, N.R. (2014), Spiral trajectory design: A
+      flexible numerical algorithm and base analytical equations. Magn. Reson.
+      Med, 71: 278-285. https://doi.org/10.1002/mrm.24675
   """
   return _kspace_trajectory('spiral',
                             {'base_resolution': base_resolution,
@@ -189,9 +189,6 @@ def _kspace_trajectory(traj_type,
 
   Returns:
     A k-space trajectory for the given parameters.
-
-  Raises:
-    NotImplementedError: If `traj_type` is `'spiral'`.
   """
   # Check inputs.
   traj_type = check_utils.validate_enum(
@@ -443,7 +440,13 @@ def _rotate_waveform_2d(waveform, theta):
   # Compute rotation matrix.
   rot_matrix = rotation_matrix_2d.from_euler(euler_angles)
 
-  # Apply rotation to trajectory.
+  # Add leading singleton dimensions to `waveform` to match the batch shape of
+  # `euler_angles`. This prevents a broadcasting error later.
+  waveform = tf.reshape(waveform,
+      tf.concat([tf.ones([tf.rank(euler_angles) - 1], dtype=tf.int32),
+                 tf.shape(waveform)], 0))
+
+  # Apply rotation.
   return rotation_matrix_2d.rotate(waveform, rot_matrix)
 
 

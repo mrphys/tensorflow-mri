@@ -20,7 +20,7 @@ from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.utils import test_utils
 
 
-class CartesianProductTest(tf.test.TestCase):
+class CartesianProductTest(test_utils.TestCase):
   """Tests for the `cartesian_product` op."""
 
   @test_utils.run_in_graph_and_eager_modes
@@ -40,7 +40,7 @@ class CartesianProductTest(tf.test.TestCase):
     self.assertAllEqual(result, ref)
 
 
-class MeshgridTest(tf.test.TestCase):
+class MeshgridTest(test_utils.TestCase):
   """Tests for the `meshgrid` op."""
 
   @test_utils.run_in_graph_and_eager_modes
@@ -57,7 +57,7 @@ class MeshgridTest(tf.test.TestCase):
     self.assertAllEqual(result, ref)
 
 
-class RavelMultiIndexTest(tf.test.TestCase):
+class RavelMultiIndexTest(test_utils.TestCase):
   """Tests for the `ravel_multi_index` op."""
 
   @test_utils.run_in_graph_and_eager_modes

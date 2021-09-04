@@ -18,6 +18,7 @@ This module contains functions to operate with MR coil arrays, such as
 estimating coil sensitivities and combining multi-coil images.
 """
 
+import collections
 import functools
 
 import numpy as np
@@ -190,8 +191,8 @@ def _estimate_coil_sensitivities_walsh(images, filter_size=5):
   For the parameters, see `estimate_coil_sensitivities`.
   """
   rank = images.shape.rank - 1
-  image_shape = images.shape[:-1].as_list()
-  num_coils = images.shape[-1]
+  image_shape = tf.shape(images)[:-1]
+  num_coils = tf.shape(images)[-1]
 
   filter_size = check_utils.validate_list(
     filter_size, element_type=int, length=rank, name='filter_size')
@@ -203,11 +204,12 @@ def _estimate_coil_sensitivities_walsh(images, filter_size=5):
   # Compute covariance matrix for each pixel; with shape
   # `[num_pixels, num_coils, num_coils]`.
   correlation_matrix = tf.math.multiply(
-    tf.reshape(flat_images, [-1, num_coils, 1]),
-    tf.math.conj(tf.reshape(flat_images, [-1, 1, num_coils])))
+      tf.reshape(flat_images, [-1, num_coils, 1]),
+      tf.math.conj(tf.reshape(flat_images, [-1, 1, num_coils])))
 
   # Smooth the covariance tensor along the spatial dimensions.
-  correlation_matrix = tf.reshape(correlation_matrix, image_shape + [-1])
+  correlation_matrix = tf.reshape(
+      correlation_matrix, tf.concat([image_shape, [-1]], 0))
   correlation_matrix = _apply_uniform_filter(correlation_matrix, filter_size)
   correlation_matrix = tf.reshape(correlation_matrix, [-1] + [num_coils] * 2)
 
@@ -216,7 +218,7 @@ def _estimate_coil_sensitivities_walsh(images, filter_size=5):
   maps = eigenvectors[..., -1]
 
   # Restore spatial axes.
-  maps = tf.reshape(maps, image_shape + [num_coils])
+  maps = tf.reshape(maps, tf.concat([image_shape, [num_coils]], 0))
 
   return maps
 
@@ -249,9 +251,14 @@ def _estimate_coil_sensitivities_inati(images,
     tnp.finfo(images.dtype).eps * tf.math.reduce_mean(tf.math.abs(images)),
     images.dtype)
 
-  for _ in range(max_iter):
+  State = collections.namedtuple('State', ['i', 'maps', 'r', 'd'])
 
-    prev_r = r
+  def _cond(i, state):
+    return tf.math.logical_and(i < max_iter, state.d >= tol)
+
+  def _body(i, state):
+    prev_r = state.r
+    r = state.r
 
     r = tf.math.conj(r)
 
@@ -283,13 +290,18 @@ def _estimate_coil_sensitivities_inati(images,
     maps = maps * im_t
 
     diff_r = r - prev_r
-    v_ratio = tf.math.abs(tf.norm(diff_r) / tf.norm(r))
-    if v_ratio < tol:
-      break
+    d = tf.math.abs(tf.norm(diff_r) / tf.norm(r))
 
-  maps = tf.reshape(maps, images.shape)
+    return i + 1, State(i=i + 1, maps=maps, r=r, d=d)
 
-  return maps
+  i = tf.constant(0, dtype=tf.int32)
+  state = State(i=i,
+                maps=tf.zeros_like(images),
+                r=r,
+                d=tf.constant(1.0, dtype=images.dtype.real_dtype))
+  [i, state] = tf.while_loop(_cond, _body, [i, state])
+
+  return tf.reshape(state.maps, images.shape)
 
 
 def _estimate_coil_sensitivities_espirit(kspace,
@@ -317,9 +329,11 @@ def _estimate_coil_sensitivities_espirit(kspace,
   kernel_size = check_utils.validate_list(
     kernel_size, element_type=int, length=rank, name='kernel_size')
 
-  tf.debugging.assert_greater(calib_size, kernel_size, message=(
-    f"`calib_size` must be greater than `kernel_size`, but got "
-    f"{calib_size} and {kernel_size}"))
+  with tf.control_dependencies([
+      tf.debugging.assert_greater(calib_size, kernel_size, message=(
+          f"`calib_size` must be greater than `kernel_size`, but got "
+          f"{calib_size} and {kernel_size}"))]):
+    kspace = tf.identity(kspace)
 
   # Get calibration region.
   calib = image_ops.central_crop(kspace, calib_size + [-1])
@@ -544,7 +558,7 @@ def coil_compression_matrix(kspace,
 
   # Move coil axis to innermost dimension if not already there.
   if coil_axis != -1:
-    rank = kspace.shape.rank
+    rank = kspace.shape.rank # Rank must be known statically.
     canonical_coil_axis = coil_axis + rank if coil_axis < 0 else coil_axis
     perm = (
       [ax for ax in range(rank) if not ax == canonical_coil_axis] +
@@ -570,15 +584,15 @@ def _coil_compression_matrix_svd(kspace, num_output_coils=None, tol=None):
   For the parameters, see `coil_compression_matrix`.
   """
   # Flatten the encoding dimensions.
-  num_coils = kspace.shape[-1]
+  num_coils = tf.shape(kspace)[-1]
   kspace = tf.reshape(kspace, [-1, num_coils])
-  num_samples = kspace.shape[0]
+  num_samples = tf.shape(kspace)[0]
 
   # Compute singular-value decomposition.
   s, u, v = tf.linalg.svd(kspace)
 
   # Compresion matrix.
-  matrix = v if num_samples > num_coils else u
+  matrix = tf.cond(num_samples > num_coils, lambda: v, lambda: u)
 
   # Get output coils based on tol.
   if tol is not None and num_output_coils is None:
@@ -614,9 +628,9 @@ def _apply_coil_compression(kspace, matrix):
   For the parameters, see `compress_coils`.
   """
   # Some info.
-  encoding_dimensions = kspace.shape[:-1]
-  num_coils = kspace.shape[-1]
-  num_compressed_coils = matrix.shape[1]
+  encoding_dimensions = tf.shape(kspace)[:-1]
+  num_coils = tf.shape(kspace)[-1]
+  num_compressed_coils = tf.shape(matrix)[1]
 
   # Flatten the encoding dimensions.
   kspace = tf.reshape(kspace, [-1, num_coils])
@@ -626,7 +640,8 @@ def _apply_coil_compression(kspace, matrix):
 
   # Restore data shape.
   compressed_kspace = tf.reshape(
-    compressed_kspace, encoding_dimensions + (num_compressed_coils,))
+      compressed_kspace,
+      tf.concat([encoding_dimensions, [num_compressed_coils]], 0))
 
   return compressed_kspace
 

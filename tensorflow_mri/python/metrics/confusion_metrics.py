@@ -241,15 +241,15 @@ class ConfusionMetric(tf.keras.metrics.Metric): # pylint: disable=abstract-metho
       return tf.reduce_sum(val, axis=axis)
 
     self.true_positives.assign_add(
-      _weighted_sum(y_pred * y_true, sample_weight))
+        _weighted_sum(y_pred * y_true, sample_weight))
     self.true_negatives.assign_add(
-      _weighted_sum((1 - y_pred) * (1 - y_true), sample_weight))
+        _weighted_sum((1 - y_pred) * (1 - y_true), sample_weight))
     self.false_positives.assign_add(
-      _weighted_sum(y_pred * (1 - y_true), sample_weight))
+        _weighted_sum(y_pred * (1 - y_true), sample_weight))
     self.false_negatives.assign_add(
-      _weighted_sum((1 - y_pred) * y_true, sample_weight))
+        _weighted_sum((1 - y_pred) * y_true, sample_weight))
     self.true_instances.assign_add(
-      _weighted_sum(y_true, sample_weight))
+        _weighted_sum(y_true, sample_weight))
 
   def result(self): # pylint: disable=missing-function-docstring
     # Compute metric. This must be implemented by subclasses.
@@ -340,12 +340,12 @@ class TruePositiveRate(ConfusionMetric):
     dtype: Data type of the metric result.
   """
   def __init__(self,
-         num_classes=None,
-         class_id=None,
-         average='macro',
-         threshold=None,
-         name='tpr',
-         dtype=None):
+               num_classes=None,
+               class_id=None,
+               average='macro',
+               threshold=None,
+               name='tpr',
+               dtype=None):
     super().__init__(num_classes=num_classes,
                      class_id=class_id,
                      average=average,
@@ -624,12 +624,12 @@ class IoU(TverskyIndex):
     dtype: Data type of the metric result.
   """
   def __init__(self,
-         num_classes=None,
-         class_id=None,
-         average='macro',
-         threshold=None,
-         name='iou',
-         dtype=None):
+               num_classes=None,
+               class_id=None,
+               average='macro',
+               threshold=None,
+               name='iou',
+               dtype=None):
     super().__init__(num_classes=num_classes,
              class_id=class_id,
              average=average,

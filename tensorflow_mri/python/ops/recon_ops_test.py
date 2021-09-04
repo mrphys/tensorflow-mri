@@ -14,6 +14,7 @@
 # ==============================================================================
 """Tests for module `recon_ops`."""
 
+from absl.testing import parameterized
 import tensorflow as tf
 import tensorflow_nufft as tfft
 
@@ -24,7 +25,7 @@ from tensorflow_mri.python.utils import io_utils
 from tensorflow_mri.python.utils import test_utils
 
 
-class ReconstructTest(tf.test.TestCase):
+class ReconstructTest(test_utils.TestCase):
   """Tests for function `reconstruct`."""
 
   @classmethod
@@ -127,8 +128,8 @@ class ReconstructTest(tf.test.TestCase):
     self.assertAllClose(image, result)
 
 
-  @test_utils.parameterized_test(reduction_axis=[[0], [1], [0, 1]],
-                                 reduction_factor=[2, 4])
+  @parameterized.product(reduction_axis=[[0], [1], [0, 1]],
+                         reduction_factor=[2, 4])
   def test_sense(self, reduction_axis, reduction_factor): # pylint: disable=missing-param-doc
     """Test reconstruction method `sense`."""
 
@@ -225,19 +226,22 @@ class ReconstructTest(tf.test.TestCase):
     result = self.data['cg_sense/cine/result']
 
     # Check batch of k-space data and batch of trajectories.
-    image = recon_ops.reconstruct(kspace, traj, sensitivities=sens)
+    image = recon_ops.reconstruct(kspace, trajectory=traj, sensitivities=sens)
 
     self.assertAllClose(image, result, rtol=1e-5, atol=1e-5)
 
     # Check batch of k-space data and batch of sensitivities.
     batch_sens = tf.tile(tf.expand_dims(sens, 0), [19, 1, 1, 1])
-    image = recon_ops.reconstruct(kspace, traj, sensitivities=batch_sens)
+    image = recon_ops.reconstruct(kspace, trajectory=traj,
+                                  sensitivities=batch_sens)
 
     self.assertAllClose(image, result, rtol=1e-5, atol=1e-5)
 
     # Check batch of k-space data without batch of trajectories (trajectory is
     # equal for all frames in this case).
-    image = recon_ops.reconstruct(kspace, traj[0, ...], sensitivities=sens)
+    image = recon_ops.reconstruct(kspace,
+                                  trajectory=traj[0, ...],
+                                  sensitivities=sens)
 
     self.assertAllClose(image, result, rtol=1e-3, atol=1e-3)
 
@@ -245,16 +249,16 @@ class ReconstructTest(tf.test.TestCase):
     # disallowed.
     with self.assertRaisesRegex(ValueError, "incompatible batch shapes"):
       image = recon_ops.reconstruct(kspace[0, ...],
-                                    traj[0, ...],
+                                    trajectory=traj[0, ...],
                                     sensitivities=batch_sens)
     with self.assertRaisesRegex(ValueError, "incompatible batch shapes"):
       image = recon_ops.reconstruct(kspace[0, ...],
-                                    traj,
+                                    trajectory=traj,
                                     sensitivities=sens)
 
 
-  @test_utils.parameterized_test(combine_coils=[True, False],
-                                 return_kspace=[True, False])
+  @parameterized.product(combine_coils=[True, False],
+                         return_kspace=[True, False])
   def test_grappa_2d(self, combine_coils, return_kspace): # pylint:disable=missing-param-doc
     """Test GRAPPA reconstruction (2D, scalar batch)."""
     data = io_utils.read_hdf5('tests/data/brain_2d_multicoil_kspace.h5')
@@ -286,8 +290,8 @@ class ReconstructTest(tf.test.TestCase):
 
     # Test op.
     result = recon_ops.reconstruct(kspace,
-                                   calib=calib,
                                    mask=mask,
+                                   calib=calib,
                                    weights_l2_regularizer=0.01,
                                    combine_coils=combine_coils,
                                    return_kspace=return_kspace)
@@ -299,7 +303,7 @@ class ReconstructTest(tf.test.TestCase):
       if combine_coils:
         ref = tf.math.sqrt(tf.math.reduce_sum(ref * tf.math.conj(ref), 0))
 
-    self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
+    self.assertAllClose(result, ref, rtol=1e-3, atol=1e-3)
 
 
   def test_grappa_2d_batch(self):
@@ -332,14 +336,14 @@ class ReconstructTest(tf.test.TestCase):
     calib = tf.math.reduce_mean(calib, axis=0)
 
     # Test op.
-    result = recon_ops.reconstruct(kspace, calib=calib, mask=mask,
+    result = recon_ops.reconstruct(kspace, mask=mask, calib=calib,
                                    weights_l2_regularizer=0.0,
                                    return_kspace=True)
     self.assertAllClose(result, self.data['grappa/2d_cine/result'],
                         rtol=1e-4, atol=1e-4)
 
 
-class ReconstructPartialKSpaceTest(tf.test.TestCase):
+class ReconstructPartialKSpaceTest(test_utils.TestCase):
   """Tests for `reconstruct_partial_kspace` operation."""
 
   @classmethod
@@ -349,9 +353,9 @@ class ReconstructPartialKSpaceTest(tf.test.TestCase):
     cls.data = io_utils.read_hdf5('tests/data/recon_ops_data.h5')
     cls.data.update(io_utils.read_hdf5('tests/data/recon_ops_data_2.h5'))
 
-  @test_utils.parameterized_test(method=['zerofill', 'homodyne', 'pocs'],
-                                 return_complex=[True, False],
-                                 return_kspace=[True, False])
+  @parameterized.product(method=['zerofill', 'homodyne', 'pocs'],
+                         return_complex=[True, False],
+                         return_kspace=[True, False])
   def test_pf(self, method, return_complex, return_kspace): # pylint:disable=missing-param-doc
     """Test PF reconstruction."""
     data = io_utils.read_hdf5('tests/data/brain_2d_multicoil_kspace.h5')

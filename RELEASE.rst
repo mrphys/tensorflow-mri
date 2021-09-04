@@ -22,7 +22,7 @@ Major Features and Improvements
 * `tfmr`:
 
   * Added new image ops `total_variation` and `phantom`.
-  * Addew new array ops `meshgrid` and `cartesian_product`.
+  * Addew new array ops `cartesian_product` and `meshgrid`.
   * Added new geometry module with ops `rotate_2d` and `rotate_3d`.
 
 Bug Fixes and Other Changes
@@ -30,6 +30,4 @@ Bug Fixes and Other Changes
 
 * `tfmr`:
 
-  * Fixed a bug that caused `fftn` and `ifftn` to fail in graph mode.
-  * Fixed a bug that caused `psnr`, `ssim` and `ssim_multiscale` to fail in
-    graph mode.
+  * Fixed some bugs that would cause some ops to fail in graph mode.

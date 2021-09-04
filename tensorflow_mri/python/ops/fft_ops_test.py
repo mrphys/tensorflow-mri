@@ -24,7 +24,7 @@ from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.utils import test_utils
 
 
-class FFTOpsTest(tf.test.TestCase):
+class FFTOpsTest(test_utils.TestCase):
   """Tests for FFT ops."""
   # pylint: disable=missing-function-docstring
 

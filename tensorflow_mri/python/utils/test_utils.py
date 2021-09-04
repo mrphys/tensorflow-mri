@@ -14,9 +14,6 @@
 # ==============================================================================
 """Utilities for testing."""
 
-import functools
-import itertools
-
 from absl.testing import parameterized
 import tensorflow as tf
 
@@ -74,38 +71,4 @@ def run_in_graph_and_eager_modes(func=None, config=None, use_gpu=True):
   if func is not None:
     return decorator(func)
 
-  return decorator
-
-
-def parameterized_test(**params):
-  """Decorates a test to run with multiple parameter combinations.
-
-  All possible combinations (Cartesian product) of the parameters will be
-  tested.
-
-  Args:
-    **params: The keyword parameters to be passed to the subtests. Each keyword
-      argument should be a list of values to be tested.
-
-  Returns:
-    A decorator which decorates the test to be called with the specified
-    parameter combinations.
-  """
-  param_lists = params
-
-  def decorator(func):
-
-    @functools.wraps(func)
-    def run(self):
-
-      # Create combinations of the parameters above.
-      values = itertools.product(*param_lists.values())
-      params = [dict(zip(param_lists.keys(), v)) for v in values]
-
-      # Now call decorated function with each set of parameters.
-      for p in params:
-        with self.subTest(**p):
-          func(self, **p)
-
-    return run
   return decorator
