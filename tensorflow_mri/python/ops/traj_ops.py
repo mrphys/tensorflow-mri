@@ -26,8 +26,8 @@ import tensorflow_nufft as tfft
 from tensorflow_graphics.geometry.transformation import rotation_matrix_2d # pylint: disable=wrong-import-order
 from tensorflow_graphics.geometry.transformation import rotation_matrix_3d # pylint: disable=wrong-import-order
 
-from tensorflow_mri.python.utils import check_utils
-from tensorflow_mri.python.utils import tensor_utils
+from tensorflow_mri.python.util import check_util
+from tensorflow_mri.python.util import tensor_util
 
 
 _mri_ops = tf.load_op_library(
@@ -191,11 +191,11 @@ def _kspace_trajectory(traj_type,
     A k-space trajectory for the given parameters.
   """
   # Check inputs.
-  traj_type = check_utils.validate_enum(
+  traj_type = check_util.validate_enum(
     traj_type, {'radial', 'spiral'}, name='traj_type')
-  spacing = check_utils.validate_enum(
+  spacing = check_util.validate_enum(
     spacing, {'linear', 'golden', 'tiny', 'sorted'}, name='spacing')
-  domain = check_utils.validate_enum(
+  domain = check_util.validate_enum(
     domain, {'full', 'half'}, name='domain')
 
   # Calculate waveform.
@@ -502,7 +502,7 @@ def estimate_density(points, grid_shape):
 
   # Create a k-space of ones.
   ones = tf.ones(batch_shape + points.shape[-2:-1],
-                 dtype=tensor_utils.get_complex_dtype(points.dtype))
+                 dtype=tensor_util.get_complex_dtype(points.dtype))
 
   # Spread ones to grid and interpolate back.
   density = tfft.interp(tfft.spread(ones, points, grid_shape), points)

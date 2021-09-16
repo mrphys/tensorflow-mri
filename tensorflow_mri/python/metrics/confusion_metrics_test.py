@@ -18,10 +18,10 @@ from absl.testing import parameterized
 import tensorflow as tf
 
 from tensorflow_mri.python.metrics import confusion_metrics
-from tensorflow_mri.python.utils import test_utils
+from tensorflow_mri.python.util import test_util
 
 
-class ConfusionMetricTest(test_utils.TestCase):
+class ConfusionMetricTest(test_util.TestCase):
   """Tests for confusion metrics."""
 
   names = [

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for module `optimization_ops`."""
+"""Tests for module `prox_ops`."""
 
 import tensorflow as tf
 

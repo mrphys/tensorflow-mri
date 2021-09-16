@@ -22,25 +22,25 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import traj_ops
-from tensorflow_mri.python.utils import io_utils
-from tensorflow_mri.python.utils import test_utils
+from tensorflow_mri.python.util import io_util
+from tensorflow_mri.python.util import test_util
 
 
-class RadialTrajectoryTest(test_utils.TestCase):
+class RadialTrajectoryTest(test_util.TestCase):
   """Radial trajectory tests."""
 
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    cls.data = io_utils.read_hdf5('tests/data/traj_ops_data.h5')
+    cls.data = io_util.read_hdf5('tests/data/traj_ops_data.h5')
 
-  @test_utils.run_in_graph_and_eager_modes
+  @test_util.run_in_graph_and_eager_modes
   def test_waveform(self):
     """Test radial waveform."""
     waveform = traj_ops.radial_waveform(base_resolution=128)
     self.assertAllClose(waveform, self.data['radial/waveform'])
 
-  @test_utils.run_in_graph_and_eager_modes
+  @test_util.run_in_graph_and_eager_modes
   def test_trajectory(self):
     """Test radial trajectory."""
     trajectory = traj_ops.radial_trajectory(base_resolution=128,
@@ -50,15 +50,15 @@ class RadialTrajectoryTest(test_utils.TestCase):
     self.assertAllClose(trajectory, self.data['radial/trajectory/golden'])
 
 
-class SpiralTrajectoryTest(test_utils.TestCase):
+class SpiralTrajectoryTest(test_util.TestCase):
   """Spiral trajectory tests."""
 
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    cls.data = io_utils.read_hdf5('tests/data/traj_ops_data.h5')
+    cls.data = io_util.read_hdf5('tests/data/traj_ops_data.h5')
 
-  @test_utils.run_in_graph_and_eager_modes
+  @test_util.run_in_graph_and_eager_modes
   def test_waveform(self):
     """Test spiral waveform."""
     waveform = traj_ops.spiral_waveform(base_resolution=128,
@@ -70,7 +70,7 @@ class SpiralTrajectoryTest(test_utils.TestCase):
     self.assertAllClose(waveform, self.data['spiral/waveform'])
 
   @parameterized.product(vd_type=['linear', 'quadratic', 'hanning'])
-  @test_utils.run_in_graph_and_eager_modes
+  @test_util.run_in_graph_and_eager_modes
   def test_waveform_vd(self, vd_type): # pylint: disable=missing-param-doc
     """Test variable-density spiral waveform."""
     waveform = traj_ops.spiral_waveform(base_resolution=256,
@@ -85,7 +85,7 @@ class SpiralTrajectoryTest(test_utils.TestCase):
                                         vd_type=vd_type)
     self.assertAllClose(waveform, self.data['spiral/waveform_vd/' + vd_type])
 
-  @test_utils.run_in_graph_and_eager_modes
+  @test_util.run_in_graph_and_eager_modes
   def test_trajectory(self):
     """Test spiral trajectory."""
     trajectory = traj_ops.spiral_trajectory(base_resolution=128,
@@ -100,9 +100,9 @@ class SpiralTrajectoryTest(test_utils.TestCase):
     self.assertAllClose(trajectory, self.data['spiral/trajectory/golden'])
 
 
-class TrajOpsTest(test_utils.TestCase): # pylint: disable=missing-class-docstring
+class TrajOpsTest(test_util.TestCase): # pylint: disable=missing-class-docstring
 
-  @test_utils.run_in_graph_and_eager_modes
+  @test_util.run_in_graph_and_eager_modes
   def test_kspace_trajectory_shapes(self):
     """Test k-space trajectory."""
 
@@ -229,15 +229,15 @@ class TrajOpsTest(test_utils.TestCase): # pylint: disable=missing-class-docstrin
           self.assertAllInRange(traj, -math.pi, math.pi)
 
 
-class DensityEstimationTest(test_utils.TestCase):
+class DensityEstimationTest(test_util.TestCase):
   """Test density estimation."""
 
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    cls.data = io_utils.read_hdf5('tests/data/traj_ops_data.h5')
+    cls.data = io_util.read_hdf5('tests/data/traj_ops_data.h5')
 
-  @test_utils.run_in_graph_and_eager_modes
+  @test_util.run_in_graph_and_eager_modes
   def test_estimate_density(self):
     """Test density estimation."""
     traj = self.data['estimate_density/trajectory']
@@ -249,7 +249,7 @@ class DensityEstimationTest(test_utils.TestCase):
     self.assertAllClose(dens, self.data['estimate_density/density'],
                         rtol=1e-5, atol=1e-5)
 
-  @test_utils.run_in_graph_and_eager_modes
+  @test_util.run_in_graph_and_eager_modes
   def test_estimate_density_3d_many_points(self):
     """Test 3D density estimation with a large points array."""
     # Here we are just checking this runs without causing a seg fault.

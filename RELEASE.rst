@@ -22,8 +22,14 @@ Major Features and Improvements
 * `tfmr`:
 
   * Added new image ops `total_variation` and `phantom`.
-  * Addew new array ops `cartesian_product` and `meshgrid`.
+  * Addew new array ops `cartesian_product`, `meshgrid`, `ravel_multi_index` and
+    `unravel_index`.
   * Added new geometry module with ops `rotate_2d` and `rotate_3d`.
+  * Added new optimizer op `lbfgs_minimize`.
+  * Added new linear algebra ops `LinearOperatorFFT` and
+    `LinearOperatorImaging`.
+  * Added new math ops `make_val_and_grad_fn`, `view_as_complex` and
+    `view_as_real`.
 
 Bug Fixes and Other Changes
 ---------------------------
@@ -31,3 +37,7 @@ Bug Fixes and Other Changes
 * `tfmr`:
 
   * Fixed some bugs that would cause some ops to fail in graph mode.
+  * Added graph mode tests.
+  * Refactored testing modules.
+  * Refactored linear algebra module.
+  * Refactored utilities modules.

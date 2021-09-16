@@ -56,3 +56,12 @@ def get_complex_dtype(dtype):
   if dtype not in dtypes:
     raise ValueError(f"Data type {dtype} has no complex equivalent.")
   return dtypes[dtype]
+
+
+def convert_shape_to_tensor(shape, name=None):
+  """Convert a static shape to a tensor."""
+  if isinstance(shape, (tuple, list)) and not shape:
+    dtype = tf.dtypes.int32
+  else:
+    dtype = None
+  return tf.convert_to_tensor(shape, dtype=dtype, name=name)

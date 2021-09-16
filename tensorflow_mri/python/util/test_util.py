@@ -14,12 +14,91 @@
 # ==============================================================================
 """Utilities for testing."""
 
+import unittest
+
 from absl.testing import parameterized
+import numpy as np
 import tensorflow as tf
 
 
 class TestCase(tf.test.TestCase, parameterized.TestCase):
   """Class to provide TensorFlow MRI specific test features."""
+
+  def assertAllTrue(self, a):
+    """Assert that all entries in a boolean `Tensor` are True.
+    
+    Args:
+      a: A `Tensor`.
+    """
+    a_ = self.get_nd_array(a)
+    all_true = np.ones_like(a_, dtype=np.bool)
+    self.assertAllEqual(all_true, a_)
+
+  def assertAllFalse(self, a):
+    """Assert that all entries in a boolean `Tensor` are False.
+    
+    Args:
+      a: A `Tensor`.
+    """
+    a_ = self.get_nd_array(a)
+    all_false = np.zeros_like(a_, dtype=np.bool)
+    self.assertAllEqual(all_false, a_)
+    
+  def assertAllFinite(self, a):
+    """Assert that all entries in a `Tensor` are finite.
+
+    Args:
+      a: A `Tensor`.
+    """
+    is_finite = np.isfinite(self.get_nd_array(a))
+    all_true = np.ones_like(is_finite, dtype=np.bool)
+    self.assertAllEqual(all_true, is_finite)
+
+  def assertAllPositiveInf(self, a):
+    """Assert that all entries in a `Tensor` are equal to positive infinity.
+
+    Args:
+      a: A `Tensor`.
+    """
+    is_positive_inf = np.isposinf(self.get_nd_array(a))
+    all_true = np.ones_like(is_positive_inf, dtype=np.bool)
+    self.assertAllEqual(all_true, is_positive_inf)
+
+  def assertAllNegativeInf(self, a):
+    """Assert that all entries in a `Tensor` are negative infinity.
+
+    Args:
+      a: A `Tensor`.
+    """
+    is_negative_inf = np.isneginf(self.get_nd_array(a))
+    all_true = np.ones_like(is_negative_inf, dtype=np.bool)
+    self.assertAllEqual(all_true, is_negative_inf)
+
+  def get_nd_array(self, a):
+    """Convert a `Tensor` to an `ndarray`.
+
+    Args:
+      a: A `Tensor`.
+
+    Returns:
+      An `ndarray`.
+    """
+    if tf.is_tensor(a):
+      if tf.executing_eagerly():
+        a = a.numpy()
+      else:
+        a = self.evaluate(a)
+    if not isinstance(a, np.ndarray):
+      return np.array(a)
+    return a
+
+  def skip_if_no_xla(self):
+    """Skip this test if XLA is not available."""
+    try:
+      tf.function(lambda: tf.constant(0), jit_compile=True)()
+    except (tf.errors.UnimplementedError, NotImplementedError) as e:
+      if 'Could not find compiler' in str(e):
+        self.skipTest('XLA not available')
 
 
 def run_in_graph_and_eager_modes(func=None, config=None, use_gpu=True):
@@ -56,11 +135,11 @@ def run_in_graph_and_eager_modes(func=None, config=None, use_gpu=True):
         raise ValueError('Must be executing eagerly when using the '
                          'run_in_graph_and_eager_modes decorator.')
 
-      # Run eager block
+      # Run in eager mode.
       f(self, *args, **kwargs)
       self.tearDown()
 
-      # Run in graph mode block
+      # Run in graph mode.
       with tf.Graph().as_default():
         self.setUp()
         with self.test_session(use_gpu=use_gpu, config=config):
@@ -72,3 +151,20 @@ def run_in_graph_and_eager_modes(func=None, config=None, use_gpu=True):
     return decorator(func)
 
   return decorator
+
+
+def run_all_in_graph_and_eager_modes(cls):
+  """Execute all test methods in the given class with and without eager."""
+  base_decorator = run_in_graph_and_eager_modes
+
+  for name in dir(cls):
+    if (not name.startswith(unittest.TestLoader.testMethodPrefix) or
+        name.startswith("testSkipEager") or
+        name.startswith("test_skip_eager") or
+        name == "test_session"):
+      continue
+    value = getattr(cls, name, None)
+    if callable(value):
+      setattr(cls, name, base_decorator(value))
+
+  return cls

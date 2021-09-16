@@ -14,9 +14,14 @@
 # ==============================================================================
 """Math operations."""
 
-import tensorflow as tf
+import functools
 
-from tensorflow_mri.python.utils import check_utils
+import tensorflow as tf
+from tensorflow.python.ops.check_ops import assert_equal
+from tensorflow.python.ops.gen_math_ops import xdivy
+import tensorflow_probability as tfp
+
+from tensorflow_mri.python.util import check_util
 
 
 def extract_from_complex(tensor, part, name='extract_from_complex'):
@@ -34,11 +39,11 @@ def extract_from_complex(tensor, part, name='extract_from_complex'):
     `tensor.dtype.real_dtype`.
   """
   with tf.name_scope(name):
-    tensor = check_utils.validate_tensor_dtype(
+    tensor = check_util.validate_tensor_dtype(
         tf.convert_to_tensor(tensor),
         (tf.float32, tf.float64, tf.complex64, tf.complex128),
         name='tensor')
-    part = check_utils.validate_enum(
+    part = check_util.validate_enum(
         part, ('magnitude', 'mag', 'phase', 'phs', 'real', 'imaginary', 'imag'),
         'part')
 
@@ -53,6 +58,28 @@ def extract_from_complex(tensor, part, name='extract_from_complex'):
       tensor = tf.math.imag(tensor)
 
     return tensor
+
+
+def make_val_and_grad_fn(value_fn):
+  """Function decorator to compute both function value and gradient.
+
+  Turns function `value_fn` that evaluates and returns a `Tensor` with the value
+  of the function evaluated at the input point into one that returns a tuple of
+  two `Tensors` with the value and the gradient of the defined function
+  evaluated at the input point.  
+
+  This is useful for constructing functions for optimization.
+
+  Args:
+    value_fn: A Python function to decorate.
+
+  Returns:
+    The decorated function.
+  """
+  @functools.wraps(value_fn)
+  def val_and_grad(x):
+    return tfp.math.value_and_gradient(value_fn, x)
+  return val_and_grad
 
 
 def scale_by_min_max(tensor,
@@ -105,3 +132,59 @@ def scale_by_min_max(tensor,
       tensor = do_rescale(tensor)
 
     return tensor
+
+
+def view_as_complex(x, stacked=True):
+  """Returns a view of the input as a complex tensor.
+
+  Returns a new complex-valued input tensor of shape `[M1, M2, ..., Mn]`:
+  
+  * If `stacked` is `True`, expects a real-valued tensor of shape
+    `[M1, M2, ..., Mn, 2]`, where the last axis has the real and imaginary
+    components of the complex numbers.
+  * If `stacked` is `False`, expects a real-valued tensor of shape
+    `[M1, M2, ..., 2 * Mn], where real and imaginary components are interleaved
+    in the channel dimension.
+
+  Args:
+    x: A real-valued `Tensor`.
+
+  Returns:
+    A complex-valued `Tensor`.
+  """
+  if not stacked:
+    x = tf.reshape(x, [-1, 2])
+  checks = [tf.debugging.assert_equal(tf.shape(x)[-1], 2, message=(
+      f"Could not interpret input tensor as complex. Last dimension must be 2, "
+      f"but got {tf.shape(x)[-1]}. Perhaps you need to set `stacked` to "
+      f"`False`?"))]
+  with tf.control_dependencies(checks):
+    x = tf.identity(x)
+  x = tf.complex(x[..., 0], x[..., 1])
+  return x
+
+
+def view_as_real(x, stacked=True):
+  """Returns a view of the input as a real tensor.
+
+  For a complex-valued input tensor of shape `[M1, M2, ..., Mn]`:
+  
+  * If `stacked` is `True`, returns a new real-valued tensor of shape
+    `[M1, M2, ..., Mn, 2]`, where the last axis has the real and imaginary
+    components of the complex numbers.
+  * If `stacked` is `False`, returns a new real-valued tensor of shape
+    `[M1, M2, ..., 2 * Mn], where real and imaginary components are interleaved
+    in the channel dimension.
+
+  Args:
+    x: A complex-valued `Tensor`.
+    stacked: A `bool`. If `True`, real and imaginary components are stacked
+      along a new axis. If `False`, they are inserted into the channel axis.
+
+  Returns:
+    A real-valued `Tensor`.
+  """
+  x = tf.stack([tf.math.real(x), tf.math.imag(x)], axis=-1)
+  if not stacked:
+    x = tf.reshape(x, tf.concat([tf.shape(x)[:-2], [-1]], 0))
+  return x

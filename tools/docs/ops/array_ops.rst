@@ -12,3 +12,4 @@ Array Manipulation
     cartesian_product
     meshgrid
     ravel_multi_index
+    unravel_index

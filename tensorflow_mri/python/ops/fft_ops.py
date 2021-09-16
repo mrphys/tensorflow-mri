@@ -17,7 +17,7 @@
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import image_ops
-from tensorflow_mri.python.utils import check_utils
+from tensorflow_mri.python.util import check_util
 
 
 def fftn(x, shape=None, axes=None, norm='backward', shift=False):
@@ -200,7 +200,7 @@ def _fft_internal(x, shape, axes, norm, shift, transform): # pylint: disable=mis
     rank = tf.identity(rank)
 
   # Normalization factor.
-  norm = check_utils.validate_enum(
+  norm = check_util.validate_enum(
     norm, {'forward', 'backward', 'ortho'}, 'norm')
   if norm == 'backward':
     norm_factor = tf.constant(1, x.dtype)

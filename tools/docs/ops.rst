@@ -13,6 +13,7 @@ Operations
     ops/image_ops
     ops/linalg_ops
     ops/math_ops
-    ops/optimization_ops
+    ops/optimizer_ops
+    ops/prox_ops
     ops/recon_ops
     ops/traj_ops

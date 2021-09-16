@@ -20,20 +20,20 @@ from absl.testing import parameterized
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import coil_ops
-from tensorflow_mri.python.utils import io_utils
-from tensorflow_mri.python.utils import test_utils
+from tensorflow_mri.python.util import io_util
+from tensorflow_mri.python.util import test_util
 
 
-class SensMapsTest(test_utils.TestCase):
+class SensMapsTest(test_util.TestCase):
   """Tests for ops related to estimation of coil sensitivity maps."""
 
   @classmethod
   def setUpClass(cls):
 
     super().setUpClass()
-    cls.data = io_utils.read_hdf5('tests/data/coil_ops_data.h5')
+    cls.data = io_util.read_hdf5('tests/data/coil_ops_data.h5')
 
-  @test_utils.run_in_graph_and_eager_modes
+  @test_util.run_in_graph_and_eager_modes
   def test_walsh(self):
     """Test Walsh's method."""
     # GPU results are close, but about 1-2% of values show deviations up to
@@ -47,7 +47,7 @@ class SensMapsTest(test_utils.TestCase):
 
     self.assertAllClose(maps, self.data['maps/walsh'])
 
-  @test_utils.run_in_graph_and_eager_modes
+  @test_util.run_in_graph_and_eager_modes
   def test_walsh_transposed(self):
     """Test Walsh's method with a transposed array."""
     with tf.device('/cpu:0'):
@@ -57,7 +57,7 @@ class SensMapsTest(test_utils.TestCase):
 
     self.assertAllClose(maps, tf.transpose(self.data['maps/walsh'], [2, 0, 1]))
 
-  @test_utils.run_in_graph_and_eager_modes
+  @test_util.run_in_graph_and_eager_modes
   def test_inati(self):
     """Test Inati's method."""
     with tf.device('/cpu:0'):
@@ -66,7 +66,7 @@ class SensMapsTest(test_utils.TestCase):
 
     self.assertAllClose(maps, self.data['maps/inati'], rtol=1e-4, atol=1e-4)
 
-  @test_utils.run_in_graph_and_eager_modes
+  @test_util.run_in_graph_and_eager_modes
   def test_espirit(self):
     """Test ESPIRiT method."""
     with tf.device('/cpu:0'):
@@ -75,7 +75,7 @@ class SensMapsTest(test_utils.TestCase):
 
     self.assertAllClose(maps, self.data['maps/espirit'])
 
-  @test_utils.run_in_graph_and_eager_modes
+  @test_util.run_in_graph_and_eager_modes
   def test_espirit_transposed(self):
     """Test ESPIRiT method with a transposed array."""
     with tf.device('/cpu:0'):
@@ -87,12 +87,12 @@ class SensMapsTest(test_utils.TestCase):
       maps, tf.transpose(self.data['maps/espirit'], [2, 0, 1, 3]))
 
 
-class CoilCombineTest(test_utils.TestCase):
+class CoilCombineTest(test_util.TestCase):
   """Tests for coil combination op."""
 
   @parameterized.product(coil_axis=[0, -1],
                          keepdims=[True, False])
-  @test_utils.run_in_graph_and_eager_modes
+  @test_util.run_in_graph_and_eager_modes
   def test_sos(self, coil_axis, keepdims): # pylint: disable=missing-param-doc
     """Test sum of squares combination."""
 
@@ -111,7 +111,7 @@ class CoilCombineTest(test_utils.TestCase):
 
   @parameterized.product(coil_axis=[0, -1],
                          keepdims=[True, False])
-  @test_utils.run_in_graph_and_eager_modes
+  @test_util.run_in_graph_and_eager_modes
   def test_adaptive(self, coil_axis, keepdims): # pylint: disable=missing-param-doc
     """Test adaptive combination."""
 
@@ -140,15 +140,15 @@ class CoilCombineTest(test_utils.TestCase):
       tf.random.normal(shape))
 
 
-class CoilCompressionTest(test_utils.TestCase):
+class CoilCompressionTest(test_util.TestCase):
   """Tests for coil compression op."""
 
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    cls.data = io_utils.read_hdf5('tests/data/coil_ops_data.h5')
+    cls.data = io_util.read_hdf5('tests/data/coil_ops_data.h5')
 
-  @test_utils.run_in_graph_and_eager_modes
+  @test_util.run_in_graph_and_eager_modes
   def test_coil_compression_svd(self):
     """Test SVD coil compression."""
     kspace = self.data['cc/kspace']
@@ -158,7 +158,7 @@ class CoilCompressionTest(test_utils.TestCase):
 
     self.assertAllClose(cc_kspace, result)
 
-  @test_utils.run_in_graph_and_eager_modes
+  @test_util.run_in_graph_and_eager_modes
   def test_coil_compression_svd_two_step(self):
     """Test SVD coil compression using two-step API."""
     kspace = self.data['cc/kspace']
@@ -170,7 +170,7 @@ class CoilCompressionTest(test_utils.TestCase):
     cc_kspace = coil_ops.compress_coils(kspace, matrix=matrix)
     self.assertAllClose(cc_kspace, result[..., :16])
 
-  @test_utils.run_in_graph_and_eager_modes
+  @test_util.run_in_graph_and_eager_modes
   def test_coil_compression_svd_transposed(self):
     """Test SVD coil compression using two-step API."""
     kspace = self.data['cc/kspace']
@@ -182,7 +182,7 @@ class CoilCompressionTest(test_utils.TestCase):
 
     self.assertAllClose(cc_kspace, result)
 
-  @test_utils.run_in_graph_and_eager_modes
+  @test_util.run_in_graph_and_eager_modes
   def test_coil_compression_svd_basic(self):
     """Test coil compression using SVD method with basic arrays."""
     shape = (20, 20, 8)

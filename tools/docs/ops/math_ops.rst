@@ -10,4 +10,7 @@ Math
     :nosignatures:
 
     extract_from_complex
+    make_val_and_grad_fn
     scale_by_min_max
+    view_as_complex
+    view_as_real

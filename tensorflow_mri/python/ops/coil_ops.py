@@ -27,7 +27,7 @@ import tensorflow.experimental.numpy as tnp
 
 from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.ops import image_ops
-from tensorflow_mri.python.utils import check_utils
+from tensorflow_mri.python.util import check_util
 
 
 def estimate_coil_sensitivities(input_,
@@ -107,8 +107,8 @@ def estimate_coil_sensitivities(input_,
   tf.debugging.assert_rank_at_least(input_, 2, message=(
     f"Argument `input_` must have rank of at least 2, but got shape: "
     f"{input_.shape}"))
-  coil_axis = check_utils.validate_type(coil_axis, int, name='coil_axis')
-  method = check_utils.validate_enum(
+  coil_axis = check_util.validate_type(coil_axis, int, name='coil_axis')
+  method = check_util.validate_enum(
     method, {'walsh', 'inati', 'espirit'}, name='method')
 
   # Move coil axis to innermost dimension if not already there.
@@ -194,7 +194,7 @@ def _estimate_coil_sensitivities_walsh(images, filter_size=5):
   image_shape = tf.shape(images)[:-1]
   num_coils = tf.shape(images)[-1]
 
-  filter_size = check_utils.validate_list(
+  filter_size = check_util.validate_list(
     filter_size, element_type=int, length=rank, name='filter_size')
 
   # Flatten all spatial dimensions into a single axis, so `images` has shape
@@ -236,10 +236,10 @@ def _estimate_coil_sensitivities_inati(images,
   coil_axis = -1
 
   # Validate inputs.
-  filter_size = check_utils.validate_list(
+  filter_size = check_util.validate_list(
     filter_size, element_type=int, length=rank, name='filter_size')
-  max_iter = check_utils.validate_type(max_iter, int, name='max_iter')
-  tol = check_utils.validate_type(tol, float, name='tol')
+  max_iter = check_util.validate_type(max_iter, int, name='max_iter')
+  tol = check_util.validate_type(tol, float, name='tol')
 
   d_sum = tf.math.reduce_sum(images, axis=spatial_axes, keepdims=True)
   d_sum /= tf.norm(d_sum, axis=coil_axis, keepdims=True)
@@ -324,9 +324,9 @@ def _estimate_coil_sensitivities_espirit(kspace,
   if calib_size is None:
     calib_size = image_shape.as_list()
 
-  calib_size = check_utils.validate_list(
+  calib_size = check_util.validate_list(
     calib_size, element_type=int, length=rank, name='calib_size')
-  kernel_size = check_utils.validate_list(
+  kernel_size = check_util.validate_list(
     kernel_size, element_type=int, length=rank, name='kernel_size')
 
   with tf.control_dependencies([
@@ -479,8 +479,8 @@ def compress_coils(kspace,
   tf.debugging.assert_rank_at_least(kspace, 2, message=(
     f"Argument `kspace` must have rank of at least 2, but got shape: "
     f"{kspace.shape}"))
-  coil_axis = check_utils.validate_type(coil_axis, int, name='coil_axis')
-  method = check_utils.validate_enum(
+  coil_axis = check_util.validate_type(coil_axis, int, name='coil_axis')
+  method = check_util.validate_enum(
     method, {'svd', 'geometric', 'espirit'}, name='method')
 
   # Move coil axis to innermost dimension if not already there.
@@ -553,7 +553,7 @@ def coil_compression_matrix(kspace,
     ValueError: If `method` is not one of `"svd"`, `"geometric"` or `"espirit"`.
   """
   kspace = tf.convert_to_tensor(kspace)
-  method = check_utils.validate_enum(
+  method = check_util.validate_enum(
     method, {'svd', 'geometric', 'espirit'}, 'method')
 
   # Move coil axis to innermost dimension if not already there.

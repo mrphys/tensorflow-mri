@@ -27,9 +27,11 @@ from tensorflow_mri.python.ops import coil_ops
 from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.ops import linalg_ops
+from tensorflow_mri.python.ops import math_ops
+from tensorflow_mri.python.ops import optimizer_ops
 from tensorflow_mri.python.ops import traj_ops
-from tensorflow_mri.python.utils import check_utils
-from tensorflow_mri.python.utils import tensor_utils
+from tensorflow_mri.python.util import check_util
+from tensorflow_mri.python.util import tensor_util
 
 
 def reconstruct(kspace,
@@ -295,7 +297,7 @@ def _fft(kspace,
         f"{rank} spatial dimensions. If `kspace` has any leading batch "
         f"dimensions, please set the argument `rank` explicitly.")
   else:
-    rank = check_utils.validate_type(rank, int, "rank")
+    rank = check_util.validate_type(rank, int, "rank")
     if rank > 3:
       raise ValueError(f"Argument `rank` must be <= 3, but got: {rank}")
   # Do FFT.
@@ -344,7 +346,7 @@ def _nufft(kspace,
   # Compensate non-uniform sampling density.
   if density is None:
     density = traj_ops.estimate_density(trajectory, image_shape)
-  kspace = tf.math.divide_no_nan(kspace, tensor_utils.cast_to_complex(density))
+  kspace = tf.math.divide_no_nan(kspace, tensor_util.cast_to_complex(density))
   # Do NUFFT.
   image = tfft.nufft(kspace, trajectory,
                      grid_shape=image_shape,
@@ -375,9 +377,9 @@ def _sense(kspace,
   rank = rank or kspace.shape.rank - 1
 
   reduced_shape = kspace.shape[-rank:]
-  reduction_axis = check_utils.validate_list(
+  reduction_axis = check_util.validate_list(
     reduction_axis, element_type=int, name='reduction_axis')
-  reduction_factor = check_utils.validate_list(
+  reduction_factor = check_util.validate_list(
     reduction_factor, element_type=int, length=len(reduction_axis),
     name='reduction_factor')
   reduction_axis = [ax + rank if ax < 0 else ax for ax in reduction_axis]
@@ -772,11 +774,60 @@ def _cs(kspace,
         density=None,
         sensitivities=None,
         regularizers=None,
-        solver=None):
+        optimizer=None,
+        initial_x=None):
   """MR image reconstruction using compressed sensing.
 
   For the parameters, see `tfmr.reconstruct`.
   """
+  image_shape = tf.shape(mask)
+
+  # Encoding operator.
+  e = linalg_ops.LinearOperatorFFT(image_shape, mask=mask)
+
+  y = tf.reshape(kspace, [-1])
+
+  def tv_linop(x):
+    x = tf.reshape(x, image_shape)
+    tv = image_ops.total_variation(x)
+    return tv
+
+  @math_ops.make_val_and_grad_fn
+  def objective(x):
+    x = math_ops.view_as_complex(x, stacked=False)
+    value = tf.math.abs(tf.norm(y - tf.linalg.matvec(e, x), ord=2))
+    value += 1. * tv_linop(x)
+    return value
+
+  if initial_x is None:
+    initial_x = e.H @ y
+  else:
+    pass
+  
+  initial_x = tf.reshape(initial_x, [-1])
+  initial_x = math_ops.view_as_real(initial_x, stacked=False)
+  
+  results = optimizer_ops.lbfgs_minimize(objective, initial_x)
+
+  image = tf.reshape(
+      math_ops.view_as_complex(results.position, stacked=False),
+      image_shape)
+
+  initial_x = tf.reshape(
+      math_ops.view_as_complex(initial_x, stacked=False),
+      image_shape)
+
+  import matplotlib.pyplot as plt
+  plt.imshow(tf.abs(initial_x))
+  plt.show()
+  plt.imshow(tf.math.angle(initial_x))
+  plt.show()
+  plt.imshow(tf.abs(image))
+  plt.show()
+  plt.imshow(tf.math.angle(image))
+  plt.show()
+
+  return image
 
 
 def _pics(kspace,
@@ -784,7 +835,7 @@ def _pics(kspace,
           trajectory=None,
           density=None,
           sensitivities=None,
-          solver=None):
+          optimizer=None):
   """MR image reconstruction using parallel imaging and compressed sensing.
 
   For the parameters, see `tfmr.reconstruct`.
@@ -1002,7 +1053,7 @@ def reconstruct_partial_kspace(kspace,
   factors = tf.convert_to_tensor(factors)
 
   # Validate inputs.
-  method = check_utils.validate_enum(method, {'zerofill', 'homodyne', 'pocs'})
+  method = check_util.validate_enum(method, {'zerofill', 'homodyne', 'pocs'})
   tf.debugging.assert_greater_equal(factors, 0.5, message=(
     f"`factors` must be greater than or equal to 0.5, but got: {factors}"))
   tf.debugging.assert_less_equal(factors, 1.0, message=(

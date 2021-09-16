@@ -19,10 +19,10 @@ import tensorflow as tf
 
 from tensorflow_mri.python.metrics import iqa_metrics
 from tensorflow_mri.python.ops import image_ops
-from tensorflow_mri.python.utils import test_utils
+from tensorflow_mri.python.util import test_util
 
 
-class IQAMetricTest(test_utils.TestCase):
+class IQAMetricTest(test_util.TestCase):
   """Tests for IQA metrics."""
 
   params = [

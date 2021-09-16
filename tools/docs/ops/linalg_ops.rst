@@ -15,4 +15,5 @@ Linear Algebra
     LinearOperatorSensitivityModulation
     LinearOperatorParallelMRI
     LinearOperatorRealWeighting
+    LinearOperatorDifference
     conjugate_gradient

@@ -21,19 +21,19 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import fft_ops
-from tensorflow_mri.python.utils import test_utils
+from tensorflow_mri.python.util import test_util
 
 
-class FFTOpsTest(test_utils.TestCase):
+class FFTOpsTest(test_util.TestCase):
   """Tests for FFT ops."""
   # pylint: disable=missing-function-docstring
 
-  @test_utils.run_in_graph_and_eager_modes
+  @test_util.run_in_graph_and_eager_modes
   def test_fftn(self):
     """Test forward FFT."""
     self._test_fftn_internal('forward')
 
-  @test_utils.run_in_graph_and_eager_modes
+  @test_util.run_in_graph_and_eager_modes
   def test_ifftn(self):
     """Test inverse FFT."""
     self._test_fftn_internal('backward')

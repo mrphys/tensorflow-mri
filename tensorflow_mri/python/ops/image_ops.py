@@ -27,7 +27,7 @@ import tensorflow as tf
 
 from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import geom_ops
-from tensorflow_mri.python.utils import check_utils
+from tensorflow_mri.python.util import check_util
 
 
 def psnr(img1, img2, max_val=None, rank=None, name='psnr'):
@@ -1065,7 +1065,7 @@ def total_variation(tensor,
             f"axis {ax} is out of bounds for tensor of rank {rank}")
 
     # Total variation.
-    tot_var = tf.constant(0, dtype=tensor.dtype)
+    tot_var = tf.constant(0, dtype=tensor.dtype.real_dtype)
 
     for ax in axis:
       slice1 = [slice(None)] * rank
@@ -1187,14 +1187,14 @@ def phantom(phantom_type='modified_shepp_logan', # pylint: disable=dangerous-def
       analytical magnetic resonance imaging phantom in the Fourier domain.
       Magnetic Resonance in Medicine, 58(2), 430-436.
   """
-  phantom_type = check_utils.validate_enum(
+  phantom_type = check_util.validate_enum(
       phantom_type,
       {'shepp_logan', 'modified_shepp_logan',
        'kak_roberts', 'modified_kak_roberts', 'koay_sarlls_ozarslan'},
       name='phantom_type')
   if isinstance(shape, tf.TensorShape):
     shape = shape.as_list()
-  shape = check_utils.validate_list(
+  shape = check_util.validate_list(
       shape, element_type=int, name='shape')
 
   # If a Shepp-Logan 3D phantom was requested, by default we use the Kak-Roberts
@@ -1225,7 +1225,7 @@ def phantom(phantom_type='modified_shepp_logan', # pylint: disable=dangerous-def
 
     if isinstance(obj, Ellipse):
       # Apply translation and rotation to coordinates.
-      tx = geom_ops.rotate_2d(x - obj.pos, tf.cast(obj.phi, dtype))
+      tx = geom_ops.rotate_2d(x - obj.pos, tf.cast(obj.phi, x.dtype))
       # Use object equation to generate a mask.
       mask = tf.math.reduce_sum(
           (tx ** 2) / (tf.convert_to_tensor(obj.size) ** 2), -1) <= 1.0

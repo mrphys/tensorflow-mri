@@ -68,6 +68,7 @@ TensorFlow MRI  TensorFlow
 ==============  ==========
 v0.4            v2.6
 v0.5            v2.6
+v0.6            v2.6
 ==============  ==========
 
 .. end-install

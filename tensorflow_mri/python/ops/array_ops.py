@@ -50,18 +50,34 @@ def meshgrid(*args):
   return tf.stack(tf.meshgrid(*args, indexing='ij'), axis=-1)
 
 
-def ravel_multi_index(multi_index, dims):
+def ravel_multi_index(multi_indices, dims):
   """Converts an array of multi-indices into an array of flat indices.
 
   Args:
-    multi_index: A `Tensor` of shape `[..., N]` containing multi-indices into
+    multi_indices: A `Tensor` of shape `[..., N]` containing multi-indices into
       an `N`-dimensional tensor.
-    dims: A `Tensor` of shape `[N]`. The shape of the tensor that `multi_index`
-      indexes into.
+    dims: A `Tensor` of shape `[N]`. The shape of the tensor that
+      `multi_indices` indexes into.
 
   Returns:
     A `Tensor` of shape `[...]` containing flat indices equivalent to
-    `multi_index`.
+    `multi_indices`.
   """
   strides = tf.math.cumprod(dims, exclusive=True, reverse=True) # pylint:disable=no-value-for-parameter
-  return tf.math.reduce_sum(multi_index * strides, axis=-1)
+  return tf.math.reduce_sum(multi_indices * strides, axis=-1)
+
+
+def unravel_index(indices, dims):
+  """Converts an array of flat indices into an array of multi-indices.
+
+  Args:
+    indices: A `Tensor` of shape `[...]` containing flat indices into an
+      `N`-dimensional tensor.
+    dims: A `Tensor` of shape `[N]`. The shape of the tensor that
+      `indices` indexes into.
+  
+  Returns:
+    A `Tensor` of shape `[..., N]` containing multi-indices equivalent to flat
+    indices.
+  """
+  return tf.transpose(tf.unravel_index(indices, dims))

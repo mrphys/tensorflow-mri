@@ -1,5 +1,4 @@
 # Copyright 2021 University College London. All Rights Reserved.
-# Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,15 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Function optimization operations.
-
-This module contains solvers for nonlinear optimization problems.
-"""
+"""Tests for module `optimizer_ops`."""
 
 import tensorflow as tf
 
 
-def nlcg_minimize():
-  r"""Applies the NLCG algorithm to minimize a differentiable function.
-
-  """
+if __name__ == '__main__':
+  tf.test.main()
