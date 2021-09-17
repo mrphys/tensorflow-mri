@@ -30,6 +30,8 @@ Major Features and Improvements
     `LinearOperatorImaging`.
   * Added new math ops `make_val_and_grad_fn`, `view_as_complex` and
     `view_as_real`.
+  * Added new convex operators module with ops `ConvexOperator`,
+    `ConvexOperatorL1Norm`, `Regularizer` and `TotalVariationRegularizer`.
 
 Bug Fixes and Other Changes
 ---------------------------

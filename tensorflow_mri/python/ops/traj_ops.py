@@ -27,11 +27,13 @@ from tensorflow_graphics.geometry.transformation import rotation_matrix_2d # pyl
 from tensorflow_graphics.geometry.transformation import rotation_matrix_3d # pylint: disable=wrong-import-order
 
 from tensorflow_mri.python.util import check_util
+from tensorflow_mri.python.util import sys_util
 from tensorflow_mri.python.util import tensor_util
 
 
-_mri_ops = tf.load_op_library(
-  tf.compat.v1.resource_loader.get_path_to_datafile('_mri_ops.so'))
+if sys_util.is_op_library_enabled():
+  _mri_ops = tf.load_op_library(
+      tf.compat.v1.resource_loader.get_path_to_datafile('_mri_ops.so'))
 
 
 def radial_trajectory(base_resolution,
@@ -365,7 +367,8 @@ def radial_waveform(base_resolution, readout_os=2.0):
   return waveform
 
 
-spiral_waveform = _mri_ops.spiral_waveform
+if sys_util.is_op_library_enabled():
+  spiral_waveform = _mri_ops.spiral_waveform
 
 
 def _trajectory_angles(views, phases=None, spacing='linear', domain='full'):
