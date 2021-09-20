@@ -39,23 +39,49 @@ if sys_util.is_op_library_enabled():
 def radial_trajectory(base_resolution,
                       views=1,
                       phases=None,
-                      spacing='linear',
-                      domain='full',
+                      ordering='linear',
+                      angle_range='full',
                       readout_os=2.0):
   """Calculate a radial trajectory.
+
+  This function supports the following 2D ordering methods:
+
+  * **linear**: Uniformly spaced radial views. Views are interleaved if there
+    are multiple phases.
+  * **golden**: Consecutive views are spaced by the golden angle (222.49
+    degrees if `angle_range` is `'full'` and 111.25 degrees if `angle_range` is
+    `'half'`) [1]_.
+  * **golden_half**: Variant of `"golden"` in which views are spaced by 111.25
+    degrees even if `angle_range` is `'full'` [1]_.
+  * **tiny**: Consecutive views are spaced by the 7th tiny golden angle (47.26
+    degrees if `angle_range` is `'full'` and 23.63 degrees if `angle_range` is
+    `'half'`) [2]_.
+  * **tiny_half**: Variant of `"tiny"` in which views are spaced by 23.63
+    degrees even if `angle_range` is `'full'` [2]_.
+  * **sorted**: Like `golden`, but views within each phase are sorted by their
+    angle in ascending order. Can be an alternative to `tiny` ordering in
+    applications where small angle increments are required.
+
+  This function also supports the following 3D ordering methods:
+
+  * **sphere_archimedean**: 3D radial trajectory ("koosh-ball"). The starting
+    points of consecutive views trace an Archimedean spiral trajectory along
+    the surface of a sphere, if `angle_range` is `'full'`, or a hemisphere, if
+    `angle_range` is `'half'`. Views are interleaved if there are multiple
+    phases.
 
   Args:
     base_resolution: An `int`. The base resolution, or number of pixels in the
       readout dimension.
-    views: An `int`. The number of radial views per k-space.
+    views: An `int`. The number of radial views per phase.
     phases: An `int`. The number of phases for cine acquisitions. If `None`,
       this is assumed to be a non-cine acquisition with no time dimension.
-    spacing: A `string`. The spacing type. Must be one of: `{'linear', 'golden',
-      'tiny', 'sorted'}`.
-    domain: A `string`. The rotation domain. Must be one of: `{'full', 'half'}`.
-      If `domain` is `'full'`, the full circle is included in the rotation
-      domain (`2 * pi`). If `domain` is `'half'`, only half circle is included
-      (`pi`).
+    ordering: A `string`. The ordering type. Must be one of: `{'linear',
+      'golden', 'tiny', 'sorted', 'sphere_archimedean'}`.
+    angle_range: A `string`. The range of the rotation angle. Must be one of:
+      `{'full', 'half'}`. If `angle_range` is `'full'`, the full circle/sphere
+      is included in the range. If `angle_range` is `'half'`, only a
+      semicircle/hemisphere is included.
     readout_os: A `float`. The readout oversampling factor. Defaults to 2.0.
 
   Returns:
@@ -63,14 +89,27 @@ def radial_trajectory(base_resolution,
     `None`, or of shape `[phases, views, samples, 2]` if `phases` is not `None`.
     `samples` is equal to `base_resolution * readout_os`. The units are
     radians/voxel, ie, values are in the range `[-pi, pi]`.
+
+  References:
+    .. [1] Winkelmann, S., Schaeffter, T., Koehler, T., Eggers, H. and
+      Doessel, O. (2007), An optimal radial profile order based on the golden
+      ratio for time-resolved MRI," in IEEE Transactions on Medical Imaging,
+      26(1): 68-76, https://doi.org/10.1109/TMI.2006.885337
+    .. [2] Wundrak, S., Paul, J., Ulrici, J., Hell, E., Geibel, M.-A.,
+      Bernhardt, P., Rottbauer, W. and Rasche, V. (2016), Golden ratio sparse
+      MRI using tiny golden angles. Magn. Reson. Med., 75: 2372-2378.
+      https://doi.org/10.1002/mrm.25831
+    .. [3] Wong, S.T.S. and Roos, M.S. (1994), A strategy for sampling on a
+      sphere applied to 3D selective RF pulse design. Magn. Reson. Med.,
+      32: 778-784. https://doi.org/10.1002/mrm.1910320614
   """
   return _kspace_trajectory('radial',
                             {'base_resolution': base_resolution,
                              'readout_os': readout_os},
                             views=views,
                             phases=phases,
-                            spacing=spacing,
-                            domain=domain)
+                            ordering=ordering,
+                            angle_range=angle_range)
 
 
 def spiral_trajectory(base_resolution,
@@ -81,8 +120,8 @@ def spiral_trajectory(base_resolution,
                       dwell_time,
                       views=1,
                       phases=None,
-                      spacing='linear',
-                      domain='full',
+                      ordering='linear',
+                      angle_range='full',
                       readout_os=2.0,
                       gradient_delay=0.0,
                       larmor_const=42.577478518,
@@ -103,15 +142,15 @@ def spiral_trajectory(base_resolution,
     dwell_time: A `float`. The digitiser's real dwell time, in us. This does not
       include oversampling. The effective dwell time (with oversampling) is
       equal to `dwell_time * readout_os`.
-    views: An `int`. The number of radial views per k-space.
+    views: An `int`. The number of radial views per phase.
     phases: An `int`. The number of phases for cine acquisitions. If `None`,
       this is assumed to be a non-cine acquisition with no time dimension.
-    spacing: A `string`. The spacing type. Must be one of: `{'linear', 'golden',
-      'tiny', 'sorted'}`.
-    domain: A `string`. The rotation domain. Must be one of: `{'full', 'half'}`.
-      If `domain` is `'full'`, the full circle is included in the rotation
-      domain (`2 * pi`). If `domain` is `'half'`, only half circle is included
-      (`pi`).
+    ordering: A `string`. The ordering type. Must be one of: `{'linear',
+      'golden', 'tiny', 'sorted', 'sphere_archimedean'}`.
+    angle_range: A `string`. The range of the rotation angle. Must be one of:
+      `{'full', 'half'}`. If `angle_range` is `'full'`, the full circle/sphere
+      is included in the range. If `angle_range` is `'half'`, only a
+      semicircle/hemisphere is included.
     readout_os: A `float`. The readout oversampling factor. Defaults to 2.0.
     gradient_delay: A `float`. The system's gradient delay relative to the ADC,
       in us. Defaults to 0.0.
@@ -161,16 +200,16 @@ def spiral_trajectory(base_resolution,
                              'vd_type': vd_type},
                             views=views,
                             phases=phases,
-                            spacing=spacing,
-                            domain=domain)
+                            ordering=ordering,
+                            angle_range=angle_range)
 
 
 def _kspace_trajectory(traj_type,
                        waveform_params,
                        views=1,
                        phases=None,
-                       spacing='linear',
-                       domain='full'):
+                       ordering='linear',
+                       angle_range='full'):
   """Calculate a k-space trajectory.
 
   Args:
@@ -179,42 +218,58 @@ def _kspace_trajectory(traj_type,
     waveform_params: A `dict`. Must contain the parameters needed to calculate
       the view waveform. The accepted parameters depend on the trajectory type:
       see `radial_waveform` and `spiral_waveform`.
-    views: An `int`. The number of radial views per k-space.
-    phases: An `int`. The number of phases for cine acquisitions. If `None`,
-      this is assumed to be a non-cine acquisition with no time dimension.
-    spacing: A `string`. The spacing type. Must be one of: `{'linear', 'golden',
-      'tiny', 'sorted'}`.
-    domain: A `string`. The rotation domain. Must be one of: `{'full', 'half'}`.
-      If `domain` is `'full'`, the full circle is included in the rotation
-      domain (`2 * pi`). If `domain` is `'half'`, only half circle is included
-      (`pi`).
+
+  For the other parameters, see `radial_trajectory` or `spiral_trajectory`.
 
   Returns:
     A k-space trajectory for the given parameters.
   """
+  # Valid orderings.
+  orderings_2d = {'linear', 'golden', 'tiny', 'sorted'} # 2D, radial or spiral
+  orderings_3d = set()                                  # 3D, radial or spiral
+  orderings_radial_2d = {'golden_half', 'tiny_half'}    # 2D, radial only
+  orderings_spiral_2d = set()                           # 2D, spiral only
+  orderings_radial_3d = {'sphere_archimedean'}          # 3D, radial only
+  orderings_spiral_3d = set()                           # 3D, spiral only
+  all_orderings = orderings_2d | orderings_3d
+  if traj_type == 'radial':
+    all_orderings |= orderings_radial_2d | orderings_radial_3d
+  elif traj_type == 'spiral':
+    all_orderings |= orderings_spiral_2d | orderings_spiral_3d
+
   # Check inputs.
   traj_type = check_util.validate_enum(
     traj_type, {'radial', 'spiral'}, name='traj_type')
-  spacing = check_util.validate_enum(
-    spacing, {'linear', 'golden', 'tiny', 'sorted'}, name='spacing')
-  domain = check_util.validate_enum(
-    domain, {'full', 'half'}, name='domain')
+  ordering = check_util.validate_enum(
+    ordering, all_orderings, name='ordering')
+  angle_range = check_util.validate_enum(
+    angle_range, {'full', 'half'}, name='angle_range')
+
+  # Is this a 3D trajectory?
+  if ordering in orderings_3d | orderings_radial_3d | orderings_spiral_3d:
+    rank = 3
+  else:
+    rank = 2
 
   # Calculate waveform.
   if traj_type == 'radial':
     waveform_func = radial_waveform
+    waveform_params['rank'] = rank
   elif traj_type == 'spiral':
     waveform_func = spiral_waveform
   waveform = waveform_func(**waveform_params)
 
   # Compute angles.
-  theta = _trajectory_angles(views,
-                             phases=phases,
-                             spacing=spacing,
-                             domain=domain)
+  angles = _trajectory_angles(views,
+                              phases=phases,
+                              ordering=ordering,
+                              angle_range=angle_range)
 
   # Rotate waveform.
-  traj = _rotate_waveform_2d(waveform, theta)
+  if rank == 3:
+    traj = _rotate_waveform_3d(waveform, angles)
+  else:
+    traj = _rotate_waveform_2d(waveform, angles)
 
   return traj
 
@@ -222,8 +277,8 @@ def _kspace_trajectory(traj_type,
 def radial_density(base_resolution,
                    views=1,
                    phases=None,
-                   spacing='linear',
-                   domain='full',
+                   ordering='linear',
+                   angle_range='full',
                    readout_os=2.0):
   """Calculate sampling density for radial trajectories.
 
@@ -237,14 +292,21 @@ def radial_density(base_resolution,
     `None`, or of shape `[phases, views, samples]` if `phases` is not `None`.
     `samples` is equal to `base_resolution * readout_os`.
   """
+  orderings_2d = {'linear', 'golden', 'tiny', 'sorted', 'golden_half',
+                  'tiny_half'}
+  if ordering not in orderings_2d:
+    raise NotImplementedError(f"Ordering `{ordering}` is not implemented.")
+
   # Get angles.
-  theta = _trajectory_angles(views, phases or 1, spacing=spacing, domain=domain)
+  angles = _trajectory_angles(
+      views, phases or 1, ordering=ordering, angle_range=angle_range)
 
   # Oversampling.
   samples = int(base_resolution * readout_os + 0.5)
 
   # Compute weights.
-  weights = tf.map_fn(lambda t: _radial_density_from_theta(samples, t), theta)
+  weights = tf.map_fn(lambda t: _radial_density_from_theta(samples, t),
+                      angles[..., 0])
 
   # Remove time dimension if there are no phases.
   if phases is None:
@@ -274,9 +336,6 @@ def _radial_density_from_theta(samples, theta):
 
   tf.debugging.assert_rank(theta, 1, message=(
     "`theta` must be of rank 1, but received shape: {}").format(theta.shape))
-
-  # Operate in numpy.
-  theta = theta.numpy()
 
   # Infer number of views from number of angles.
   views = tf.size(theta)
@@ -334,13 +393,14 @@ def _radial_density_from_theta(samples, theta):
   return weights
 
 
-def radial_waveform(base_resolution, readout_os=2.0):
+def radial_waveform(base_resolution, readout_os=2.0, rank=2):
   """Calculate a radial readout waveform.
 
   Args:
     base_resolution: An `int`. The base resolution, or number of pixels in the
       readout dimension.
     readout_os: A `float`. The readout oversampling factor. Defaults to 2.0.
+    rank: An `int`. The rank of the waveform. Must be 2 or 3. Defaults to 2.
 
   Returns:
     A `Tensor` of type `float32` and shape `[samples, 2]`, where `samples` is
@@ -357,9 +417,9 @@ def radial_waveform(base_resolution, readout_os=2.0):
   waveform = tf.range(-samples // 2, samples // 2, dtype=tf.float32)
   waveform /= samples
 
-  # Add y dimension.
+  # Add y/z dimensions.
   waveform = tf.expand_dims(waveform, axis=1)
-  waveform = tf.concat([waveform, tf.zeros((samples, 1))], axis=1)
+  waveform = tf.concat([waveform, tf.zeros((samples, rank-1))], axis=1)
 
   # Scale to [-pi, pi] (radians/voxel).
   waveform *= 2.0 * math.pi
@@ -371,95 +431,122 @@ if sys_util.is_op_library_enabled():
   spiral_waveform = _mri_ops.spiral_waveform
 
 
-def _trajectory_angles(views, phases=None, spacing='linear', domain='full'):
+def _trajectory_angles(views, phases=None, ordering='linear', angle_range='full'):
   """Compute angles for k-space trajectory.
 
-  Args:
-    views: An `int`. The number of radial views per k-space.
-    phases: An `int`. The number of phases for cine acquisitions. If `None`,
-      this is assumed to be a non-cine acquisition with no time dimension.
-    spacing: A `string`. The spacing type. Must be one of: `{'linear', 'golden',
-      'tiny', 'sorted'}`.
-    domain: A `string`. The rotation domain. Must be one of: `{'full', 'half'}`.
-      If `domain` is `'full'`, the full circle is included in the rotation
-      domain (`2 * pi`). If `domain` is `'half'`, only half circle is included
-      (`pi`).
+  For the parameters, see `_kspace_trajectory`.
 
   Returns:
-    An array of angles of shape (phases, views) if `phases` is not
-    None, or of shape (views,) otherwise.
+    An array of angles of shape `(phases, views)` if `phases` is not
+    `None`, or of shape `(views,)` otherwise.
   """
-  # Golden ratio.
-  phi = 2.0 / (1.0 + tf.sqrt(5.0))
+  # Constants.
+  pi = math.pi
+  pi2 = math.pi * 2.0
+  phi = 2.0 / (1.0 + tf.sqrt(5.0))  # Golden ratio.
+  phi_7 = 1.0 / (phi + 7)           # 7th tiny golden ratio.
 
-  # Get spacing.
-  if spacing == 'linear':
-    delta = 1.0 / views
-  elif spacing == 'golden':
-    delta = phi
-  elif spacing == 'sorted':
-    delta = phi
-  elif spacing == 'tiny':
-    order = 7
-    delta = 1.0 / (phi + order)
+  if angle_range == 'full':
+    default_max = pi2
+  elif angle_range == 'half':
+    default_max = pi
+  else:
+    raise ValueError(f"Unexpected rotation range: {angle_range}")
 
-  if domain == 'full':
-    theta_domain = 2.0 * math.pi
-  elif domain == 'half':
-    theta_domain = math.pi
+  def _angles_2d(angle_delta, angle_max, interleave=False):
+    # Compute azimuthal angles [-pi, pi] (full) or [-pi, 0] (half).
+    angles = tf.range(views * (phases or 1), dtype=tf.float32)
+    angles *= angle_delta
+    angles %= angle_max
+    angles -= pi
+    if interleave:
+      angles = tf.transpose(tf.reshape(angles, (views, phases or 1)))
+    else:
+      angles = tf.reshape(angles, (phases or 1, views))
+    angles = tf.expand_dims(angles, -1)
+    return angles
 
-  # Compute azimuthal angles.
-  theta = tf.range(views * (phases or 1), dtype=tf.float32)
-  theta *= delta
-  theta %= 1.0
-  theta -= 0.5
-  theta *= theta_domain
-  theta = tf.reshape(theta, (phases or 1, views))
+  # Get ordering.
+  if ordering == 'linear':
+    angles = _angles_2d(default_max / (views * (phases or 1)), default_max, interleave=True)
+  elif ordering == 'golden':
+    angles = _angles_2d(phi * default_max, default_max)
+  elif ordering == 'golden_half':
+    angles = _angles_2d(phi * pi, default_max)
+  elif ordering == 'sorted':
+    angles = _angles_2d(phi * default_max, default_max)
+    angles = tf.sort(angles, axis=1)
+  elif ordering == 'tiny':
+    angles = _angles_2d(phi_7 * default_max, default_max)
+  elif ordering == 'tiny_half':
+    angles = _angles_2d(phi_7 * pi, default_max)
+  elif ordering == 'sphere_archimedean':
+    projections = views * (phases or 1)
+    full_projections = 2 * projections if angle_range == 'half' else projections
+    # Computation is sensitive to floating-point errors, so we use float64 to
+    # ensure sufficient accuracy.
+    indices = tf.range(projections, dtype=tf.float64)
+    dh = 2.0 * indices / full_projections - 1.0
+    pol = tf.math.acos(dh)
+    az = tf.math.divide_no_nan(tf.constant(3.6, dtype=tf.float64),
+                               tf.math.sqrt(full_projections * (1.0 - dh * dh)))
+    az = tf.math.floormod(tf.math.cumsum(az), 2.0 * math.pi)
+    # Interleave the readouts.
+    def _interleave(arg):
+      return tf.transpose(tf.reshape(arg, (views, phases or 1)))
+    pol = _interleave(pol)
+    az = _interleave(az)
+    # Angle conversions.
+    az = az - math.pi         # Azimuthal angle [0, 2 * pi] -> [-pi, pi].
+    el = math.pi / 2.0 - pol  # Polar angle to elevation [-pi/2, pi/2].
+    euler_z = az  # Azimuthal angle = rotation of base waveform about z axis.
+    euler_y = el  # Elevation angle = rotation of base waveform about y axis.
+    euler_x = tf.zeros_like(az)   # Base waveform is along x axis.
+    angles = tf.stack([euler_x, euler_y, euler_z], -1)
+    angles = tf.cast(angles, tf.float32)
+  else:
+    raise ValueError(f"Unexpected ordering method: {ordering}")
 
-  # For sorted GA, sort each frame.
-  if spacing == 'sorted':
-    theta = tf.sort(theta, axis=1)
   if phases is None:
-    theta = theta[0, ...]
+    angles = angles[0, ...]
 
-  return theta
+  return angles
 
 
-def _rotate_waveform_2d(waveform, theta):
+def _rotate_waveform_2d(waveform, angles):
   """Rotate a 2D waveform.
 
   Args:
     waveform: The waveform to rotate. Must have shape `[N, 2]`, where `N` is the
       number of samples.
-    theta: The azimuthal rotation angles, with shape `[A1, A1, ..., An]`.
+    angles: The Euler rotation angles, with shape `[A1, A1, ..., An, 1]`.
 
   Returns:
     Rotated waveform(s).
   """
-  # Create Euler angle array.
-  euler_angles = tf.expand_dims(theta, -1)
-  euler_angles = tf.expand_dims(euler_angles, -2)
+  # Prepare for broadcasting.
+  angles = tf.expand_dims(angles, -2)
 
   # Compute rotation matrix.
-  rot_matrix = rotation_matrix_2d.from_euler(euler_angles)
+  rot_matrix = rotation_matrix_2d.from_euler(angles)
 
   # Add leading singleton dimensions to `waveform` to match the batch shape of
-  # `euler_angles`. This prevents a broadcasting error later.
+  # `angles`. This prevents a broadcasting error later.
   waveform = tf.reshape(waveform,
-      tf.concat([tf.ones([tf.rank(euler_angles) - 1], dtype=tf.int32),
+      tf.concat([tf.ones([tf.rank(angles) - 2], dtype=tf.int32),
                  tf.shape(waveform)], 0))
 
   # Apply rotation.
   return rotation_matrix_2d.rotate(waveform, rot_matrix)
 
 
-def _rotate_waveform_3d(waveform, theta):
+def _rotate_waveform_3d(waveform, angles):
   """Rotate a 3D waveform.
 
   Args:
     waveform: The waveform to rotate. Must have shape `[N, 3]`, where `N` is the
       number of samples.
-    theta: The azimuthal rotation angles, with shape `[A1, A1, ..., An]`.
+    angles: The Euler rotation angles, with shape `[A1, A1, ..., An, 3]`.
 
   Returns:
     Rotated waveform(s).
@@ -467,14 +554,11 @@ def _rotate_waveform_3d(waveform, theta):
   # See https://github.com/tensorflow/tensorflow/issues/43038
   # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
 
-  # Create Euler angle array.
-  euler_angles = tf.zeros(theta.shape + (2,))
-  theta = tf.expand_dims(theta, -1)
-  euler_angles = tf.concat([euler_angles, theta], axis=-1)
-  euler_angles = tf.expand_dims(euler_angles, -2)
+  # Prepare for broadcasting.
+  angles = tf.expand_dims(angles, -2)
 
   # Compute rotation matrix.
-  rot_matrix = rotation_matrix_3d.from_euler(euler_angles)
+  rot_matrix = rotation_matrix_3d.from_euler(angles)
 
   # Apply rotation to trajectory.
   return rotation_matrix_3d.rotate(waveform, rot_matrix)

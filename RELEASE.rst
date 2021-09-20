@@ -6,8 +6,12 @@ Release 0.6.0
 Breaking Changes
 ----------------
 
-* <DOCUMENT BREAKING CHANGES HERE>
-* <THIS SECTION SHOULD CONTAIN API, ABI AND BEHAVIORAL BREAKING CHANGES>
+* The keyword arguments `spacing` and `domain` of the ops
+  `tfmr.radial_trajectory` and `tfmr.spiral_trajectory` have been renamed to
+  `ordering` and `angle_range`, respectively.
+* The range of the angles in 2D radial trajectories will now be `[-pi, 0]`
+  instead of `[-pi/2, pi/2]`.
+* Multi-phase linear trajectories will now be interleaved.
 
 Known Caveats
 -------------
@@ -32,6 +36,9 @@ Major Features and Improvements
     `view_as_real`.
   * Added new convex operators module with ops `ConvexOperator`,
     `ConvexOperatorL1Norm`, `Regularizer` and `TotalVariationRegularizer`.
+  * Added new ordering methods `"golden_half"`, `"tiny_half"` and
+    `"sphere_archimedean"` to function `radial_trajectory`.
+  * Added keyword argument `rank` to function `radial_waveform`.
 
 Bug Fixes and Other Changes
 ---------------------------
