@@ -1142,7 +1142,9 @@ def extract_glimpses(images, sizes, offsets):
 
 def phantom(phantom_type='modified_shepp_logan', # pylint: disable=dangerous-default-value
             shape=[256, 256],
-            dtype=tf.dtypes.float32):
+            num_coils=None,
+            dtype=tf.dtypes.float32,
+            return_sensitivities=False):
   """Generate a phantom image.
 
   Available 2D phantoms are:
@@ -1167,11 +1169,21 @@ def phantom(phantom_type='modified_shepp_logan', # pylint: disable=dangerous-def
       `modified_kak_roberts` for 3D phantoms.
     shape: A list of `ints`. The shape of the generated phantom. Must have
       length 2 or 3.
+    num_coils: An `int`. The number of coils for parallel imaging phantoms. If
+      `None`, no coil array will be simulated. Defaults to `None`.
     dtype: A `string` or `tf.DType`. The data type of the generated phantom.
+    return_sensitivities: A `bool`. If `True`, returns a tuple containing the
+      phantom and the coil sensitivities. If `False`, returns the phantom.
+      Defaults to `False`.
 
   Returns:
-    A `Tensor` of shape `shape` and type `dtype` containing the generated
-    phantom.
+    A `Tensor` of type `dtype` containing the generated phantom. Has shape
+    `shape` if `num_coils` is `None`, or shape `[num_coils, *shape]` if
+    `num_coils` is not `None`.
+
+    If `return_sensitivities` is `True`, returns a tuple of two tensors with
+    equal shape and type, the first of which is the phantom and the second the
+    coil sensitivities.
 
   Raises:
     ValueError: If the requested ND phantom is not defined.
@@ -1240,7 +1252,105 @@ def phantom(phantom_type='modified_shepp_logan', # pylint: disable=dangerous-def
       # Add current object to image.
       image = tf.where(mask, image + obj.rho, image)
 
+  if num_coils is not None:
+    sens = _birdcage_sensitivities(shape, num_coils, dtype=dtype)
+    image *= sens
+
+    if return_sensitivities:
+      return image, sens
+
   return image
+
+
+def _birdcage_sensitivities(shape,
+                            num_coils,
+                            birdcage_radius=1.5,
+                            num_rings=4,
+                            dtype=tf.dtypes.complex64):
+  """Simulates birdcage coil sensitivities.
+
+  Args:
+    shape: A list of `ints` of length 2 or 3. The shape of the coil
+      sensitivities.
+    num_coils: An `int`. The number of coils.
+    birdcage_radius: A `float`. The relative radius of the birdcage. Defaults
+      to 1.5.
+    num_rings: An `int`. The number of rings along the depth dimension. Defaults
+      to 4. Only relevant if `shape` has rank 3.
+    dtype: A `string` or a `DType`. The data type of the output tensor.
+
+  Returns:
+    An array of shape `[num_coils, *shape]`.
+  """
+  if isinstance(shape, tf.TensorShape):
+    shape = shape.as_list()
+  dtype = tf.dtypes.as_dtype(dtype)
+
+  if len(shape) == 2:
+
+    height, width = shape
+    c, y, x = tf.meshgrid(
+        *[tf.range(n, dtype=dtype.real_dtype) for n in (num_coils,
+                                                        height,
+                                                        width)],
+        indexing='ij')
+
+    coil_x = birdcage_radius * tf.math.cos(c * (2.0 * np.pi / num_coils))
+    coil_y = birdcage_radius * tf.math.sin(c * (2.0 * np.pi / num_coils))
+    coil_phs = -c * (2.0 * np.pi / num_coils)
+
+    x_co = (x - width / 2.0) / (width / 2.0) - coil_x
+    y_co = (y - height / 2.0) / (height / 2.0) - coil_y
+
+    rr = tf.math.sqrt(x_co ** 2 + y_co ** 2)
+    
+    if dtype.is_complex:
+      phi = tf.math.atan2(x_co, -y_co) + coil_phs
+      out = tf.cast(1.0 / rr, dtype) * tf.math.exp(
+          tf.dtypes.complex(tf.constant(0.0, dtype=dtype.real_dtype), phi))
+    else:
+      out = 1.0 / rr
+
+  elif len(shape) == 3:
+
+    num_coils_per_ring = (num_coils + num_rings - 1) // num_rings
+
+    depth, height, width = shape
+    c, z, y, x = tf.meshgrid(
+        *[tf.range(n, dtype=dtype.real_dtype) for n in (num_coils,
+                                                        depth,
+                                                        height,
+                                                        width)],
+        indexing='ij')
+
+    coil_x = birdcage_radius * tf.math.cos(c * (2 * np.pi / num_coils_per_ring))
+    coil_y = birdcage_radius * tf.math.sin(c * (2 * np.pi / num_coils_per_ring))
+    coil_z = tf.math.floor(c / num_coils_per_ring) - 0.5 * (
+        tf.math.ceil(num_coils / num_coils_per_ring) - 1)
+    coil_phs = -(c + tf.math.floor(c / num_coils_per_ring)) * (
+        2 * np.pi / num_coils_per_ring)
+
+    x_co = (x - width / 2.0) / (width / 2.0) - coil_x
+    y_co = (y - height / 2.0) / (height / 2.0) - coil_y
+    z_co = (z - depth / 2.0) / (depth / 2.0) - coil_z
+
+    rr = tf.math.sqrt(x_co ** 2 + y_co ** 2 + z_co ** 2)
+    
+    if dtype.is_complex:
+      phi = tf.math.atan2(x_co, -y_co) + coil_phs
+      out = tf.cast(1.0 / rr, dtype) * tf.math.exp(
+          tf.dtypes.complex(tf.constant(0.0, dtype=dtype.real_dtype), phi))
+    else:
+      out = 1.0 / rr
+
+  else:
+    raise ValueError(f"`shape` must be of rank 2 or 3, but got: {shape}")
+
+  # Normalize by root sum of squares.
+  rss = tf.math.sqrt(tf.math.reduce_sum(out * tf.math.conj(out), axis=0))
+  out /= rss
+
+  return tf.cast(out, dtype)
 
 
 Ellipse = collections.namedtuple(

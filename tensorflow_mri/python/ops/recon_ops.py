@@ -162,9 +162,10 @@ def reconstruct(kspace,
         `True`.
 
     * For `method="nufft"`, provide `kspace`, `trajectory` and, optionally,
-      `density`. If `density` is not provided, an estimate will be used (see
-      `tfmr.estimate_density`). In addition, the following keyword arguments
-      are accepted:
+      `density` and `sensitivities`. If `density` is not provided, an estimate
+      will be used (see `tfmr.estimate_density`). If `sensitivities` are
+      provided, they will be used for adaptive coil combination. In addition,
+      the following keyword arguments are accepted:
 
       * **image_shape**: A `TensorShape` or list of `ints`. The shape of the
         output images. This parameter must be provided.

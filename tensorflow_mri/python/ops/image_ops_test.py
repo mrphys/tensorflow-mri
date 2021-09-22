@@ -728,6 +728,87 @@ class PhantomTest(test_util.TestCase):
     result = image_ops.phantom(shape=[128, 128, 128])
     self.assertAllClose(result, expected)
 
+  @parameterized.product(dtype=[tf.float32, tf.complex64])
+  @test_util.run_in_graph_and_eager_modes
+  def test_pi_2d(self, dtype):
+    """Test parallel imaging phantom (2D)."""
+    image, sens = image_ops.phantom(shape=[128, 128],
+                                    num_coils=12,
+                                    dtype=dtype,
+                                    return_sensitivities=True)
+
+    sens_ref = image_ops._birdcage_sensitivities([128, 128], 12, dtype=dtype)
+
+    image_ref = image_ops.phantom(shape=[128, 128], dtype=dtype) * sens
+    self.assertAllClose(image, image_ref)
+    self.assertAllClose(sens, sens_ref)
+
+  @parameterized.product(shape=[[32, 32], [128, 64], [32, 32, 32]],
+                         num_coils=[4, 6],
+                         birdcage_radius=[1.5, 1.3],
+                         num_rings=[2])
+  @test_util.run_in_graph_and_eager_modes
+  def test_birdcage_sensitivities(self,
+                                  shape,
+                                  num_coils,
+                                  birdcage_radius,
+                                  num_rings):
+    """Test birdcage sensitivities."""   
+    tf_sens = image_ops._birdcage_sensitivities(shape,
+                                                num_coils,
+                                                birdcage_radius=birdcage_radius,
+                                                num_rings=num_rings)
+
+    np_sens = self._np_birdcage_sensitivities(
+        [num_coils] + shape, r=birdcage_radius,
+        nzz=np.ceil(num_coils / num_rings))
+
+    self.assertAllClose(tf_sens, np_sens, rtol=1e-4, atol=1e-4)
+
+  def _np_birdcage_sensitivities(self, shape, r=1.5, nzz=8, dtype=np.complex64):
+    """Simulate birdcage coil sensitivities.
+    
+    Implementation from:
+    https://github.com/mikgroup/sigpy/blob/v0.1.23/sigpy/mri/sim.py
+    """
+    if len(shape) == 3:
+
+      nc, ny, nx = shape
+      c, y, x = np.mgrid[:nc, :ny, :nx]
+
+      coilx = r * np.cos(c * (2 * np.pi / nc))
+      coily = r * np.sin(c * (2 * np.pi / nc))
+      coil_phs = -c * (2 * np.pi / nc)
+
+      x_co = (x - nx / 2.0) / (nx / 2.0) - coilx
+      y_co = (y - ny / 2.0) / (ny / 2.0) - coily
+      rr = np.sqrt(x_co ** 2 + y_co ** 2)
+      phi = np.arctan2(x_co, -y_co) + coil_phs
+      out = (1.0 / rr) * np.exp(1j * phi)
+
+    elif len(shape) == 4:
+      nc, nz, ny, nx = shape
+      c, z, y, x = np.mgrid[:nc, :nz, :ny, :nx]
+
+      coilx = r * np.cos(c * (2 * np.pi / nzz))
+      coily = r * np.sin(c * (2 * np.pi / nzz))
+      coilz = np.floor(c / nzz) - 0.5 * (np.ceil(nc / nzz) - 1)
+      coil_phs = -(c + np.floor(c / nzz)) * (2 * np.pi / nzz)
+
+      x_co = (x - nx / 2.0) / (nx / 2.0) - coilx
+      y_co = (y - ny / 2.0) / (ny / 2.0) - coily
+      z_co = (z - nz / 2.0) / (nz / 2.0) - coilz
+      rr = (x_co**2 + y_co**2 + z_co**2)**0.5
+      phi = np.arctan2(x_co, -y_co) + coil_phs
+      out = (1 / rr) * np.exp(1j * phi)
+    else:
+      raise ValueError('Can only generate shape with length 3 or 4')
+
+    rss = sum(abs(out) ** 2, 0)**0.5
+    out /= rss
+
+    return out.astype(dtype)
+
 
 if __name__ == '__main__':
   tf.test.main()
