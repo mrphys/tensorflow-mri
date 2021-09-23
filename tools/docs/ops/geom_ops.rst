@@ -11,3 +11,4 @@ Geometry
 
     rotate_2d
     rotate_3d
+    euler_to_rotation_matrix_3d

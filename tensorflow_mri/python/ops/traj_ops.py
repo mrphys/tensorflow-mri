@@ -26,6 +26,7 @@ import tensorflow_nufft as tfft
 from tensorflow_graphics.geometry.transformation import rotation_matrix_2d # pylint: disable=wrong-import-order
 from tensorflow_graphics.geometry.transformation import rotation_matrix_3d # pylint: disable=wrong-import-order
 
+from tensorflow_mri.python.ops import geom_ops
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import sys_util
 from tensorflow_mri.python.util import tensor_util
@@ -403,7 +404,7 @@ def radial_waveform(base_resolution, readout_os=2.0, rank=2):
     rank: An `int`. The rank of the waveform. Must be 2 or 3. Defaults to 2.
 
   Returns:
-    A `Tensor` of type `float32` and shape `[samples, 2]`, where `samples` is
+    A `Tensor` of type `float32` and shape `[samples, rank]`, where `samples` is
     equal to `base_resolution * readout_os`. The units are radians/voxel, ie,
     values are in the range `[-pi, pi]`.
   """
@@ -419,7 +420,12 @@ def radial_waveform(base_resolution, readout_os=2.0, rank=2):
 
   # Add y/z dimensions.
   waveform = tf.expand_dims(waveform, axis=1)
-  waveform = tf.concat([waveform, tf.zeros((samples, rank-1))], axis=1)
+  if rank == 2:
+    waveform = tf.pad(waveform, [[0, 0], [0, 1]])
+  elif rank == 3:
+    waveform = tf.pad(waveform, [[0, 0], [1, 1]])
+  else:
+    raise ValueError("`rank` must be 2 or 3.")
 
   # Scale to [-pi, pi] (radians/voxel).
   waveform *= 2.0 * math.pi
@@ -431,7 +437,10 @@ if sys_util.is_op_library_enabled():
   spiral_waveform = _mri_ops.spiral_waveform
 
 
-def _trajectory_angles(views, phases=None, ordering='linear', angle_range='full'):
+def _trajectory_angles(views,
+                       phases=None,
+                       ordering='linear',
+                       angle_range='full'):
   """Compute angles for k-space trajectory.
 
   For the parameters, see `_kspace_trajectory`.
@@ -502,7 +511,7 @@ def _trajectory_angles(views, phases=None, ordering='linear', angle_range='full'
     euler_z = az  # Azimuthal angle = rotation of base waveform about z axis.
     euler_y = el  # Elevation angle = rotation of base waveform about y axis.
     euler_x = tf.zeros_like(az)   # Base waveform is along x axis.
-    angles = tf.stack([euler_x, euler_y, euler_z], -1)
+    angles = tf.stack([euler_z, euler_x, euler_y], -1)
     angles = tf.cast(angles, tf.float32)
   else:
     raise ValueError(f"Unexpected ordering method: {ordering}")
@@ -547,6 +556,7 @@ def _rotate_waveform_3d(waveform, angles):
     waveform: The waveform to rotate. Must have shape `[N, 3]`, where `N` is the
       number of samples.
     angles: The Euler rotation angles, with shape `[A1, A1, ..., An, 3]`.
+    order: The order in which the rotations are applied. Defaults to `"XYZ"`.
 
   Returns:
     Rotated waveform(s).
@@ -557,11 +567,14 @@ def _rotate_waveform_3d(waveform, angles):
   # Prepare for broadcasting.
   angles = tf.expand_dims(angles, -2)
 
-  # Compute rotation matrix.
-  rot_matrix = rotation_matrix_3d.from_euler(angles)
+  # Compute rotation matrix. Apply azimuthal (Z) rotation first, then polar (Y),
+  # then X (trivial for radial).
+  rot_matrix = geom_ops.euler_to_rotation_matrix_3d(angles, order='ZYX')
 
   # Apply rotation to trajectory.
-  return rotation_matrix_3d.rotate(waveform, rot_matrix)
+  waveform = rotation_matrix_3d.rotate(waveform, rot_matrix)
+
+  return waveform
 
 
 def estimate_density(points, grid_shape):

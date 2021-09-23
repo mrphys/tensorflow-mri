@@ -41,6 +41,14 @@ class RadialTrajectoryTest(test_util.TestCase):
     self.assertAllClose(waveform, self.data['radial/waveform'])
 
   @test_util.run_in_graph_and_eager_modes
+  def test_waveform_3d(self):
+    """Test radial waveform (3D)."""
+    waveform = traj_ops.radial_waveform(base_resolution=128, rank=3)
+    ref = self.data['radial/waveform']
+    self.assertAllClose(waveform,
+                        np.concatenate([np.zeros((256, 1)), ref], axis=-1))
+
+  @test_util.run_in_graph_and_eager_modes
   def test_trajectory(self):
     """Test radial trajectory."""
     trajectory = traj_ops.radial_trajectory(base_resolution=128,
@@ -59,8 +67,9 @@ class RadialTrajectoryTest(test_util.TestCase):
                                        ordering='sphere_archimedean',
                                        angle_range='half')
 
+    ref = self.data['radial/trajectory/sphere_archimedean/half/1']
     self.assertAllClose(
-        traj1, self.data['radial/trajectory/sphere_archimedean/half/1'])
+        traj1, tf.stack([ref[..., 2], ref[..., 0], ref[..., 1]], axis=-1))
 
     traj2 = traj_ops.radial_trajectory(base_resolution=64,
                                        views=25,
@@ -68,8 +77,9 @@ class RadialTrajectoryTest(test_util.TestCase):
                                        ordering='sphere_archimedean',
                                        angle_range='half')
 
+    ref = self.data['radial/trajectory/sphere_archimedean/half/2']
     self.assertAllClose(
-        traj2, self.data['radial/trajectory/sphere_archimedean/half/2'])
+        traj2, tf.stack([ref[..., 2], ref[..., 0], ref[..., 1]], axis=-1))
 
   def test_density_3d(self):
     """Test 3D radial density."""
@@ -130,6 +140,24 @@ class RadialTrajectoryTest(test_util.TestCase):
     angles = traj_ops._trajectory_angles(
         4, phases=phases, ordering='tiny_half', angle_range='full')
     self.assertAllClose(angles, _calc(phi_7 * math.pi, 2.0 * math.pi))
+
+    angles = traj_ops._trajectory_angles(
+        4, phases=phases, ordering='sphere_archimedean', angle_range='half')
+    if phases is None:
+      ref_angles = [[-3.1415927, 0., -1.5707964],
+                    [-1.2173117, 0., -0.8480621],
+                    [ 0.2523821, 0., -0.5235988],
+                    [ 1.5669162, 0., -0.2526802]]
+    elif phases == 2:
+      ref_angles = [[[-3.1415927, 0.0, -1.5707964],
+                     [ 0.0781114, 0.0, -0.8480621],
+                     [ 2.2702646, 0.0, -0.5235988],
+                     [-2.1125570, 0.0, -0.2526802]],
+                    [[-1.2825607, 0.0, -1.0654358],
+                     [ 1.2310342, 0.0, -0.6751315],
+                     [-3.0420728, 0.0, -0.3843967],
+                     [-1.2054421, 0.0, -0.1253278]]]
+    self.assertAllClose(angles, ref_angles)
 
 
 class SpiralTrajectoryTest(test_util.TestCase):

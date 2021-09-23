@@ -219,6 +219,31 @@ class ReconstructTest(test_util.TestCase):
   #   self.assertAllEqual(result.shape, ref.shape)
   #   self.assertAllClose(result, ref)
 
+  
+  def test_cg_sense_3d(self):
+    """Test CG-SENSE in 3D."""
+    # TODO: Actually check result. Currently just checking it runs.
+    traj = traj_ops.radial_trajectory(128,
+                                      views=2000,
+                                      ordering='sphere_archimedean')
+    traj = tf.reshape(traj, [-1, 3])
+
+    image, sens = image_ops.phantom(shape=[128, 128, 128],
+                                    num_coils=8,
+                                    dtype=tf.complex64,
+                                    return_sensitivities=True)
+    kspace = tfft.nufft(image, traj,
+                        grid_shape=image.shape,
+                        transform_type='type_2',
+                        fft_direction='forward')
+
+    result_nufft = recon_ops.reconstruct(kspace,
+                                         trajectory=traj,
+                                         image_shape=[128, 128, 128],
+                                         multicoil=True)
+
+    result = recon_ops.reconstruct(kspace, trajectory=traj, sensitivities=sens)
+
 
   # def test_cg_sense_batch(self):
   #   """Test reconstruction method `cg_sense` with batched inputs."""

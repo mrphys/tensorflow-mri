@@ -326,21 +326,17 @@ class LinearOperatorNUFFT(LinearOperatorImaging): # pylint: disable=abstract-met
                      name=name,
                      parameters=parameters)
 
-  def _matvec(self, x, adjoint=False):
+  def _transform(self, x, adjoint=False):
 
-    arg_batch_shape = x.shape[:-1]
     if adjoint:
-      x = tf.reshape(x, arg_batch_shape + self.range_shape)
       x = tfft.nufft(x, self.points,
                      grid_shape=self.domain_shape[-self.rank:],
                      transform_type='type_1',
                      fft_direction='backward')
     else:
-      x = tf.reshape(x, arg_batch_shape + self.domain_shape)
       x = tfft.nufft(x, self.points,
                      transform_type='type_2',
                      fft_direction='forward')
-    x = tf.reshape(x, arg_batch_shape.as_list() + [-1])
     return x
 
   def _domain_shape(self):
@@ -403,7 +399,7 @@ class LinearOperatorSensitivityModulation(LinearOperatorImaging): # pylint: disa
     )
 
     self._sensitivities = check_util.validate_tensor_dtype(
-      tf.convert_to_tensor(sensitivities), 'complex', name='sensitivities')
+        tf.convert_to_tensor(sensitivities), 'complex', name='sensitivities')
 
     self._rank = rank or self.sensitivities.shape.rank - 1
     self._image_shape = self.sensitivities.shape[-self.rank:]
@@ -431,18 +427,14 @@ class LinearOperatorSensitivityModulation(LinearOperatorImaging): # pylint: disa
   def _batch_shape(self):
     return self._bshape
 
-  def _matvec(self, x, adjoint=False):
+  def _transform(self, x, adjoint=False):
 
-    arg_batch_shape = x.shape[:-1]
     if adjoint:
-      x = tf.reshape(x, arg_batch_shape + self.range_shape)
       x *= tf.math.conj(self.sensitivities)
       x = tf.math.reduce_sum(x, axis=self._coil_axis)
     else:
-      x = tf.reshape(x, arg_batch_shape + self.domain_shape)
       x = tf.expand_dims(x, -self.domain_shape.rank-1)
       x *= self.sensitivities
-    x = tf.reshape(x, arg_batch_shape.as_list() + [-1])
     return x
 
   @property
@@ -719,12 +711,8 @@ class LinearOperatorRealWeighting(LinearOperatorImaging): # pylint: disable=abst
   def _batch_shape(self):
     return self._bshape
 
-  def _matvec(self, x, adjoint=False):
-
-    arg_batch_shape = x.shape[:-1]
-    x = tf.reshape(x, arg_batch_shape + self.domain_shape)
+  def _transform(self, x, adjoint=False):
     x *= self.weights
-    x = tf.reshape(x, arg_batch_shape.as_list() + [-1])
     return x
 
   @property
