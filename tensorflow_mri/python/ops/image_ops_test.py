@@ -728,18 +728,19 @@ class PhantomTest(test_util.TestCase):
     result = image_ops.phantom(shape=[128, 128, 128])
     self.assertAllClose(result, expected)
 
-  @parameterized.product(dtype=[tf.float32, tf.complex64])
+  @parameterized.product(rank=[2, 3],
+                         dtype=[tf.float32, tf.complex64])
   @test_util.run_in_graph_and_eager_modes
-  def test_pi_2d(self, dtype):
-    """Test parallel imaging phantom (2D)."""
-    image, sens = image_ops.phantom(shape=[128, 128],
+  def test_parallel_imaging(self, rank, dtype):
+    """Test parallel imaging phantom."""
+    image, sens = image_ops.phantom(shape=[64] * rank,
                                     num_coils=12,
                                     dtype=dtype,
                                     return_sensitivities=True)
 
-    sens_ref = image_ops._birdcage_sensitivities([128, 128], 12, dtype=dtype)
+    sens_ref = image_ops._birdcage_sensitivities([64] * rank, 12, dtype=dtype)
 
-    image_ref = image_ops.phantom(shape=[128, 128], dtype=dtype) * sens
+    image_ref = image_ops.phantom(shape=[64] * rank, dtype=dtype) * sens
     self.assertAllClose(image, image_ref)
     self.assertAllClose(sens, sens_ref)
 

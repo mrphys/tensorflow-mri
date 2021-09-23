@@ -20,6 +20,7 @@ from absl.testing import parameterized
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import coil_ops
+from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.util import io_util
 from tensorflow_mri.python.util import test_util
 
@@ -85,6 +86,16 @@ class SensMapsTest(test_util.TestCase):
 
     self.assertAllClose(
       maps, tf.transpose(self.data['maps/espirit'], [2, 0, 1, 3]))
+
+  @test_util.run_in_graph_and_eager_modes
+  def test_walsh_3d(self):
+    """Test Walsh method with 3D image."""
+    with tf.device('/cpu:0'):
+      image = image_ops.phantom(shape=[64, 64, 64], num_coils=4)
+      # Currently only testing if it runs.
+      maps = coil_ops.estimate_coil_sensitivities(image,
+                                                  coil_axis=0,
+                                                  method='walsh')
 
 
 class CoilCombineTest(test_util.TestCase):

@@ -1245,7 +1245,7 @@ def phantom(phantom_type='modified_shepp_logan', # pylint: disable=dangerous-def
       image = tf.where(mask, image + obj.rho, image)
     elif isinstance(obj, Ellipsoid):
       # Apply translation and rotation to coordinates.
-      tx = geom_ops.rotate_3d(x - obj.pos, tf.cast(obj.phi, dtype))
+      tx = geom_ops.rotate_3d(x - obj.pos, tf.cast(obj.phi, x.dtype))
       # Use object equation to generate a mask.
       mask = tf.math.reduce_sum(
           (tx ** 2) / (tf.convert_to_tensor(obj.size) ** 2), -1) <= 1.0

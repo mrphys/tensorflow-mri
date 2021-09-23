@@ -682,12 +682,12 @@ def _apply_uniform_filter(tensor, size=5):
     tensor_real = tf.math.real(tensor)
     tensor_imag = tf.math.imag(tensor)
 
-    output_real = conv_nd(tensor_real, filters, 1, 'SAME')
-    output_imag = conv_nd(tensor_imag, filters, 1, 'SAME')
+    output_real = conv_nd(tensor_real, filters, [1] * (rank + 2), 'SAME')
+    output_imag = conv_nd(tensor_imag, filters, [1] * (rank + 2), 'SAME')
 
     output = tf.dtypes.complex(output_real, output_imag)
   else:
-    output = conv_nd(tensor, filters, 1, 'SAME')
+    output = conv_nd(tensor, filters, [1] * (rank + 2), 'SAME')
 
   # Remove channels dimension.
   output = output[..., 0]
