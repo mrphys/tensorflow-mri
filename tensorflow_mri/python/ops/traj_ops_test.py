@@ -55,7 +55,8 @@ class RadialTrajectoryTest(test_util.TestCase):
                                             views=8,
                                             phases=4,
                                             ordering='golden')
-    self.assertAllClose(trajectory, self.data['radial/trajectory/golden'],
+    self.assertAllClose(trajectory,
+                        _rotate_pi(self.data['radial/trajectory/golden']),
                         rtol=1e-4, atol=1e-4)
 
   @test_util.run_in_graph_and_eager_modes
@@ -68,8 +69,7 @@ class RadialTrajectoryTest(test_util.TestCase):
                                        angle_range='half')
 
     ref = self.data['radial/trajectory/sphere_archimedean/half/1']
-    self.assertAllClose(
-        traj1, tf.stack([ref[..., 2], ref[..., 0], ref[..., 1]], axis=-1))
+    self.assertAllClose(traj1, ref)
 
     traj2 = traj_ops.radial_trajectory(base_resolution=64,
                                        views=25,
@@ -78,8 +78,7 @@ class RadialTrajectoryTest(test_util.TestCase):
                                        angle_range='half')
 
     ref = self.data['radial/trajectory/sphere_archimedean/half/2']
-    self.assertAllClose(
-        traj2, tf.stack([ref[..., 2], ref[..., 0], ref[..., 1]], axis=-1))
+    self.assertAllClose(traj2, ref)
 
   def test_density_3d(self):
     """Test 3D radial density."""
@@ -98,7 +97,7 @@ class RadialTrajectoryTest(test_util.TestCase):
     phi_7 = 1.0 / (phi + 7)
 
     def _calc(inc, max, intl=False):
-      res = tf.expand_dims(-math.pi + tf.math.floormod(
+      res = tf.expand_dims(tf.math.floormod(
           tf.range(4 * (phases or 1), dtype=tf.float32) * inc, max), -1)
       if phases is not None:
         if intl:
@@ -144,19 +143,19 @@ class RadialTrajectoryTest(test_util.TestCase):
     angles = traj_ops._trajectory_angles(
         4, phases=phases, ordering='sphere_archimedean', angle_range='half')
     if phases is None:
-      ref_angles = [[-3.1415927, 0., -1.5707964],
-                    [-1.2173117, 0., -0.8480621],
-                    [ 0.2523821, 0., -0.5235988],
-                    [ 1.5669162, 0., -0.2526802]]
+      ref_angles = [[3.1415927, 0.       ],
+                    [2.4188583, 1.9242810],
+                    [2.0943952, 3.3939748],
+                    [1.8234766, 4.7085090]]
     elif phases == 2:
-      ref_angles = [[[-3.1415927, 0.0, -1.5707964],
-                     [ 0.0781114, 0.0, -0.8480621],
-                     [ 2.2702646, 0.0, -0.5235988],
-                     [-2.1125570, 0.0, -0.2526802]],
-                    [[-1.2825607, 0.0, -1.0654358],
-                     [ 1.2310342, 0.0, -0.6751315],
-                     [-3.0420728, 0.0, -0.3843967],
-                     [-1.2054421, 0.0, -0.1253278]]]
+      ref_angles = [[[3.141593, 0.       ],
+                    [2.4188583, 3.2197042],
+                    [2.0943952, 5.4118570],
+                    [1.8234766, 1.0290358]],
+                   [[2.6362321, 1.8590320],
+                    [2.2459278, 4.3726270],
+                    [1.9551930, 0.0995198],
+                    [1.6961242, 1.9361506]]]
     self.assertAllClose(angles, ref_angles)
 
 
@@ -207,7 +206,8 @@ class SpiralTrajectoryTest(test_util.TestCase):
                                             views=8,
                                             phases=4,
                                             ordering='golden')
-    self.assertAllClose(trajectory, self.data['spiral/trajectory/golden'],
+    self.assertAllClose(trajectory,
+                        _rotate_pi(self.data['spiral/trajectory/golden']),
                         rtol=1e-4, atol=1e-4)
 
 
@@ -267,11 +267,10 @@ class TrajOpsTest(test_util.TestCase): # pylint: disable=missing-class-docstring
 
           if views == 3: # We'll check the exact results for this subset.
 
-            #  and phases is None and ordering == 'linear':
-            expected_waveform = np.array([[3.1415927, 0.0],
-                                          [1.5707964, 0.0],
+            expected_waveform = np.array([[-3.1415927, 0.0],
+                                          [-1.5707964, 0.0],
                                           [0.0, 0.0],
-                                          [-1.5707964, 0.0]])
+                                          [ 1.5707964, 0.0]])
 
             expected_weights = None
 
@@ -367,6 +366,10 @@ class DensityEstimationTest(test_util.TestCase):
     rng = tf.random.Generator.from_seed(0)
     flat_traj = rng.uniform([2560000, 3], minval=-np.pi, maxval=np.pi)
     traj_ops.estimate_density(flat_traj, [128, 128, 128])
+
+
+def _rotate_pi(traj):
+  return -traj
 
 
 if __name__ == '__main__':

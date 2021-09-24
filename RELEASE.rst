@@ -9,8 +9,10 @@ Breaking Changes
 * The keyword arguments `spacing` and `domain` of the ops
   `tfmr.radial_trajectory` and `tfmr.spiral_trajectory` have been renamed to
   `ordering` and `angle_range`, respectively.
-* The range of the angles in 2D radial trajectories will now be `[-pi, 0]`
+* The range of the angles in 2D "half" radial trajectories will now be `[0, pi]`
   instead of `[-pi/2, pi/2]`.
+* The range of the angles in 2D radial/spiral trajectories will now be
+  `[0, 2 * pi]` instead of `[0, pi]`.
 * Multi-phase linear trajectories will now be interleaved.
 
 Known Caveats

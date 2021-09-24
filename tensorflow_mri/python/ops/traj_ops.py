@@ -268,7 +268,10 @@ def _kspace_trajectory(traj_type,
 
   # Rotate waveform.
   if rank == 3:
-    traj = _rotate_waveform_3d(waveform, angles)
+    if traj_type == 'radial':
+      traj = _radial_trajectory_from_spherical_coordinates(waveform, angles)
+    else:
+      traj = _rotate_waveform_3d(waveform, angles)
   else:
     traj = _rotate_waveform_2d(waveform, angles)
 
@@ -463,11 +466,10 @@ def _trajectory_angles(views,
     raise ValueError(f"Unexpected rotation range: {angle_range}")
 
   def _angles_2d(angle_delta, angle_max, interleave=False):
-    # Compute azimuthal angles [-pi, pi] (full) or [-pi, 0] (half).
+    # Compute azimuthal angles [0, 2 * pi] (full) or [0, pi] (half).
     angles = tf.range(views * (phases or 1), dtype=tf.float32)
     angles *= angle_delta
     angles %= angle_max
-    angles -= pi
     if interleave:
       angles = tf.transpose(tf.reshape(angles, (views, phases or 1)))
     else:
@@ -477,7 +479,8 @@ def _trajectory_angles(views,
 
   # Get ordering.
   if ordering == 'linear':
-    angles = _angles_2d(default_max / (views * (phases or 1)), default_max, interleave=True)
+    angles = _angles_2d(default_max / (views * (phases or 1)), default_max,
+                        interleave=True)
   elif ordering == 'golden':
     angles = _angles_2d(phi * default_max, default_max)
   elif ordering == 'golden_half':
@@ -505,13 +508,7 @@ def _trajectory_angles(views,
       return tf.transpose(tf.reshape(arg, (views, phases or 1)))
     pol = _interleave(pol)
     az = _interleave(az)
-    # Angle conversions.
-    az = az - math.pi         # Azimuthal angle [0, 2 * pi] -> [-pi, pi].
-    el = math.pi / 2.0 - pol  # Polar angle to elevation [-pi/2, pi/2].
-    euler_z = az  # Azimuthal angle = rotation of base waveform about z axis.
-    euler_y = el  # Elevation angle = rotation of base waveform about y axis.
-    euler_x = tf.zeros_like(az)   # Base waveform is along x axis.
-    angles = tf.stack([euler_z, euler_x, euler_y], -1)
+    angles = tf.stack([pol, az], axis=-1)
     angles = tf.cast(angles, tf.float32)
   else:
     raise ValueError(f"Unexpected ordering method: {ordering}")
@@ -567,14 +564,41 @@ def _rotate_waveform_3d(waveform, angles):
   # Prepare for broadcasting.
   angles = tf.expand_dims(angles, -2)
 
-  # Compute rotation matrix. Apply azimuthal (Z) rotation first, then polar (Y),
-  # then X (trivial for radial).
-  rot_matrix = geom_ops.euler_to_rotation_matrix_3d(angles, order='ZYX')
+  # Compute rotation matrix.
+  rot_matrix = geom_ops.euler_to_rotation_matrix_3d(angles, order='XYZ')
 
   # Apply rotation to trajectory.
   waveform = rotation_matrix_3d.rotate(waveform, rot_matrix)
 
   return waveform
+
+
+def _radial_trajectory_from_spherical_coordinates(waveform, angles):
+  """Create a 3D radial trajectory from spherical coordinates.
+  
+  Args:
+    waveform: A `Tensor` of shape `[samples, 3]` containing a 3D radial
+      waveform.
+    angles: A `Tensor` of shape `[..., 2]` where `angles[..., 0]` are the polar
+      angles and `angles[..., 1]` are the azimuthal angles.
+
+  Returns:
+    A `Tensor` of shape `[..., samples, 3]` containing a 3D radial trajectory
+    with dimensions z, x, y.
+  """
+  r = waveform[..., 1]
+  theta = angles[..., 0]
+  phi = angles[..., 1]
+
+  theta = tf.expand_dims(theta, -1)
+  phi = tf.expand_dims(phi, -1)
+
+  tmp = r * tf.sin(theta)
+  x = tmp * tf.cos(phi)
+  y = tmp * tf.sin(phi)
+  z = r * tf.cos(theta)
+
+  return tf.stack([z, x, y], -1)
 
 
 def estimate_density(points, grid_shape):
