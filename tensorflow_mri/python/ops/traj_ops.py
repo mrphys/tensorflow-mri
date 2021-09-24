@@ -499,7 +499,7 @@ def _trajectory_angles(views,
     # ensure sufficient accuracy.
     indices = tf.range(projections, dtype=tf.float64)
     dh = 2.0 * indices / full_projections - 1.0
-    pol = tf.math.acos(dh)
+    pol = math.pi - tf.math.acos(dh)
     az = tf.math.divide_no_nan(tf.constant(3.6, dtype=tf.float64),
                                tf.math.sqrt(full_projections * (1.0 - dh * dh)))
     az = tf.math.floormod(tf.math.cumsum(az), 2.0 * math.pi)
@@ -517,6 +517,18 @@ def _trajectory_angles(views,
     angles = angles[0, ...]
 
   return angles
+
+
+def _spherical_to_euler(angles):
+  """Convert angles from spherical coordinates to Euler angles."""
+  pol = angles[..., 0]
+  az = angles[..., 1]
+  az = az                   # Azimuthal angle [0, 2 * pi] -> [-pi, pi].
+  el = math.pi / 2.0 - pol  # Polar angle to elevation [-pi/2, pi/2].
+  euler_z = az  # Azimuthal angle = rotation of base waveform about z axis.
+  euler_y = el  # Elevation angle = rotation of base waveform about y axis.
+  euler_x = tf.zeros_like(az)   # Base waveform is along x axis.
+  return tf.stack([euler_z, euler_x, euler_y], -1)
 
 
 def _rotate_waveform_2d(waveform, angles):
@@ -565,7 +577,7 @@ def _rotate_waveform_3d(waveform, angles):
   angles = tf.expand_dims(angles, -2)
 
   # Compute rotation matrix.
-  rot_matrix = geom_ops.euler_to_rotation_matrix_3d(angles, order='XYZ')
+  rot_matrix = geom_ops.euler_to_rotation_matrix_3d(angles, order='ZYX')
 
   # Apply rotation to trajectory.
   waveform = rotation_matrix_3d.rotate(waveform, rot_matrix)
@@ -593,9 +605,8 @@ def _radial_trajectory_from_spherical_coordinates(waveform, angles):
   theta = tf.expand_dims(theta, -1)
   phi = tf.expand_dims(phi, -1)
 
-  tmp = r * tf.sin(theta)
-  x = tmp * tf.cos(phi)
-  y = tmp * tf.sin(phi)
+  x = r * tf.cos(phi) * tf.sin(theta)
+  y = r * tf.sin(phi) * tf.sin(theta)
   z = r * tf.cos(theta)
 
   return tf.stack([z, x, y], -1)

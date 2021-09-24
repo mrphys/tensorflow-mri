@@ -69,7 +69,7 @@ class RadialTrajectoryTest(test_util.TestCase):
                                        angle_range='half')
 
     ref = self.data['radial/trajectory/sphere_archimedean/half/1']
-    self.assertAllClose(traj1, ref)
+    self.assertAllClose(traj1, tf.concat([-ref[..., 0:1], ref[..., 1:3]], -1))
 
     traj2 = traj_ops.radial_trajectory(base_resolution=64,
                                        views=25,
@@ -78,7 +78,7 @@ class RadialTrajectoryTest(test_util.TestCase):
                                        angle_range='half')
 
     ref = self.data['radial/trajectory/sphere_archimedean/half/2']
-    self.assertAllClose(traj2, ref)
+    self.assertAllClose(traj2, tf.concat([-ref[..., 0:1], ref[..., 1:3]], -1))
 
   def test_density_3d(self):
     """Test 3D radial density."""
@@ -143,19 +143,19 @@ class RadialTrajectoryTest(test_util.TestCase):
     angles = traj_ops._trajectory_angles(
         4, phases=phases, ordering='sphere_archimedean', angle_range='half')
     if phases is None:
-      ref_angles = [[3.1415927, 0.       ],
-                    [2.4188583, 1.9242810],
-                    [2.0943952, 3.3939748],
-                    [1.8234766, 4.7085090]]
+      ref_angles = [[0.       , 0.       ],
+                    [0.7227343, 1.9242810],
+                    [1.0471976, 3.3939748],
+                    [1.3181161, 4.7085090]]
     elif phases == 2:
-      ref_angles = [[[3.141593, 0.       ],
-                    [2.4188583, 3.2197042],
-                    [2.0943952, 5.4118570],
-                    [1.8234766, 1.0290358]],
-                   [[2.6362321, 1.8590320],
-                    [2.2459278, 4.3726270],
-                    [1.9551930, 0.0995198],
-                    [1.6961242, 1.9361506]]]
+      ref_angles = [[[0.       , 0.       ],
+                     [0.7227343, 3.2197042],
+                     [1.0471976, 5.4118570],
+                     [1.3181161, 1.0290358]],
+                    [[0.5053605, 1.8590320],
+                     [0.8956648, 4.3726270],
+                     [1.1863996, 0.0995198],
+                     [1.4454685, 1.9361506]]]
     self.assertAllClose(angles, ref_angles)
 
 
