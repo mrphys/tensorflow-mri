@@ -348,8 +348,8 @@ class DensityEstimationTest(test_util.TestCase):
     cls.data = io_util.read_hdf5('tests/data/traj_ops_data.h5')
 
   @test_util.run_in_graph_and_eager_modes
-  def test_estimate_density(self):
-    """Test density estimation."""
+  def test_estimate_density_jackson(self):
+    """Test density estimation (Jackson's method)."""
     traj = self.data['estimate_density/trajectory']
 
     flat_traj = tf.reshape(traj, [-1, traj.shape[-1]])
@@ -357,6 +357,21 @@ class DensityEstimationTest(test_util.TestCase):
     dens = tf.reshape(dens_flat, traj.shape[:-1])
 
     self.assertAllClose(dens, self.data['estimate_density/density'],
+                        rtol=1e-5, atol=1e-5)
+
+  @test_util.run_in_graph_and_eager_modes
+  def test_estimate_density_pipe(self):
+    """Test density estimation (Pipe's method)."""
+    traj = self.data['estimate_density/trajectory']
+
+    flat_traj = tf.reshape(traj, [-1, traj.shape[-1]])
+    dens_flat = traj_ops.estimate_density(flat_traj,
+                                          [128, 128],
+                                          method='pipe',
+                                          max_iter=20)
+    dens = tf.reshape(dens_flat, traj.shape[:-1])
+
+    self.assertAllClose(dens, self.data['estimate_density/pipe'],
                         rtol=1e-5, atol=1e-5)
 
   @test_util.run_in_graph_and_eager_modes

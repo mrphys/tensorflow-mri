@@ -16,4 +16,5 @@ Operations
     ops/math_ops
     ops/optimizer_ops
     ops/recon_ops
+    ops/signal_ops
     ops/traj_ops

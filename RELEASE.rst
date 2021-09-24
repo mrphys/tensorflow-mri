@@ -31,16 +31,20 @@ Major Features and Improvements
   * Addew new array ops `cartesian_product`, `meshgrid`, `ravel_multi_index` and
     `unravel_index`.
   * Added new geometry module with ops `rotate_2d` and `rotate_3d`.
-  * Added new optimizer op `lbfgs_minimize`.
+  * Added new optimizers module with op `lbfgs_minimize`.
+  * Added new convex operators module with ops `ConvexOperator`,
+    `ConvexOperatorL1Norm`, `Regularizer` and `TotalVariationRegularizer`.
+  * Added new signal processing module with ops `crop_kspace`, `filter_kspace`
+    and `hamming_filter`.
   * Added new linear algebra ops `LinearOperatorFFT` and
     `LinearOperatorImaging`.
   * Added new math ops `make_val_and_grad_fn`, `view_as_complex` and
     `view_as_real`.
-  * Added new convex operators module with ops `ConvexOperator`,
-    `ConvexOperatorL1Norm`, `Regularizer` and `TotalVariationRegularizer`.
   * Added new ordering methods `"golden_half"`, `"tiny_half"` and
     `"sphere_archimedean"` to function `radial_trajectory`.
+  * Added new method "`pipe`" to `estimate_density`.
   * Added keyword argument `rank` to function `radial_waveform`.
+
 
 Bug Fixes and Other Changes
 ---------------------------

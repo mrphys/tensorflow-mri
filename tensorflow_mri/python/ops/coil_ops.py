@@ -195,7 +195,7 @@ def _estimate_coil_sensitivities_walsh(images, filter_size=5):
   num_coils = tf.shape(images)[-1]
 
   filter_size = check_util.validate_list(
-    filter_size, element_type=int, length=rank, name='filter_size')
+      filter_size, element_type=int, length=rank, name='filter_size')
 
   # Flatten all spatial dimensions into a single axis, so `images` has shape
   # `[num_pixels, num_coils]`.

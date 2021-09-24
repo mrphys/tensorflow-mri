@@ -612,7 +612,7 @@ def _radial_trajectory_from_spherical_coordinates(waveform, angles):
   return tf.stack([z, x, y], -1)
 
 
-def estimate_density(points, grid_shape):
+def estimate_density(points, grid_shape, method='jackson', max_iter=50):
   """Estimate the density of an arbitrary set of points.
 
   Args:
@@ -624,10 +624,26 @@ def estimate_density(points, grid_shape):
       ie, in the range `[-pi, pi]`.
     grid_shape: A `tf.TensorShape` or list of `ints`. The shape of the image
       corresponding to this *k*-space.
+    method: A `str`. The estimation algorithm to use. Must be `"jackson"`
+      or `"pipe"`. Method `"pipe"` may be more accurate but it is slower.
+    max_iter: Maximum number of iterations. Only relevant if `method` is
+      `"pipe"`.
 
   Returns:
     A `Tensor` of shape `[..., M]` containing the density of `points`.
+
+  References:
+    .. [1] Jackson, J.I., Meyer, C.H., Nishimura, D.G. and Macovski, A. (1991),
+      Selection of a convolution function for Fourier inversion using gridding
+      (computerised tomography application). IEEE Transactions on Medical
+      Imaging, 10(3): 473-478. https://doi.org/10.1109/42.97598
+    .. [2] Pipe, J.G. and Menon, P. (1999), Sampling density compensation in
+      MRI: Rationale and an iterative numerical solution. Magn. Reson. Med.,
+      41: 179-186. https://doi.org/10.1002/(SICI)1522-2594(199901)41:1<179::AID-MRM25>3.0.CO;2-V
   """
+  method = check_util.validate_enum(
+      method, {'jackson', 'pipe'}, name='method')
+
   # We do not check inputs here, the NUFFT op will do it for us.
   batch_shape = points.shape[:-2]
 
@@ -635,12 +651,27 @@ def estimate_density(points, grid_shape):
   grid_shape = tf.TensorShape(grid_shape) # Canonicalize.
   grid_shape = [_next_smooth_int(2 * s) for s in grid_shape.as_list()]
 
-  # Create a k-space of ones.
-  ones = tf.ones(batch_shape + points.shape[-2:-1],
-                 dtype=tensor_util.get_complex_dtype(points.dtype))
+  if method in ('jackson', 'pipe'):
+    # Create a k-space of ones.
+    ones = tf.ones(batch_shape + points.shape[-2:-1],
+                  dtype=tensor_util.get_complex_dtype(points.dtype))
 
-  # Spread ones to grid and interpolate back.
-  density = tfft.interp(tfft.spread(ones, points, grid_shape), points)
+    # Spread ones to grid and interpolate back.
+    density = tfft.interp(tfft.spread(ones, points, grid_shape), points)
+
+  if method == 'pipe':
+
+    def _cond(i, weights):
+      return i < max_iter
+
+    def _body(i, weights):
+      weights /= tfft.interp(tfft.spread(weights, points, grid_shape), points)
+      return i + 1, weights
+
+    i = tf.constant(0, dtype=tf.dtypes.int32)
+    weights = tf.math.reciprocal_no_nan(density)
+    _, weights = tf.while_loop(_cond, _body, [i, weights])
+    density = tf.math.reciprocal_no_nan(weights)
 
   # Get real part and make sure there are no (slightly) negative numbers.
   density = tf.math.abs(tf.math.real(density))
