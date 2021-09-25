@@ -316,10 +316,6 @@ def radial_density(base_resolution,
   if phases is None:
     weights = weights[0, ...]
 
-  # Scale weights (valid for 2D radial only).
-  scale = (samples * views) / (samples ** 2)
-  weights *= scale
-
   density = tf.math.reciprocal(weights)
 
   return density
@@ -382,19 +378,53 @@ def _radial_density_from_theta(samples, theta):
   # Compute weights.
   dists = np.expand_dims(dists, axis=1) # For broadcasting.
   radii = tf.expand_dims(radii, axis=0) # For broadcasting.
-  weights = 8.0 * radii * dists
+  weights = 4.0 * radii * dists * tf.cast(views, dtype=tf.float32)
 
   # Special calculation for DC component.
   echo = samples // 2
   # w[:, echo] = 1.0 / views
   weights = tf.transpose(weights)
   weights = tf.tensor_scatter_nd_update(
-    weights,
-    [[echo]],
-    tf.ones([1, views], dtype=tf.float32) / tf.cast(views, dtype=tf.float32))
+      weights,
+      [[echo]],
+      tf.ones([1, views], dtype=tf.float32))
   weights = tf.transpose(weights)
 
   return weights
+
+
+def estimate_radial_density(points, base_resolution):
+  """Estimate the sampling density of a radial *k*-space trajectory.
+
+  This method estimates the density based on the radius of each sample, but does
+  not take into account the relationships between different spokes or views.
+
+  .. warning::
+    This function assumes that `points` represents a radial trajectory, but
+    cannot verify that. If used with trajectories other than radial, it will
+    not fail but the result will be invalid.
+
+  Args:
+    points: A `Tensor`. Must be one of the following types: `float32`,
+      `float64`. The coordinates at which the sampling density should be
+      estimated. Must have shape `[..., N]`, where `N` is the number of
+      dimensions. `N` must be 2 or 3. The coordinates should be in
+      radians/pixel, ie, in the range `[-pi, pi]`.
+    base_resolution: An `int`. The base resolution or matrix size.
+
+  Returns:
+    A `Tensor` of shape `[...]` containing the density of `points`.
+  """
+  rank = points.shape[-1]
+  if rank not in (2, 3):
+    raise ValueError(
+        f"Rank must be 2 or 3, but received trajectory with shape: {rank}")
+  radius = tf.norm(points, axis=-1) / np.pi * base_resolution
+  if rank == 2:
+    weights = tf.where(radius < 0.5, 1.0, 4 * radius)
+  elif rank == 3:
+    weights = tf.where(radius < 0.5, 1.0, 12 * radius ** 2 + 1)
+  return tf.math.reciprocal_no_nan(weights)
 
 
 def radial_waveform(base_resolution, readout_os=2.0, rank=2):

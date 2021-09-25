@@ -276,25 +276,25 @@ class TrajOpsTest(test_util.TestCase): # pylint: disable=missing-class-docstring
 
             if phases is None and ordering == 'linear':
               expected_theta = np.array([0.0, 2.0943952, 4.1887903])
-              expected_weights = np.array([[4.0, 2.0, 0.25, 2.0],
-                                           [4.0, 2.0, 0.25, 2.0],
-                                           [4.0, 2.0, 0.25, 2.0]])
+              expected_weights = 2.0 * np.array([[4.0, 2.0, 0.5, 2.0],
+                                                 [4.0, 2.0, 0.5, 2.0],
+                                                 [4.0, 2.0, 0.5, 2.0]])
             elif phases is None and ordering == 'golden':
               # phi = 2.0 / (1.0 + tf.sqrt(5.0))
               # expected_theta = (phi * tf.range(3.0) % 1.0) * 2.0 * math.pi
               expected_theta = np.array([0.0, 3.8832223, 1.4832591])
-              expected_weights = np.array([
-                [4.5835924, 2.2917962, 0.25, 2.2917962],
-                [2.832816, 1.416408, 0.25, 1.416408],
-                [4.583592, 2.291796, 0.25, 2.291796]])
+              expected_weights = 2.0 * np.array([
+                [4.5835924, 2.2917962, 0.5, 2.2917962],
+                [2.832816, 1.416408, 0.5, 1.416408],
+                [4.583592, 2.291796, 0.5, 2.291796]])
             elif phases is None and ordering == 'tiny':
               # expected_theta = (
               #   1 / (phi + 7) * tf.range(3.0) % 1.0) * 2.0 * math.pi
               expected_theta = np.array([0.0, 0.8247778, 1.6495556])
-              expected_weights = np.array([
-                [4.424791, 2.2123954, 0.25, 2.2123954],
-                [3.1504188, 1.5752094, 0.25, 1.5752094],
-                [4.4247904, 2.2123952, 0.25, 2.2123952]])
+              expected_weights = 2.0 * np.array([
+                [4.424791, 2.2123954, 0.5, 2.2123954],
+                [3.1504188, 1.5752094, 0.5, 1.5752094],
+                [4.4247904, 2.2123952, 0.5, 2.2123952]])
             elif phases is None and ordering == 'sorted':
               expected_theta = np.array([0.0, 1.4832591, 3.8832223])
             elif phases == 2 and ordering == 'linear':
@@ -309,13 +309,13 @@ class TrajOpsTest(test_util.TestCase): # pylint: disable=missing-class-docstring
             elif phases == 2 and ordering == 'sorted':
               expected_theta = np.array([[0.0, 1.4832591, 3.8832223],
                                          [0.56655425, 2.9665182, 5.3664813]])
-              expected_weights = np.array([
-                [[4.583592, 2.291796, 0.25, 2.291796],
-                 [4.583592, 2.291796, 0.25, 2.291796],
-                 [2.832816, 1.416408, 0.25, 1.416408]],
-                [[4.583592, 2.291796, 0.25, 2.291796],
-                 [2.832815, 1.416408, 0.25, 1.416408],
-                 [4.583593, 2.291797, 0.25, 2.291797]]])
+              expected_weights = 2.0 * np.array([
+                [[4.583592, 2.291796, 0.5, 2.291796],
+                 [4.583592, 2.291796, 0.5, 2.291796],
+                 [2.832816, 1.416408, 0.5, 1.416408]],
+                [[4.583592, 2.291796, 0.5, 2.291796],
+                 [2.832815, 1.416408, 0.5, 1.416408],
+                 [4.583593, 2.291797, 0.5, 2.291797]]])
             else:
               raise ValueError("Unexpected parameter combination")
 

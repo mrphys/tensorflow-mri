@@ -14,6 +14,7 @@ Breaking Changes
 * The range of the angles in 2D radial/spiral trajectories will now be
   `[0, 2 * pi]` instead of `[0, pi]`.
 * Multi-phase linear trajectories will now be interleaved.
+* The density calculated by `radial_density` will now be scaled differently.
 
 Known Caveats
 -------------
@@ -40,6 +41,7 @@ Major Features and Improvements
     `LinearOperatorImaging`.
   * Added new math ops `make_val_and_grad_fn`, `view_as_complex` and
     `view_as_real`.
+  * Added new *k*-space trajectory op `estimate_radial_density`.
   * Added new ordering methods `"golden_half"`, `"tiny_half"` and
     `"sphere_archimedean"` to function `radial_trajectory`.
   * Added new method `"nufft"` to `reconstruct`.
@@ -52,6 +54,8 @@ Bug Fixes and Other Changes
 
 * `tfmr`:
 
+  * Fixed a bug in `radial_density` that resulted in the DC component being
+    underweighted.
   * Fixed some bugs that would cause some ops to fail in graph mode.
   * Added graph mode tests.
   * Refactored testing modules.

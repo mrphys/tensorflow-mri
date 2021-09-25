@@ -15,3 +15,4 @@
     spiral_waveform
     radial_density
     estimate_density
+    estimate_radial_density
