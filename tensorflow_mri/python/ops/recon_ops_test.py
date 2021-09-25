@@ -31,12 +31,13 @@ from tensorflow_mri.python.util import test_util
 class ReconstructTest(test_util.TestCase):
   """Tests for function `reconstruct`."""
 
-  # @classmethod
-  # def setUpClass(cls):
-  #   """Prepare tests."""
-  #   super().setUpClass()
-  #   cls.data = io_util.read_hdf5('tests/data/recon_ops_data.h5')
-  #   cls.data.update(io_util.read_hdf5('tests/data/recon_ops_data_2.h5'))
+  @classmethod
+  def setUpClass(cls):
+    """Prepare tests."""
+    super().setUpClass()
+    cls.data = io_util.read_hdf5('tests/data/recon_ops_data.h5')
+    cls.data.update(io_util.read_hdf5('tests/data/recon_ops_data_2.h5'))
+    cls.data.update(io_util.read_hdf5('tests/data/recon_ops_data_3.h5'))
 
 
   # def test_fft(self):
@@ -129,6 +130,30 @@ class ReconstructTest(test_util.TestCase):
   #     tf.math.reduce_sum(result * tf.math.conj(sens), axis=0), scale)
 
   #   self.assertAllClose(image, result)
+
+
+  @test_util.run_in_graph_and_eager_modes
+  def test_inufft_2d(self):
+    """Test inverse NUFFT method with 2D phantom."""
+    base_res = 128
+    image_shape = [base_res] * 2
+
+    # Create trajectory.
+    traj = traj_ops.radial_trajectory(base_res, views=64)
+    traj = tf.reshape(traj, [-1, 2])
+
+    # Generate k-space data.
+    image = image_ops.phantom(shape=image_shape, dtype=tf.complex64)
+    kspace = tfft.nufft(image, traj,
+                        transform_type='type_2',
+                        fft_direction='forward')
+
+    # Reconstruct.
+    image_cg = recon_ops.reconstruct(kspace, trajectory=traj,
+                                     method='inufft', image_shape=image_shape)
+
+    self.assertAllClose(image_cg,
+                        self.data['reconstruct/inufft/shepp_logan_2d/result'])
 
 
   # @parameterized.product(reduction_axis=[[0], [1], [0, 1]],

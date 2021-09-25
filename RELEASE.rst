@@ -42,7 +42,8 @@ Major Features and Improvements
     `view_as_real`.
   * Added new ordering methods `"golden_half"`, `"tiny_half"` and
     `"sphere_archimedean"` to function `radial_trajectory`.
-  * Added new method "`pipe`" to `estimate_density`.
+  * Added new method `"nufft"` to `reconstruct`.
+  * Added new method `"pipe"` to `estimate_density`.
   * Added keyword argument `rank` to function `radial_waveform`.
 
 
