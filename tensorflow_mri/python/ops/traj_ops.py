@@ -414,7 +414,8 @@ def estimate_radial_density(points, base_resolution):
       `float64`. The coordinates at which the sampling density should be
       estimated. Must have shape `[..., N]`, where `N` is the number of
       dimensions. `N` must be 2 or 3. The coordinates should be in
-      radians/pixel, ie, in the range `[-pi, pi]`.
+      radians/pixel, ie, in the range `[-pi, pi]`. Must represent a radial
+      trajectory.
     base_resolution: An `int`. The base resolution or matrix size.
 
   Returns:
@@ -684,12 +685,12 @@ def estimate_density(points, grid_shape, method='jackson', max_iter=50):
 
   # Calculate an appropriate grid shape.
   grid_shape = tf.TensorShape(grid_shape) # Canonicalize.
-  grid_shape = [_next_smooth_int(2 * s) for s in grid_shape.as_list()]
+  grid_shape = tf.TensorShape([_next_smooth_int(2 * s) for s in grid_shape.as_list()])
 
   if method in ('jackson', 'pipe'):
     # Create a k-space of ones.
     ones = tf.ones(batch_shape + points.shape[-2:-1],
-                  dtype=tensor_util.get_complex_dtype(points.dtype))
+                   dtype=tensor_util.get_complex_dtype(points.dtype))
 
     # Spread ones to grid and interpolate back.
     density = tfft.interp(tfft.spread(ones, points, grid_shape), points)

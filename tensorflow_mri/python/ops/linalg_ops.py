@@ -372,6 +372,36 @@ class LinearOperatorNUFFT(LinearOperatorImaging): # pylint: disable=abstract-met
     return self._points
 
 
+class LinearOperatorInterp(LinearOperatorNUFFT): # pylint: disable=abstract-method
+  """Linear operator acting like an interpolator.
+
+  Args:
+    points: A `Tensor`. Must have type `float32` or `float64`. Must have shape
+      `[..., M, N]`, where `N` is the rank (or spatial dimensionality), `M` is
+      the number of samples and `...` is the batch shape, which can have any
+      number of dimensions.
+    domain_shape: A `TensorShape` or a list of `ints`. The domain shape of this
+      operator. This is usually the shape of the image but may include
+      additional dimensions.
+    name: An optional `string`. The name of this operator.
+  """
+  def __init__(self,
+               points,
+               domain_shape,
+               name="LinearOperatorInterp"):
+
+    super().__init__(points, domain_shape, name=name)
+
+  def _transform(self, x, adjoint=False):
+
+    if adjoint:
+      x = tfft.spread(x, self.points,
+                      grid_shape=self.domain_shape[-self.rank:])
+    else:
+      x = tfft.interp(x, self.points)
+    return x
+
+
 class LinearOperatorSensitivityModulation(LinearOperatorImaging): # pylint: disable=abstract-method
   """Linear operator acting like a sensitivity modulation matrix.
 

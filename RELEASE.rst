@@ -37,8 +37,7 @@ Major Features and Improvements
     `ConvexOperatorL1Norm`, `Regularizer` and `TotalVariationRegularizer`.
   * Added new signal processing module with ops `crop_kspace`, `filter_kspace`
     and `hamming_filter`.
-  * Added new linear algebra ops `LinearOperatorFFT` and
-    `LinearOperatorImaging`.
+  * Added new linear algebra ops `LinearOperatorFFT` and `LinearOperatorInterp`.
   * Added new math ops `make_val_and_grad_fn`, `view_as_complex` and
     `view_as_real`.
   * Added new *k*-space trajectory op `estimate_radial_density`.
