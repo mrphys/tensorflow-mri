@@ -6,7 +6,7 @@ Image Quality Assessment
 .. currentmodule:: tfmr.metrics
 
 .. autosummary::
-    :toctree: _iqa_metrics
+    :toctree: iqa_metrics
     :nosignatures:
     
     PeakSignalToNoiseRatio

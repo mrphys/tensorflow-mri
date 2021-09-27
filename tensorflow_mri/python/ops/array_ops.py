@@ -75,7 +75,7 @@ def unravel_index(indices, dims):
       `N`-dimensional tensor.
     dims: A `Tensor` of shape `[N]`. The shape of the tensor that
       `indices` indexes into.
-  
+
   Returns:
     A `Tensor` of shape `[..., N]` containing multi-indices equivalent to flat
     indices.

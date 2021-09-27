@@ -22,7 +22,7 @@ from tensorflow_mri.python.util import test_util
 
 
 class FilterTest(test_util.TestCase):
-
+  """Test filters."""
   def test_hamming(self):
     """Test Hamming filter."""
     x = tf.linspace(-np.pi, np.pi, 100)
@@ -31,6 +31,7 @@ class FilterTest(test_util.TestCase):
 
 
 class KSpaceFilterTest(test_util.TestCase):
+  """Test k-space filters."""
 
   def test_crop(self):
     """Test k-space cropping."""

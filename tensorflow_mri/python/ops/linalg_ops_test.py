@@ -22,6 +22,7 @@ from tensorflow_mri.python.util import test_util
 
 
 class LinearOperatorFFTTest(test_util.TestCase):
+  """Tests for FFT linear operator."""
 
   @classmethod
   def setUpClass(cls):
@@ -36,7 +37,7 @@ class LinearOperatorFFTTest(test_util.TestCase):
                       [[False, True], [True, False]]])
 
   def test_transform(self):
-
+    """Test transform method."""
     signal = tf.constant([1, 2, 4, 4], dtype=tf.complex64)
 
     result = tf.linalg.matvec(self.linop1, signal)
@@ -49,7 +50,7 @@ class LinearOperatorFFTTest(test_util.TestCase):
     self.assertAllClose(result, [[-1, 5, 0, 0], [0, 0, 1, 11], [0, 5, 1, 0]])
 
   def test_domain_shape(self):
-
+    """Test domain shape."""
     self.assertIsInstance(self.linop1.domain_shape, tf.TensorShape)
     self.assertAllEqual(self.linop1.domain_shape, [2, 2])
     self.assertAllEqual(self.linop1.domain_shape_tensor(), [2, 2])
@@ -63,7 +64,7 @@ class LinearOperatorFFTTest(test_util.TestCase):
     self.assertAllEqual(self.linop3.domain_shape_tensor(), [2, 2])
 
   def test_range_shape(self):
-
+    """Test range shape."""
     self.assertIsInstance(self.linop1.range_shape, tf.TensorShape)
     self.assertAllEqual(self.linop1.range_shape, [2, 2])
     self.assertAllEqual(self.linop1.range_shape_tensor(), [2, 2])
@@ -77,7 +78,7 @@ class LinearOperatorFFTTest(test_util.TestCase):
     self.assertAllEqual(self.linop3.range_shape_tensor(), [2, 2])
 
   def test_batch_shape(self):
-
+    """Test batch shape."""
     self.assertIsInstance(self.linop1.batch_shape, tf.TensorShape)
     self.assertAllEqual(self.linop1.batch_shape, [])
     self.assertAllEqual(self.linop1.batch_shape_tensor(), [])
@@ -92,7 +93,7 @@ class LinearOperatorFFTTest(test_util.TestCase):
 
 
 class LinearOperatorDifferenceTest(test_util.TestCase):
-
+  """Tests for difference linear operator."""
   @classmethod
   def setUpClass(cls):
 
@@ -104,7 +105,7 @@ class LinearOperatorDifferenceTest(test_util.TestCase):
                                         [0, 0, -1, 1]], dtype=tf.float32)
 
   def test_transform(self):
-
+    """Test transform method."""
     signal = tf.constant([1, 2, 4, 8], dtype=tf.float32)
 
     result = tf.linalg.matvec(self.linop1, signal)
@@ -115,32 +116,32 @@ class LinearOperatorDifferenceTest(test_util.TestCase):
     signal2 = tf.range(16, dtype=tf.float32)
     result = tf.linalg.matvec(self.linop2, signal2)
     self.assertAllClose(result, [4] * 12)
-    
-  def test_transform_adjoint(self):
 
+  def test_transform_adjoint(self):
+    """Test adjoint."""
     signal = tf.constant([1, 2, 4], dtype=tf.float32)
     result = tf.linalg.matvec(self.linop1, signal, adjoint_a=True)
     self.assertAllClose(result,
                         tf.linalg.matvec(tf.transpose(self.matrix1), signal))
 
   def test_shapes(self):
-    
+    """Test shapes."""
     self._test_all_shapes(self.linop1, [4], [3])
     self._test_all_shapes(self.linop2, [4, 4], [3, 4])
 
   def _test_all_shapes(self, linop, domain_shape, range_shape):
-
+    """Test shapes."""
     self.assertIsInstance(linop.domain_shape, tf.TensorShape)
     self.assertAllEqual(linop.domain_shape, domain_shape)
     self.assertAllEqual(linop.domain_shape_tensor(), domain_shape)
-    
+
     self.assertIsInstance(linop.range_shape, tf.TensorShape)
     self.assertAllEqual(linop.range_shape, range_shape)
     self.assertAllEqual(linop.range_shape_tensor(), range_shape)
 
 
 # TODO: Add more tests. Much of `linalg_ops` is tested indirectly by recon ops,
-# but specific tests should be added here. 
+# but specific tests should be added here.
 
 
 if __name__ == '__main__':

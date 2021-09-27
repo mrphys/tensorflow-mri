@@ -72,15 +72,13 @@ def reconstruct(kspace,
   * **grappa**: Generalized autocalibrating partially parallel acquisitions [3]_
     reconstruction for Cartesian *k*-space data. This is the default method if
     `kspace`, `calib` and (optionally) `sensitivities` are given.
-  * **cs**:  Compressed sensing (CS) reconstruction. Accepts Cartesian and
-    non-Cartesian *k*-space data. Supply `mask` in combination with a Cartesian
-    `kspace`, or `trajectory` and (optionally) `density` in combination with
-    a non-Cartesian `kspace`. This method is never selected by default.
   * **pics**: Combined parallel imaging and compressed sensing (PICS)
     reconstruction. Accepts Cartesian and non-Cartesian *k*-space data. Supply
     `mask` and `sensitivities` in combination with a Cartesian `kspace`, or
     `trajectory`, `sensitivities` and (optionally) `density` in combination with
-    a non-Cartesian `kspace`. This method is never selected by default.
+    a non-Cartesian `kspace`. If `sensitivities` is not provided, a compressed
+    sensing reconstruction is performed. This method is never selected by
+    default.
 
   .. note::
     This function supports CPU and GPU computation.
@@ -108,25 +106,24 @@ def reconstruct(kspace,
       and `False` otherwise. `True` entries should correspond to the data in
       `kspace`, and the result of dropping all `False` entries from `mask`
       should have shape `K`. `mask` is required if `method` is `"grappa"`, or
-      if `method` is `"cs"` or `"pics"` and `kspace` is Cartesian. For other
-      methods or for non-Cartesian `kspace`, this parameter is not relevant.
+      if `method` is `"pics"` and `kspace` is Cartesian. For other methods or
+      for non-Cartesian `kspace`, this parameter is not relevant.
     trajectory: A `Tensor`. The *k*-space trajectory. Must have type `float32`
       or `float64`. Must have shape `[..., M, N]`, where `N` is the number of
       spatial dimensions, `N` is the number of *k*-space samples and `...` is
       the batch shape, which can have any rank and must be broadcastable to the
       batch shape of `kspace`. `trajectory` is required when `method` is
-      `"nufft"`, `"inufft"` or `"cg_sense"`, or if `method` is `"cs"` or
-      `"pics"` and `kspace` is non-Cartesian. For other methods or for Cartesian
-      `kspace`, this parameter is not relevant.
+      `"nufft"`, `"inufft"` or `"cg_sense"`, or if `method` is `"pics"` and
+      `kspace` is non-Cartesian. For other methods or for Cartesian `kspace`,
+      this parameter is not relevant.
     density: A `Tensor`. The sampling density. Must have type `float32` or
       `float64`. Must have shape `[..., M]`, where `M` is the number of
       *k*-space samples and `...` is the batch shape, which can have any rank
       and must be broadcastable to the batch shape of `kspace`. `density` is
       optional when `method` is `"nufft"` or `"cg_sense"`, or if `method` is
-      `"cs"` or `"pics"` and `kspace` is non-Cartesian. In these cases,
-      `density` will be estimated from the given `trajectory` if not provided.
-      For other methods or for Cartesian `kspace`, this parameter is not
-      relevant.
+      `"pics"` and `kspace` is non-Cartesian. In these cases, `density` will be
+      estimated from the given `trajectory` if not provided. For other methods
+      or for Cartesian `kspace`, this parameter is not relevant.
     calib: A `Tensor`. The calibration data. Must have type `complex64` or
       `complex128`. Must have shape `[..., C, *R]`, where `R` is the shape of
       the calibration region, `C` is the number of coils and `...` is the batch
@@ -141,8 +138,7 @@ def reconstruct(kspace,
       `"sense"` or `"cg_sense"`. For other methods, this parameter is not
       relevant.
     method: A `string`. The reconstruction method. Must be one of `"fft"`,
-      `"nufft"`, `"inufft"`, `"sense"`, `"cg_sense"`, `"grappa"`, `"cs"` or
-      `"pics"`.
+      `"nufft"`, `"inufft"`, `"sense"`, `"cg_sense"` or `"grappa"`.
     **kwargs: Additional method-specific keyword arguments. See Notes for the
       method-specific arguments.
 
@@ -436,7 +432,7 @@ def _inufft(kspace,
   batch_shape = tf.shape(kspace)[:-1]
 
   # Set up system operator and right hand side.
-  linop_nufft = linalg_ops.LinearOperatorNUFFT(trajectory, image_shape)
+  linop_nufft = linalg_ops.LinearOperatorNUFFT(image_shape, trajectory)
   operator = tf.linalg.LinearOperatorComposition(
       [linop_nufft.H, linop_nufft],
       is_self_adjoint=True, is_positive_definite=True)
@@ -868,78 +864,75 @@ def _grappa(kspace,
   return result
 
 
-def _cs(kspace,
-        mask=None,
-        trajectory=None,
-        density=None,
-        sensitivities=None,
-        regularizers=None,
-        optimizer=None,
-        initial_x=None):
-  """MR image reconstruction using compressed sensing.
-
-  For the parameters, see `tfmr.reconstruct`.
-  """
-  image_shape = tf.shape(mask)
-
-  # Encoding operator.
-  e = linalg_ops.LinearOperatorFFT(image_shape, mask=mask)
-
-  y = tf.reshape(kspace, [-1])
-
-  def tv_linop(x):
-    x = tf.reshape(x, image_shape)
-    tv = image_ops.total_variation(x)
-    return tv
-
-  @math_ops.make_val_and_grad_fn
-  def objective(x):
-    x = math_ops.view_as_complex(x, stacked=False)
-    value = tf.math.abs(tf.norm(y - tf.linalg.matvec(e, x), ord=2))
-    value += 1. * tv_linop(x)
-    return value
-
-  if initial_x is None:
-    initial_x = e.H @ y
-  else:
-    pass
-  
-  initial_x = tf.reshape(initial_x, [-1])
-  initial_x = math_ops.view_as_real(initial_x, stacked=False)
-  
-  results = optimizer_ops.lbfgs_minimize(objective, initial_x)
-
-  image = tf.reshape(
-      math_ops.view_as_complex(results.position, stacked=False),
-      image_shape)
-
-  initial_x = tf.reshape(
-      math_ops.view_as_complex(initial_x, stacked=False),
-      image_shape)
-
-  import matplotlib.pyplot as plt
-  plt.imshow(tf.abs(initial_x))
-  plt.show()
-  plt.imshow(tf.math.angle(initial_x))
-  plt.show()
-  plt.imshow(tf.abs(image))
-  plt.show()
-  plt.imshow(tf.math.angle(image))
-  plt.show()
-
-  return image
-
-
 def _pics(kspace,
           mask=None,
           trajectory=None,
           density=None,
           sensitivities=None,
-          optimizer=None):
+          image_shape=None,
+          regularizers=None,
+          optimizer=None,
+          initial_image=None):
   """MR image reconstruction using parallel imaging and compressed sensing.
 
   For the parameters, see `tfmr.reconstruct`.
   """
+  # pylint: disable=unreachable
+  raise NotImplementedError("Method `pics` is not yet implemented.")
+
+  # Check inputs.
+  if image_shape is None:
+    raise ValueError(
+        "Input `image_shape` must be provided for CS.")
+  if regularizers is None:
+    regularizers = []
+  if optimizer is None:
+    # Choose a default optimizer.
+    optimizer = 'lbfgs'
+  optimizer = check_util.validate_enum(optimizer, {'lbfgs'}, name='optimizer')
+
+  # Select encoding operator.
+  if sensitivities is None:
+    if mask is not None and trajectory is None:
+      e = linalg_ops.LinearOperatorFFT(image_shape, mask=mask)
+    elif mask is None and trajectory is not None:
+      e = linalg_ops.LinearOperatorNUFFT(image_shape, trajectory)
+  else:
+    e = linalg_ops.LinearOperatorParallelMRI(sensitivities,
+                                             trajectory=trajectory,
+                                             rank=image_shape.rank)
+
+  # Flatten input k-space.
+  y = tf.reshape(kspace, [-1])
+  if density is not None:
+    density = tf.reshape(density, [-1])
+
+  @math_ops.make_val_and_grad_fn
+  def _objective(x):
+    x = math_ops.view_as_complex(x, stacked=False)
+    value = tf.math.abs(tf.norm(y - tf.linalg.matvec(e, x), ord=2))
+    x = tf.reshape(x, image_shape)
+    for reg in regularizers:
+      value += reg(x)
+    return value
+
+  # Prepare initial estimate.
+  if initial_image is None:
+    initial_image = tf.linalg.matvec(e.H, y / density)
+  initial_image = tf.reshape(initial_image, [-1])
+  initial_image = math_ops.view_as_real(initial_image, stacked=False)
+
+  # Perform optimization.
+  if optimizer == 'lbfgs':
+    result = optimizer_ops.lbfgs_minimize(_objective, initial_image)
+  else:
+    raise ValueError(f"Unknown optimizer: {optimizer}")
+
+  # Image to correct shape and type.
+  image = tf.reshape(
+      math_ops.view_as_complex(result.position, stacked=False), image_shape)
+
+  return image
 
 
 def _extract_patches(images, sizes):
@@ -1344,6 +1337,5 @@ _MR_RECON_METHODS = {
   'sense': _sense,
   'cg_sense': _cg_sense,
   'grappa': _grappa,
-  'cs': _cs,
   'pics': _pics
 }

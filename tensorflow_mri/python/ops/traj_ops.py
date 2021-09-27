@@ -295,11 +295,14 @@ def radial_density(base_resolution,
     A `Tensor` of type `float32` and shape `[views, samples]` if `phases` is
     `None`, or of shape `[phases, views, samples]` if `phases` is not `None`.
     `samples` is equal to `base_resolution * readout_os`.
+
+  Raises:
+    ValueError: If any of the input arguments are invalid.
   """
   orderings_2d = {'linear', 'golden', 'tiny', 'sorted', 'golden_half',
                   'tiny_half'}
   if ordering not in orderings_2d:
-    raise NotImplementedError(f"Ordering `{ordering}` is not implemented.")
+    raise ValueError(f"Ordering `{ordering}` is not implemented.")
 
   # Get angles.
   angles = _trajectory_angles(
@@ -420,6 +423,9 @@ def estimate_radial_density(points, base_resolution):
 
   Returns:
     A `Tensor` of shape `[...]` containing the density of `points`.
+
+  Raises:
+    ValueError: If any of the passed inputs is invalid.
   """
   rank = points.shape[-1]
   if rank not in (2, 3):
@@ -446,6 +452,9 @@ def radial_waveform(base_resolution, readout_os=2.0, rank=2):
     A `Tensor` of type `float32` and shape `[samples, rank]`, where `samples` is
     equal to `base_resolution * readout_os`. The units are radians/voxel, ie,
     values are in the range `[-pi, pi]`.
+
+  Raises:
+    ValueError: If any of the input arguments has an invalid value.
   """
   # See https://github.com/tensorflow/tensorflow/issues/43038
   # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
@@ -487,6 +496,9 @@ def _trajectory_angles(views,
   Returns:
     An array of angles of shape `(phases, views)` if `phases` is not
     `None`, or of shape `(views,)` otherwise.
+
+  Raises:
+    ValueError: If unexpected inputs are received.
   """
   # Constants.
   pi = math.pi
@@ -538,7 +550,7 @@ def _trajectory_angles(views,
     pol = math.pi - tf.math.acos(dh)
     az = tf.math.divide_no_nan(tf.constant(3.6, dtype=tf.float64),
                                tf.math.sqrt(full_projections * (1.0 - dh * dh)))
-    az = tf.math.floormod(tf.math.cumsum(az), 2.0 * math.pi)
+    az = tf.math.floormod(tf.math.cumsum(az), 2.0 * math.pi) # pylint: disable=no-value-for-parameter
     # Interleave the readouts.
     def _interleave(arg):
       return tf.transpose(tf.reshape(arg, (views, phases or 1)))
@@ -559,7 +571,6 @@ def _spherical_to_euler(angles):
   """Convert angles from spherical coordinates to Euler angles."""
   pol = angles[..., 0]
   az = angles[..., 1]
-  az = az                   # Azimuthal angle [0, 2 * pi] -> [-pi, pi].
   el = math.pi / 2.0 - pol  # Polar angle to elevation [-pi/2, pi/2].
   euler_z = az  # Azimuthal angle = rotation of base waveform about z axis.
   euler_y = el  # Elevation angle = rotation of base waveform about y axis.
@@ -601,7 +612,6 @@ def _rotate_waveform_3d(waveform, angles):
     waveform: The waveform to rotate. Must have shape `[N, 3]`, where `N` is the
       number of samples.
     angles: The Euler rotation angles, with shape `[A1, A1, ..., An, 3]`.
-    order: The order in which the rotations are applied. Defaults to `"XYZ"`.
 
   Returns:
     Rotated waveform(s).
@@ -623,7 +633,7 @@ def _rotate_waveform_3d(waveform, angles):
 
 def _radial_trajectory_from_spherical_coordinates(waveform, angles):
   """Create a 3D radial trajectory from spherical coordinates.
-  
+
   Args:
     waveform: A `Tensor` of shape `[samples, 3]` containing a 3D radial
       waveform.
@@ -685,7 +695,8 @@ def estimate_density(points, grid_shape, method='jackson', max_iter=50):
 
   # Calculate an appropriate grid shape.
   grid_shape = tf.TensorShape(grid_shape) # Canonicalize.
-  grid_shape = tf.TensorShape([_next_smooth_int(2 * s) for s in grid_shape.as_list()])
+  grid_shape = tf.TensorShape(
+      [_next_smooth_int(2 * s) for s in grid_shape.as_list()])
 
   if method in ('jackson', 'pipe'):
     # Create a k-space of ones.
@@ -697,7 +708,7 @@ def estimate_density(points, grid_shape, method='jackson', max_iter=50):
 
   if method == 'pipe':
 
-    def _cond(i, weights):
+    def _cond(i, weights): # pylint: disable=unused-argument
       return i < max_iter
 
     def _body(i, weights):

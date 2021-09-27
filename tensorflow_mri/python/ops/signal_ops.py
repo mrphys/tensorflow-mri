@@ -29,6 +29,9 @@ def hamming_filter(arg, name='hamming_filter'):
   Args:
     arg: Input tensor.
     name: Name to use for the scope.
+
+  Returns:
+    The value of a Hamming window at the specified coordinates.
   """
   return _raised_cosine_filter(arg, 0.54, 0.46, name=name)
 
@@ -37,6 +40,7 @@ def _raised_cosine_filter(arg, a, b, name=None):
   """Helper function for computing a raised cosine window.
 
   Args:
+    arg: Input tensor.
     a: The alpha parameter to the raised cosine filter.
     b: The beta parameter to the raised cosine filter.
     name: Name to use for the scope.
@@ -44,7 +48,8 @@ def _raised_cosine_filter(arg, a, b, name=None):
   Returns:
     A `Tensor` of shape `arg.shape`.
   """
-  return a - b * tf.math.cos(arg + np.pi)
+  with tf.name_scope(name):
+    return a - b * tf.math.cos(arg + np.pi)
 
 
 def filter_kspace(kspace, traj, filter_type='hamming'):
@@ -56,8 +61,8 @@ def filter_kspace(kspace, traj, filter_type='hamming'):
     kspace: A `Tensor` of any shape. The input *k*-space.
     traj: A `Tensor` of shape `kspace.shape + [N]`, where `N` is the number of
       spatial dimensions.
-    filter_type. A `str`. Must be one of `"hamming"`.
-  
+    filter_type: A `str`. Must be one of `"hamming"`.
+
   Returns:
     A `Tensor` of shape `kspace.shape`. The filtered *k*-space.
   """
@@ -85,7 +90,7 @@ def crop_kspace(kspace, traj, cutoff, mode='low_pass'):
       spatial dimensions.
     cutoff: A `float` between `-pi` and `pi`. The cutoff frequency.
     mode: A `str`. Must be one of `low_pass` or `high_pass`.
-  
+
   Returns:
     A `Tensor`. The cropped *k*-space.
   """

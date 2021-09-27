@@ -17,8 +17,6 @@
 import functools
 
 import tensorflow as tf
-from tensorflow.python.ops.check_ops import assert_equal
-from tensorflow.python.ops.gen_math_ops import xdivy
 import tensorflow_probability as tfp
 
 from tensorflow_mri.python.util import check_util
@@ -66,7 +64,7 @@ def make_val_and_grad_fn(value_fn):
   Turns function `value_fn` that evaluates and returns a `Tensor` with the value
   of the function evaluated at the input point into one that returns a tuple of
   two `Tensors` with the value and the gradient of the defined function
-  evaluated at the input point.  
+  evaluated at the input point.
 
   This is useful for constructing functions for optimization.
 
@@ -138,7 +136,7 @@ def view_as_complex(x, stacked=True):
   """Returns a view of the input as a complex tensor.
 
   Returns a new complex-valued input tensor of shape `[M1, M2, ..., Mn]`:
-  
+
   * If `stacked` is `True`, expects a real-valued tensor of shape
     `[M1, M2, ..., Mn, 2]`, where the last axis has the real and imaginary
     components of the complex numbers.
@@ -148,6 +146,9 @@ def view_as_complex(x, stacked=True):
 
   Args:
     x: A real-valued `Tensor`.
+    stacked: A `bool`. If `True`, real and imaginary components are expected to
+      be stacked in their own axis. If `False`, they are expected to be
+      interleaved in the channel dimension.
 
   Returns:
     A complex-valued `Tensor`.
@@ -168,7 +169,7 @@ def view_as_real(x, stacked=True):
   """Returns a view of the input as a real tensor.
 
   For a complex-valued input tensor of shape `[M1, M2, ..., Mn]`:
-  
+
   * If `stacked` is `True`, returns a new real-valued tensor of shape
     `[M1, M2, ..., Mn, 2]`, where the last axis has the real and imaginary
     components of the complex numbers.

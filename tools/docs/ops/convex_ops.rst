@@ -8,3 +8,8 @@ Convex Operators
 .. autosummary::
     :toctree: convex_ops
     :nosignatures:
+
+    ConvexOperator
+    ConvexOperatorL1Norm
+    Regularizer
+    TotalVariationRegularizer

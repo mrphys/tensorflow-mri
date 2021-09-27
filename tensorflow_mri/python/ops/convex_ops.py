@@ -20,10 +20,10 @@ import contextlib
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from tensorflow_mri.python.ops import linalg_ops
+from tensorflow_mri.python.ops import image_ops
 
 
-class ConvexOperator(object):
+class ConvexOperator():
   """Base class defining a [batch of] convex operator[s]."""
 
   def __init__(self,
@@ -38,11 +38,11 @@ class ConvexOperator(object):
 
   def call(self, x, name="call"):
     """Apply this `ConvexOperator` to [batch] input `x`.
-    
+
     Args:
       x: A `Tensor` with compatible shape and same `dtype` as `self`.
       name: A name for this operation.
-    
+
     Returns:
       A `Tensor` with the same `dtype` as `self`.
     """
@@ -56,7 +56,7 @@ class ConvexOperator(object):
 
     Args:
       x: A `Tensor` with compatible shape and same `dtype` as `self`.
-      name: A name for this operation. 
+      name: A name for this operation.
 
     Returns:
       A `Tensor` with the same `dtype` as `self`.
@@ -131,13 +131,36 @@ class ConvexOperatorL1Norm(ConvexOperator):
     return tfp.math.soft_threshold(x, self._gamma)
 
 
-class Regularizer(object):
+class Regularizer():
   """Base class defining a [batch of] regularizer[s]."""
-  def __init__(self, convex_operator, linear_operator):
+  def __init__(self,
+               reg_factor=1.0,
+               convex_operator=None,
+               linear_operator=None):
     """Initialize this `Regularizer`."""
+    self._reg_factor = reg_factor
     self._cvx_op = convex_operator
     self._lin_op = linear_operator
 
   def __call__(self, x):
+    return self.call(x)
+
+  def call(self, x):
+    """Compute the regularization term for input `x`."""
     # Apply linear transformation, then convex operator.
-    return self._cvx_op(tf.linalg.matvec(self._lin_op, x))
+    return self._reg_factor * self._cvx_op(tf.linalg.matvec(self._lin_op, x))
+
+
+class TotalVariationRegularizer(Regularizer):
+  """Regularizer calculating the total variation of a [batch of] input[s].
+
+  Args:
+    reg_factor: A `float`. The regularization factor.
+  """
+  def __init__(self, reg_factor, axis):
+    super().__init__(reg_factor=reg_factor)
+    self._axis = axis
+
+  def call(self, x):
+    # Override default implementation of `call` - we use a shortcut here.
+    return self._reg_factor * image_ops.total_variation(x, axis=self._axis)

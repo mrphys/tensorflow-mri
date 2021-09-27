@@ -15,6 +15,8 @@ Breaking Changes
   `[0, 2 * pi]` instead of `[0, pi]`.
 * Multi-phase linear trajectories will now be interleaved.
 * The density calculated by `radial_density` will now be scaled differently.
+* Arguments `domain_shape` and `points` of `LinearOperatorNUFFT` have changed
+  order.
 
 Known Caveats
 -------------
@@ -60,3 +62,4 @@ Bug Fixes and Other Changes
   * Refactored testing modules.
   * Refactored linear algebra module.
   * Refactored utilities modules.
+  * Added new utilities module `plot_util`.

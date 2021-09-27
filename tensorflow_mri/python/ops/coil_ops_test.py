@@ -93,7 +93,7 @@ class SensMapsTest(test_util.TestCase):
     with tf.device('/cpu:0'):
       image = image_ops.phantom(shape=[64, 64, 64], num_coils=4)
       # Currently only testing if it runs.
-      maps = coil_ops.estimate_coil_sensitivities(image,
+      maps = coil_ops.estimate_coil_sensitivities(image, # pylint: disable=unused-variable
                                                   coil_axis=0,
                                                   method='walsh')
 

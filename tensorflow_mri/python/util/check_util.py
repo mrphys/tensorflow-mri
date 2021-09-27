@@ -135,7 +135,7 @@ def validate_axis(value,
                   must_be_unique=True,
                   scalar_to_list=True):
   """Validates that value is a valid list of axes.
-  
+
   Args:
     value: The value to check.
     rank: The rank of the tensor.
@@ -145,9 +145,12 @@ def validate_axis(value,
     must_be_unique: If `True`, repeated axes are not allowed.
     scalar_to_list: If `True`, scalar inputs are converted to a list of length
       1.
-  
+
   Returns:
     A valid `list` of axes.
+
+  Raises:
+    ValueError: If `value` is not valid.
   """
   if isinstance(value, int):
     scalar = True
@@ -171,7 +174,7 @@ def validate_axis(value,
   if rank is not None:
     # These checks depend on the rank being known.
     for v in value:
-      if v >= rank or v < -rank:
+      if v >= rank or v < -rank: # pylint: disable=invalid-unary-operand-type
         raise ValueError(
             f"Axis {v} is out of range for a tensor of rank {rank}")
 

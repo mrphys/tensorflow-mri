@@ -67,6 +67,8 @@ def euler_to_rotation_matrix_3d(angles, order='XYZ', name='rotation_matrix_3d'):
       represents the three Euler angles. `[A1, ..., An, 0]` is the angle about
       `x` in radians `[A1, ..., An, 1]` is the angle about `y` in radians and
       `[A1, ..., An, 2]` is the angle about `z` in radians.
+    order: A `str`. The order in which the rotations are applied. Defaults to
+      `"XYZ"`.
     name: A name for this op that defaults to "rotation_matrix_3d_from_euler".
 
   Returns:
@@ -100,13 +102,18 @@ def _build_matrix_from_sines_and_cosines(sin_angles, cos_angles, order='XYZ'):
       represents the sine of the Euler angles.
     cos_angles: A tensor of shape `[A1, ..., An, 3]`, where the last dimension
       represents the cosine of the Euler angles.
+    order: A `str`. The order in which the rotations are applied. Defaults to
+      `"XYZ"`.
 
   Returns:
     A tensor of shape `[A1, ..., An, 3, 3]`, where the last two dimensions
     represent a 3d rotation matrix.
+
+  Raises:
+    ValueError: If any of the input arguments has an invalid value.
   """
   sin_angles.shape.assert_is_compatible_with(cos_angles.shape)
-  output_shape = tf.concat((tf.shape(input=sin_angles)[:-1], (3, 3)), axis=-1)
+  output_shape = tf.concat((tf.shape(sin_angles)[:-1], (3, 3)), -1)
 
   sx, sy, sz = tf.unstack(sin_angles, axis=-1)
   cx, cy, cz = tf.unstack(cos_angles, axis=-1)
@@ -157,7 +164,7 @@ def _build_matrix_from_sines_and_cosines(sin_angles, cos_angles, order='XYZ'):
                  m20, m21, m22),
                 axis=-1)
   rz = tf.reshape(rz, output_shape)
-  
+
   matrix = tf.eye(output_shape[-2], output_shape[-1],
                   batch_shape=output_shape[:-2])
 

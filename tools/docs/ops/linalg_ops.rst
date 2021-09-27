@@ -12,6 +12,7 @@ Linear Algebra
     LinearOperatorImaging
     LinearOperatorFFT
     LinearOperatorNUFFT
+    LinearOperatorInterp
     LinearOperatorSensitivityModulation
     LinearOperatorParallelMRI
     LinearOperatorRealWeighting

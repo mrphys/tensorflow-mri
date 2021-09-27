@@ -23,10 +23,11 @@ import tensorflow as tf
 
 class TestCase(tf.test.TestCase, parameterized.TestCase):
   """Class to provide TensorFlow MRI specific test features."""
+  # pylint: disable=invalid-name
 
   def assertAllTrue(self, a):
     """Assert that all entries in a boolean `Tensor` are True.
-    
+
     Args:
       a: A `Tensor`.
     """
@@ -36,14 +37,14 @@ class TestCase(tf.test.TestCase, parameterized.TestCase):
 
   def assertAllFalse(self, a):
     """Assert that all entries in a boolean `Tensor` are False.
-    
+
     Args:
       a: A `Tensor`.
     """
     a_ = self.get_nd_array(a)
     all_false = np.zeros_like(a_, dtype=np.bool)
     self.assertAllEqual(all_false, a_)
-    
+
   def assertAllFinite(self, a):
     """Assert that all entries in a `Tensor` are finite.
 

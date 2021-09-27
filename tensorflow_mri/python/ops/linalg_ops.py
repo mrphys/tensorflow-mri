@@ -90,29 +90,26 @@ class LinearOperatorImaging(tf.linalg.LinearOperator):
 
   def domain_shape_tensor(self, name="domain_shape_tensor"):
     """Domain shape of this linear operator, determined at runtime."""
-    with self._name_scope(name):
+    with self._name_scope(name): # pylint: disable=not-callable
       # Prefer to use statically defined shape if available.
       if self.domain_shape.is_fully_defined():
         return tensor_util.convert_shape_to_tensor(self.domain_shape.as_list())
-      else:
-        return self._domain_shape_tensor()
+      return self._domain_shape_tensor()
 
   def range_shape_tensor(self, name="range_shape_tensor"):
     """Range shape of this linear operator, determined at runtime."""
-    with self._name_scope(name):
+    with self._name_scope(name): # pylint: disable=not-callable
       # Prefer to use statically defined shape if available.
       if self.range_shape.is_fully_defined():
         return tensor_util.convert_shape_to_tensor(self.range_shape.as_list())
-      else:
-        return self._range_shape_tensor()
+      return self._range_shape_tensor()
 
   def batch_shape_tensor(self, name="batch_shape_tensor"):
     """Batch shape of this linear operator, determined at runtime."""
-    with self._name_scope(name):
+    with self._name_scope(name): # pylint: disable=not-callable
       if self.batch_shape.is_fully_defined():
         return tensor_util.convert_shape_to_tensor(self.batch_shape.as_list())
-      else:
-        return self._batch_shape_tensor()
+      return self._batch_shape_tensor()
 
   @abc.abstractmethod
   def _domain_shape(self):
@@ -137,7 +134,7 @@ class LinearOperatorImaging(tf.linalg.LinearOperator):
   def _range_shape_tensor(self):
     raise NotImplementedError("_range_shape_tensor is not implemented.")
 
-  def _batch_shape_tensor(self):
+  def _batch_shape_tensor(self, shape=None):
     return tf.constant([], dtype=tf.int32)
 
   def _shape(self):
@@ -187,7 +184,7 @@ class LinearOperatorImaging(tf.linalg.LinearOperator):
     raise NotImplementedError("Method `_transform` is not implemented.")
 
 
-class LinearOperatorFFT(LinearOperatorImaging):
+class LinearOperatorFFT(LinearOperatorImaging): # pylint: disable=abstract-method
   """Linear operator acting like a DFT matrix.
 
   Can act like an undersampled FFT operator by providing `mask`.
@@ -205,7 +202,7 @@ class LinearOperatorFFT(LinearOperatorImaging):
                mask=None,
                dtype=tf.dtypes.complex64,
                name="LinearOperatorFFT"):
-    
+
     parameters = dict(
       domain_shape=domain_shape,
       mask=mask,
@@ -267,23 +264,23 @@ class LinearOperatorNUFFT(LinearOperatorImaging): # pylint: disable=abstract-met
   """Linear operator acting like a nonuniform DFT matrix.
 
   Args:
+    domain_shape: A `TensorShape` or a list of `ints`. The domain shape of this
+      operator. This is usually the shape of the image but may include
+      additional dimensions.
     points: A `Tensor`. Must have type `float32` or `float64`. Must have shape
       `[..., M, N]`, where `N` is the rank (or spatial dimensionality), `M` is
       the number of samples and `...` is the batch shape, which can have any
       number of dimensions.
-    domain_shape: A `TensorShape` or a list of `ints`. The domain shape of this
-      operator. This is usually the shape of the image but may include
-      additional dimensions.
     name: An optional `string`. The name of this operator.
   """
   def __init__(self,
-               points,
                domain_shape,
+               points,
                name="LinearOperatorNUFFT"):
 
     parameters = dict(
-      points=points,
       domain_shape=domain_shape,
+      points=points,
       name=name
     )
 
@@ -376,21 +373,21 @@ class LinearOperatorInterp(LinearOperatorNUFFT): # pylint: disable=abstract-meth
   """Linear operator acting like an interpolator.
 
   Args:
+    domain_shape: A `TensorShape` or a list of `ints`. The domain shape of this
+      operator. This is usually the shape of the image but may include
+      additional dimensions.
     points: A `Tensor`. Must have type `float32` or `float64`. Must have shape
       `[..., M, N]`, where `N` is the rank (or spatial dimensionality), `M` is
       the number of samples and `...` is the batch shape, which can have any
       number of dimensions.
-    domain_shape: A `TensorShape` or a list of `ints`. The domain shape of this
-      operator. This is usually the shape of the image but may include
-      additional dimensions.
     name: An optional `string`. The name of this operator.
   """
   def __init__(self,
-               points,
                domain_shape,
+               points,
                name="LinearOperatorInterp"):
 
-    super().__init__(points, domain_shape, name=name)
+    super().__init__(domain_shape, points, name=name)
 
   def _transform(self, x, adjoint=False):
 
@@ -546,13 +543,13 @@ class LinearOperatorParallelMRI(tf.linalg.LinearOperatorComposition): # pylint: 
     # Prepare the Fourier operator.
     if trajectory is not None: # Non-Cartesian
       trajectory = check_util.validate_tensor_dtype(
-        tf.convert_to_tensor(trajectory),
-        sensitivities.dtype.real_dtype, name='trajectory')
+          tf.convert_to_tensor(trajectory),
+          sensitivities.dtype.real_dtype, name='trajectory')
       trajectory = tf.expand_dims(trajectory, -3) # Add coil dimension.
       self._rank = trajectory.shape[-1]
       self._is_cartesian = False
       linop_fourier = LinearOperatorNUFFT(
-        trajectory, sensitivities.shape[-self.rank-1:]) # pylint: disable=invalid-unary-operand-type
+          sensitivities.shape[-self.rank-1:], trajectory) # pylint: disable=invalid-unary-operand-type
     else: # Cartesian
       self._rank = rank
       self._is_cartesian = True
@@ -750,7 +747,7 @@ class LinearOperatorRealWeighting(LinearOperatorImaging): # pylint: disable=abst
     return self._weights
 
 
-class LinearOperatorDifference(LinearOperatorImaging):
+class LinearOperatorDifference(LinearOperatorImaging): # pylint: disable=abstract-method
   """Linear operator acting like a finite differences matrix.
 
   Args:
@@ -776,13 +773,13 @@ class LinearOperatorDifference(LinearOperatorImaging):
     )
 
     domain_shape = tf.TensorShape(domain_shape)
-    
+
     self._scalar_axis = isinstance(axis, int)
     self._axis = check_util.validate_axis(axis, domain_shape.rank,
                                           max_length=1,
                                           canonicalize="negative",
-                                          scalar_to_list=False)      
-    
+                                          scalar_to_list=False)
+
     range_shape = domain_shape.as_list()
     range_shape[self.axis] = range_shape[self.axis] - 1
     range_shape = tf.TensorShape(range_shape)
@@ -800,14 +797,14 @@ class LinearOperatorDifference(LinearOperatorImaging):
                      parameters=parameters)
 
   def _transform(self, x, adjoint=False):
-    
+
     if adjoint:
       paddings1 = [[0, 0]] * x.shape.rank
       paddings2 = [[0, 0]] * x.shape.rank
       paddings1[self.axis] = [1, 0]
       paddings2[self.axis] = [0, 1]
-      x1 = tf.pad(x, paddings1)
-      x2 = tf.pad(x, paddings2)
+      x1 = tf.pad(x, paddings1) # pylint: disable=no-value-for-parameter
+      x2 = tf.pad(x, paddings2) # pylint: disable=no-value-for-parameter
       x = x1 - x2
     else:
       slice1 = [slice(None)] * x.shape.rank

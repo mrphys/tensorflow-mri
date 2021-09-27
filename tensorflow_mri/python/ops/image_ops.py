@@ -1281,6 +1281,9 @@ def _birdcage_sensitivities(shape,
 
   Returns:
     An array of shape `[num_coils, *shape]`.
+
+  Raises:
+    ValueError: If `shape` does not have a valid rank.
   """
   if isinstance(shape, tf.TensorShape):
     shape = shape.as_list()
@@ -1303,7 +1306,7 @@ def _birdcage_sensitivities(shape,
     y_co = (y - height / 2.0) / (height / 2.0) - coil_y
 
     rr = tf.math.sqrt(x_co ** 2 + y_co ** 2)
-    
+
     if dtype.is_complex:
       phi = tf.math.atan2(x_co, -y_co) + coil_phs
       out = tf.cast(1.0 / rr, dtype) * tf.math.exp(
@@ -1335,7 +1338,7 @@ def _birdcage_sensitivities(shape,
     z_co = (z - depth / 2.0) / (depth / 2.0) - coil_z
 
     rr = tf.math.sqrt(x_co ** 2 + y_co ** 2 + z_co ** 2)
-    
+
     if dtype.is_complex:
       phi = tf.math.atan2(x_co, -y_co) + coil_phs
       out = tf.cast(1.0 / rr, dtype) * tf.math.exp(

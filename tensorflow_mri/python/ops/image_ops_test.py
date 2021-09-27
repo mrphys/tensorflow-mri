@@ -731,14 +731,14 @@ class PhantomTest(test_util.TestCase):
   @parameterized.product(rank=[2, 3],
                          dtype=[tf.float32, tf.complex64])
   @test_util.run_in_graph_and_eager_modes
-  def test_parallel_imaging(self, rank, dtype):
+  def test_parallel_imaging(self, rank, dtype): # pylint: disable=missing-param-doc
     """Test parallel imaging phantom."""
     image, sens = image_ops.phantom(shape=[64] * rank,
                                     num_coils=12,
                                     dtype=dtype,
                                     return_sensitivities=True)
 
-    sens_ref = image_ops._birdcage_sensitivities([64] * rank, 12, dtype=dtype)
+    sens_ref = image_ops._birdcage_sensitivities([64] * rank, 12, dtype=dtype) # pylint: disable=protected-access
 
     image_ref = image_ops.phantom(shape=[64] * rank, dtype=dtype) * sens
     self.assertAllClose(image, image_ref)
@@ -749,13 +749,13 @@ class PhantomTest(test_util.TestCase):
                          birdcage_radius=[1.5, 1.3],
                          num_rings=[2])
   @test_util.run_in_graph_and_eager_modes
-  def test_birdcage_sensitivities(self,
+  def test_birdcage_sensitivities(self, # pylint: disable=missing-param-doc
                                   shape,
                                   num_coils,
                                   birdcage_radius,
                                   num_rings):
-    """Test birdcage sensitivities."""   
-    tf_sens = image_ops._birdcage_sensitivities(shape,
+    """Test birdcage sensitivities."""
+    tf_sens = image_ops._birdcage_sensitivities(shape, # pylint: disable=protected-access
                                                 num_coils,
                                                 birdcage_radius=birdcage_radius,
                                                 num_rings=num_rings)
@@ -766,9 +766,9 @@ class PhantomTest(test_util.TestCase):
 
     self.assertAllClose(tf_sens, np_sens, rtol=1e-4, atol=1e-4)
 
-  def _np_birdcage_sensitivities(self, shape, r=1.5, nzz=8, dtype=np.complex64):
+  def _np_birdcage_sensitivities(self, shape, r=1.5, nzz=8, dtype=np.complex64): # pylint: disable=missing-param-doc
     """Simulate birdcage coil sensitivities.
-    
+
     Implementation from:
     https://github.com/mikgroup/sigpy/blob/v0.1.23/sigpy/mri/sim.py
     """

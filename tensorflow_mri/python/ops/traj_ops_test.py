@@ -83,7 +83,7 @@ class RadialTrajectoryTest(test_util.TestCase):
   def test_density_3d(self):
     """Test 3D radial density."""
     with self.assertRaisesRegex(
-        NotImplementedError, "`sphere_archimedean` is not implemented"):
+        ValueError, "`sphere_archimedean` is not implemented"):
       traj_ops.radial_density(base_resolution=64,
                               views=100,
                               phases=None,
@@ -91,14 +91,16 @@ class RadialTrajectoryTest(test_util.TestCase):
                               angle_range='half')
 
   @parameterized.product(phases=[None, 2])
-  def test_angles(self, phases):
+  def test_angles(self, phases): # pylint: disable=missing-param-doc
     """Test angles."""
+    # pylint: disable=protected-access
+
     phi = 2.0 / (1.0 + tf.sqrt(5.0))
     phi_7 = 1.0 / (phi + 7)
 
-    def _calc(inc, max, intl=False):
+    def _calc(inc, max_, intl=False):
       res = tf.expand_dims(tf.math.floormod(
-          tf.range(4 * (phases or 1), dtype=tf.float32) * inc, max), -1)
+          tf.range(4 * (phases or 1), dtype=tf.float32) * inc, max_), -1)
       if phases is not None:
         if intl:
           res = tf.transpose(tf.reshape(res, [4, phases, 1]), [1, 0, 2])
