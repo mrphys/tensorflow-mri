@@ -20,8 +20,14 @@ This module contains functions for N-dimensional image processing.
 # Some of the code in this file is adapted from
 # tensorflow/python/ops/image_ops_impl.py to support 2D and 3D processing.
 
+import collections
+
 import numpy as np
 import tensorflow as tf
+
+from tensorflow_mri.python.ops import array_ops
+from tensorflow_mri.python.ops import geom_ops
+from tensorflow_mri.python.util import check_util
 
 
 def psnr(img1, img2, max_val=None, rank=None, name='psnr'):
@@ -72,13 +78,7 @@ def psnr(img1, img2, max_val=None, rank=None, name='psnr'):
     # Infer the number of spatial dimensions if not specified by the user, then
     # check that the value is valid.
     if rank is None:
-      rank = tf.rank(img1) - 2
-    tf.debugging.assert_greater_equal(
-        rank, 2,
-        message=f"`rank` must be >= 2, but got: {rank}")
-    tf.debugging.assert_less_equal(
-        rank, 3,
-        message=f"`rank` must be <= 3, but got: {rank}")
+      rank = img1.shape.rank - 2 # Rank must be defined statically.
 
     mse = tf.math.reduce_mean(
       tf.math.squared_difference(img1, img2), tf.range(-rank-1, 0)) # pylint: disable=invalid-unary-operand-type
@@ -220,13 +220,8 @@ def ssim(img1,
     # Infer the number of spatial dimensions if not specified by the user, then
     # check that the value is valid.
     if rank is None:
-      rank = tf.rank(img1) - 2
-    tf.debugging.assert_greater_equal(
-        rank, 2,
-        message=f"`rank` must be >= 2, but got: {rank}")
-    tf.debugging.assert_less_equal(
-        rank, 3,
-        message=f"`rank` must be <= 3, but got: {rank}")
+      rank = img1.shape.rank - 2 # Rank must be defined statically.
+
     # Check shapes.
     _, _, checks = _verify_compatible_image_shapes(img1, img2, rank)
     with tf.control_dependencies(checks):
@@ -444,26 +439,22 @@ def ssim_multiscale(img1,
     # check that the value is valid.
     if rank is None:
       rank = img1.shape.rank - 2
-    tf.debugging.assert_greater_equal(
-        rank, 2,
-        message=f"`rank` must be >= 2, but got: {rank}")
-    tf.debugging.assert_less_equal(
-        rank, 3,
-        message=f"`rank` must be <= 3, but got: {rank}")
+
     # Shape checking.
     shape1, shape2, checks = _verify_compatible_image_shapes(img1, img2, rank)
-    with tf.control_dependencies(checks):
-      img1 = tf.identity(img1)
 
     # Check that spatial dimensions are big enough.
     min_dim_size = (filter_size - 1) * 2 ** (len(power_factors) - 1) + 1
-    tf.debugging.assert_greater_equal(
+    checks.append(tf.debugging.assert_greater_equal(
         shape1[-rank-1:-1], min_dim_size, # pylint: disable=invalid-unary-operand-type
         message=(
-          f"All spatial dimensions must have size of at least {min_dim_size}, "
+          f"All spatial dimensions must have size of at least {min_dim_size}, " # pylint: disable=invalid-unary-operand-type
           f"but got shape: {shape1[-rank-1:-1]}. Try upsampling the image, " # pylint: disable=invalid-unary-operand-type
           f"using a smaller `filter_size` or a smaller number of "
-          f"`power_factors`."))
+          f"`power_factors`.")))
+
+    with tf.control_dependencies(checks):
+      img1 = tf.identity(img1)
 
     imgs = [img1, img2]
     shapes = [shape1, shape2]
@@ -750,7 +741,7 @@ def _ssim_per_channel(img1,
     img1, img2, reducer, max_val, compensation, k1, k2)
 
   # Average over the spatial dimensions.
-  axes = tf.constant(tf.range(-(rank + 1), -1), dtype=tf.int32)
+  axes = tf.range(-(rank + 1), -1)
   ssim_val = tf.math.reduce_mean(luminance * cs, axes)
   cs = tf.math.reduce_mean(cs, axes)
   return ssim_val, cs
@@ -874,33 +865,28 @@ def _verify_compatible_image_shapes(img1, img2, rank):
   match.
 
   Args:
-    rank: Rank of the images (number of spatial dimensions).
     img1: Tensor containing the first image batch.
     img2: Tensor containing the second image batch.
+    rank: Rank of the images (number of spatial dimensions).
 
   Returns:
     A tuple containing: the first tensor shape, the second tensor shape, and
     a list of tf.debugging.Assert() ops implementing the checks.
-
-  Raises:
-    ValueError: When static shape check fails.
   """
   rank_p1 = rank + 1
-
-  shape1 = img1.get_shape().with_rank_at_least(rank_p1)
-  shape2 = img2.get_shape().with_rank_at_least(rank_p1)
-  shape1[-rank_p1:].assert_is_compatible_with(shape2[-rank_p1:])
-
-  if shape1.ndims is not None and shape2.ndims is not None:
-    for dim1, dim2 in zip(reversed(shape1.dims[:-rank_p1]),
-                          reversed(shape2.dims[:-rank_p1])):
-      if not (dim1 == 1 or dim2 == 1 or dim1.is_compatible_with(dim2)):
-        raise ValueError(f"Incompatible image shapes: {shape1} and {shape2}")
 
   # Now assign shape tensors.
   shape1, shape2 = tf.shape_n([img1, img2])
 
   checks = []
+  checks.append(
+      tf.debugging.assert_greater_equal(
+          rank, 2,
+          message=f"`rank` must be >= 2, but got: {rank}"))
+  checks.append(
+      tf.debugging.assert_less_equal(
+          rank, 3,
+          message=f"`rank` must be <= 3, but got: {rank}"))
   checks.append(
       tf.debugging.Assert(
           tf.math.greater_equal(tf.size(shape1), rank_p1), [shape1, shape2],
@@ -970,7 +956,9 @@ def central_crop(tensor, shape):
   shape = tf.convert_to_tensor(shape)
 
   # Check that ranks are consistent.
-  tf.debugging.assert_equal(tf.rank(tensor), tf.size(shape))
+  with tf.control_dependencies([tf.debugging.assert_equal(tf.rank(tensor),
+                                                          tf.size(shape))]):
+    tensor = tf.identity(tensor)
 
   # Crop the tensor.
   slice_begin = tf.where(
@@ -983,8 +971,9 @@ def central_crop(tensor, shape):
     -1)
   tensor = tf.slice(tensor, slice_begin, slice_size)
 
-  # Set static shape.
-  tensor = tf.ensure_shape(tensor, static_shape)
+  # Set static shape, if possible.
+  if static_shape is not None:
+    tensor = tf.ensure_shape(tensor, static_shape)
 
   return tensor
 
@@ -1027,6 +1016,79 @@ def resize_with_crop_or_pad(tensor, shape):
   return tensor
 
 
+def total_variation(tensor,
+                    axis=None,
+                    keepdims=False,
+                    name='total_variation'):
+  """Calculate and return the total variation along the specified axes.
+
+  The total variation is the sum of the absolute differences for neighboring
+  values in the input tensor. This is a measure of the noise present.
+
+  This implements the anisotropic N-D version of the formula described here:
+
+  https://en.wikipedia.org/wiki/Total_variation_denoising
+
+  Args:
+    tensor: A `Tensor`. Can have any shape.
+    axis: An `int` or a list of `ints`. The axes along which the differences are
+      taken. Defaults to `list(range(1, tensor.shape.rank - 1))`, i.e.
+      differences are taken along all axes except the first and the last, which
+      are assumed to be the batch and channel axes, respectively.
+    keepdims: A `bool`. If `True`, keeps the singleton reduced dimensions.
+      Defaults to `False`.
+    name: A name for the operation (optional).
+
+  Returns:
+    The total variation of `images`.
+
+  Raises:
+    ValueError: If `tensor` has unknown static rank or `axis` is out of bounds.
+  """
+  with tf.name_scope(name):
+
+    tensor = tf.convert_to_tensor(tensor)
+    rank = tensor.shape.rank
+
+    if rank is None:
+      raise ValueError(
+          "`total_variation` requires known rank for input `tensor`")
+
+    # If `axis` was not specified, compute along all axes.
+    if axis is None:
+      axis = list(range(rank))
+    if isinstance(axis, int):
+      axis = [axis]
+    for ax in axis:
+      if ax < -rank or ax >= rank:
+        raise ValueError(
+            f"axis {ax} is out of bounds for tensor of rank {rank}")
+
+    # Total variation.
+    tot_var = tf.constant(0, dtype=tensor.dtype.real_dtype)
+
+    for ax in axis:
+      slice1 = [slice(None)] * rank
+      slice2 = [slice(None)] * rank
+      slice1[ax] = slice(1, None)
+      slice2[ax] = slice(None, -1)
+
+      # Calculate the difference of neighboring values.
+      pixel_diff = tensor[slice1] - tensor[slice2]
+
+      # Add the difference for the current axis to total. Use `keepdims=True`
+      # to enable broadcasting.
+      tot_var += tf.math.reduce_sum(tf.math.abs(pixel_diff),
+                                    axis=axis,
+                                    keepdims=True)
+
+    # Squeeze the TV dimensions.
+    if not keepdims:
+      tot_var = tf.squeeze(tot_var, axis=axis)
+
+    return tot_var
+
+
 def extract_glimpses(images, sizes, offsets):
   """Extract glimpses (patches) from a tensor at the given offsets.
 
@@ -1047,11 +1109,14 @@ def extract_glimpses(images, sizes, offsets):
   # Infer rank from kernel size, then check that `images` and `offsets` are
   # consistent.
   rank = len(sizes)
-  tf.debugging.assert_rank(images, rank + 2, message=(
-    f"`images` must have rank `len(sizes) + 2`, but got: {tf.rank(images)}"))
-  tf.debugging.assert_equal(tf.shape(offsets)[-1], rank, message=(
-    f"The last dimension of `offsets` must be equal to `len(sizes)`, "
-    f"but got: {tf.shape(offsets)[-1]}"))
+  checks = []
+  checks.append(tf.debugging.assert_rank(images, rank + 2, message=(
+      f"`images` must have rank `len(sizes) + 2`, but got: {tf.rank(images)}")))
+  checks.append(tf.debugging.assert_equal(tf.shape(offsets)[-1], rank, message=(
+      f"The last dimension of `offsets` must be equal to `len(sizes)`, "
+      f"but got: {tf.shape(offsets)[-1]}")))
+  with tf.control_dependencies(checks):
+    images = tf.identity(images)
 
   # Get batch size and the number of patches.
   batch_size = tf.shape(images)[0]
@@ -1073,3 +1138,301 @@ def extract_glimpses(images, sizes, offsets):
   patches = tf.gather_nd(images, indices)
   patches = tf.reshape(patches, [batch_size, num_patches, -1])
   return patches
+
+
+def phantom(phantom_type='modified_shepp_logan', # pylint: disable=dangerous-default-value
+            shape=[256, 256],
+            num_coils=None,
+            dtype=tf.dtypes.float32,
+            return_sensitivities=False):
+  """Generate a phantom image.
+
+  Available 2D phantoms are:
+
+    * **shepp_logan**: The original Shepp-Logan phantom [1]_.
+    * **modified_shepp_logan**: A variant of the Shepp-Logan phantom in which
+      the contrast is improved for better visual perception [2]_.
+
+  Available 3D phantoms are:
+
+    * **kak_roberts**: A simplified 3D extension of the Shepp-Logan phantom
+      [3]_.
+    * **modified_kak_roberts**: A variant of the Kak-Roberts phantom in which
+      the contrast is improved for better visual perception [4]_.
+    * **koay_sarlls_ozarslan**: Same as `modified_kak_roberts`.
+
+  Args:
+    phantom_type: A `string`. If 2D, must be one of
+      `{'shepp_logan', 'modified_shepp_logan'}`. If 3D, must be one of
+      `{'kak_roberts', 'modified_kak_roberts', 'koay_sarlls_ozarslan'}`.
+      Defaults to `modified_shepp_logan` for 2D phantoms and
+      `modified_kak_roberts` for 3D phantoms.
+    shape: A list of `ints`. The shape of the generated phantom. Must have
+      length 2 or 3.
+    num_coils: An `int`. The number of coils for parallel imaging phantoms. If
+      `None`, no coil array will be simulated. Defaults to `None`.
+    dtype: A `string` or `tf.DType`. The data type of the generated phantom.
+    return_sensitivities: A `bool`. If `True`, returns a tuple containing the
+      phantom and the coil sensitivities. If `False`, returns the phantom.
+      Defaults to `False`.
+
+  Returns:
+    A `Tensor` of type `dtype` containing the generated phantom. Has shape
+    `shape` if `num_coils` is `None`, or shape `[num_coils, *shape]` if
+    `num_coils` is not `None`.
+
+    If `return_sensitivities` is `True`, returns a tuple of two tensors with
+    equal shape and type, the first of which is the phantom and the second the
+    coil sensitivities.
+
+  Raises:
+    ValueError: If the requested ND phantom is not defined.
+
+  References:
+    .. [1] Shepp, L. A., & Logan, B. F. (1974). The Fourier reconstruction of a
+      head section. IEEE Transactions on nuclear science, 21(3), 21-43.
+    .. [2] Toft, P. (1996). The radon transform. Theory and Implementation
+      (Ph. D. Dissertation)(Copenhagen: Technical University of Denmark).
+    .. [3] Kak, A. C., & Slaney, M. (2001). Principles of computerized
+      tomographic imaging. Society for Industrial and Applied Mathematics.
+    .. [4] Koay, C. G., Sarlls, J. E., & Özarslan, E. (2007). Three‐dimensional
+      analytical magnetic resonance imaging phantom in the Fourier domain.
+      Magnetic Resonance in Medicine, 58(2), 430-436.
+  """
+  phantom_type = check_util.validate_enum(
+      phantom_type,
+      {'shepp_logan', 'modified_shepp_logan',
+       'kak_roberts', 'modified_kak_roberts', 'koay_sarlls_ozarslan'},
+      name='phantom_type')
+  if isinstance(shape, tf.TensorShape):
+    shape = shape.as_list()
+  shape = check_util.validate_list(
+      shape, element_type=int, name='shape')
+
+  # If a Shepp-Logan 3D phantom was requested, by default we use the Kak-Roberts
+  # 3D extension of the Shepp-Logan phantom.
+  if len(shape) == 3 and phantom_type == 'shepp_logan':
+    phantom_type = 'kak_roberts'
+  elif len(shape) == 3 and phantom_type == 'modified_shepp_logan':
+    phantom_type = 'modified_kak_roberts'
+
+  if len(shape) == 2:
+    phantom_objects = _PHANTOMS_2D
+  elif len(shape) == 3:
+    phantom_objects = _PHANTOMS_3D
+  else:
+    raise ValueError(
+        f"`shape` must have rank 2 or 3, but got: {shape}")
+  if phantom_type in phantom_objects:
+    phantom_objects = phantom_objects[phantom_type]
+  else:
+    raise ValueError(
+        f"No definition for {len(shape)}D phantom of type: {phantom_type}")
+
+  # Initialize image and coordinates arrays.
+  image = tf.zeros(shape, dtype=dtype)
+  x = array_ops.meshgrid(*[tf.linspace(-1.0, 1.0, s) for s in shape])
+
+  for obj in phantom_objects:
+
+    if isinstance(obj, Ellipse):
+      # Apply translation and rotation to coordinates.
+      tx = geom_ops.rotate_2d(x - obj.pos, tf.cast(obj.phi, x.dtype))
+      # Use object equation to generate a mask.
+      mask = tf.math.reduce_sum(
+          (tx ** 2) / (tf.convert_to_tensor(obj.size) ** 2), -1) <= 1.0
+      # Add current object to image.
+      image = tf.where(mask, image + obj.rho, image)
+    elif isinstance(obj, Ellipsoid):
+      # Apply translation and rotation to coordinates.
+      tx = geom_ops.rotate_3d(x - obj.pos, tf.cast(obj.phi, x.dtype))
+      # Use object equation to generate a mask.
+      mask = tf.math.reduce_sum(
+          (tx ** 2) / (tf.convert_to_tensor(obj.size) ** 2), -1) <= 1.0
+      # Add current object to image.
+      image = tf.where(mask, image + obj.rho, image)
+
+  if num_coils is not None:
+    sens = _birdcage_sensitivities(shape, num_coils, dtype=dtype)
+    image *= sens
+
+    if return_sensitivities:
+      return image, sens
+
+  return image
+
+
+def _birdcage_sensitivities(shape,
+                            num_coils,
+                            birdcage_radius=1.5,
+                            num_rings=4,
+                            dtype=tf.dtypes.complex64):
+  """Simulates birdcage coil sensitivities.
+
+  Args:
+    shape: A list of `ints` of length 2 or 3. The shape of the coil
+      sensitivities.
+    num_coils: An `int`. The number of coils.
+    birdcage_radius: A `float`. The relative radius of the birdcage. Defaults
+      to 1.5.
+    num_rings: An `int`. The number of rings along the depth dimension. Defaults
+      to 4. Only relevant if `shape` has rank 3.
+    dtype: A `string` or a `DType`. The data type of the output tensor.
+
+  Returns:
+    An array of shape `[num_coils, *shape]`.
+
+  Raises:
+    ValueError: If `shape` does not have a valid rank.
+  """
+  if isinstance(shape, tf.TensorShape):
+    shape = shape.as_list()
+  dtype = tf.dtypes.as_dtype(dtype)
+
+  if len(shape) == 2:
+
+    height, width = shape
+    c, y, x = tf.meshgrid(
+        *[tf.range(n, dtype=dtype.real_dtype) for n in (num_coils,
+                                                        height,
+                                                        width)],
+        indexing='ij')
+
+    coil_x = birdcage_radius * tf.math.cos(c * (2.0 * np.pi / num_coils))
+    coil_y = birdcage_radius * tf.math.sin(c * (2.0 * np.pi / num_coils))
+    coil_phs = -c * (2.0 * np.pi / num_coils)
+
+    x_co = (x - width / 2.0) / (width / 2.0) - coil_x
+    y_co = (y - height / 2.0) / (height / 2.0) - coil_y
+
+    rr = tf.math.sqrt(x_co ** 2 + y_co ** 2)
+
+    if dtype.is_complex:
+      phi = tf.math.atan2(x_co, -y_co) + coil_phs
+      out = tf.cast(1.0 / rr, dtype) * tf.math.exp(
+          tf.dtypes.complex(tf.constant(0.0, dtype=dtype.real_dtype), phi))
+    else:
+      out = 1.0 / rr
+
+  elif len(shape) == 3:
+
+    num_coils_per_ring = (num_coils + num_rings - 1) // num_rings
+
+    depth, height, width = shape
+    c, z, y, x = tf.meshgrid(
+        *[tf.range(n, dtype=dtype.real_dtype) for n in (num_coils,
+                                                        depth,
+                                                        height,
+                                                        width)],
+        indexing='ij')
+
+    coil_x = birdcage_radius * tf.math.cos(c * (2 * np.pi / num_coils_per_ring))
+    coil_y = birdcage_radius * tf.math.sin(c * (2 * np.pi / num_coils_per_ring))
+    coil_z = tf.math.floor(c / num_coils_per_ring) - 0.5 * (
+        tf.math.ceil(num_coils / num_coils_per_ring) - 1)
+    coil_phs = -(c + tf.math.floor(c / num_coils_per_ring)) * (
+        2 * np.pi / num_coils_per_ring)
+
+    x_co = (x - width / 2.0) / (width / 2.0) - coil_x
+    y_co = (y - height / 2.0) / (height / 2.0) - coil_y
+    z_co = (z - depth / 2.0) / (depth / 2.0) - coil_z
+
+    rr = tf.math.sqrt(x_co ** 2 + y_co ** 2 + z_co ** 2)
+
+    if dtype.is_complex:
+      phi = tf.math.atan2(x_co, -y_co) + coil_phs
+      out = tf.cast(1.0 / rr, dtype) * tf.math.exp(
+          tf.dtypes.complex(tf.constant(0.0, dtype=dtype.real_dtype), phi))
+    else:
+      out = 1.0 / rr
+
+  else:
+    raise ValueError(f"`shape` must be of rank 2 or 3, but got: {shape}")
+
+  # Normalize by root sum of squares.
+  rss = tf.math.sqrt(tf.math.reduce_sum(out * tf.math.conj(out), axis=0))
+  out /= rss
+
+  return tf.cast(out, dtype)
+
+
+Ellipse = collections.namedtuple(
+    'Ellipse', ['rho', 'size', 'pos', 'phi'])
+Ellipsoid = collections.namedtuple(
+    'Ellipsoid', ['rho', 'size', 'pos', 'phi'])
+
+
+_PHANTOMS_2D = {
+    'shepp_logan': [
+        Ellipse(rho=1, size=(.9200, .6900), pos=(0, 0), phi=(0,)),
+        Ellipse(rho=-.98, size=(.8740, .6624), pos=(.0184, 0), phi=(0,)),
+        Ellipse(rho=-.02, size=(.3100, .1100),
+                pos=(0, .22), phi=(.1 * np.pi,)),
+        Ellipse(rho=-.02, size=(.4100, .1600),
+                pos=(0, -.22), phi=(-.1 * np.pi,)),
+        Ellipse(rho=.01, size=(.2500, .2100), pos=(-.35, 0), phi=(0,)),
+        Ellipse(rho=.01, size=(.0460, .0460), pos=(-.1, 0), phi=(0,)),
+        Ellipse(rho=.01, size=(.0460, .0460), pos=(.1, 0), phi=(0,)),
+        Ellipse(rho=.01, size=(.0230, .0460), pos=(.605, -.08), phi=(0,)),
+        Ellipse(rho=.01, size=(.0230, .0230), pos=(.606, 0), phi=(0,)),
+        Ellipse(rho=.01, size=(.0460, .0230), pos=(.605, .06), phi=(0,))],
+    'modified_shepp_logan': [
+        Ellipse(rho=1, size=(.9200, .6900), pos=(0, 0), phi=(0,)),
+        Ellipse(rho=-.8, size=(.8740, .6624), pos=(.0184, 0), phi=(0,)),
+        Ellipse(rho=-.2, size=(.3100, .1100),
+                pos=(0, .22), phi=(.1 * np.pi,)),
+        Ellipse(rho=-.2, size=(.4100, .1600),
+                pos=(0, -.22), phi=(-.1 * np.pi,)),
+        Ellipse(rho=.1, size=(.2500, .2100), pos=(-.35, 0), phi=(0,)),
+        Ellipse(rho=.1, size=(.0460, .0460), pos=(-.1, 0), phi=(0,)),
+        Ellipse(rho=.1, size=(.0460, .0460), pos=(.1, 0), phi=(0,)),
+        Ellipse(rho=.1, size=(.0230, .0460), pos=(.605, -.08), phi=(0,)),
+        Ellipse(rho=.1, size=(.0230, .0230), pos=(.606, 0), phi=(0,)),
+        Ellipse(rho=.1, size=(.0460, .0230), pos=(.605, .06), phi=(0,))]
+}
+
+
+_PHANTOMS_3D = {
+    'kak_roberts': [
+        Ellipsoid(rho=2, size=(.9000, .9200, .6900),
+                  pos=(0, 0, 0), phi=(0, 0, 0)),
+        Ellipsoid(rho=-.98, size=(.8800, .8740, .6624),
+                  pos=(0, 0, 0), phi=(0, 0, 0)),
+        Ellipsoid(rho=-.02, size=(.2100, .1600, .4100),
+                  pos=(-.250, 0, -.220), phi=(-.6 * np.pi, 0, 0)),
+        Ellipsoid(rho=-.02, size=(.2200, .1100, .3100),
+                  pos=(-.250, 0, .220), phi=(-.4 * np.pi, 0, 0)),
+        Ellipsoid(rho=.02, size=(.5000, .2500, .2100),
+                  pos=(-.250, -.350, 0), phi=(0, 0, 0)),
+        Ellipsoid(rho=.02, size=(.0460, .0460, .0460),
+                  pos=(-.250, -.100, 0), phi=(0, 0, 0)),
+        Ellipsoid(rho=.01, size=(.0200, .0230, .0460),
+                  pos=(-.250, .650, -.080), phi=(0, 0, 0)),
+        Ellipsoid(rho=.01, size=(.0200, .0230, .0460),
+                  pos=(-.250, .650, .060), phi=(-.5 * np.pi, 0, 0)),
+        Ellipsoid(rho=.02, size=(.1000, .0400, .0560),
+                  pos=(.625, .105, .060), phi=(-.5 * np.pi, 0, 0)),
+        Ellipsoid(rho=-.02, size=(.1000, .0560, .0560),
+                  pos=(.625, -.100, 0), phi=(0, 0, 0))],
+    'modified_kak_roberts': [
+        Ellipsoid(rho=2, size=(.9000, .9200, .6900),
+                  pos=(0, 0, 0), phi=(0, 0, 0)),
+        Ellipsoid(rho=-.8, size=(.8800, .8740, .6624),
+                  pos=(0, 0, 0), phi=(0, 0, 0)),
+        Ellipsoid(rho=-.2, size=(.2100, .1600, .4100),
+                  pos=(-.250, 0, -.220), phi=(-.6 * np.pi, 0, 0)),
+        Ellipsoid(rho=-.2, size=(.2200, .1100, .3100),
+                  pos=(-.250, 0, .220), phi=(-.4 * np.pi, 0, 0)),
+        Ellipsoid(rho=.2, size=(.5000, .2500, .2100),
+                  pos=(-.250, -.350, 0), phi=(0, 0, 0)),
+        Ellipsoid(rho=.2, size=(.0460, .0460, .0460),
+                  pos=(-.250, -.100, 0), phi=(0, 0, 0)),
+        Ellipsoid(rho=.1, size=(.0200, .0230, .0460),
+                  pos=(-.250, .650, -.080), phi=(0, 0, 0)),
+        Ellipsoid(rho=.1, size=(.0200, .0230, .0460),
+                  pos=(-.250, .650, .060), phi=(-.5 * np.pi, 0, 0)),
+        Ellipsoid(rho=.2, size=(.1000, .0400, .0560),
+                  pos=(.625, .105, .060), phi=(-.5 * np.pi, 0, 0)),
+        Ellipsoid(rho=-.2, size=(.1000, .0560, .0560),
+                  pos=(.625, -.100, 0), phi=(0, 0, 0))]
+}

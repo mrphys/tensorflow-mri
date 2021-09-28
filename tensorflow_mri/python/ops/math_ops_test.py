@@ -19,11 +19,13 @@ import itertools
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import math_ops
+from tensorflow_mri.python.util import test_util
 
 
-class ScaleMinmaxTest(tf.test.TestCase):
+class ScaleMinmaxTest(test_util.TestCase):
   """Tests for function `scale_by_min_max`."""
 
+  @test_util.run_in_graph_and_eager_modes
   def test_scale_by_min_max(self):
     """Test function `scale_by_min_max`."""
 
@@ -55,7 +57,7 @@ class ScaleMinmaxTest(tf.test.TestCase):
         self.assertAllClose(tf.reduce_min(y), p['output_min'])
         self.assertAllClose(tf.reduce_max(y), p['output_max'])
 
-
+  @test_util.run_in_graph_and_eager_modes
   def test_scale_by_min_max_complex(self):
     """Test function `scale_by_min_max` with complex numbers."""
     # pylint: disable=unexpected-keyword-arg,no-value-for-parameter

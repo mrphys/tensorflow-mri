@@ -6,7 +6,7 @@ Fourier Transform
 .. currentmodule:: tfmr
 
 .. autosummary::
-    :toctree: _fft_ops
+    :toctree: fft_ops
     :nosignatures:
 
     fftn

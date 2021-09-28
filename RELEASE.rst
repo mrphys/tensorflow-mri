@@ -1,35 +1,45 @@
-Release 0.5.0
+Release 0.6.0
 =============
 
-This release focuses on the new `metrics` module and implements several
-Keras metrics. It also adds some image reconstruction functionality.
+Breaking Changes
+----------------
+
+* The keyword arguments `spacing` and `domain` of the ops
+  `tfmr.radial_trajectory` and `tfmr.spiral_trajectory` have been renamed to
+  `ordering` and `angle_range`, respectively.
+* The range of the angles in 2D "full" radial/spiral trajectories will now be
+  `[0, 2 * pi]` instead of `[0, pi]`.
+* The range of the angles in 2D "half" radial trajectories will now be `[0, pi]`
+  instead of `[-pi/2, pi/2]`.
+* Multi-phase linear trajectories will now be interleaved.
+* The density calculated by `radial_density` will now be scaled differently.
+* Arguments `domain_shape` and `points` of `LinearOperatorNUFFT` have changed
+  order.
+
 
 Major Features and Improvements
 -------------------------------
 
 * `tfmr`:
 
-  * Added new method `"grappa"` to `reconstruct` operation, implementing
-    generalized autocalibrating partially parallel acquisitions (GRAPPA).
-  * Added new operation `reconstruct_partial_kspace` for partial Fourier (PF)
-    reconstruction. Supported PF methods are zero-filling, homodyne detection
-    and projection onto convex sets.
-  * Added new operation `ravel_multi_index` to convert arrays of
-    multi-dimensionalindices to arrays of flat indices.
-  * Added new operation `extract_glimpses` to extract patches or windows at the
-    specified locations from N-dimensional images.
-
-* `tfmr.metrics`:
-
-  * Added new confusion metrics module with multiple binary, multiclass and
-    multilabel metrics: `Accuracy`, `TruePositiveRate`, `TrueNegativeRate`,
-    `PositivePredictiveValue`, `NegativePredictiveValue`, `Precision`, `Recall`,
-    `Sensitivity`, `Specificity`, `Selectivity`, `TverskyIndex`, `FBetaScore`,
-    `F1Score` and `IoU`. This module also exposes the abstract base class
-    `ConfusionMetric`.
-  * Added new image quality assessment metrics module with 2D/3D
-    `PeakSignalToNoiseRatio`, `StructuralSimilarity` and
-    `MultiscaleStructuralSimilarity`.
+  * Added new image ops `total_variation` and `phantom`.
+  * Addew new array ops `cartesian_product`, `meshgrid`, `ravel_multi_index` and
+    `unravel_index`.
+  * Added new geometry module with ops `rotate_2d` and `rotate_3d`.
+  * Added new optimizers module with op `lbfgs_minimize`.
+  * Added new convex operators module with ops `ConvexOperator`,
+    `ConvexOperatorL1Norm`, `Regularizer` and `TotalVariationRegularizer`.
+  * Added new signal processing module with ops `crop_kspace`, `filter_kspace`
+    and `hamming`.
+  * Added new linear algebra ops `LinearOperatorFFT` and `LinearOperatorInterp`.
+  * Added new math ops `make_val_and_grad_fn`, `view_as_complex` and
+    `view_as_real`.
+  * Added new *k*-space trajectory op `estimate_radial_density`.
+  * Added new ordering methods `"golden_half"`, `"tiny_half"` and
+    `"sphere_archimedean"` to function `radial_trajectory`.
+  * Added new method `"inufft"` to `reconstruct`.
+  * Added new method `"pipe"` to `estimate_density`.
+  * Added keyword argument `rank` to function `radial_waveform`.
 
 
 Bug Fixes and Other Changes
@@ -37,5 +47,11 @@ Bug Fixes and Other Changes
 
 * `tfmr`:
 
-  * Added new keyword argument `coil_axis` to `coil_compression_matrix`
-    operation.
+  * Fixed a bug in `radial_density` that resulted in the DC component being
+    underweighted.
+  * Fixed a few bugs that would cause some ops to fail in graph mode.
+  * Added graph mode tests.
+  * Refactored testing modules.
+  * Refactored linear algebra module.
+  * Refactored utilities modules.
+  * Added new utilities module `plot_util`.

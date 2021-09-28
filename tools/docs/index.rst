@@ -1,5 +1,5 @@
-Welcome to TensorFlow MRI
-=========================
+TensorFlow MRI |release|
+========================
 
 .. include:: ../../README.rst
    :start-after: start-intro
@@ -11,6 +11,13 @@ Installation
 .. include:: ../../README.rst
    :start-after: start-install
    :end-before: end-install
+
+FAQ
+---
+
+.. include:: ../../README.rst
+   :start-after: start-faq
+   :end-before: end-faq
 
 .. toctree::
    :maxdepth: 3

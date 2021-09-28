@@ -14,26 +14,26 @@
 # ==============================================================================
 """Tests for module `iqa_metrics`."""
 
+from absl.testing import parameterized
 import tensorflow as tf
 
 from tensorflow_mri.python.metrics import iqa_metrics
 from tensorflow_mri.python.ops import image_ops
-from tensorflow_mri.python.utils import test_utils
+from tensorflow_mri.python.util import test_util
 
 
-class IQAMetricTest(tf.test.TestCase):
+class IQAMetricTest(test_util.TestCase):
   """Tests for IQA metrics."""
 
-  pairs = [
+  params = [
     (iqa_metrics.PeakSignalToNoiseRatio, image_ops.psnr),
     (iqa_metrics.StructuralSimilarity, image_ops.ssim),
     (iqa_metrics.MultiscaleStructuralSimilarity, image_ops.ssim_multiscale)
   ]
 
-  @test_utils.parameterized_test(pair=pairs)
-  def test_mean_metric(self, pair):
+  @parameterized.parameters(*params)
+  def test_mean_metric(self, metric, fn):
     """Test mean metric."""
-    metric, fn = pair
     y_true, y_pred = self._random_images()
     m = metric()
     m.update_state(y_true, y_pred)

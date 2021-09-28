@@ -127,6 +127,70 @@ def validate_list(value,
   return value
 
 
+def validate_axis(value,
+                  rank=None,
+                  min_length=None,
+                  max_length=None,
+                  canonicalize=False,
+                  must_be_unique=True,
+                  scalar_to_list=True):
+  """Validates that value is a valid list of axes.
+
+  Args:
+    value: The value to check.
+    rank: The rank of the tensor.
+    min_length: The minimum number of axes.
+    max_length: The maximum number of axes.
+    canonicalize: Must be `"positive"`, `"negative"` or `None`.
+    must_be_unique: If `True`, repeated axes are not allowed.
+    scalar_to_list: If `True`, scalar inputs are converted to a list of length
+      1.
+
+  Returns:
+    A valid `list` of axes.
+
+  Raises:
+    ValueError: If `value` is not valid.
+  """
+  if isinstance(value, int):
+    scalar = True
+    value = [value]
+
+  # Convert other iterables to list.
+  value = list(value)
+
+  if must_be_unique:
+    if len(set(value)) != len(value):
+      raise ValueError(
+          f"Axes must be unique: {value}")
+
+  if min_length is not None and len(value) < min_length:
+    raise ValueError(
+        f"Expected at least {min_length} axes, but got {len(value)}: {value}")
+  if max_length is not None and len(value) > max_length:
+    raise ValueError(
+        f"Expected at most {max_length} axes, but got {len(value)}: {value}")
+
+  if rank is not None:
+    # These checks depend on the rank being known.
+    for v in value:
+      if v >= rank or v < -rank: # pylint: disable=invalid-unary-operand-type
+        raise ValueError(
+            f"Axis {v} is out of range for a tensor of rank {rank}")
+
+    if canonicalize == "positive":
+      value = [v + rank if v < 0 else v for v in value]
+    elif canonicalize == "negative":
+      value = [v - rank if v >= 0 else v for v in value]
+    elif canonicalize is not None:
+      raise ValueError(f"Invalid value of `canonicalize`: {canonicalize}")
+
+  if scalar and not scalar_to_list:
+    value = value[0]
+
+  return value
+
+
 def validate_tensor_dtype(tensor, dtypes, name):
   """Validates that a tensor has one of the specified types.
 

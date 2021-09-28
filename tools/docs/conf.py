@@ -70,7 +70,22 @@ html_theme = 'furo'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = []
+html_static_path = ['../assets']
+
+
+html_theme_options = {
+    'sidebar_hide_name': True,
+    'light_logo': 'tfmr_logo.svg',
+    'dark_logo': 'tmfr_logo_dark.svg',
+    'light_css_variables': {
+        'color-brand-primary': '#128091',
+        'color-brand-content': '#128091'
+    },
+    'dark_css_variables': {
+        'color-brand-primary': '#18A8BE',
+        'color-brand-content': '#18A8BE'
+    }
+}
 
 
 import tfmr

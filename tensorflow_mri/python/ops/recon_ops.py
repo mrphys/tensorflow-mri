@@ -27,17 +27,19 @@ from tensorflow_mri.python.ops import coil_ops
 from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.ops import linalg_ops
+from tensorflow_mri.python.ops import math_ops
+from tensorflow_mri.python.ops import optimizer_ops
 from tensorflow_mri.python.ops import traj_ops
-from tensorflow_mri.python.utils import check_utils
-from tensorflow_mri.python.utils import tensor_utils
+from tensorflow_mri.python.util import check_util
+from tensorflow_mri.python.util import tensor_util
 
 
 def reconstruct(kspace,
+                mask=None,
                 trajectory=None,
                 density=None,
-                sensitivities=None,
                 calib=None,
-                mask=None,
+                sensitivities=None,
                 method=None,
                 **kwargs):
   """MR image reconstruction gateway.
@@ -55,8 +57,12 @@ def reconstruct(kspace,
     *k*-space data. This is the default method if only a `kspace` argument is
     given.
   * **nufft**: Non-uniform fast Fourier transform (NUFFT) reconstruction for
-    non-Cartesian *k*-space data. This is the default method if `kspace`,
-    `trajectory` and (optionally) `density` are given.
+    non-Cartesian *k*-space data. Uses the adjoint NUFFT operator with density
+    compensation. This is the default method if `kspace`, `trajectory` and
+    (optionally) `density` are given.
+  * **inufft**: Non-uniform fast Fourier transform (NUFFT) reconstruction for
+    non-Cartesian *k*-space data. Uses the inverse NUFFT, calculated
+    iteratively. This method is never selected by default.
   * **sense**: SENSitivity Encoding (SENSE) [1]_ reconstruction for Cartesian
     *k*-space data. This is the default method if `kspace` and `sensitivities`
     are given.
@@ -66,6 +72,13 @@ def reconstruct(kspace,
   * **grappa**: Generalized autocalibrating partially parallel acquisitions [3]_
     reconstruction for Cartesian *k*-space data. This is the default method if
     `kspace`, `calib` and (optionally) `sensitivities` are given.
+  * **pics**: Combined parallel imaging and compressed sensing (PICS)
+    reconstruction. Accepts Cartesian and non-Cartesian *k*-space data. Supply
+    `mask` and `sensitivities` in combination with a Cartesian `kspace`, or
+    `trajectory`, `sensitivities` and (optionally) `density` in combination with
+    a non-Cartesian `kspace`. If `sensitivities` is not provided, a compressed
+    sensing reconstruction is performed. This method is never selected by
+    default.
 
   .. note::
     This function supports CPU and GPU computation.
@@ -86,19 +99,37 @@ def reconstruct(kspace,
       included. A non-Cartesian `kspace` must have shape `[..., C, M]`, where
       `M` is the number of samples, `C` is the number of coils and `...` is the
       batch shape, which can have any rank.
+    mask: A `Tensor`. The sampling mask. Must have type `bool`. Must have shape
+      `S`, where `S` is the shape of the spatial dimensions. In other words,
+      `mask` should have the shape of a fully sampled *k*-space. For each point,
+      `mask` should be `True` if the corresponding *k*-space sample was measured
+      and `False` otherwise. `True` entries should correspond to the data in
+      `kspace`, and the result of dropping all `False` entries from `mask`
+      should have shape `K`. `mask` is required if `method` is `"grappa"`, or
+      if `method` is `"pics"` and `kspace` is Cartesian. For other methods or
+      for non-Cartesian `kspace`, this parameter is not relevant.
     trajectory: A `Tensor`. The *k*-space trajectory. Must have type `float32`
       or `float64`. Must have shape `[..., M, N]`, where `N` is the number of
       spatial dimensions, `N` is the number of *k*-space samples and `...` is
       the batch shape, which can have any rank and must be broadcastable to the
       batch shape of `kspace`. `trajectory` is required when `method` is
-      `"nufft"` or `"cg_sense"`. For other methods, this parameter is not
-      relevant.
+      `"nufft"`, `"inufft"` or `"cg_sense"`, or if `method` is `"pics"` and
+      `kspace` is non-Cartesian. For other methods or for Cartesian `kspace`,
+      this parameter is not relevant.
     density: A `Tensor`. The sampling density. Must have type `float32` or
       `float64`. Must have shape `[..., M]`, where `M` is the number of
       *k*-space samples and `...` is the batch shape, which can have any rank
       and must be broadcastable to the batch shape of `kspace`. `density` is
-      optional when `method` is `"nufft"` or `"cg_sense"`. For other methods,
-      this parameter is not relevant.
+      optional when `method` is `"nufft"` or `"cg_sense"`, or if `method` is
+      `"pics"` and `kspace` is non-Cartesian. In these cases, `density` will be
+      estimated from the given `trajectory` if not provided. For other methods
+      or for Cartesian `kspace`, this parameter is not relevant.
+    calib: A `Tensor`. The calibration data. Must have type `complex64` or
+      `complex128`. Must have shape `[..., C, *R]`, where `R` is the shape of
+      the calibration region, `C` is the number of coils and `...` is the batch
+      shape, which can have any rank and must be broadcastable to the batch
+      shape of `kspace`. `calib` is required when `method` is `"grappa"`. For
+      other methods, this parameter is not relevant.
     sensitivities: A `Tensor`. The coil sensitivity maps. Must have type
       `complex64` or `complex128`. Must have shape `[..., C, *S]`, where `S` is
       shape of the spatial dimensions, `C` is the number of coils and `...` is
@@ -106,22 +137,8 @@ def reconstruct(kspace,
       batch shape of `kspace`. `sensitivities` is required when `method` is
       `"sense"` or `"cg_sense"`. For other methods, this parameter is not
       relevant.
-    calib: A `Tensor`. The calibration data. Must have type `complex64` or
-      `complex128`. Must have shape `[..., C, *R]`, where `R` is the shape of
-      the calibration region, `C` is the number of coils and `...` is the batch
-      shape, which can have any rank and must be broadcastable to the batch
-      shape of `kspace`. `calib` is required when `method` is `"grappa"`. For
-      other methods, this parameter is not relevant.
-    mask: A `Tensor`. The sampling mask. Must have type `bool`. Must have shape
-      `S`, where `S` is the shape of the spatial dimensions. In other words,
-      `mask` should have the shape of a fully sampled *k*-space. For each point,
-      `mask` should be `True` if the corresponding *k*-space sample was measured
-      and `False` otherwise. `True` entries should correspond to the data in
-      `kspace`, and the result of dropping all `False` entries from `mask`
-      should have shape `K`. `mask` is required when `method` is `"grappa"`. For
-      other methods, this parameter is not relevant.
     method: A `string`. The reconstruction method. Must be one of `"fft"`,
-      `"nufft"`, `"sense"` or `"cg_sense"`.
+      `"nufft"`, `"inufft"`, `"sense"`, `"cg_sense"` or `"grappa"`.
     **kwargs: Additional method-specific keyword arguments. See Notes for the
       method-specific arguments.
 
@@ -146,12 +163,37 @@ def reconstruct(kspace,
         `True`.
 
     * For `method="nufft"`, provide `kspace`, `trajectory` and, optionally,
-      `density`. If `density` is not provided, an estimate will be used (see
-      `tfmr.estimate_density`). In addition, the following keyword arguments
-      are accepted:
+      `density` and `sensitivities`. If `density` is not provided, an estimate
+      will be used (see `tfmr.estimate_density`). If provided, `sensitivities`
+      are used for adaptive coil combination (see `tfmr.combine_coils`). If not
+      provided, multi-coil inputs are combined using the sum of squares method.
+      In addition, the following keyword arguments are accepted:
 
       * **image_shape**: A `TensorShape` or list of `ints`. The shape of the
         output images. This parameter must be provided.
+      * **multicoil**: An optional `bool`. Whether the input *k*-space has a
+        coil dimension. Defaults to `True` if `sensitivities` were specified,
+        `False` otherwise.
+      * **combine_coils**: An optional `bool`. If `True`, multi-coil images
+        are combined. Otherwise, the uncombined images are returned. Defaults to
+        `True`.
+
+    * For `method="inufft"`, provide `kspace`, `trajectory` and, optionally,
+      `sensitivities`. If provided, `sensitivities` are used for adaptive coil
+      combination (see `tfmr.combine_coils`). If not provided, multi-coil inputs
+      are combined using the sum of squares method. In addition, the following
+      arguments are accepted:
+
+      * **image_shape**: A `TensorShape` or list of `ints`. The shape of the
+        output images. This parameter must be provided.
+      * **tol**: An optional `float`. The convergence tolerance for the
+        conjugate gradient iteration. Defaults to 1e-05.
+      * **max_iter**: An optional `int`. The maximum number of iterations for
+        the conjugate gradient iteration. Defaults to 10.
+      * **return_cg_state**: An optional `bool`. Defaults to `False`. If `True`,
+        return a tuple containing the image and an object describing the final
+        state of the CG iteration. For more details about the CG state, see
+        `tfmr.conjugate_gradient`. If `False`, only the image is returned.
       * **multicoil**: An optional `bool`. Whether the input *k*-space has a
         coil dimension. Defaults to `True` if `sensitivities` were specified,
         `False` otherwise.
@@ -198,11 +240,11 @@ def reconstruct(kspace,
         state of the CG iteration. For more details about the CG state, see
         `tfmr.conjugate_gradient`. If `False`, only the image is returned.
 
-    * For `method="grappa"`, provide `kspace` and `calib`. Optionally, you can
-      also provide `sensitivities` (note that `sensitivities` are not used for
-      the GRAPPA computation, but they are used for adaptive coil combination).
-      If `sensitivities` are not provided, coil combination will be performed
-      using the sum of squares method.
+    * For `method="grappa"`, provide `kspace`, `mask` and `calib`. Optionally,
+      you can also provide `sensitivities` (note that `sensitivities` are not
+      used for the GRAPPA computation, but they are used for adaptive coil
+      combination). If `sensitivities` are not provided, coil combination will
+      be performed using the sum of squares method.
 
       * **kernel_size**: An `int` or list of `ints`. The size of the GRAPPA
         kernel. Must have length equal to the image rank or number of spatial
@@ -239,13 +281,13 @@ def reconstruct(kspace,
       1202-1210. https://doi.org/10.1002/mrm.10171
   """
   method = _select_reconstruction_method(
-    kspace, trajectory, density, sensitivities, calib, mask, method)
+    kspace, mask, trajectory, density, calib, sensitivities, method)
 
-  args = {'trajectory': trajectory,
+  args = {'mask': mask,
+          'trajectory': trajectory,
           'density': density,
-          'sensitivities': sensitivities,
           'calib': calib,
-          'mask': mask}
+          'sensitivities': sensitivities}
 
   args = {name: arg for name, arg in args.items() if arg is not None}
 
@@ -264,6 +306,7 @@ def _fft(kspace,
   kspace = tf.convert_to_tensor(kspace)
   if sensitivities is not None:
     sensitivities = tf.convert_to_tensor(sensitivities)
+
   # Check inputs and set defaults.
   if multicoil is None:
     # `multicoil` defaults to True if sensitivities were passed; False
@@ -281,12 +324,14 @@ def _fft(kspace,
         f"{rank} spatial dimensions. If `kspace` has any leading batch "
         f"dimensions, please set the argument `rank` explicitly.")
   else:
-    rank = check_utils.validate_type(rank, int, "rank")
+    rank = check_util.validate_type(rank, int, "rank")
     if rank > 3:
       raise ValueError(f"Argument `rank` must be <= 3, but got: {rank}")
+
   # Do FFT.
   axes = list(range(-rank, 0)) # pylint: disable=invalid-unary-operand-type
   image = fft_ops.ifftn(kspace, axes=axes, shift=True)
+
   # If multicoil, do coil combination. Will do adaptive combine if
   # `sensitivities` are given, otherwise sum of squares.
   if multicoil and combine_coils:
@@ -301,7 +346,7 @@ def _nufft(kspace,
            image_shape=None,
            multicoil=None,
            combine_coils=True):
-  """MR image reconstruction using NUFFT.
+  """MR image reconstruction using density-compensated adjoint NUFFT.
 
   For the parameters, see `tfmr.reconstruct`.
   """
@@ -311,35 +356,102 @@ def _nufft(kspace,
     density = tf.convert_to_tensor(density)
   if sensitivities is not None:
     sensitivities = tf.convert_to_tensor(sensitivities)
+
   # Infer rank from number of dimensions in trajectory.
   rank = trajectory.shape[-1]
   if rank > 3:
     raise ValueError(
-      f"Can only reconstruct images up to rank 3, but `trajectory` implies "
-      f"rank {rank}.")
+        f"Can only reconstruct images up to rank 3, but `trajectory` implies "
+        f"rank {rank}.")
   # Check inputs and set defaults.
   if image_shape is None:
     # `image_shape` is required.
     raise ValueError("Argument `image_shape` must be provided for NUFFT.")
   image_shape = tf.TensorShape(image_shape)
   image_shape.assert_has_rank(rank)
+
   if multicoil is None:
     # `multicoil` defaults to True if sensitivities were passed; False
     # otherwise.
     multicoil = sensitivities is not None
+
   # Compensate non-uniform sampling density.
   if density is None:
     density = traj_ops.estimate_density(trajectory, image_shape)
-  kspace = tf.math.divide_no_nan(kspace, tensor_utils.cast_to_complex(density))
+  kspace = tf.math.divide_no_nan(kspace, tensor_util.cast_to_complex(density))
+
   # Do NUFFT.
   image = tfft.nufft(kspace, trajectory,
                      grid_shape=image_shape,
                      transform_type='type_1',
                      fft_direction='backward')
+
   # Do coil combination.
   if multicoil and combine_coils:
     image = coil_ops.combine_coils(image, maps=sensitivities, coil_axis=-rank-1)
   return image
+
+
+def _inufft(kspace,
+            trajectory,
+            sensitivities=None,
+            image_shape=None,
+            tol=1e-5,
+            max_iter=10,
+            return_cg_state=False,
+            multicoil=None,
+            combine_coils=True):
+  """MR image reconstruction using iterative inverse NUFFT.
+
+  For the parameters, see `tfmr.reconstruct`.
+  """
+  kspace = tf.convert_to_tensor(kspace)
+  trajectory = tf.convert_to_tensor(trajectory)
+
+  if sensitivities is not None:
+    sensitivities = tf.convert_to_tensor(sensitivities)
+
+  # Infer rank from number of dimensions in trajectory.
+  rank = trajectory.shape[-1]
+  if rank > 3:
+    raise ValueError(
+        f"Can only reconstruct images up to rank 3, but `trajectory` implies "
+        f"rank {rank}.")
+  # Check inputs and set defaults.
+  if image_shape is None:
+    # `image_shape` is required.
+    raise ValueError("Argument `image_shape` must be provided for NUFFT.")
+  image_shape = tf.TensorShape(image_shape)
+  image_shape.assert_has_rank(rank)
+
+  if multicoil is None:
+    # `multicoil` defaults to True if sensitivities were passed; False
+    # otherwise.
+    multicoil = sensitivities is not None
+
+  batch_shape = tf.shape(kspace)[:-1]
+
+  # Set up system operator and right hand side.
+  linop_nufft = linalg_ops.LinearOperatorNUFFT(image_shape, trajectory)
+  operator = tf.linalg.LinearOperatorComposition(
+      [linop_nufft.H, linop_nufft],
+      is_self_adjoint=True, is_positive_definite=True)
+
+  # Compute right hand side.
+  rhs = tf.linalg.matvec(linop_nufft.H, kspace)
+
+  # Solve linear system using conjugate gradient iteration.
+  result = linalg_ops.conjugate_gradient(operator, rhs, x=None,
+                                         tol=tol, max_iter=max_iter)
+
+  # Restore image shape.
+  image = tf.reshape(result.x, tf.concat([batch_shape, image_shape], 0))
+
+  # Do coil combination.
+  if multicoil and combine_coils:
+    image = coil_ops.combine_coils(image, maps=sensitivities, coil_axis=-rank-1)
+
+  return (image, result) if return_cg_state else image
 
 
 def _sense(kspace,
@@ -361,9 +473,9 @@ def _sense(kspace,
   rank = rank or kspace.shape.rank - 1
 
   reduced_shape = kspace.shape[-rank:]
-  reduction_axis = check_utils.validate_list(
+  reduction_axis = check_util.validate_list(
     reduction_axis, element_type=int, name='reduction_axis')
-  reduction_factor = check_utils.validate_list(
+  reduction_factor = check_util.validate_list(
     reduction_factor, element_type=int, length=len(reduction_axis),
     name='reduction_factor')
   reduction_axis = [ax + rank if ax < 0 else ax for ax in reduction_axis]
@@ -499,14 +611,14 @@ def _cg_sense(kspace,
   # Check some inputs.
   tf.debugging.assert_equal(
     tf.shape(kspace)[-1], tf.shape(trajectory)[-2], message=(
-      f"The number of samples in `kspace` (axis -1) and `trajectory` "
-      f"(axis -2) must match, but got: {tf.shape(kspace)[-1]}, "
-      f"{tf.shape(trajectory)[-2]}"))
+        f"The number of samples in `kspace` (axis -1) and `trajectory` "
+        f"(axis -2) must match, but got: {tf.shape(kspace)[-1]}, "
+        f"{tf.shape(trajectory)[-2]}"))
   tf.debugging.assert_equal(
     tf.shape(kspace)[-2], tf.shape(sensitivities)[-rank-1], message=(
-      f"The number of coils in `kspace` (axis -2) and `sensitivities` "
-      f"(axis {-rank-1}) must match, but got: {tf.shape(kspace)[-1]}, "
-      f"{tf.shape(sensitivities)[-rank-1]}"))
+        f"The number of coils in `kspace` (axis -2) and `sensitivities` "
+        f"(axis {-rank-1}) must match, but got: {tf.shape(kspace)[-1]}, "
+        f"{tf.shape(sensitivities)[-rank-1]}"))
   # Check batch shapes.
   kspace_batch_shape = kspace.shape[:-2]
   sens_batch_shape = sensitivities.shape[:-rank-1]
@@ -515,13 +627,13 @@ def _cg_sense(kspace,
   # We do not broadcast the k-space input, by design.
   if batch_shape != kspace_batch_shape:
     raise ValueError(
-      f"`kspace` and `sensitivities` have incompatible batch shapes: "
-      f"{kspace_batch_shape}, {sens_batch_shape}")
+        f"`kspace` and `sensitivities` have incompatible batch shapes: "
+        f"{kspace_batch_shape}, {sens_batch_shape}")
   batch_shape = tf.broadcast_static_shape(kspace_batch_shape, traj_batch_shape)
   if batch_shape != kspace_batch_shape:
     raise ValueError(
-      f"`kspace` and `trajectory` have incompatible batch shapes: "
-      f"{kspace_batch_shape}, {traj_batch_shape}")
+        f"`kspace` and `trajectory` have incompatible batch shapes: "
+        f"{kspace_batch_shape}, {traj_batch_shape}")
 
   # For sampling density correction.
   if density is None:
@@ -539,32 +651,32 @@ def _cg_sense(kspace,
   # Prepare intensity correction linear operator.
   intensity_weights = tf.math.reciprocal_no_nan(intensity)
   linop_intensity = linalg_ops.LinearOperatorRealWeighting(
-    tf.math.sqrt(intensity_weights),
-    arg_shape=intensity_weights.shape[-rank:],
-    dtype=kspace.dtype)
+      tf.math.sqrt(intensity_weights),
+      arg_shape=intensity_weights.shape[-rank:],
+      dtype=kspace.dtype)
 
   # Prepare density compensation linear operator.
   density_weights = tf.math.reciprocal_no_nan(density)
   linop_density = linalg_ops.LinearOperatorRealWeighting(
-    tf.math.sqrt(density_weights),
-    arg_shape=[num_coils, num_points],
-    dtype=kspace.dtype)
+      tf.math.sqrt(density_weights),
+      arg_shape=[num_coils, num_points],
+      dtype=kspace.dtype)
 
   # Get non-Cartesian parallel MRI operator.
   linop_parallel_mri = linalg_ops.LinearOperatorParallelMRI(
-    sensitivities, trajectory=trajectory)
+      sensitivities, trajectory=trajectory)
 
   # Calculate the right half of the system operator. Then, the left half is the
   # adjoint of the right half.
   linop_right = tf.linalg.LinearOperatorComposition(
-    [linop_density, linop_parallel_mri, linop_intensity])
+      [linop_density, linop_parallel_mri, linop_intensity])
   linop_left = linop_right.H
 
   # Finally, make system operator. We know this to be self-adjoint and positive
   # definite, as required for CG.
   operator = tf.linalg.LinearOperatorComposition(
-    [linop_left, linop_right],
-    is_self_adjoint=True, is_positive_definite=True)
+      [linop_left, linop_right],
+      is_self_adjoint=True, is_positive_definite=True)
 
   # Step 1. Compute the right hand side of the linear system.
   kspace_vec = tf.reshape(kspace, batch_shape.as_list() + [-1])
@@ -585,9 +697,9 @@ def _cg_sense(kspace,
 
 
 def _grappa(kspace,
-            sensitivities=None,
-            calib=None,
             mask=None,
+            calib=None,
+            sensitivities=None,
             kernel_size=5,
             weights_l2_regularizer=0.0,
             combine_coils=True,
@@ -596,10 +708,10 @@ def _grappa(kspace,
 
   For the parameters, see `tfmr.reconstruct`.
   """
-  if calib is None:
-    raise ValueError("Argument `calib` must be provided.")
   if mask is None:
     raise ValueError("Argument `mask` must be provided.")
+  if calib is None:
+    raise ValueError("Argument `calib` must be provided.")
 
   kspace = tf.convert_to_tensor(kspace)
   calib = tf.convert_to_tensor(calib)
@@ -752,6 +864,77 @@ def _grappa(kspace,
   return result
 
 
+def _pics(kspace,
+          mask=None,
+          trajectory=None,
+          density=None,
+          sensitivities=None,
+          image_shape=None,
+          regularizers=None,
+          optimizer=None,
+          initial_image=None):
+  """MR image reconstruction using parallel imaging and compressed sensing.
+
+  For the parameters, see `tfmr.reconstruct`.
+  """
+  # pylint: disable=unreachable
+  raise NotImplementedError("Method `pics` is not yet implemented.")
+
+  # Check inputs.
+  if image_shape is None:
+    raise ValueError(
+        "Input `image_shape` must be provided for CS.")
+  if regularizers is None:
+    regularizers = []
+  if optimizer is None:
+    # Choose a default optimizer.
+    optimizer = 'lbfgs'
+  optimizer = check_util.validate_enum(optimizer, {'lbfgs'}, name='optimizer')
+
+  # Select encoding operator.
+  if sensitivities is None:
+    if mask is not None and trajectory is None:
+      e = linalg_ops.LinearOperatorFFT(image_shape, mask=mask)
+    elif mask is None and trajectory is not None:
+      e = linalg_ops.LinearOperatorNUFFT(image_shape, trajectory)
+  else:
+    e = linalg_ops.LinearOperatorParallelMRI(sensitivities,
+                                             trajectory=trajectory,
+                                             rank=image_shape.rank)
+
+  # Flatten input k-space.
+  y = tf.reshape(kspace, [-1])
+  if density is not None:
+    density = tf.reshape(density, [-1])
+
+  @math_ops.make_val_and_grad_fn
+  def _objective(x):
+    x = math_ops.view_as_complex(x, stacked=False)
+    value = tf.math.abs(tf.norm(y - tf.linalg.matvec(e, x), ord=2))
+    x = tf.reshape(x, image_shape)
+    for reg in regularizers:
+      value += reg(x)
+    return value
+
+  # Prepare initial estimate.
+  if initial_image is None:
+    initial_image = tf.linalg.matvec(e.H, y / density)
+  initial_image = tf.reshape(initial_image, [-1])
+  initial_image = math_ops.view_as_real(initial_image, stacked=False)
+
+  # Perform optimization.
+  if optimizer == 'lbfgs':
+    result = optimizer_ops.lbfgs_minimize(_objective, initial_image)
+  else:
+    raise ValueError(f"Unknown optimizer: {optimizer}")
+
+  # Image to correct shape and type.
+  image = tf.reshape(
+      math_ops.view_as_complex(result.position, stacked=False), image_shape)
+
+  return image
+
+
 def _extract_patches(images, sizes):
   """Extract patches from N-D image.
 
@@ -843,11 +1026,11 @@ def _flatten_last_dimensions(x):
 
 
 def _select_reconstruction_method(kspace, # pylint: disable=unused-argument
+                                  mask,
                                   trajectory,
                                   density,
-                                  sensitivities,
                                   calib,
-                                  mask,
+                                  sensitivities,
                                   method):
   """Select an appropriate reconstruction method based on user inputs.
 
@@ -963,7 +1146,7 @@ def reconstruct_partial_kspace(kspace,
   factors = tf.convert_to_tensor(factors)
 
   # Validate inputs.
-  method = check_utils.validate_enum(method, {'zerofill', 'homodyne', 'pocs'})
+  method = check_util.validate_enum(method, {'zerofill', 'homodyne', 'pocs'})
   tf.debugging.assert_greater_equal(factors, 0.5, message=(
     f"`factors` must be greater than or equal to 0.5, but got: {factors}"))
   tf.debugging.assert_less_equal(factors, 1.0, message=(
@@ -1150,7 +1333,9 @@ _ifftn = lambda x, rank: fft_ops.ifftn(x, axes=tf.range(-rank, 0), shift=True)
 _MR_RECON_METHODS = {
   'fft': _fft,
   'nufft': _nufft,
+  'inufft': _inufft,
   'sense': _sense,
   'cg_sense': _cg_sense,
-  'grappa': _grappa
+  'grappa': _grappa,
+  'pics': _pics
 }

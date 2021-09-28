@@ -21,24 +21,28 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import fft_ops
+from tensorflow_mri.python.util import test_util
 
 
-class FFTOpsTest(tf.test.TestCase):
+class FFTOpsTest(test_util.TestCase):
   """Tests for FFT ops."""
   # pylint: disable=missing-function-docstring
 
+  @test_util.run_in_graph_and_eager_modes
   def test_fftn(self):
-
+    """Test forward FFT."""
     self._test_fftn_internal('forward')
 
-
+  @test_util.run_in_graph_and_eager_modes
   def test_ifftn(self):
-
+    """Test inverse FFT."""
     self._test_fftn_internal('backward')
 
+  def _test_fftn_internal(self, transform): # pylint: disable=missing-param-doc
+    """All FFT tests.
 
-  def _test_fftn_internal(self, transform):
-
+    Checks that FFT results match those of NumPy.
+    """
     if transform == 'forward':
       tf_op = fft_ops.fftn
       np_op = np.fft.fftn
@@ -46,10 +50,10 @@ class FFTOpsTest(tf.test.TestCase):
       tf_op = fft_ops.ifftn
       np_op = np.fft.ifftn
 
-    x = tf.complex(
-      tf.random.uniform((30, 20, 10), dtype=tf.dtypes.float32),
-      tf.random.uniform((30, 20, 10), dtype=tf.dtypes.float32))
-    input_rank = x.shape.rank
+    rng = np.random.default_rng(0)
+    x = rng.random((30, 20, 10), dtype=np.float32) + 1j * \
+        rng.random((30, 20, 10), dtype=np.float32)
+    input_rank = len(x.shape)
 
     shape = (None, (20, 10), (20, 20), (10, 10, 10))
     axes = (None, (0, 1), (2, 3), (-1,))
@@ -69,9 +73,7 @@ class FFTOpsTest(tf.test.TestCase):
         if (distutils.version.StrictVersion(np.__version__) <
             distutils.version.StrictVersion('1.20.0')):
           if p['norm'] in ('forward', 'backward'):
-            # Skip this test.
-            print("skipping")
-            continue
+            self.skipTest("numpy version < 1.20.0")
 
         # Handle invalid parameters and check that appropriate
         # exceptions are raised.
@@ -96,7 +98,7 @@ class FFTOpsTest(tf.test.TestCase):
         # NumPy, so we implement it manually.
         p['s'] = p.pop('shape')
         shift = p.pop('shift')
-        x_ref = x.numpy()
+        x_ref = x
 
         # Compute using NumPy, with additional fftshifts as necessary.
         if shift:
@@ -105,10 +107,7 @@ class FFTOpsTest(tf.test.TestCase):
         if shift:
           y_ref = np.fft.fftshift(y_ref)
 
-        y_ref = tf.convert_to_tensor(y_ref)
-
         self.assertAllClose(y, y_ref, rtol=1e-4, atol=1e-4)
-
 
 if __name__ == '__main__':
   tf.test.main()

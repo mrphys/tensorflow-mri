@@ -14,13 +14,14 @@
 # ==============================================================================
 """Tests for module `confusion_metrics`."""
 
+from absl.testing import parameterized
 import tensorflow as tf
 
 from tensorflow_mri.python.metrics import confusion_metrics
-from tensorflow_mri.python.utils import test_utils
+from tensorflow_mri.python.util import test_util
 
 
-class ConfusionMetricTest(tf.test.TestCase):
+class ConfusionMetricTest(test_util.TestCase):
   """Tests for confusion metrics."""
 
   names = [
@@ -40,7 +41,7 @@ class ConfusionMetricTest(tf.test.TestCase):
     'IoU'
   ]
 
-  @test_utils.parameterized_test(name=names)
+  @parameterized.parameters(*names)
   def test_binary_metric(self, name): # pylint: disable=missing-param-doc
     """Test binary metric."""
     metric = getattr(confusion_metrics, name)
@@ -70,7 +71,7 @@ class ConfusionMetricTest(tf.test.TestCase):
     m.update_state(y_true, y_pred)
     self.assertAllClose(m.result(), result)
 
-  @test_utils.parameterized_test(name=names)
+  @parameterized.parameters(*names)
   def test_binary_metric_custom_threshold(self, name): # pylint: disable=missing-param-doc
     """Test binary metric with a custom threshold."""
     metric = getattr(confusion_metrics, name)
@@ -100,9 +101,9 @@ class ConfusionMetricTest(tf.test.TestCase):
     m.update_state(y_true, y_pred)
     self.assertAllClose(m.result(), result)
 
-  @test_utils.parameterized_test(name=names,
-                                 class_id=[None, 0, 1, 2],
-                                 average=[None, 'macro', 'micro'])
+  @parameterized.product(name=names,
+                         class_id=[None, 0, 1, 2],
+                         average=[None, 'macro', 'micro'])
   def test_multiclass_metric(self, name, class_id, average): # pylint: disable=missing-param-doc
     """Test multiclass metric."""
     metric = getattr(confusion_metrics, name)
@@ -153,7 +154,7 @@ class ConfusionMetricTest(tf.test.TestCase):
     m.update_state(y_true, y_pred)
     self.assertAllClose(m.result(), result)
 
-  @test_utils.parameterized_test(name=names)
+  @parameterized.parameters(*names)
   def test_metric_reset(self, name): # pylint: disable=missing-param-doc
     """Test metric reset."""
     metric = getattr(confusion_metrics, name)

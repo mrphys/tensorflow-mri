@@ -6,7 +6,7 @@ Coil Arrays
 .. currentmodule:: tfmr
 
 .. autosummary::
-    :toctree: _coil_ops
+    :toctree: coil_ops
     :nosignatures:
     
     combine_coils

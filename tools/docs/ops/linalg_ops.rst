@@ -6,13 +6,15 @@ Linear Algebra
 .. currentmodule:: tfmr
 
 .. autosummary::
-    :toctree: _linalg_ops
+    :toctree: linalg_ops
     :nosignatures:
 
     LinearOperatorImaging
     LinearOperatorFFT
     LinearOperatorNUFFT
+    LinearOperatorInterp
     LinearOperatorSensitivityModulation
     LinearOperatorParallelMRI
     LinearOperatorRealWeighting
+    LinearOperatorDifference
     conjugate_gradient

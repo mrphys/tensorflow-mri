@@ -12,27 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""About TensorFlow MRI."""
+"""Utilities for system configuration."""
 
-__all__ = [
-    "__title__",
-    "__summary__",
-    "__uri__",
-    "__version__",
-    "__author__",
-    "__email__",
-    "__license__",
-    "__copyright__",
-]
+import distutils.util
+import os
 
-__title__ = "tensorflow-mri"
-__summary__ = "A collection of TensorFlow add-ons for computational MRI."
-__uri__ = "https://github.com/mrphys/tensorflow-mri"
 
-__version__ = "0.6.0"
+def is_op_library_enabled():
+  """Checks whether the op library is enabled.
 
-__author__ = "Javier Montalt Tordera"
-__email__ = "javier.montalt@outlook.com"
-
-__license__ = "Apache 2.0"
-__copyright__ = "2021 University College London"
+  Returns `True` unless the environment variable `TFMR_DISABLE_OP_LIBRARY` has
+  been set to a true value (as defined by `distutils.util.strtobool`).
+  """
+  str_value = os.getenv("TFMR_DISABLE_OP_LIBRARY", '0')
+  bool_value = distutils.util.strtobool(str_value)
+  return not bool_value

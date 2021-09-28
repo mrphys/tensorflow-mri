@@ -1,5 +1,9 @@
-TensorFlow MRI
-==============
+.. image:: https://raw.githubusercontent.com/mrphys/tensorflow-mri/develop/tools/assets/tfmr_logo.svg?sanitize=true
+  :align: center
+  :scale: 70 %
+  :alt: TFMR logo
+
+|
 
 |pypi| |build| |docs| |doi|
 
@@ -61,8 +65,9 @@ each package you can expect to work together.
 ==============  ==========
 TensorFlow MRI  TensorFlow
 ==============  ==========
-v0.4.0          v2.6.0
-v0.5.0          v2.6.0
+v0.4            v2.6
+v0.5            v2.6
+v0.6            v2.6
 ==============  ==========
 
 .. end-install
@@ -88,3 +93,23 @@ Citation
 
 If you find this software useful in your work, please
 `cite us <https://doi.org/10.5281/zenodo.5151590>`_.
+
+FAQ
+---
+
+.. start-faq
+
+**When trying to install TensorFlow MRI, I get an error about OpenEXR which
+includes:
+`OpenEXR.cpp:36:10: fatal error: ImathBox.h: No such file or directory`. What do
+I do?**
+
+OpenEXR is needed by TensorFlow Graphics, which is a dependency of TensorFlow
+MRI. This issue can be fixed by installing the OpenEXR library. On
+Debian/Ubuntu:
+
+.. code-block:: console
+
+    $ apt install libopenexr-dev
+
+.. end-faq

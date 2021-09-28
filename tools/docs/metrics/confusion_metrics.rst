@@ -6,7 +6,7 @@ Confusion
 .. currentmodule:: tfmr.metrics
 
 .. autosummary::
-    :toctree: _confusion_metrics
+    :toctree: confusion_metrics
     :nosignatures:
     
     ConfusionMetric

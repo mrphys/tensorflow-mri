@@ -17,11 +17,50 @@
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import array_ops
+from tensorflow_mri.python.util import test_util
 
 
-class RavelMultiIndexTest(tf.test.TestCase):
+class CartesianProductTest(test_util.TestCase):
+  """Tests for the `cartesian_product` op."""
+
+  @test_util.run_in_graph_and_eager_modes
+  def test_cartesian_product(self):
+    """Test `cartesian_product` op."""
+    vec1 = [1, 2, 3]
+    vec2 = [4, 5]
+
+    ref = [[1, 4],
+           [1, 5],
+           [2, 4],
+           [2, 5],
+           [3, 4],
+           [3, 5]]
+
+    result = array_ops.cartesian_product(vec1, vec2)
+    self.assertAllEqual(result, ref)
+
+
+class MeshgridTest(test_util.TestCase):
+  """Tests for the `meshgrid` op."""
+
+  @test_util.run_in_graph_and_eager_modes
+  def test_meshgrid(self):
+    """Test `meshgrid` op."""
+    vec1 = [1, 2, 3]
+    vec2 = [4, 5]
+
+    ref = [[[1, 4], [1, 5]],
+           [[2, 4], [2, 5]],
+           [[3, 4], [3, 5]]]
+
+    result = array_ops.meshgrid(vec1, vec2)
+    self.assertAllEqual(result, ref)
+
+
+class RavelMultiIndexTest(test_util.TestCase):
   """Tests for the `ravel_multi_index` op."""
 
+  @test_util.run_in_graph_and_eager_modes
   def test_ravel_multi_index_2d(self):
     """Test multi-index ravelling (2D, 1D indices array)."""
     indices = [[0, 0], [0, 1], [2, 2], [3, 1]]
@@ -30,6 +69,7 @@ class RavelMultiIndexTest(tf.test.TestCase):
     result = array_ops.ravel_multi_index(indices, [4, 4])
     self.assertAllEqual(result, expected)
 
+  @test_util.run_in_graph_and_eager_modes
   def test_ravel_multi_index_2d_scalar(self):
     """Test multi-index ravelling (2D, scalar index)."""
     indices = [2, 2]
@@ -38,6 +78,7 @@ class RavelMultiIndexTest(tf.test.TestCase):
     result = array_ops.ravel_multi_index(indices, [4, 5])
     self.assertAllEqual(result, expected)
 
+  @test_util.run_in_graph_and_eager_modes
   def test_ravel_multi_index_2d_batch(self):
     """Test multi-index ravelling (2D, 2D indices array)."""
     indices = [[[0, 0], [0, 1], [2, 2], [3, 1]],
@@ -48,6 +89,7 @@ class RavelMultiIndexTest(tf.test.TestCase):
     result = array_ops.ravel_multi_index(indices, [4, 4])
     self.assertAllEqual(result, expected)
 
+  @test_util.run_in_graph_and_eager_modes
   def test_ravel_multi_index_3d(self):
     """Test multi-index ravelling (3D, 1D indices array)."""
     indices = [[0, 0, 0], [0, 1, 1], [2, 2, 3], [3, 1, 2]]
@@ -56,6 +98,7 @@ class RavelMultiIndexTest(tf.test.TestCase):
     result = array_ops.ravel_multi_index(indices, [4, 4, 4])
     self.assertAllEqual(result, expected)
 
+  @test_util.run_in_graph_and_eager_modes
   def test_ravel_multi_index_3d_scalar(self):
     """Test multi-index ravelling (3D, scalar index)."""
     indices = [2, 2, 1]

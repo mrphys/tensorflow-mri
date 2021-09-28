@@ -17,7 +17,7 @@
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import image_ops
-from tensorflow_mri.python.utils import check_utils
+from tensorflow_mri.python.util import check_util
 
 
 def fftn(x, shape=None, axes=None, norm='backward', shift=False):
@@ -144,24 +144,39 @@ def _fft_internal(x, shape, axes, norm, shift, transform): # pylint: disable=mis
   # Convert shape and axes to tensors if specified and run some checks.
   if shape is not None:
     shape = tf.convert_to_tensor(shape, dtype=tf.dtypes.int32)
-    tf.debugging.assert_less_equal(tf.size(shape), input_rank_tensor, message=(
-      "Argument `shape` cannot have length greater than the rank of `x`. "
-      "Received: {}").format(shape))
+    checks = []
+    checks.append(tf.debugging.assert_less_equal(
+        tf.size(shape), input_rank_tensor, message=(
+            "Argument `shape` cannot have length greater than the rank of `x`. "
+            "Received: {}").format(shape)))
+    with tf.control_dependencies(checks):
+      shape = tf.identity(shape)
   if axes is not None:
     axes = tf.convert_to_tensor(axes, dtype=tf.dtypes.int32)
-    tf.debugging.assert_less_equal(tf.size(axes), input_rank_tensor, message=(
-      "Argument `axes` cannot have length greater than the rank of `x`. "
-      "Received: {}").format(axes))
-    tf.debugging.assert_less(axes, input_rank_tensor, message=(
-      "Argument `axes` contains invalid indices. "
-      "Received: {}").format(axes))
-    tf.debugging.assert_greater_equal(axes, -input_rank_tensor, message=(
-      "Argument `axes` contains invalid indices. "
-      "Received: {}").format(axes))
+    checks = []
+    checks.append(tf.debugging.assert_less_equal(
+        tf.size(axes), input_rank_tensor, message=(
+            "Argument `axes` cannot have length greater than the rank of `x`. "
+            "Received: {}").format(axes)))
+    checks.append(tf.debugging.assert_less(
+        axes, input_rank_tensor, message=(
+            "Argument `axes` contains invalid indices. "
+            "Received: {}").format(axes)))
+    checks.append(tf.debugging.assert_greater_equal(
+        axes, -input_rank_tensor, message=(
+            "Argument `axes` contains invalid indices. "
+            "Received: {}").format(axes)))
+    with tf.control_dependencies(checks):
+      axes = tf.identity(axes)
   if shape is not None and axes is not None:
-    tf.debugging.assert_equal(tf.size(shape), tf.size(axes), message=(
-      "Arguments `shape` and `axes` must have equal length. "
-      "Received: {}, {}").format(shape, axes))
+    checks = []
+    checks.append(
+        tf.debugging.assert_equal(tf.size(shape), tf.size(axes), message=(
+          "Arguments `shape` and `axes` must have equal length. "
+          "Received: {}, {}").format(shape, axes)))
+    with tf.control_dependencies(checks):
+      shape, axes = tf.identity_n([shape, axes])
+
   # Default value for `axes`.
   if axes is None:
     if shape is None:
@@ -173,16 +188,19 @@ def _fft_internal(x, shape, axes, norm, shift, transform): # pylint: disable=mis
   # Set flags for which parts of computation to perform. This might allow a
   # slight performance improvement.
   perform_padding = shape is not None
-  perform_transpose = not tf.math.reduce_all(tf.math.equal(
-    axes, tf.range(input_rank_tensor - tf.size(axes), input_rank_tensor)))
+  perform_transpose = tf.math.logical_not(tf.math.reduce_all(tf.math.equal(
+    axes, tf.range(input_rank_tensor - tf.size(axes), input_rank_tensor))))
   # Default value for `shape`.
   if shape is None:
     shape = tf.gather(tf.shape(x), axes, axis=0)
   # Rank of the op.
   rank = tf.size(axes)
+  with tf.control_dependencies([tf.debugging.assert_less_equal(
+      rank, 3, message=("N-D FFT supported only up to 3-D."))]):
+    rank = tf.identity(rank)
 
   # Normalization factor.
-  norm = check_utils.validate_enum(
+  norm = check_util.validate_enum(
     norm, {'forward', 'backward', 'ortho'}, 'norm')
   if norm == 'backward':
     norm_factor = tf.constant(1, x.dtype)
@@ -222,12 +240,11 @@ def _fft_internal(x, shape, axes, norm, shift, transform): # pylint: disable=mis
         initializer=tf.fill(all_dims.shape, True))),
     axes], 0)
 
-  if perform_transpose:
-    x = tf.transpose(x, perm=perm)
+  x = tf.cond(perform_transpose,
+              lambda: tf.transpose(x, perm=perm),
+              lambda: x)
 
   # Perform FFT. Currently, only rank up to 3 is supported.
-  tf.debugging.assert_less_equal(rank, 3, message=(
-    "N-D FFT supported only up to 3-D."))
   if transform == 'forward':
     # We need to check static rank here to make sure FFT ops do not complain
     # about input rank being lower than op rank.
@@ -260,8 +277,9 @@ def _fft_internal(x, shape, axes, norm, shift, transform): # pylint: disable=mis
     x = x * norm_factor
 
   # Undo transpose.
-  if perform_transpose:
-    x = tf.transpose(x, perm=tf.argsort(perm))
+  x = tf.cond(perform_transpose,
+              lambda: tf.transpose(x, perm=tf.argsort(perm)),
+              lambda: x)
 
   # Apply output domain FFT shift.
   if shift:
@@ -320,7 +338,9 @@ def _right_pad_or_crop(tensor, shape):
 
   # Normalize `shape`, which may have less dimensions than input. In this
   # case, `shape` is assumed to refer to the last dimensions in `x`.
-  tf.debugging.assert_less_equal(tf.size(shape), tf.size(input_shape))
+  with tf.control_dependencies([tf.debugging.assert_less_equal(
+      tf.size(shape), tf.size(input_shape))]):
+    shape = tf.identity(shape)
   shape = tf.concat([input_shape[:tf.size(input_shape) - tf.size(shape)],
                      shape], 0)
 
