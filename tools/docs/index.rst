@@ -1,5 +1,5 @@
-Welcome to TensorFlow MRI
-=========================
+TensorFlow MRI |release|
+========================
 
 .. include:: ../../README.rst
    :start-after: start-intro

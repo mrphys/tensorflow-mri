@@ -26,7 +26,7 @@ class FilterTest(test_util.TestCase):
   def test_hamming(self):
     """Test Hamming filter."""
     x = tf.linspace(-np.pi, np.pi, 100)
-    result = signal_ops.hamming_filter(x)
+    result = signal_ops.hamming(x)
     self.assertAllClose(result, np.hamming(100))
 
 
@@ -56,7 +56,7 @@ class KSpaceFilterTest(test_util.TestCase):
 
     result = signal_ops.filter_kspace(kspace, traj)
     self.assertAllClose(
-        result, kspace * tf.cast(signal_ops.hamming_filter(radius),
+        result, kspace * tf.cast(signal_ops.hamming(radius),
                                  tf.complex64))
 
 

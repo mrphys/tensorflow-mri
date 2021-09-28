@@ -401,8 +401,8 @@ def estimate_radial_density(points, base_resolution):
 
   This function estimates the density based on the radius of each sample, but
   does not take into account the relationships between different spokes or
-  views. This function should work well as the spacing between radial spokes is
-  reasonably uniform. If this is not the case, consider also
+  views. This function should work well as long as the spacing between radial
+  spokes is reasonably uniform. If this is not the case, consider also
   `tfmr.radial_density` or `tfmr.estimate_density`.
 
   This function supports 2D and 3D ("koosh-ball") radial trajectories.

@@ -20,7 +20,7 @@ import tensorflow as tf
 from tensorflow_mri.python.util import check_util
 
 
-def hamming_filter(arg, name='hamming_filter'):
+def hamming(arg, name='hamming'):
   """Calculate a Hamming window at the specified coordinates.
 
   Coordinates should be in the range `[-pi, pi]`. The center of the window
@@ -33,10 +33,10 @@ def hamming_filter(arg, name='hamming_filter'):
   Returns:
     The value of a Hamming window at the specified coordinates.
   """
-  return _raised_cosine_filter(arg, 0.54, 0.46, name=name)
+  return _raised_cosine(arg, 0.54, 0.46, name=name)
 
 
-def _raised_cosine_filter(arg, a, b, name=None):
+def _raised_cosine(arg, a, b, name=None):
   """Helper function for computing a raised cosine window.
 
   Args:
@@ -72,7 +72,7 @@ def filter_kspace(kspace, traj, filter_type='hamming'):
   filter_type = check_util.validate_enum(
       filter_type, valid_values={'hamming'}, name='filter_type')
   filter_func = {
-      'hamming': hamming_filter
+      'hamming': hamming
   }[filter_type]
 
   traj_norm = tf.norm(traj, axis=-1)

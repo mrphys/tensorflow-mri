@@ -1,5 +1,5 @@
-Image Reconstruction
-====================
+Signal Processing
+=================
 
 .. automodule:: tensorflow_mri.python.ops.signal_ops
 
@@ -11,4 +11,4 @@ Image Reconstruction
 
     crop_kspace
     filter_kspace
-    hamming_filter
+    hamming
