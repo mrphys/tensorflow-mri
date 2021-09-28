@@ -151,7 +151,8 @@ class ReconstructTest(test_util.TestCase):
                                      method='inufft', image_shape=image_shape)
 
     self.assertAllClose(image_cg,
-                        self.data['reconstruct/inufft/shepp_logan_2d/result'])
+                        self.data['reconstruct/inufft/shepp_logan_2d/result'],
+                        rtol=1e-4, atol=1e-4)
 
 
   @parameterized.product(reduction_axis=[[0], [1], [0, 1]],
