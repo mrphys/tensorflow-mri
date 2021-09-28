@@ -3,11 +3,6 @@
   :scale: 70 %
   :alt: TFMR logo
 
-.. image:: https://raw.githubusercontent.com/mrphys/tensorflow-mri/develop/tools/assets/tfmr_logo.png
-  :align: center
-  :scale: 70 %
-  :alt: TFMR logo
-
 |
 
 |pypi| |build| |docs| |doi|
