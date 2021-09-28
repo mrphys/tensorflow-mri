@@ -1,8 +1,12 @@
-.. raw:: html
+.. image:: https://raw.githubusercontent.com/mrphys/tensorflow-mri/develop/tools/assets/tfmr_logo.svg?sanitize=true
+  :align: center
+  :scale: 70 %
+  :alt: TFMR logo
 
-  <div align="center">
-    <img src="https://raw.githubusercontent.com/mrphys/tensorflow-mri/develop/tools/assets/tfmr_logo.svg?sanitize=true" width="70%">
-  </div>
+.. image:: https://raw.githubusercontent.com/mrphys/tensorflow-mri/develop/tools/assets/tfmr_logo.png
+  :align: center
+  :scale: 70 %
+  :alt: TFMR logo
 
 |
 
