@@ -6,7 +6,7 @@
 .. currentmodule:: tfmr
 
 .. autosummary::
-    :toctree: _traj_ops
+    :toctree: traj_ops
     :nosignatures:
 
     radial_trajectory
@@ -15,3 +15,4 @@
     spiral_waveform
     radial_density
     estimate_density
+    estimate_radial_density

@@ -1,0 +1,6 @@
+﻿tfmr.crop\_kspace
+=================
+
+.. currentmodule:: tfmr
+
+.. autofunction:: crop_kspace

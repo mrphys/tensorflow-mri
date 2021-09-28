@@ -1,0 +1,6 @@
+﻿tfmr.rotate\_3d
+===============
+
+.. currentmodule:: tfmr
+
+.. autofunction:: rotate_3d

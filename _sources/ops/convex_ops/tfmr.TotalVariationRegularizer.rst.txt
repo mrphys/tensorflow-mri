@@ -1,0 +1,8 @@
+﻿tfmr.TotalVariationRegularizer
+==============================
+  
+.. currentmodule:: tfmr
+
+.. autoclass:: tfmr.TotalVariationRegularizer
+   :members:
+   :show-inheritance:

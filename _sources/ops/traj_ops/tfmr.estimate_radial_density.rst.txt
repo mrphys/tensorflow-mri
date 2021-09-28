@@ -1,0 +1,6 @@
+﻿tfmr.estimate\_radial\_density
+==============================
+
+.. currentmodule:: tfmr
+
+.. autofunction:: estimate_radial_density

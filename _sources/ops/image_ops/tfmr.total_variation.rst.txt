@@ -1,0 +1,6 @@
+﻿tfmr.total\_variation
+=====================
+
+.. currentmodule:: tfmr
+
+.. autofunction:: total_variation

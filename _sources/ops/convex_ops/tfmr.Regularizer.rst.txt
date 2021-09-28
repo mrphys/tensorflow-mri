@@ -1,0 +1,8 @@
+﻿tfmr.Regularizer
+================
+  
+.. currentmodule:: tfmr
+
+.. autoclass:: tfmr.Regularizer
+   :members:
+   :show-inheritance:

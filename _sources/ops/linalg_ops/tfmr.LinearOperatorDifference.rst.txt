@@ -1,0 +1,8 @@
+﻿tfmr.LinearOperatorDifference
+=============================
+  
+.. currentmodule:: tfmr
+
+.. autoclass:: tfmr.LinearOperatorDifference
+   :members:
+   :show-inheritance:

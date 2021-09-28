@@ -1,0 +1,6 @@
+﻿tfmr.view\_as\_real
+===================
+
+.. currentmodule:: tfmr
+
+.. autofunction:: view_as_real

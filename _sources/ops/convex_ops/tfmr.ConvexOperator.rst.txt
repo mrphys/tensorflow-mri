@@ -1,0 +1,8 @@
+﻿tfmr.ConvexOperator
+===================
+  
+.. currentmodule:: tfmr
+
+.. autoclass:: tfmr.ConvexOperator
+   :members:
+   :show-inheritance:
