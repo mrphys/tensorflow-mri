@@ -68,7 +68,7 @@ def radial_trajectory(base_resolution,
   * **sphere_archimedean**: 3D radial trajectory ("koosh-ball"). The starting
     points of consecutive views trace an Archimedean spiral trajectory along
     the surface of a sphere, if `angle_range` is `'full'`, or a hemisphere, if
-    `angle_range` is `'half'`. Views are interleaved if there are multiple
+    `angle_range` is `'half'` [3]_. Views are interleaved if there are multiple
     phases.
 
   Args:

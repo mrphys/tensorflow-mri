@@ -1149,17 +1149,17 @@ def phantom(phantom_type='modified_shepp_logan', # pylint: disable=dangerous-def
 
   Available 2D phantoms are:
 
-    * **shepp_logan**: The original Shepp-Logan phantom [1]_.
-    * **modified_shepp_logan**: A variant of the Shepp-Logan phantom in which
-      the contrast is improved for better visual perception [2]_.
+  * **shepp_logan**: The original Shepp-Logan phantom [1]_.
+  * **modified_shepp_logan**: A variant of the Shepp-Logan phantom in which
+    the contrast is improved for better visual perception [2]_.
 
   Available 3D phantoms are:
 
-    * **kak_roberts**: A simplified 3D extension of the Shepp-Logan phantom
-      [3]_.
-    * **modified_kak_roberts**: A variant of the Kak-Roberts phantom in which
-      the contrast is improved for better visual perception [4]_.
-    * **koay_sarlls_ozarslan**: Same as `modified_kak_roberts`.
+  * **kak_roberts**: A simplified 3D extension of the Shepp-Logan phantom
+    [3]_.
+  * **modified_kak_roberts**: A variant of the Kak-Roberts phantom in which
+    the contrast is improved for better visual perception [4]_.
+  * **koay_sarlls_ozarslan**: Same as `modified_kak_roberts`.
 
   Args:
     phantom_type: A `string`. If 2D, must be one of
