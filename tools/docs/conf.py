@@ -62,6 +62,10 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # -- Options for HTML output -------------------------------------------------
 
+html_title = 'TensorFlow MRI Documentation'
+
+html_favicon = '../assets/tfmr_icon.svg'
+
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #

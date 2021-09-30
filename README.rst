@@ -1,6 +1,6 @@
-.. image:: https://raw.githubusercontent.com/mrphys/tensorflow-mri/develop/tools/assets/tfmr_logo.svg?sanitize=true
+.. image:: https://raw.githubusercontent.com/mrphys/tensorflow-mri/v0.6.0/tools/assets/tfmr_logo.svg?sanitize=true
   :align: center
-  :scale: 70 %
+  :scale: 100 %
   :alt: TFMR logo
 
 |
@@ -18,27 +18,24 @@
 
 .. start-intro
 
-TensorFlow MRI is a collection of TensorFlow add-ons for computational MRI.
+TensorFlow MRI (TFMR) is a Python library for MR image reconstruction and
+processing. TFMR provides:
 
-It contains functionality including:
+* A selection of differentiable operators for accelerated image reconstruction,
+  Cartesian and non-Cartesian *k*-space sampling, and many other common MR image
+  and signal processing tasks.
+* Keras objects such as metrics and losses for the creation, fitting and
+  evaluation of machine learning models.
 
-* Estimation of coil sensitivity maps: Walsh's method, Inati's fast method and
-  ESPIRiT.
-* Coil compression using singular value decomposition (SVD).
-* Image reconstruction operations: basic (FFT, NUFFT), parallel imaging
-  (SENSE, GRAPPA, CG-SENSE) and partial Fourier (zero-filling, homodyne
-  detection, projection onto convex sets). 
-* Calculation of radial and spiral trajectories and sampling densities.
-* Keras metrics for image quality assessment, classification and segmentation.
-* Helper operations for array manipulation, image processing and linear algebra.
+TFMR is aimed for scientists and researchers working with MRI data, whether they
+intend to use machine learning or not.
 
-All operations are performed using a TensorFlow/Keras backend. This has several
-key advantages:
+TFMR enables prototyping and deployment of computational MRI solutions easily
+and within a single language.
 
-* Seamless integration in machine learning applications.
-* Runs on heterogeneous systems, with most operations supporting CPU and
-  GPU-accelerated paths.
-* Code is easy to understand, with most of this package written in Python.
+Thanks to the use of a TensorFlow backend, TFMR integrates seamlessly in machine
+learning projects. TFMR also inherits other benefits of TensorFlow, including
+high performance computation and GPU acceleration. 
 
 .. end-intro
 
@@ -101,8 +98,8 @@ FAQ
 
 **When trying to install TensorFlow MRI, I get an error about OpenEXR which
 includes:
-`OpenEXR.cpp:36:10: fatal error: ImathBox.h: No such file or directory`. What do
-I do?**
+``OpenEXR.cpp:36:10: fatal error: ImathBox.h: No such file or directory``. What
+do I do?**
 
 OpenEXR is needed by TensorFlow Graphics, which is a dependency of TensorFlow
 MRI. This issue can be fixed by installing the OpenEXR library. On
