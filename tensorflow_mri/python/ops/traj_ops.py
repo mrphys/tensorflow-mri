@@ -52,15 +52,15 @@ def radial_trajectory(base_resolution,
   * **golden**: Consecutive views are spaced by the golden angle (222.49
     degrees if `angle_range` is `'full'` and 111.25 degrees if `angle_range` is
     `'half'`) [1]_.
-  * **golden_half**: Variant of `"golden"` in which views are spaced by 111.25
+  * **golden_half**: Variant of `'golden'` in which views are spaced by 111.25
     degrees even if `angle_range` is `'full'` [1]_.
   * **tiny**: Consecutive views are spaced by the 7th tiny golden angle (47.26
     degrees if `angle_range` is `'full'` and 23.63 degrees if `angle_range` is
     `'half'`) [2]_.
-  * **tiny_half**: Variant of `"tiny"` in which views are spaced by 23.63
+  * **tiny_half**: Variant of `'tiny'` in which views are spaced by 23.63
     degrees even if `angle_range` is `'full'` [2]_.
   * **sorted**: Like `golden`, but views within each phase are sorted by their
-    angle in ascending order. Can be an alternative to `tiny` ordering in
+    angle in ascending order. Can be an alternative to `'tiny'` ordering in
     applications where small angle increments are required.
 
   This function also supports the following 3D ordering methods:
@@ -94,7 +94,7 @@ def radial_trajectory(base_resolution,
   References:
     .. [1] Winkelmann, S., Schaeffter, T., Koehler, T., Eggers, H. and
       Doessel, O. (2007), An optimal radial profile order based on the golden
-      ratio for time-resolved MRI," in IEEE Transactions on Medical Imaging,
+      ratio for time-resolved MRI. IEEE Transactions on Medical Imaging,
       26(1): 68-76, https://doi.org/10.1109/TMI.2006.885337
     .. [2] Wundrak, S., Paul, J., Ulrici, J., Hell, E., Geibel, M.-A.,
       Bernhardt, P., Rottbauer, W. and Rasche, V. (2016), Golden ratio sparse
