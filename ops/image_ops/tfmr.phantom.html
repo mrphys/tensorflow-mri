@@ -5,8 +5,8 @@
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="tfmr.psnr" href="tfmr.psnr.html" /><link rel="prev" title="tfmr.extract_glimpses" href="tfmr.extract_glimpses.html" />
 
-    <meta name="generator" content="sphinx-4.1.2, furo 2021.08.17.beta43"/>
-        <title>tfmr.phantom - tensorflow-mri 0.6.0 documentation</title>
+    <link rel="shortcut icon" href="../../_static/tfmr_icon.svg"/><meta name="generator" content="sphinx-4.1.2, furo 2021.08.17.beta43"/>
+        <title>tfmr.phantom - TensorFlow MRI Documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=910ac4ccc9d7c023151c34010d7b500fb9777a51" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?digest=16fb25fabf47304eee183a5e9af80b1ba98259b1" />
@@ -127,7 +127,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">tensorflow-mri 0.6.0 documentation</div></a>
+      <a href="../../index.html"><div class="brand">TensorFlow MRI Documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -313,26 +313,22 @@
 <h1>tfmr.phantom<a class="headerlink" href="#tfmr-phantom" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="tfmr.phantom">
-<span class="sig-prename descclassname"><span class="pre">tfmr.</span></span><span class="sig-name descname"><span class="pre">phantom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phantom_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'modified_shepp_logan'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[256,</span> <span class="pre">256]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_coils</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">tf.float32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_sensitivities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.6.0/tensorflow_mri/python/ops/image_ops.py#L1143-L1262"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.phantom" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">tfmr.</span></span><span class="sig-name descname"><span class="pre">phantom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phantom_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'modified_shepp_logan'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[256,</span> <span class="pre">256]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_coils</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">tf.float32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_sensitivities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.6.1/tensorflow_mri/python/ops/image_ops.py#L1143-L1262"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.phantom" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate a phantom image.</p>
 <p>Available 2D phantoms are:</p>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li><p><strong>shepp_logan</strong>: The original Shepp-Logan phantom <a class="footnote-reference brackets" href="#id5" id="id1">1</a>.</p></li>
 <li><p><strong>modified_shepp_logan</strong>: A variant of the Shepp-Logan phantom in which
 the contrast is improved for better visual perception <a class="footnote-reference brackets" href="#id6" id="id2">2</a>.</p></li>
 </ul>
-</div></blockquote>
 <p>Available 3D phantoms are:</p>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li><p><strong>kak_roberts</strong>: A simplified 3D extension of the Shepp-Logan phantom
 <a class="footnote-reference brackets" href="#id7" id="id3">3</a>.</p></li>
 <li><p><strong>modified_kak_roberts</strong>: A variant of the Kak-Roberts phantom in which
 the contrast is improved for better visual perception <a class="footnote-reference brackets" href="#id8" id="id4">4</a>.</p></li>
 <li><p><strong>koay_sarlls_ozarslan</strong>: Same as <code class="docutils literal notranslate"><span class="pre">modified_kak_roberts</span></code>.</p></li>
 </ul>
-</div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">

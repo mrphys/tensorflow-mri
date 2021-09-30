@@ -5,8 +5,8 @@
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="tfmr.spiral_trajectory" href="tfmr.spiral_trajectory.html" /><link rel="prev" title="k-space Trajectories" href="../traj_ops.html" />
 
-    <meta name="generator" content="sphinx-4.1.2, furo 2021.08.17.beta43"/>
-        <title>tfmr.radial_trajectory - tensorflow-mri 0.6.0 documentation</title>
+    <link rel="shortcut icon" href="../../_static/tfmr_icon.svg"/><meta name="generator" content="sphinx-4.1.2, furo 2021.08.17.beta43"/>
+        <title>tfmr.radial_trajectory - TensorFlow MRI Documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=910ac4ccc9d7c023151c34010d7b500fb9777a51" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?digest=16fb25fabf47304eee183a5e9af80b1ba98259b1" />
@@ -127,7 +127,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">tensorflow-mri 0.6.0 documentation</div></a>
+      <a href="../../index.html"><div class="brand">TensorFlow MRI Documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -313,7 +313,7 @@
 <h1>tfmr.radial_trajectory<a class="headerlink" href="#tfmr-radial-trajectory" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="tfmr.radial_trajectory">
-<span class="sig-prename descclassname"><span class="pre">tfmr.</span></span><span class="sig-name descname"><span class="pre">radial_trajectory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_resolution</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">views</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phases</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ordering</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'full'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readout_os</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.6.0/tensorflow_mri/python/ops/traj_ops.py#L40-L113"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.radial_trajectory" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">tfmr.</span></span><span class="sig-name descname"><span class="pre">radial_trajectory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_resolution</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">views</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phases</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ordering</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'full'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readout_os</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.6.1/tensorflow_mri/python/ops/traj_ops.py#L40-L113"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.radial_trajectory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate a radial trajectory.</p>
 <p>This function supports the following 2D ordering methods:</p>
 <ul class="simple">
@@ -321,14 +321,14 @@
 are multiple phases.</p></li>
 <li><p><strong>golden</strong>: Consecutive views are spaced by the golden angle (222.49
 degrees if <code class="docutils literal notranslate"><span class="pre">angle_range</span></code> is <code class="docutils literal notranslate"><span class="pre">'full'</span></code> and 111.25 degrees if <code class="docutils literal notranslate"><span class="pre">angle_range</span></code> is
-<code class="docutils literal notranslate"><span class="pre">'half'</span></code>) <a class="footnote-reference brackets" href="#id5" id="id1">1</a>.</p></li>
+<code class="docutils literal notranslate"><span class="pre">'half'</span></code>) <a class="footnote-reference brackets" href="#id6" id="id1">1</a>.</p></li>
 <li><p><strong>golden_half</strong>: Variant of <code class="docutils literal notranslate"><span class="pre">"golden"</span></code> in which views are spaced by 111.25
-degrees even if <code class="docutils literal notranslate"><span class="pre">angle_range</span></code> is <code class="docutils literal notranslate"><span class="pre">'full'</span></code> <a class="footnote-reference brackets" href="#id5" id="id2">1</a>.</p></li>
+degrees even if <code class="docutils literal notranslate"><span class="pre">angle_range</span></code> is <code class="docutils literal notranslate"><span class="pre">'full'</span></code> <a class="footnote-reference brackets" href="#id6" id="id2">1</a>.</p></li>
 <li><p><strong>tiny</strong>: Consecutive views are spaced by the 7th tiny golden angle (47.26
 degrees if <code class="docutils literal notranslate"><span class="pre">angle_range</span></code> is <code class="docutils literal notranslate"><span class="pre">'full'</span></code> and 23.63 degrees if <code class="docutils literal notranslate"><span class="pre">angle_range</span></code> is
-<code class="docutils literal notranslate"><span class="pre">'half'</span></code>) <a class="footnote-reference brackets" href="#id6" id="id3">2</a>.</p></li>
+<code class="docutils literal notranslate"><span class="pre">'half'</span></code>) <a class="footnote-reference brackets" href="#id7" id="id3">2</a>.</p></li>
 <li><p><strong>tiny_half</strong>: Variant of <code class="docutils literal notranslate"><span class="pre">"tiny"</span></code> in which views are spaced by 23.63
-degrees even if <code class="docutils literal notranslate"><span class="pre">angle_range</span></code> is <code class="docutils literal notranslate"><span class="pre">'full'</span></code> <a class="footnote-reference brackets" href="#id6" id="id4">2</a>.</p></li>
+degrees even if <code class="docutils literal notranslate"><span class="pre">angle_range</span></code> is <code class="docutils literal notranslate"><span class="pre">'full'</span></code> <a class="footnote-reference brackets" href="#id7" id="id4">2</a>.</p></li>
 <li><p><strong>sorted</strong>: Like <code class="docutils literal notranslate"><span class="pre">golden</span></code>, but views within each phase are sorted by their
 angle in ascending order. Can be an alternative to <code class="docutils literal notranslate"><span class="pre">tiny</span></code> ordering in
 applications where small angle increments are required.</p></li>
@@ -338,7 +338,7 @@ applications where small angle increments are required.</p></li>
 <li><p><strong>sphere_archimedean</strong>: 3D radial trajectory (“koosh-ball”). The starting
 points of consecutive views trace an Archimedean spiral trajectory along
 the surface of a sphere, if <code class="docutils literal notranslate"><span class="pre">angle_range</span></code> is <code class="docutils literal notranslate"><span class="pre">'full'</span></code>, or a hemisphere, if
-<code class="docutils literal notranslate"><span class="pre">angle_range</span></code> is <code class="docutils literal notranslate"><span class="pre">'half'</span></code>. Views are interleaved if there are multiple
+<code class="docutils literal notranslate"><span class="pre">angle_range</span></code> is <code class="docutils literal notranslate"><span class="pre">'half'</span></code> <a class="footnote-reference brackets" href="#id8" id="id5">3</a>. Views are interleaved if there are multiple
 phases.</p></li>
 </ul>
 <dl class="field-list simple">
@@ -367,19 +367,19 @@ radians/voxel, ie, values are in the range <code class="docutils literal notrans
 </dl>
 <p class="rubric">References</p>
 <dl class="footnote brackets">
-<dt class="label" id="id5"><span class="brackets">1</span><span class="fn-backref">(<a href="#id1">1</a>,<a href="#id2">2</a>)</span></dt>
+<dt class="label" id="id6"><span class="brackets">1</span><span class="fn-backref">(<a href="#id1">1</a>,<a href="#id2">2</a>)</span></dt>
 <dd><p>Winkelmann, S., Schaeffter, T., Koehler, T., Eggers, H. and
 Doessel, O. (2007), An optimal radial profile order based on the golden
 ratio for time-resolved MRI,” in IEEE Transactions on Medical Imaging,
 26(1): 68-76, <a class="reference external" href="https://doi.org/10.1109/TMI.2006.885337">https://doi.org/10.1109/TMI.2006.885337</a></p>
 </dd>
-<dt class="label" id="id6"><span class="brackets">2</span><span class="fn-backref">(<a href="#id3">1</a>,<a href="#id4">2</a>)</span></dt>
+<dt class="label" id="id7"><span class="brackets">2</span><span class="fn-backref">(<a href="#id3">1</a>,<a href="#id4">2</a>)</span></dt>
 <dd><p>Wundrak, S., Paul, J., Ulrici, J., Hell, E., Geibel, M.-A.,
 Bernhardt, P., Rottbauer, W. and Rasche, V. (2016), Golden ratio sparse
 MRI using tiny golden angles. Magn. Reson. Med., 75: 2372-2378.
 <a class="reference external" href="https://doi.org/10.1002/mrm.25831">https://doi.org/10.1002/mrm.25831</a></p>
 </dd>
-<dt class="label" id="id7"><span class="brackets">3</span></dt>
+<dt class="label" id="id8"><span class="brackets"><a class="fn-backref" href="#id5">3</a></span></dt>
 <dd><p>Wong, S.T.S. and Roos, M.S. (1994), A strategy for sampling on a
 sphere applied to 3D selective RF pulse design. Magn. Reson. Med.,
 32: 778-784. <a class="reference external" href="https://doi.org/10.1002/mrm.1910320614">https://doi.org/10.1002/mrm.1910320614</a></p>
