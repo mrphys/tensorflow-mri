@@ -16,7 +16,7 @@
 """Confusion metrics.
 
 This module contains metrics derived from the confusion matrix for
-classification problems.
+classification and segmentation problems.
 """
 # Some of the code in this file is adapted from
 # tensorflow_addons/metrics/f_scores.py, to support a much wider range of uses
@@ -465,13 +465,6 @@ class NegativePredictiveValue(ConfusionMetric):
       self.true_negatives + self.false_negatives)
 
 
-Precision = PositivePredictiveValue
-Recall = TruePositiveRate
-Sensitivity = TruePositiveRate
-Specificity = TrueNegativeRate
-Selectivity = TrueNegativeRate
-
-
 @tf.keras.utils.register_keras_serializable(package="MRI")
 class TverskyIndex(ConfusionMetric):
   r"""Computes Tversky index.
@@ -669,3 +662,13 @@ TverskyIndex.__doc__ = _update_docstring(TverskyIndex.__doc__)
 FBetaScore.__doc__ = _update_docstring(FBetaScore.__doc__)
 F1Score.__doc__ = _update_docstring(F1Score.__doc__)
 IoU.__doc__ = _update_docstring(IoU.__doc__)
+
+
+# Aliases.
+Precision = PositivePredictiveValue
+Recall = TruePositiveRate
+Sensitivity = TruePositiveRate
+Specificity = TrueNegativeRate
+Selectivity = TrueNegativeRate
+DiceIndex = F1Score
+JaccardIndex = IoU
