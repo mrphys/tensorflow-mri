@@ -38,7 +38,9 @@ class ConfusionMetricTest(test_util.TestCase):
     'TverskyIndex',
     'FBetaScore',
     'F1Score',
-    'IoU'
+    'IoU',
+    'DiceIndex',
+    'JaccardIndex'
   ]
 
   @parameterized.parameters(*names)
@@ -189,5 +191,7 @@ class ConfusionMetricTest(test_util.TestCase):
       'TverskyIndex': tp / (tp + 0.3 * fp + 0.7 * fn),
       'FBetaScore': 1.25 * tp / (1.25 * tp + fp + 0.25 * fn),
       'F1Score': tp / (tp + 0.5 * fp + 0.5 * fn),
-      'IoU': tp / (tp + fp + fn)
+      'IoU': tp / (tp + fp + fn),
+      'DiceIndex': tp / (tp + 0.5 * fp + 0.5 * fn),
+      'JaccardIndex': tp / (tp + fp + fn)
     }[name]
