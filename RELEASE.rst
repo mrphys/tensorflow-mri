@@ -22,6 +22,9 @@ Major Features and Improvements
 * `tfmr.losses`:
 
   * Added module.
+  * Added new losses `StructuralSimilarityLoss`,
+    `MultiscaleStructuralSimilarityLoss`, `ssim_loss` and
+    `ssim_multiscale_loss`.
 
 
 * `tfmr.metrics`:
