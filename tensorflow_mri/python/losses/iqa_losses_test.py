@@ -14,7 +14,47 @@
 # ==============================================================================
 """Tests for module `iqa_losses`."""
 
+from absl.testing import parameterized
 import tensorflow as tf
+
+from tensorflow_mri.python.losses import iqa_losses
+from tensorflow_mri.python.ops import image_ops
+from tensorflow_mri.python.util import test_util
+
+
+class SSIMLossTest(test_util.TestCase):
+
+  losses = [
+    (iqa_losses.StructuralSimilarityLoss,
+     iqa_losses.ssim_loss, image_ops.ssim),
+    (iqa_losses.MultiscaleStructuralSimilarityLoss,
+     iqa_losses.ssim_multiscale_loss, image_ops.ssim_multiscale)
+  ]
+
+  @parameterized.product(loss=losses)
+  @test_util.run_in_graph_and_eager_modes
+  def test_loss(self, loss):
+    """Test the loss function."""
+    loss_cls, loss_fn, ref_fn = loss
+    y_true, y_pred = self._random_images()
+
+    ref = 1.0 - ref_fn(y_true, y_pred)
+
+    # Test function.
+    result_fn = loss_fn(y_true, y_pred) 
+    self.assertAllClose(result_fn, ref)
+
+    # Test class.
+    loss_obj = loss_cls()
+    result_cls = loss_obj(y_true, y_pred)
+    self.assertAllClose(result_cls, tf.math.reduce_mean(ref))
+
+  def _random_images(self):
+    """Generate random images."""
+    y_true = tf.random.uniform((4, 192, 192, 2))
+    y_pred = tf.random.uniform((4, 192, 192, 2))
+    return y_true, y_pred
+
 
 
 if __name__ == '__main__':
