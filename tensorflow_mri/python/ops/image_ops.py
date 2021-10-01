@@ -159,7 +159,7 @@ def ssim(img1,
   This function operates on batches of multi-channel inputs and returns an SSIM
   value for each image in the batch.
 
-  .. note::
+  .. warning::
     As of TensorFlow 2.6.0, 3D inputs with `channels` > 1 can only be processed
     on GPU.
 
@@ -303,7 +303,7 @@ def ssim3d(img1,
   This function operates on batches of multi-channel inputs and returns an SSIM
   value for each image in the batch.
 
-  .. note::
+  .. warning::
     As of TensorFlow 2.6.0, 3D inputs with `channels` > 1 can only be processed
     on GPU.
 
@@ -369,7 +369,7 @@ def ssim_multiscale(img1,
   This function operates on batches of multi-channel inputs and returns an
   MS-SSIM value for each image in the batch.
 
-  .. note::
+  .. warning::
     As of TensorFlow 2.6.0, 3D inputs with `channels` > 1 can only be processed
     on GPU.
 
@@ -609,7 +609,7 @@ def ssim3d_multiscale(img1,
   This function operates on batches of multi-channel inputs and returns an
   MS-SSIM value for each image in the batch.
 
-  .. note::
+  .. warning::
     As of TensorFlow 2.6.0, 3D inputs with `channels` > 1 can only be processed
     on GPU.
 

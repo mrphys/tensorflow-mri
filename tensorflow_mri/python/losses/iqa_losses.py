@@ -75,7 +75,7 @@ class StructuralSimilarityLoss(keras_util.LossFunctionWrapper):
 class MultiscaleStructuralSimilarityLoss(keras_util.LossFunctionWrapper):
   """Computes the multiscale structural similarity (MS-SSIM) loss.
 
-  The MS-SSIM loss is equal to :math:`1.0 - \textrm{SSIM}`.
+  The MS-SSIM loss is equal to :math:`1.0 - \textrm{MS-SSIM}`.
 
   .. warning::
     As of TensorFlow 2.6.0, 3D inputs with `channels` > 1 can only be processed
@@ -131,11 +131,11 @@ class MultiscaleStructuralSimilarityLoss(keras_util.LossFunctionWrapper):
 def ssim_loss(y_true, y_pred, max_val=None,
               filter_size=11, filter_sigma=1.5,
               k1=0.01, k2=0.03, rank=None):
-  """Computes the structural similarity (SSIM) loss.
+  r"""Computes the structural similarity (SSIM) loss.
 
   The SSIM loss is equal to :math:`1.0 - \textrm{SSIM}`.
 
-  .. note::
+  .. warning::
     As of TensorFlow 2.6.0, 3D inputs with `channels` > 1 can only be processed
     on GPU.
 
@@ -192,11 +192,11 @@ def ssim_multiscale_loss(y_true, y_pred, max_val=None,
                          power_factors=image_ops._MSSSIM_WEIGHTS,
                          filter_size=11, filter_sigma=1.5,
                          k1=0.01, k2=0.03, rank=None):
-  """Computes the multiscale structural similarity (MS-SSIM) loss.
+  r"""Computes the multiscale structural similarity (MS-SSIM) loss.
 
   The MS-SSIM loss is equal to :math:`1.0 - \textrm{MS-SSIM}`.
 
-  .. note::
+  .. warning::
     As of TensorFlow 2.6.0, 3D inputs with `channels` > 1 can only be processed
     on GPU.
 

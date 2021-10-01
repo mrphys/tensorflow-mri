@@ -24,3 +24,5 @@ Confusion
     FBetaScore
     F1Score
     IoU
+    DiceIndex
+    JaccardIndex
