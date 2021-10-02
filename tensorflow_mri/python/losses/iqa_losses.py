@@ -23,6 +23,7 @@ from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.util import keras_util
 
 
+@tf.keras.utils.register_keras_serializable(package="MRI")
 class StructuralSimilarityLoss(keras_util.LossFunctionWrapper):
   """Computes the structural similarity (SSIM) loss.
 
@@ -72,6 +73,7 @@ class StructuralSimilarityLoss(keras_util.LossFunctionWrapper):
                      k1=k1, k2=k2, rank=rank)
 
 
+@tf.keras.utils.register_keras_serializable(package="MRI")
 class MultiscaleStructuralSimilarityLoss(keras_util.LossFunctionWrapper):
   """Computes the multiscale structural similarity (MS-SSIM) loss.
 
@@ -128,6 +130,7 @@ class MultiscaleStructuralSimilarityLoss(keras_util.LossFunctionWrapper):
                      k1=k1, k2=k2, rank=rank)
 
 
+@tf.keras.utils.register_keras_serializable(package="MRI")
 def ssim_loss(y_true, y_pred, max_val=None,
               filter_size=11, filter_sigma=1.5,
               k1=0.01, k2=0.03, rank=None):
@@ -188,6 +191,7 @@ def ssim_loss(y_true, y_pred, max_val=None,
                               rank=rank)
 
 
+@tf.keras.utils.register_keras_serializable(package="MRI")
 def ssim_multiscale_loss(y_true, y_pred, max_val=None,
                          power_factors=image_ops._MSSSIM_WEIGHTS,
                          filter_size=11, filter_sigma=1.5,
