@@ -1,4 +1,9 @@
-Release 0.6.1
+Release 0.6.2
 =============
 
-This release contains some improvements to the documentation.
+Bug Fixes and Other Changes
+---------------------------
+
+* `tfmr`:
+
+  * Fixed a bug that would cause `radial_density` to fail when in graph mode.

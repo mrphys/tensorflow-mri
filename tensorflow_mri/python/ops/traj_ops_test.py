@@ -80,6 +80,16 @@ class RadialTrajectoryTest(test_util.TestCase):
     ref = self.data['radial/trajectory/sphere_archimedean/half/2']
     self.assertAllClose(traj2, tf.concat([-ref[..., 0:1], ref[..., 1:3]], -1))
 
+  @test_util.run_in_graph_and_eager_modes
+  def test_density_2d(self):
+    """Test 2D radial density."""
+    dens = traj_ops.radial_density(base_resolution=4,
+                                   views=5,
+                                   phases=None,
+                                   ordering='linear')
+    ref = [[0.0625, 0.08333334, 0.125, 0.25, 1., 0.25, 0.125, 0.08333334]] * 5
+    self.assertAllClose(dens, ref)
+
   def test_density_3d(self):
     """Test 3D radial density."""
     with self.assertRaisesRegex(

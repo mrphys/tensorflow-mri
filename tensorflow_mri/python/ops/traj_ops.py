@@ -379,7 +379,7 @@ def _radial_density_from_theta(samples, theta):
   radii = tf.abs(tf.range(-samples // 2, samples // 2, dtype=tf.float32))
 
   # Compute weights.
-  dists = np.expand_dims(dists, axis=1) # For broadcasting.
+  dists = tf.expand_dims(dists, axis=1) # For broadcasting.
   radii = tf.expand_dims(radii, axis=0) # For broadcasting.
   weights = 4.0 * radii * dists * tf.cast(views, dtype=tf.float32)
 
