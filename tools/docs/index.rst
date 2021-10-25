@@ -31,6 +31,7 @@ FAQ
    :caption: API Documentation
    :hidden:
 
+   layers
    losses
    metrics
    ops

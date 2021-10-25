@@ -65,3 +65,14 @@ def convert_shape_to_tensor(shape, name=None):
   else:
     dtype = None
   return tf.convert_to_tensor(shape, dtype=dtype, name=name)
+
+
+def convert_partial_shape_to_tensor(shape, name=None):
+  """Convert a static shape to a tensor.
+  
+  The input shape may be partially known. Unknown dimensions are replaced by
+  the special value `-1` in the output tensor.
+  """
+  shape = tf.TensorShape(shape).as_list() # Canonicalize.
+  shape = [-1 if s is None else s for s in shape]
+  return tf.convert_to_tensor(shape, dtype=tf.dtypes.int32, name=name)

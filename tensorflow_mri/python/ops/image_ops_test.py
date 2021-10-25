@@ -625,6 +625,30 @@ class SymmetricPadOrCropTest(test_util.TestCase):
 
     self.assertAllEqual(y_tf, y_np)
 
+  def test_static_shape(self):
+    """Test static shapes."""
+    def get_fn(target_shape):
+      return lambda x: image_ops.resize_with_crop_or_pad(x, target_shape)
+
+    self._assert_static_shape(get_fn([1, -1]), [None, 3], [1, 3])
+    self._assert_static_shape(get_fn([-1, -1]), [None, 3], [None, 3])
+    self._assert_static_shape(get_fn([-1, 5]), [None, 3], [None, 5])
+    self._assert_static_shape(get_fn([5, 5]), [None, None], [5, 5])
+    self._assert_static_shape(get_fn([-1, -1]), [None, None], [None, None])
+    self._assert_static_shape(get_fn([144, 144, 144, -1]), [None, None, None, 1], [144, 144, 144, 1])
+
+  def _assert_static_shape(self, fn, input_shape, expected_output_shape):
+    """Asserts that function returns the expected static shapes."""
+    @tf.function
+    def graph_fn(x):
+      return fn(x)
+
+    input_spec = tf.TensorSpec(shape=input_shape)
+    concrete_fn = graph_fn.get_concrete_function(input_spec)
+
+    self.assertAllEqual(concrete_fn.structured_outputs.shape,
+                        expected_output_shape)
+
 
 class TotalVariationTest(test_util.TestCase):
   """Tests for operation `total_variation`."""

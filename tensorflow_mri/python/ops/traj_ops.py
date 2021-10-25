@@ -147,7 +147,7 @@ def spiral_trajectory(base_resolution,
     phases: An `int`. The number of phases for cine acquisitions. If `None`,
       this is assumed to be a non-cine acquisition with no time dimension.
     ordering: A `string`. The ordering type. Must be one of: `{'linear',
-      'golden', 'tiny', 'sorted', 'sphere_archimedean'}`.
+      'golden', 'tiny', 'sorted'}`.
     angle_range: A `string`. The range of the rotation angle. Must be one of:
       `{'full', 'half'}`. If `angle_range` is `'full'`, the full circle/sphere
       is included in the range. If `angle_range` is `'half'`, only a
@@ -308,12 +308,11 @@ def radial_density(base_resolution,
   angles = _trajectory_angles(
       views, phases or 1, ordering=ordering, angle_range=angle_range)
 
-  # Oversampling.
-  samples = int(base_resolution * readout_os + 0.5)
-
   # Compute weights.
-  weights = tf.map_fn(lambda t: _radial_density_from_theta(samples, t),
-                      angles[..., 0])
+  weights = tf.map_fn(
+      lambda t: _radial_density_from_theta(base_resolution, t,
+                                           readout_os=readout_os),
+      angles[..., 0])
 
   # Remove time dimension if there are no phases.
   if phases is None:
@@ -324,18 +323,22 @@ def radial_density(base_resolution,
   return density
 
 
-def _radial_density_from_theta(samples, theta):
+def _radial_density_from_theta(base_resolution, theta, readout_os=2.0):
   """Compute density compensation weights for a single radial frame.
 
   Args:
-    samples: Number of samples, including oversampling.
+    base_resolution: Number of samples, including oversampling.
     theta: A 1D `Tensor` of rotation angles.
+    readout_os: A `float`. The readout oversampling factor. Defaults to 2.0.
 
   Returns:
     A `Tensor` of shape `[views, samples]`, where `views = theta.shape`.
   """
   # See https://github.com/tensorflow/tensorflow/issues/43038
   # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
+
+  # Oversampling.
+  samples = int(base_resolution * readout_os + 0.5)
 
   tf.debugging.assert_rank(theta, 1, message=(
     "`theta` must be of rank 1, but received shape: {}").format(theta.shape))
@@ -358,13 +361,13 @@ def _radial_density_from_theta(samples, theta):
   #   theta[sort_inds[(inds + 1) % views]] -
   #   theta[sort_inds[(inds - 1) % views]])
   dists = tf.tensor_scatter_nd_update(
-    dists,
-    sort_inds,
-    tf.gather_nd(theta, tf.gather_nd(sort_inds, (inds + 1) % views)))
+      dists,
+      sort_inds,
+      tf.gather_nd(theta, tf.gather_nd(sort_inds, (inds + 1) % views)))
   dists = tf.tensor_scatter_nd_sub(
-    dists,
-    sort_inds,
-    tf.gather_nd(theta, tf.gather_nd(sort_inds, (inds - 1) % views)))
+      dists,
+      sort_inds,
+      tf.gather_nd(theta, tf.gather_nd(sort_inds, (inds - 1) % views)))
 
   # First and last elements will be negative, so add pi.
   # dists[sort_inds[0]] += math.pi
@@ -381,7 +384,7 @@ def _radial_density_from_theta(samples, theta):
   # Compute weights.
   dists = tf.expand_dims(dists, axis=1) # For broadcasting.
   radii = tf.expand_dims(radii, axis=0) # For broadcasting.
-  weights = 4.0 * radii * dists * tf.cast(views, dtype=tf.float32)
+  weights = 4.0 * radii * dists
 
   # Special calculation for DC component.
   echo = samples // 2
@@ -390,13 +393,16 @@ def _radial_density_from_theta(samples, theta):
   weights = tf.tensor_scatter_nd_update(
       weights,
       [[echo]],
-      tf.ones([1, views], dtype=tf.float32))
+      tf.ones([1, views], dtype=tf.float32) / tf.cast(views, dtype=tf.float32))
   weights = tf.transpose(weights)
+
+  # Compensate for oversampling.
+  weights /= (readout_os ** 2)
 
   return weights
 
 
-def estimate_radial_density(points, base_resolution):
+def estimate_radial_density(points, readout_os=2.0):
   """Estimate the sampling density of a radial *k*-space trajectory.
 
   This function estimates the density based on the radius of each sample, but
@@ -415,11 +421,10 @@ def estimate_radial_density(points, base_resolution):
   Args:
     points: A `Tensor`. Must be one of the following types: `float32`,
       `float64`. The coordinates at which the sampling density should be
-      estimated. Must have shape `[..., N]`, where `N` is the number of
-      dimensions. `N` must be 2 or 3. The coordinates should be in
-      radians/pixel, ie, in the range `[-pi, pi]`. Must represent a radial
-      trajectory.
-    base_resolution: An `int`. The base resolution or matrix size.
+      estimated. Must have shape `[..., views, samples, rank]`. The coordinates
+      should be in radians/pixel, ie, in the range `[-pi, pi]`. Must represent a
+      radial trajectory.
+    readout_os: A `float`. The readout oversampling factor. Defaults to 2.0.
 
   Returns:
     A `Tensor` of shape `[...]` containing the density of `points`.
@@ -427,15 +432,21 @@ def estimate_radial_density(points, base_resolution):
   Raises:
     ValueError: If any of the passed inputs is invalid.
   """
-  rank = points.shape[-1]
+  views, samples, rank = points.shape[-3:]
+
   if rank not in (2, 3):
     raise ValueError(
-        f"Rank must be 2 or 3, but received trajectory with shape: {rank}")
-  radius = tf.norm(points, axis=-1) / np.pi * base_resolution
+        f"Rank must be 2 or 3, but received trajectory with rank: {rank}")
+
+  radius = tf.norm(points, axis=-1) / np.pi * (samples // 2)
+
   if rank == 2:
-    weights = tf.where(radius < 0.5, 1.0, 4 * radius)
+    weights = tf.where(radius < 0.5, 1.0, 4.0 * radius)
   elif rank == 3:
-    weights = tf.where(radius < 0.5, 1.0, 12 * radius ** 2 + 1)
+    weights = tf.where(radius < 0.5, 1.0, 12.0 * radius ** 2 + 1.0)
+
+  weights /= views * (readout_os ** 2)
+
   return tf.math.reciprocal_no_nan(weights)
 
 
@@ -720,6 +731,9 @@ def estimate_density(points, grid_shape, method='jackson', max_iter=50):
     _, weights = tf.while_loop(_cond, _body, [i, weights])
     density = tf.math.reciprocal_no_nan(weights)
 
+  # Apply scaling.
+  density *= np.pi
+
   # Get real part and make sure there are no (slightly) negative numbers.
   density = tf.math.abs(tf.math.real(density))
 
@@ -756,3 +770,35 @@ def _next_smooth_int(n):
     while ndiv % 5 == 0:
       ndiv /= 5
   return n
+
+
+def flatten_trajectory(trajectory):
+  """Flatten a trajectory tensor.
+  
+  Args:
+    trajectory: A tensor. Must have shape `[..., views, samples, ndim]`.
+  
+  Returns:
+    A reshaped tensor with flattened views and samples dimensions, i.e. with
+    shape `[..., views*samples, ndim]`.
+  """
+  batch_shape = trajectory.shape[:-3]
+  views, samples, rank = trajectory.shape[-3:]
+  new_shape = batch_shape + [views*samples, rank]
+  return tf.reshape(trajectory, new_shape)
+
+
+def flatten_density(density):
+  """Flatten a density tensor.
+  
+  Args:
+    density: A tensor. Must have shape `[..., views, samples]`.
+  
+  Returns:
+    A reshaped tensor with flattened views and samples dimensions, i.e. with
+    shape `[..., views*samples]`.
+  """
+  batch_shape = density.shape[:-2]
+  views, samples = density.shape[-2:]
+  new_shape = batch_shape + [views*samples]
+  return tf.reshape(density, new_shape)

@@ -171,7 +171,6 @@ def ssim_loss(y_true, y_pred, max_val=None,
       `y_true` and `y_pred` should have shape `[batch, height, width, channels]`
       if processing 2D images or `[batch, depth, height, width, channels]` if
       processing 3D images.
-    name: Namespace to embed the computation in.
 
   Returns:
     A `Tensor` of type `float32` and shape `batch_shape` containing an SSIM
@@ -193,7 +192,7 @@ def ssim_loss(y_true, y_pred, max_val=None,
 
 @tf.keras.utils.register_keras_serializable(package="MRI")
 def ssim_multiscale_loss(y_true, y_pred, max_val=None,
-                         power_factors=image_ops._MSSSIM_WEIGHTS,
+                         power_factors=image_ops._MSSSIM_WEIGHTS, # pylint: disable=protected-access
                          filter_size=11, filter_sigma=1.5,
                          k1=0.01, k2=0.03, rank=None):
   r"""Computes the multiscale structural similarity (MS-SSIM) loss.
@@ -223,6 +222,11 @@ def ssim_multiscale_loss(y_true, y_pred, max_val=None,
       the maximum and the minimum allowed values). Defaults to 1 for floating
       point input images and `MAX` for integer input images, where `MAX` is the
       largest positive representable number for the data type.
+    power_factors: A list of weights for each of the scales. The length of the
+      list determines the number of scales. Index 0 is the unscaled resolution's
+      weight and each increasing scale corresponds to the image being
+      downsampled by 2. Defaults to (0.0448, 0.2856, 0.3001, 0.2363, 0.1333),
+      which are the values obtained in the original paper.
     filter_size: The size of the Gaussian filter. Defaults to 11.
     filter_sigma: The standard deviation of the Gaussian filter. Defaults to
       1.5.
@@ -235,7 +239,6 @@ def ssim_multiscale_loss(y_true, y_pred, max_val=None,
       `y_true` and `y_pred` should have shape `[batch, height, width, channels]`
       if processing 2D images or `[batch, depth, height, width, channels]` if
       processing 3D images.
-    name: Namespace to embed the computation in.
 
   Returns:
     A `Tensor` of type `float32` and shape `batch_shape` containing an SSIM

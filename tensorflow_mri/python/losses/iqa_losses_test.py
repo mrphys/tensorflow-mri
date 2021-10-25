@@ -23,6 +23,7 @@ from tensorflow_mri.python.util import test_util
 
 
 class SSIMLossTest(test_util.TestCase):
+  """Tests for SSIM loss."""
 
   losses = [
     (iqa_losses.StructuralSimilarityLoss,
@@ -33,7 +34,7 @@ class SSIMLossTest(test_util.TestCase):
 
   @parameterized.product(loss=losses)
   @test_util.run_in_graph_and_eager_modes
-  def test_loss(self, loss):
+  def test_loss(self, loss): # pylint: disable=missing-param-doc
     """Test the loss function."""
     loss_cls, loss_fn, ref_fn = loss
     y_true, y_pred = self._random_images()
@@ -41,7 +42,7 @@ class SSIMLossTest(test_util.TestCase):
     ref = 1.0 - ref_fn(y_true, y_pred)
 
     # Test function.
-    result_fn = loss_fn(y_true, y_pred) 
+    result_fn = loss_fn(y_true, y_pred)
     self.assertAllClose(result_fn, ref)
 
     # Test class.
@@ -51,8 +52,8 @@ class SSIMLossTest(test_util.TestCase):
 
   def _random_images(self):
     """Generate random images."""
-    y_true = tf.random.uniform((4, 192, 192, 2))
-    y_pred = tf.random.uniform((4, 192, 192, 2))
+    y_true = tf.random.uniform((4, 192, 192, 2), dtype=tf.float32)
+    y_pred = tf.random.uniform((4, 192, 192, 2), dtype=tf.float32)
     return y_true, y_pred
 
 

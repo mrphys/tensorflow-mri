@@ -33,6 +33,7 @@ wheel: $(TARGET)
 docs: $(TARGET)
 	ln -sf tensorflow_mri tfmr
 	rm -rf tools/docs/_*
+	rm -rf tools/docs/ops/*_layers
 	rm -rf tools/docs/ops/*_losses
 	rm -rf tools/docs/ops/*_metrics
 	rm -rf tools/docs/ops/*_ops

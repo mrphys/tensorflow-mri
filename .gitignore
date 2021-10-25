@@ -7,6 +7,8 @@ __pycache__/
 artifacts/
 third_party/spiral_waveform
 tools/docs/_*
+tools/docs/layers/*
+!tools/docs/layers/*.rst
 tools/docs/losses/*
 !tools/docs/losses/*.rst
 tools/docs/metrics/*
