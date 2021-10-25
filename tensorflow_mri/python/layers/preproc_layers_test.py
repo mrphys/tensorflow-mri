@@ -51,6 +51,31 @@ class KSpaceResamplingTest(test_util.TestCase):
     self.assertAllClose(tf.math.reduce_max(output), result_max[dens_algo],
                         rtol=1e-4, atol=1e-4)
 
+  @parameterized.product(dens_algo=['geometric', 'radial', 'jackson', 'pipe'])
+  def test_radial_2d_impulse(self, dens_algo):
+    """Test radial 2D with impulse function."""
+    image = tf.scatter_nd([[96, 96]], [1.0], [192, 192])
+    image = tf.expand_dims(image, -1)
+
+    layer = preproc_layers.KSpaceResampling(image_shape=[192, 192],
+                                            trajectory='radial',
+                                            views=89,
+                                            angle_range='half',
+                                            dens_algo=dens_algo)
+
+    result_max = {
+        'geometric': 1.0000054,
+        'radial': 1.0000054,
+        'jackson': 0.6805566,
+        'pipe': 0.6819394
+    }
+
+    output = layer(image)
+    self.assertAllEqual(output.shape, [192, 192, 1])
+    self.assertDTypeEqual(output, 'float32')
+    self.assertAllClose(output[96, 96, 0], result_max[dens_algo],
+                        rtol=1e-4, atol=1e-4)
+
 
 class ResizeWithCropOrPadTest(test_util.TestCase):
 
