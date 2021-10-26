@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Keras callbacks."""
+"""Tensorboard callbacks."""
 
-from tensorflow_mri.python.callbacks.tensorboard_callbacks import *
+

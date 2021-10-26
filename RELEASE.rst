@@ -33,6 +33,23 @@ Major Features and Improvements
     whose length is less than the rank of `tensor`.
   * Added new ops `flatten_trajectory` and `flatten_density`.
 
+* `tfmr.callbacks`:
+
+  * Added module.
+  * Added new callback `TensorBoardImage`.
+
+* `tfmr.io`:
+
+  * Added module.
+  * Added new function `encode_gif`.
+
+* `tfmr.layers`:
+
+  * Added module.
+  * Added new convolutional layers `ConvBlock` and `UNet`.
+  * Added new preprocessing layers `AddChannelDimension` and
+    `ResizeWithCropOrPad`.
+
 * `tfmr.losses`:
 
   * Added module.
@@ -44,13 +61,6 @@ Major Features and Improvements
 
   * Added new metrics `DiceIndex` and `JaccardIndex` (aliases of `F1Score` and
     `IoU`, respectively).
-
-* `tfmr.layers`:
-
-  * Added module.
-  * Added new convolutional layers `ConvBlock` and `UNet`.
-  * Added new preprocessing layers `AddChannelDimension` and
-    `ResizeWithCropOrPad`.
 
 Bug Fixes and Other Changes
 ---------------------------

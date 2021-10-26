@@ -4,5 +4,6 @@ numpy
 plotly
 tensorflow>=2.6.0,<2.7.0
 tensorflow-graphics
+tensorflow-io
 tensorflow-nufft
 tensorflow-probability
