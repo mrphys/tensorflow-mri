@@ -29,6 +29,7 @@ from tensorflow_mri.python.ops.recon_ops import *
 from tensorflow_mri.python.ops.signal_ops import *
 from tensorflow_mri.python.ops.traj_ops import *
 
+from tensorflow_mri.python import callbacks
 from tensorflow_mri.python import layers
 from tensorflow_mri.python import losses
 from tensorflow_mri.python import metrics
