@@ -22,7 +22,7 @@ from tensorflow_mri.python.summary import image_summary
 from tensorflow_mri.python.util import nest_util
 
 
-class TensorBoardImage(tf.keras.callbacks.Callback):
+class TensorBoardImages(tf.keras.callbacks.Callback):
   """Keras callback to write image summaries to Tensorboard.
 
   Supports 2D and 3D images. Inputs are expected to have shape NHWC for 2D
@@ -44,9 +44,9 @@ class TensorBoardImage(tf.keras.callbacks.Callback):
       to 3.
     summary_name: Name for the image summaries. Defaults to `'val_images'`. 
     volume_mode: Specifies how to save 3D images. Must be `None`, `'gif'` or an
-      integer. If `None` (default), inputs are treated as 2D images. In `'gif'`
-      mode, each 3D volume is stored as an animated GIF. If an integer, only the
-      corresponding slice is saved.
+      integer. If `None` (default), inputs are expected to be 2D images. In
+      `'gif'` mode, each 3D volume is stored as an animated GIF. If an integer,
+      only the corresponding slice is saved.
   """
   def __init__(self,
                x,
@@ -54,7 +54,7 @@ class TensorBoardImage(tf.keras.callbacks.Callback):
                display_func=None,
                images_freq=1,
                max_images=3,
-               summary_name='val_images',
+               summary_name='images',
                volume_mode=None):
     """Initialize callback."""
     super().__init__()
@@ -71,7 +71,7 @@ class TensorBoardImage(tf.keras.callbacks.Callback):
   def on_epoch_end(self, epoch, logs=None): # pylint: disable=unused-argument
     """Called at the end of an epoch."""
     # This function is used to save the images when in training mode.
-    if epoch % self._update_freq == 0:
+    if epoch % self.update_freq == 0:
       self._write_image_summaries(step=epoch)
 
 
@@ -120,13 +120,13 @@ class TensorBoardImage(tf.keras.callbacks.Callback):
     # Write images.
     with self.file_writer.as_default(step=step):
       if self.volume_mode == 'gif':
-        image_summary.gif(self.name,
+        image_summary.gif(self.summary_name,
                           images,
-                          max_outputs=self.max_outputs)
+                          max_outputs=self.max_images)
       else:
-        tf.summary.image(self.name,
+        tf.summary.image(self.summary_name,
                          images,
-                         max_outputs=self.max_outputs)
+                         max_outputs=self.max_images)
 
     # Close writer.
     self.file_writer.close()

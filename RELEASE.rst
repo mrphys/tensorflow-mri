@@ -36,7 +36,7 @@ Major Features and Improvements
 * `tfmr.callbacks`:
 
   * Added module.
-  * Added new callback `TensorBoardImage`.
+  * Added new callback `TensorBoardImages`.
 
 * `tfmr.io`:
 

@@ -9,4 +9,4 @@ TensorBoard
     :toctree: tensorboard_callbacks
     :nosignatures:
     
-    TensorBoardImage
+    TensorBoardImages
