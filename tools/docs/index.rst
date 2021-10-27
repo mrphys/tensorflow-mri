@@ -31,10 +31,13 @@ FAQ
    :caption: API Documentation
    :hidden:
 
+   callbacks
+   io
    layers
    losses
    metrics
    ops
+   summary
 
 .. meta::
    :google-site-verification: 8PySedj6KJ0kc5qC1CbO6_9blFB9Nho3SgXvbRzyVOU

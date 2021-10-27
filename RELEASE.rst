@@ -47,8 +47,9 @@ Major Features and Improvements
 
   * Added module.
   * Added new convolutional layers `ConvBlock` and `UNet`.
-  * Added new preprocessing layers `AddChannelDimension` and
-    `ResizeWithCropOrPad`.
+  * Added new preprocessing layers `AddChannelDimension`, `Cast`,
+    `KSpaceResampling`, `RepeatTensor`, `ResizeWithCropOrPad` and
+    `ScaleByMinMax`.
 
 * `tfmr.losses`:
 

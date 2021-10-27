@@ -18,6 +18,7 @@ import tensorflow as tf
 import tensorflow_nufft as tfft
 
 from tensorflow_mri.python.ops import image_ops
+from tensorflow_mri.python.ops import math_ops
 from tensorflow_mri.python.ops import traj_ops
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import tensor_util
@@ -297,7 +298,6 @@ class KSpaceResampling(tf.keras.layers.Layer):
     # Move channel dimension back to the end.
     inv_perm = list(range(1, input_rank)) + [0]
     x = tf.transpose(x, inv_perm)
-
     return x
 
   def get_config(self):
@@ -323,6 +323,32 @@ class KSpaceResampling(tf.keras.layers.Layer):
         'vd_type': self._vd_type,
         'dens_algo': self._dens_algo
     }
+    base_config = super().get_config()
+    return {**base_config, **config}
+
+
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class RepeatTensor(tf.keras.layers.Layer):
+  """Repeats the input.
+
+  Returns a list with the repeated inputs.
+
+  Args:
+    repeats: An `int`. The number of times the input should be repeated.
+    **kwargs: Additional keyword arguments to be passed to base class.
+  """
+  def __init__(self, repeats, **kwargs):
+    """Initializes layer."""
+    super().__init__(**kwargs)
+    self._repeats = repeats
+
+  def call(self, inputs, training=None):
+    """Runs forward pass on the input tensor."""
+    return [inputs] * self._repeats
+
+  def get_config(self):
+    """Gets layer configuration."""
+    config = {'repeats': self._repeats}
     base_config = super().get_config()
     return {**base_config, **config}
 
@@ -355,6 +381,35 @@ class ResizeWithCropOrPad(tf.keras.layers.Layer):
   def get_config(self):
     """Gets layer configuration."""
     config = {'shape': self._shape}
+    base_config = super().get_config()
+    return {**base_config, **config}
+
+
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class ScaleByMinMax(tf.keras.layers.Layer):
+  """Scale input into a specified range.
+
+  Args:
+    output_min: An optional `float`. The minimum value in the output tensor.
+      Defaults to 0.0.
+    output_max: An optional `float`. The maximum value in the output tensor.
+      Defaults to 1.0.
+    **kwargs: Additional keyword arguments to be passed to base class.
+  """
+  def __init__(self, output_min=0.0, output_max=1.0, **kwargs):
+    """Initializes layer."""
+    super().__init__(**kwargs)
+    self._output_min = output_min
+    self._output_max = output_max
+
+  def call(self, inputs, training=None):
+    """Runs forward pass on the input tensor."""
+    return math_ops.scale_by_min_max(inputs, self._output_min, self._output_max)
+
+  def get_config(self):
+    """Gets layer configuration."""
+    config = {'output_min': self._output_min,
+              'output_max': self._output_max}
     base_config = super().get_config()
     return {**base_config, **config}
 

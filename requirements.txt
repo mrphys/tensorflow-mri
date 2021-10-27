@@ -2,6 +2,7 @@ h5py
 ismrmrd
 numpy
 plotly
+tensorboard
 tensorflow>=2.6.0,<2.7.0
 tensorflow-graphics
 tensorflow-io

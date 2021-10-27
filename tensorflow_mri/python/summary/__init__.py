@@ -12,4 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Model utilities."""
+"""Tensorboard summaries."""
+
+from tensorflow_mri.python.summary.image_summary import *
