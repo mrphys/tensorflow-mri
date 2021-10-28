@@ -163,4 +163,5 @@ class TotalVariationRegularizer(Regularizer):
 
   def call(self, x):
     # Override default implementation of `call` - we use a shortcut here.
-    return self._reg_factor * image_ops.total_variation(x, axis=self._axis)
+    return self._reg_factor * tf.math.reduce_sum(
+        image_ops.total_variation(x, axis=self._axis))

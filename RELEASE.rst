@@ -32,8 +32,8 @@ Major Features and Improvements
   * Added new ops `flatten_trajectory` and `flatten_density`.
   * `central_crop` and `resize_with_crop_or_pad` now accept `shape` arguments
     whose length is less than the rank of `tensor`.
-  * Added new argument `norm` to `LinearOperatorNUFFT` to control FFT
-    normalization.
+  * Added new argument `norm` to `LinearOperatorFFT`, `LinearOperatorNUFFT` and
+    `LinearOperatorParallelMRI`. This argument controls FFT normalization.
 
 * `tfmr.callbacks`:
 
@@ -77,3 +77,5 @@ Bug Fixes and Other Changes
   * Fixed a bug in `LinearOperatorNUFFT` that would result in incorrect batch
     shape processing when the rank of `domain_shape` was equal to the number of
     spatial dimensions.
+  * Fixed a bug in `TotalVariationRegularizer` that would cause it to returned
+    arrays instead of a single number.

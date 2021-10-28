@@ -193,6 +193,8 @@ class LinearOperatorFFT(LinearOperatorImaging): # pylint: disable=abstract-metho
     domain_shape: A `tf.TensorShape` or list of ints. The domain shape of this
       operator.
     mask: An optional `Tensor` of type `bool`. The sampling mask.
+    norm: FFT normalization mode. Must be `None` (no normalization) or
+      `'ortho'`.
     dtype: An optional `string` or `DType`. The data type for this operator.
       Defaults to `complex64`.
     name: An optional `string`. A name for this operator.
@@ -200,6 +202,7 @@ class LinearOperatorFFT(LinearOperatorImaging): # pylint: disable=abstract-metho
   def __init__(self,
                domain_shape,
                mask=None,
+               norm=None,
                dtype=tf.dtypes.complex64,
                name="LinearOperatorFFT"):
 
@@ -214,6 +217,7 @@ class LinearOperatorFFT(LinearOperatorImaging): # pylint: disable=abstract-metho
     self._mask_cast = tf.cast(self.mask, dtype) if mask is not None else None
     self._dshape = tf.TensorShape(domain_shape)
     self._rshape = tf.TensorShape(domain_shape)
+    self._norm = check_util.validate_enum(norm, {None, 'ortho'}, 'norm')
 
     if self.mask is None:
       # If no mask, this operator has no batch shape.
@@ -235,12 +239,17 @@ class LinearOperatorFFT(LinearOperatorImaging): # pylint: disable=abstract-metho
 
   def _transform(self, x, adjoint=False):
 
+    # If `norm` is `None`, we do not do normalization. In this case `norm` is
+    # set to `forward` for IFFT and `backward` for the FFT, so that the
+    # normalization is never applied.
     if adjoint:
       if self.mask is not None:
         x *= self._mask_cast
-      x = fft_ops.ifftn(x, axes=list(range(-self.rank, 0)), shift=True)
+      x = fft_ops.ifftn(x, axes=list(range(-self.rank, 0)),
+                        norm=self.norm or 'forward', shift=True)
     else:
-      x = fft_ops.fftn(x, axes=list(range(-self.rank, 0)), shift=True)
+      x = fft_ops.fftn(x, axes=list(range(-self.rank, 0)),
+                       norm=self.norm or 'backward', shift=True)
       if self.mask is not None:
         x *= self._mask_cast
     return x
@@ -259,6 +268,10 @@ class LinearOperatorFFT(LinearOperatorImaging): # pylint: disable=abstract-metho
     """Sampling mask."""
     return self._mask
 
+  @property
+  def norm(self):
+    return self._norm
+
 
 class LinearOperatorNUFFT(LinearOperatorImaging): # pylint: disable=abstract-method
   """Linear operator acting like a nonuniform DFT matrix.
@@ -271,7 +284,8 @@ class LinearOperatorNUFFT(LinearOperatorImaging): # pylint: disable=abstract-met
       `[..., M, N]`, where `N` is the rank (or spatial dimensionality), `M` is
       the number of samples and `...` is the batch shape, which can have any
       number of dimensions.
-    norm: FFT normalization mode. Must be `None` (no normalization) or `ortho`.
+    norm: FFT normalization mode. Must be `None` (no normalization) or
+      `'ortho'`.
     name: An optional `string`. The name of this operator.
   """
   def __init__(self,
@@ -554,12 +568,15 @@ class LinearOperatorParallelMRI(tf.linalg.LinearOperatorComposition): # pylint: 
       `trajectory` and this argument is ignored. If `trajectory` is `None`,
       this value defaults to `sensitivities.shape.rank - 1`. `rank` must be
       specified if `sensitivities` has any batch dimensions.
+    norm: FFT normalization mode. Must be `None` (no normalization) or
+      `'ortho'`.
     name: An optional `string`. The name of this operator.
   """
   def __init__(self,
                sensitivities,
                trajectory=None,
                rank=None,
+               norm=None,
                name='LinearOperatorParallelMRI'):
 
     sensitivities = tf.convert_to_tensor(sensitivities)
@@ -573,11 +590,12 @@ class LinearOperatorParallelMRI(tf.linalg.LinearOperatorComposition): # pylint: 
       self._rank = trajectory.shape[-1]
       self._is_cartesian = False
       linop_fourier = LinearOperatorNUFFT(
-          sensitivities.shape[-self.rank-1:], trajectory) # pylint: disable=invalid-unary-operand-type
+          sensitivities.shape[-self.rank-1:], trajectory, norm=norm) # pylint: disable=invalid-unary-operand-type
     else: # Cartesian
       self._rank = rank
       self._is_cartesian = True
-      linop_fourier = LinearOperatorFFT(sensitivities.shape[-self.rank-1:]) # pylint: disable=abstract-class-instantiated,invalid-unary-operand-type
+      linop_fourier = LinearOperatorFFT(
+          sensitivities.shape[-self.rank-1:], norm=norm) # pylint: disable=abstract-class-instantiated,invalid-unary-operand-type
 
     # Prepare the coil sensitivity operator.
     linop_sens = LinearOperatorSensitivityModulation(

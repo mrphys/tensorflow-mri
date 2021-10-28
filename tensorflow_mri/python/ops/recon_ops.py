@@ -869,70 +869,121 @@ def _pics(kspace,
           trajectory=None,
           density=None,
           sensitivities=None,
-          image_shape=None,
+          recon_shape=None,
+          rank=None,
           regularizers=None,
           optimizer=None,
-          initial_image=None):
+          initial_image=None,
+          max_iterations=50):
   """MR image reconstruction using parallel imaging and compressed sensing.
 
   For the parameters, see `tfmr.reconstruct`.
   """
-  # pylint: disable=unreachable
-  raise NotImplementedError("Method `pics` is not yet implemented.")
-
   # Check inputs.
-  if image_shape is None:
+  if recon_shape is None:
     raise ValueError(
-        "Input `image_shape` must be provided for CS.")
+        "Input `recon_shape` must be provided for CS.")
+  recon_shape = tf.TensorShape(recon_shape)
   if regularizers is None:
     regularizers = []
   if optimizer is None:
     # Choose a default optimizer.
     optimizer = 'lbfgs'
   optimizer = check_util.validate_enum(optimizer, {'lbfgs'}, name='optimizer')
+  is_cartesian = trajectory is None
+  is_multicoil = sensitivities is not None
+  if is_cartesian:
+    rank = rank or recon_shape.rank
+    recon_dims = recon_shape.rank
+    kspace_shape = kspace.shape[-(rank + is_multicoil):]
+    batch_shape_tensor = tf.shape(kspace)[:-(recon_dims + is_multicoil)]
+  else:
+    rank = trajectory.shape[-1]
+    recon_dims = recon_shape.rank
+    kspace_shape = kspace.shape[-(1 + is_multicoil):]
+    batch_shape_tensor = tf.shape(kspace)[:-(recon_dims - rank + 1 + is_multicoil)]
+    
+  image_shape = recon_shape[-rank:]
+  additional_shape = recon_shape[:-rank]
+
+  # Add channel dimension to density and trajectory.
+  if is_multicoil:
+    trajectory = tf.expand_dims(trajectory, -3)
+    if density is not None:
+      density = tf.expand_dims(density, -2)
+
+  # Estimate density if it was not provided.
+  if not is_cartesian and density is None:
+    density = traj_ops.estimate_density(trajectory, image_shape)
+
+  # Compute and apply weights.
+  if not is_cartesian:
+    weights = tf.math.sqrt(tf.math.reciprocal_no_nan(density))
+    kspace *= tf.cast(weights, kspace.dtype)
+
+  # Flatten k-space and density.
+  flat_shape_tensor = tf.concat([batch_shape_tensor, additional_shape, [-1]], 0)
+  y = tf.reshape(kspace, flat_shape_tensor)
+  # if density is not None:
+  #   density = tf.reshape(density, tf.concat([batch_shape_tensor, additional_shape, [-1]], 0))
+
+  x_shape_tensor = tf.concat([batch_shape_tensor, recon_shape], 0)
+  y_shape_tensor = tf.shape(y)
 
   # Select encoding operator.
   if sensitivities is None:
-    if mask is not None and trajectory is None:
-      e = linalg_ops.LinearOperatorFFT(image_shape, mask=mask)
-    elif mask is None and trajectory is not None:
-      e = linalg_ops.LinearOperatorNUFFT(image_shape, trajectory)
+    if is_cartesian:
+      e = linalg_ops.LinearOperatorFFT(recon_shape, mask=mask)
+    else:
+      e = linalg_ops.LinearOperatorNUFFT(recon_shape, trajectory)
   else:
+    # TODO: add `mask` to LinearOperatorParallelMRI.
     e = linalg_ops.LinearOperatorParallelMRI(sensitivities,
-                                             trajectory=trajectory,
-                                             rank=image_shape.rank)
+                                             trajectory=trajectory[..., 0, :, :],
+                                             rank=recon_shape.rank,
+                                             norm='ortho')
 
-  # Flatten input k-space.
-  y = tf.reshape(kspace, [-1])
-  if density is not None:
-    density = tf.reshape(density, [-1])
+  if not is_cartesian:
+    print(weights.shape)
+    linop_dens = linalg_ops.LinearOperatorRealWeighting(weights,
+                                                        arg_shape=kspace_shape,
+                                                        dtype=kspace.dtype)
+    print("e, linop_dens", e.shape, linop_dens.shape)
+    e = tf.linalg.LinearOperatorComposition([linop_dens, e])
 
   @math_ops.make_val_and_grad_fn
   def _objective(x):
     x = math_ops.view_as_complex(x, stacked=False)
-    value = tf.math.abs(tf.norm(y - tf.linalg.matvec(e, x), ord=2))
-    x = tf.reshape(x, image_shape)
+    x = tf.reshape(x, flat_shape_tensor)
+    value = tf.linalg.matvec(e, x)
+    value = tf.math.abs(tf.norm(y - value, ord=2))
+    x = tf.reshape(x, x_shape_tensor)
     for reg in regularizers:
       value += reg(x)
     return value
 
   # Prepare initial estimate.
-  if initial_image is None:
-    initial_image = tf.linalg.matvec(e.H, y / density)
-  initial_image = tf.reshape(initial_image, [-1])
-  initial_image = math_ops.view_as_real(initial_image, stacked=False)
+  density = tf.cast(density, y.dtype)
+  initial_x = initial_image
+  if initial_x is None:
+    initial_x = tf.linalg.matvec(e.H, y)
+  print("initial_x", initial_x.shape)
+  initial_x = tf.reshape(initial_x, tf.concat([batch_shape_tensor, [-1]], 0))
+  print("initial_x", initial_x.shape)
+  initial_x = math_ops.view_as_real(initial_x, stacked=False)
 
   # Perform optimization.
   if optimizer == 'lbfgs':
-    result = optimizer_ops.lbfgs_minimize(_objective, initial_image)
+    result = optimizer_ops.lbfgs_minimize(_objective, initial_x,
+                                          max_iterations=max_iterations)
   else:
     raise ValueError(f"Unknown optimizer: {optimizer}")
 
   # Image to correct shape and type.
-  image = tf.reshape(
-      math_ops.view_as_complex(result.position, stacked=False), image_shape)
+  recon = tf.reshape(
+      math_ops.view_as_complex(result.position, stacked=False), recon_shape)
 
-  return image
+  return recon
 
 
 def _extract_patches(images, sizes):
