@@ -365,18 +365,22 @@ class ResizeWithCropOrPad(tf.keras.layers.Layer):
   Args:
     shape: A list of `int` or a `tf.TensorShape`. The target shape. Each
       dimension can be `None`, in which case it is left unmodified.
+    padding_mode: A `str`. Must be one of `'constant'`, `'reflect'` or
+      `'symmetric'`.
     **kwargs: Additional keyword arguments to be passed to base class.
   """
-  def __init__(self, shape, **kwargs):
+  def __init__(self, shape, padding_mode='constant', **kwargs):
     """Initializes layer."""
     super().__init__(**kwargs)
     self._shape = shape
     self._shape_internal = [s or -1 for s in tf.TensorShape(shape).as_list()]
     self._shape_internal += [-1]
+    self._padding_mode = padding_mode
 
   def call(self, inputs, training=None):
     """Runs forward pass on the input tensor."""
-    return image_ops.resize_with_crop_or_pad(inputs, self._shape_internal)
+    return image_ops.resize_with_crop_or_pad(inputs, self._shape_internal,
+                                             padding_mode=self._padding_mode)
 
   def get_config(self):
     """Gets layer configuration."""

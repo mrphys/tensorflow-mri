@@ -983,7 +983,7 @@ def central_crop(tensor, shape):
   return tensor
 
 
-def resize_with_crop_or_pad(tensor, shape):
+def resize_with_crop_or_pad(tensor, shape, padding_mode='constant'):
   """Crops and/or pads a tensor to a target shape.
 
   Pads symmetrically or crops centrally the input tensor as necessary to achieve
@@ -997,6 +997,8 @@ def resize_with_crop_or_pad(tensor, shape):
       the last `len(shape)` dimensions of `tensor`. Any component of `shape` can
       be set to the special value -1 to leave the corresponding dimension
       unchanged.
+    padding_mode: A `str`. Must be one of `'constant'`, `'reflect'` or
+      `'symmetric'`.
 
   Returns:
     A `Tensor`. Has the same type as `tensor`. The symmetrically padded/cropped
@@ -1033,7 +1035,8 @@ def resize_with_crop_or_pad(tensor, shape):
       (tf.math.maximum(target_shape_tensor - input_shape_tensor, 0) + 1) // 2,
       0)
 
-  tensor = tf.pad(tensor, tf.transpose(tf.stack([pad_left, pad_right]))) # pylint: disable=no-value-for-parameter
+  tensor = tf.pad(tensor, tf.transpose(tf.stack([pad_left, pad_right])),
+                  mode=padding_mode) # pylint: disable=no-value-for-parameter
 
   # Crop the tensor.
   tensor = central_crop(tensor, target_shape)

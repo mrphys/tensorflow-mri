@@ -34,6 +34,7 @@ Major Features and Improvements
     whose length is less than the rank of `tensor`.
   * Added new argument `norm` to `LinearOperatorFFT`, `LinearOperatorNUFFT` and
     `LinearOperatorParallelMRI`. This argument controls FFT normalization.
+  * Added new argument `padding_mode` to op `resize_with_crop_or_pad`.
 
 * `tfmr.callbacks`:
 
@@ -77,5 +78,5 @@ Bug Fixes and Other Changes
   * Fixed a bug in `LinearOperatorNUFFT` that would result in incorrect batch
     shape processing when the rank of `domain_shape` was equal to the number of
     spatial dimensions.
-  * Fixed a bug in `TotalVariationRegularizer` that would cause it to returned
-    arrays instead of a single number.
+  * Fixed a bug in `TotalVariationRegularizer` that would sometimes cause it to
+    return an array instead of a scalar.

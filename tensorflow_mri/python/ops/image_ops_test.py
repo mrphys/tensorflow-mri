@@ -600,6 +600,18 @@ class SymmetricPadOrCropTest(test_util.TestCase):
     self.assertAllEqual(y_tf, y_np)
 
   @test_util.run_in_graph_and_eager_modes
+  def test_padding_non_default_mode(self):
+    """Test padding."""
+    shape = [7]
+    x_np = np.array([1, 2, 3])
+    y_np = np.array([[3, 2, 1, 2, 3, 2, 1]])
+
+    y_tf = image_ops.resize_with_crop_or_pad(x_np, shape,
+                                             padding_mode='reflect')
+
+    self.assertAllEqual(y_tf, y_np)
+
+  @test_util.run_in_graph_and_eager_modes
   def test_padding_cropping(self):
     """Test combined cropping and padding."""
     shape = [1, 5]
