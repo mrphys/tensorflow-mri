@@ -35,7 +35,7 @@ class UNetTest(test_util.TestCase):
                          rank,
                          out_channels,
                          use_deconv,
-                         use_residual):
+                         use_global_residual):
     """Test object creation."""
     inputs = tf.keras.Input(
         shape=(128,) * rank + (16,), batch_size=1)
@@ -47,7 +47,7 @@ class UNetTest(test_util.TestCase):
         rank=rank,
         use_deconv=use_deconv,
         out_channels=out_channels,
-        use_residual=use_residual)
+        use_global_residual=use_global_residual)
 
     features = network(inputs)
     if out_channels is None:
@@ -77,7 +77,7 @@ class UNetTest(test_util.TestCase):
         bn_epsilon=0.002,
         out_channels=1,
         out_activation='relu',
-        use_residual=True,
+        use_global_residual=True,
         name='conv_block',
         dtype='float32',
         trainable=True)

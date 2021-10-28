@@ -64,7 +64,7 @@ class UNet(tf.keras.layers.Layer):
     out_channels: An `int`. The number of output channels.
     out_activation: A callable or a Keras activation identifier. The output
       activation. Defaults to `None`.
-    use_residual: A `bool`. If `True`, adds a global residual connection.
+    use_global_residual: A `bool`. If `True`, adds a global residual connection.
     **kwargs: Additional keyword arguments to be passed to base class.
   """
   def __init__(self,
@@ -86,7 +86,7 @@ class UNet(tf.keras.layers.Layer):
                bn_epsilon=0.001,
                out_channels=None,
                out_activation=None,
-               use_residual=False,
+               use_global_residual=False,
                **kwargs):
     """Creates a UNet layer."""
     self._scales = scales
@@ -107,7 +107,7 @@ class UNet(tf.keras.layers.Layer):
     self._bn_epsilon = bn_epsilon
     self._out_channels = out_channels
     self._out_activation = out_activation
-    self._use_residual = use_residual
+    self._use_global_residual = use_global_residual
 
     block_config = dict(
         filters=None, # To be filled for each scale.
@@ -176,14 +176,14 @@ class UNet(tf.keras.layers.Layer):
       block_config['filters'] = self._out_channels
       # If network is residual, the activation is performed after the residual
       # addition.
-      if self._use_residual:
+      if self._use_global_residual:
         block_config['activation'] = None
       else:
         block_config['activation'] = self._out_activation
       self._out_block = conv_blocks.ConvBlock(**block_config)
 
     # Configure residual addition, if requested.
-    if self._use_residual:
+    if self._use_global_residual:
       self._add = tf.keras.layers.Add()
       self._out_activation_fn = tf.keras.activations.get(self._out_activation)
 
@@ -211,7 +211,7 @@ class UNet(tf.keras.layers.Layer):
       x = self._out_block(x)
 
     # Residual connection.
-    if self._use_residual:
+    if self._use_global_residual:
       x = self._add([x, inputs])
       x = self._out_activation_fn(x)
 
@@ -238,7 +238,7 @@ class UNet(tf.keras.layers.Layer):
         'bn_epsilon': self._bn_epsilon,
         'out_channels': self._out_channels,
         'out_activation': self._out_activation,
-        'use_residual': self._use_residual
+        'use_global_residual': self._use_global_residual
     }
     base_config = super().get_config()
     return {**base_config, **config}
