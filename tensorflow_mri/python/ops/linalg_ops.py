@@ -271,16 +271,19 @@ class LinearOperatorNUFFT(LinearOperatorImaging): # pylint: disable=abstract-met
       `[..., M, N]`, where `N` is the rank (or spatial dimensionality), `M` is
       the number of samples and `...` is the batch shape, which can have any
       number of dimensions.
+    norm: FFT normalization mode. Must be `None` (no normalization) or `ortho`.
     name: An optional `string`. The name of this operator.
   """
   def __init__(self,
                domain_shape,
                points,
+               norm=None,
                name="LinearOperatorNUFFT"):
 
     parameters = dict(
       domain_shape=domain_shape,
       points=points,
+      norm=norm,
       name=name
     )
 
@@ -288,6 +291,7 @@ class LinearOperatorNUFFT(LinearOperatorImaging): # pylint: disable=abstract-met
     self._points = check_util.validate_tensor_dtype(
       tf.convert_to_tensor(points), 'floating', 'points')
     self._rank = self._points.shape[-1]
+    self._norm = check_util.validate_enum(norm, {None, 'ortho'}, 'norm')
 
     # Compute NUFFT batch shape. The NUFFT batch shape is different from this
     # operator's batch shape, and it is included in the operator's inner shape.
@@ -296,21 +300,26 @@ class LinearOperatorNUFFT(LinearOperatorImaging): # pylint: disable=abstract-met
     # Batch shape of `points` might have two parts: one that goes into NUFFT
     # batch shape and another that goes into this operator's batch shape.
     points_batch_shape = self.points.shape[:-2]
-    # Take operator part of batch shape, then keep remainder.
-    self._bshape = points_batch_shape[:-nufft_batch_shape.rank] # pylint: disable=invalid-unary-operand-type
-    points_batch_shape = points_batch_shape[-nufft_batch_shape.rank:] # pylint: disable=invalid-unary-operand-type
-    # Check that NUFFT part of points batch shape is broadcast compatible with
-    # NUFFT batch shape.
-    points_batch_shape = points_batch_shape.as_list()
-    points_batch_shape = [None if s == 1 else s for s in points_batch_shape]
-    points_batch_shape = [None] * (
-      nufft_batch_shape.rank - len(points_batch_shape)) + points_batch_shape
-    if not nufft_batch_shape.is_compatible_with(points_batch_shape):
-      raise ValueError(
-        f"The batch shape of `points` must be broadcastable to the batch part "
-        f"of `domain_shape`. Received batch shapes "
-        f"{str(self.domain_shape[:-self.rank])} and "
-        f"{str(self.points.shape[:-2])} for input and `points`, respectively.")
+
+    if nufft_batch_shape.rank == 0:
+      self._bshape = points_batch_shape
+    else:
+      # Take operator part of batch shape, then keep remainder.
+      self._bshape = points_batch_shape[:-nufft_batch_shape.rank] # pylint: disable=invalid-unary-operand-type
+      points_batch_shape = points_batch_shape[-nufft_batch_shape.rank:] # pylint: disable=invalid-unary-operand-type
+      # Check that NUFFT part of points batch shape is broadcast compatible with
+      # NUFFT batch shape.
+      points_batch_shape = points_batch_shape.as_list()
+      points_batch_shape = [None if s == 1 else s for s in points_batch_shape]
+      points_batch_shape = [None] * (
+        nufft_batch_shape.rank - len(points_batch_shape)) + points_batch_shape
+      if not nufft_batch_shape.is_compatible_with(points_batch_shape):
+        raise ValueError(
+            f"The batch shape of `points` must be broadcastable to the batch "
+            f"part of `domain_shape`. Received batch shapes "
+            f"{str(self.domain_shape[:-self.rank])} and "
+            f"{str(self.points.shape[:-2])} for input and `points`, "
+            f"respectively.")
     self._rshape = nufft_batch_shape + self.points.shape[-2:-1]
 
     is_square = self.domain_dimension == self.range_dimension
@@ -323,17 +332,28 @@ class LinearOperatorNUFFT(LinearOperatorImaging): # pylint: disable=abstract-met
                      name=name,
                      parameters=parameters)
 
+    # Compute normalization factors.
+    if self.norm == 'ortho':
+      norm_factor = tf.math.reciprocal(
+          tf.math.sqrt(tf.cast(self.grid_shape.num_elements(), self.dtype)))
+      self._norm_factor_forward = norm_factor
+      self._norm_factor_adjoint = norm_factor
+
   def _transform(self, x, adjoint=False):
 
     if adjoint:
       x = tfft.nufft(x, self.points,
-                     grid_shape=self.domain_shape[-self.rank:],
+                     grid_shape=self.grid_shape,
                      transform_type='type_1',
                      fft_direction='backward')
+      if self.norm is not None:
+        x *= self._norm_factor_adjoint
     else:
       x = tfft.nufft(x, self.points,
                      transform_type='type_2',
                      fft_direction='forward')
+      if self.norm is not None:
+        x *= self._norm_factor_forward
     return x
 
   def _domain_shape(self):
@@ -348,9 +368,7 @@ class LinearOperatorNUFFT(LinearOperatorImaging): # pylint: disable=abstract-met
   @property
   def rank(self):
     """Rank (in the sense of spatial dimensionality) of this operator.
-
     The number of spatial dimensions in the images that this operator acts on.
-
     Returns:
       An `int`.
     """
@@ -359,14 +377,20 @@ class LinearOperatorNUFFT(LinearOperatorImaging): # pylint: disable=abstract-met
   @property
   def points(self):
     """Sampling coordinates.
-
     The set of nonuniform points in which this operator evaluates the Fourier
     transform.
-
     Returns:
       A `Tensor` of shape `[..., M, N]`.
     """
     return self._points
+
+  @property
+  def grid_shape(self):
+    return self.domain_shape[-self.rank:]
+
+  @property
+  def norm(self):
+    return self._norm
 
 
 class LinearOperatorInterp(LinearOperatorNUFFT): # pylint: disable=abstract-method

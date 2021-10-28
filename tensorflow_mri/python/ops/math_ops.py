@@ -154,7 +154,9 @@ def view_as_complex(x, stacked=True):
     A complex-valued `Tensor`.
   """
   if not stacked:
-    x = tf.reshape(x, [-1, 2])
+    x_shape = tf.shape(x)
+    x_shape = tf.concat([x_shape[:-1], [x_shape[-1] // 2], [2]], 0)
+    x = tf.reshape(x, x_shape)
   checks = [tf.debugging.assert_equal(tf.shape(x)[-1], 2, message=(
       f"Could not interpret input tensor as complex. Last dimension must be 2, "
       f"but got {tf.shape(x)[-1]}. Perhaps you need to set `stacked` to "
