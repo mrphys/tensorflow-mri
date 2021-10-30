@@ -24,8 +24,11 @@ from tensorflow_mri.python.ops import image_ops
 
 
 class ConvexOperator():
-  """Base class defining a [batch of] convex operator[s]."""
+  """Base class defining a [batch of] convex operator[s].
 
+  Subclasses should implement the `_call` and `_prox` methods to define the
+  forward pass and the proximal mapping, respectively.
+  """
   def __init__(self,
                dtype,
                name=None):

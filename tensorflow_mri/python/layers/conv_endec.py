@@ -210,10 +210,11 @@ class UNet(tf.keras.layers.Layer):
     if self._out_channels is not None:
       x = self._out_block(x)
 
-    # Residual connection.
+    # Global residual connection.
     if self._use_global_residual:
       x = self._add([x, inputs])
-      x = self._out_activation_fn(x)
+      if self._out_activation is not None:
+        x = self._out_activation_fn(x)
 
     return x
 
