@@ -418,6 +418,33 @@ class ScaleByMinMax(tf.keras.layers.Layer):
     return {**base_config, **config}
 
 
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class Transpose(tf.keras.layers.Layer):
+  """Transpose the input tensor.
+
+  Args:
+    perm: A list of `int`. A permutation of the dimensions of the input tensor.
+    conjugate: An optional `bool`. Defaults to `False`.
+    **kwargs: Additional keyword arguments to be passed to base class.
+  """
+  def __init__(self, perm, conjugate=False, **kwargs):
+    """Initializes layer."""
+    super().__init__(**kwargs)
+    self._perm = perm
+    self._conjugate = conjugate
+
+  def call(self, inputs, training=None):
+    """Runs forward pass on the input tensor."""
+    return tf.transpose(inputs, self._perm, conjugate=self._conjugate)
+
+  def get_config(self):
+    """Gets layer configuration."""
+    config = {'perm': self._perm,
+              'conjugate': self._conjugate}
+    base_config = super().get_config()
+    return {**base_config, **config}
+
+
 def _check_not_none(value, name):
   """Checks that value is not None."""
   if value is None:
