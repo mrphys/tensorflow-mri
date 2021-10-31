@@ -57,6 +57,31 @@ class Cast(tf.keras.layers.Layer):
 
 
 @tf.keras.utils.register_keras_serializable(package='MRI')
+class ExpandDims(tf.keras.layers.Layer):
+  """Insert a new axis at specified index.
+
+  Args:
+    axis: An `int` specifying the dimension index at which to expand the shape
+      of input.
+    **kwargs: Additional keyword arguments to be passed to base class.
+  """
+  def __init__(self, axis, **kwargs):
+    """Initializes layer."""
+    super().__init__(**kwargs)
+    self._axis = axis
+
+  def call(self, inputs, training=None):
+    """Runs forward pass on the input tensor."""
+    return tf.expand_dims(inputs, self._axis)
+
+  def get_config(self):
+    """Gets layer configuration."""
+    config = {'axis': self._axis}
+    base_config = super().get_config()
+    return {**base_config, **config}
+
+
+@tf.keras.utils.register_keras_serializable(package='MRI')
 class KSpaceResampling(tf.keras.layers.Layer):
   """K-space resampling layer.
 
