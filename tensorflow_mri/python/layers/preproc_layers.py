@@ -427,7 +427,7 @@ class Transpose(tf.keras.layers.Layer):
     conjugate: An optional `bool`. Defaults to `False`.
     **kwargs: Additional keyword arguments to be passed to base class.
   """
-  def __init__(self, perm, conjugate=False, **kwargs):
+  def __init__(self, perm=None, conjugate=False, **kwargs):
     """Initializes layer."""
     super().__init__(**kwargs)
     self._perm = perm

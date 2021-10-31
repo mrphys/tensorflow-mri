@@ -125,5 +125,36 @@ class ResizeWithCropOrPadTest(test_util.TestCase):
                         expected_output_shape)
 
 
+class TransposeTest(test_util.TestCase):
+
+  @parameterized.product(perm=[[0, 2, 1], [1, 0, 2]],
+                         conjugate=[True, False])
+  @test_util.run_in_graph_and_eager_modes
+  def test_result(self, perm, conjugate):
+    """Test result shapes."""
+    input1 = tf.random.stateless_normal([4, 4, 4], [234, 231])
+
+    layer1 = preproc_layers.Transpose(perm=perm, conjugate=conjugate)
+
+    output1 = layer1(input1)
+    self.assertAllEqual(output1, tf.transpose(input1, perm=perm,
+                                              conjugate=conjugate))
+
+  def test_serialize_deserialize(self):
+    """Test de/serialization."""
+    config = dict(
+        perm=[1, 0],
+        conjugate=True,
+        name='transpose',
+        dtype='float32',
+        trainable=True)
+
+    layer1 = preproc_layers.Transpose(**config)
+    self.assertEqual(layer1.get_config(), config)
+
+    layer2 = preproc_layers.Transpose.from_config(layer1.get_config())
+    self.assertAllEqual(layer1.get_config(), layer2.get_config())
+
+
 if __name__ == '__main__':
   tf.test.main()
