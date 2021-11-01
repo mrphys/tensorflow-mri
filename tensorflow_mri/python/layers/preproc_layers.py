@@ -94,7 +94,7 @@ class KSpaceResampling(tf.keras.layers.Layer):
   Args:
     image_shape: An `tf.TensorShape` or a list of ints. The spatial dimensions
       of the input/output images.
-    trajectory: A `str`. The type of the trajectory. Must be `radial` or
+    traj_type: A `str`. The type of the trajectory. Must be `radial` or
       `spiral`.
     views: An `int`. The number of radial views per phase.
     phases: An `int`. The number of phases for cine acquisitions. If `None`,
@@ -151,7 +151,7 @@ class KSpaceResampling(tf.keras.layers.Layer):
   """
   def __init__(self,
                image_shape,
-               trajectory,
+               traj_type,
                views,
                phases=None,
                ordering='linear',
@@ -174,11 +174,11 @@ class KSpaceResampling(tf.keras.layers.Layer):
     super().__init__(**kwargs)
 
     check_not_none_if_spiral = lambda value, name: _check_if(
-        trajectory == 'spiral', _check_not_none, value, name)
+        traj_type == 'spiral', _check_not_none, value, name)
 
     self._image_shape = tf.TensorShape(image_shape)
-    self._trajectory = check_util.validate_enum(
-        trajectory, {'radial', 'spiral'}, 'trajectory')
+    self._traj_type = check_util.validate_enum(
+        traj_type, {'radial', 'spiral'}, 'traj_type')
     self._views = views
     self._phases = phases
     self._ordering = ordering
@@ -203,14 +203,14 @@ class KSpaceResampling(tf.keras.layers.Layer):
     self._dens_algo = check_util.validate_enum(
         dens_algo, {'geometric', 'radial', 'jackson', 'pipe'})
 
-    rank = self._image_shape.rank
+    self._rank = self._image_shape.rank
     base_resolution = self._image_shape[-2]
 
     self._image_size = tf.math.reciprocal(
         tf.cast(self._image_shape.num_elements(),
         tensor_util.get_complex_dtype(self.dtype)))
 
-    if self._trajectory == 'radial':
+    if self._traj_type == 'radial':
       self._points = traj_ops.radial_trajectory(
           base_resolution,
           views=self._views,
@@ -220,7 +220,7 @@ class KSpaceResampling(tf.keras.layers.Layer):
           readout_os=self._readout_os)
 
       if self._dens_algo == 'geometric':
-        if rank == 3:
+        if self._rank == 3:
           raise ValueError(
               f"Density algorithm '{self._dens_algo}' does not support 3D "
               f"radial trajectories.")
@@ -243,7 +243,7 @@ class KSpaceResampling(tf.keras.layers.Layer):
         density = traj_ops.estimate_density(self._points, self._image_shape,
                                             method=self._dens_algo)
 
-    elif self._trajectory == 'spiral':
+    elif self._traj_type == 'spiral':
       self._points = traj_ops.spiral_trajectory(
           base_resolution,
           self._spiral_arms,
@@ -274,15 +274,15 @@ class KSpaceResampling(tf.keras.layers.Layer):
                                           method=self._dens_algo)
 
     else:
-      raise ValueError(f"Unknown trajectory: {self._trajectory}")
+      raise ValueError(f"Unknown trajectory type: {self._traj_type}")
 
     self._weights = tf.cast(tf.math.reciprocal_no_nan(density),
                             tensor_util.get_complex_dtype(self.dtype))
 
     traj_rank = self._points.shape[-1]
-    if traj_rank != rank:
+    if traj_rank != self._rank:
       raise ValueError(
-          f"`image_shape` has rank {rank}, but the specified trajectory "
+          f"`image_shape` has rank {self._rank}, but the specified trajectory "
           f"has rank {traj_rank}")
 
   def call(self, inputs, training=None): # pylint: disable=unused-argument
@@ -303,6 +303,10 @@ class KSpaceResampling(tf.keras.layers.Layer):
     x = tfft.nufft(x, self._points,
                    transform_type='type_2',
                    fft_direction='forward')
+
+    # Additional k-space processing steps. This does not do anything in this
+    # class but may be used by subclasses.
+    x = self.process_kspace(x)
 
     # Density compensation.
     x *= self._weights
@@ -325,11 +329,25 @@ class KSpaceResampling(tf.keras.layers.Layer):
     x = tf.transpose(x, inv_perm)
     return x
 
+  def process_kspace(self, kspace):
+    """Additional k-space processing.
+
+    Subclasses that wish to do additional k-space processing should override
+    this method.
+
+    Args:
+      kspace: A tensor containing the resampled k-space data.
+
+    Returns:
+      A processed k-space tensor. Has the same shape and type as `kspace`.
+    """
+    return kspace
+
   def get_config(self):
     """Gets layer configuration."""
     config = {
         'image_shape': self._image_shape,
-        'trajectory': self._trajectory,
+        'traj_type': self._traj_type,
         'views': self._views,
         'phases': self._phases,
         'ordering': self._ordering,
