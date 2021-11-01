@@ -1004,9 +1004,9 @@ def _pics(kspace,
 
   # Select encoding operator.
   if is_multicoil:
-    # TODO: add `mask` to LinearOperatorParallelMRI.
     e = linalg_ops.LinearOperatorParallelMRI(
         sensitivities,
+        mask=mask,
         trajectory=trajectory, 
         rank=recon_shape.rank,
         norm='ortho')
