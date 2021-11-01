@@ -33,7 +33,7 @@ class KSpaceResamplingWithMotion(preproc_layers.KSpaceResampling):
         callable which takes no arguments and returns a float. This may be used
         to obtain a different number for each call. Defaults to 0.0.
       views_per_segment: The number of views per segment. All views in the same
-        segment receive the same motion artefact.
+        segment share the same motion state. Defaults to 1.
     """
     # Get arguments specific to this subclass.
     self._max_displacement = kwargs.pop('max_displacement', 0.0)
