@@ -209,6 +209,7 @@ class LinearOperatorFFT(LinearOperatorImaging): # pylint: disable=abstract-metho
     parameters = dict(
       domain_shape=domain_shape,
       mask=mask,
+      norm=norm,
       dtype=dtype,
       name=name
     )
@@ -556,6 +557,8 @@ class LinearOperatorParallelMRI(tf.linalg.LinearOperatorComposition): # pylint: 
       is the spatial shape, `C` is the number of coils and `...` is the batch
       shape, which can have any dimensionality. Note that `rank` must be
       specified if you intend to provide any batch dimensions.
+    mask: An optional `Tensor` of type `bool`. The sampling mask. Only relevant
+      for Cartesian imaging.
     trajectory: An optional `Tensor`. Must have type `float32` or `float64`.
       Must have shape `[..., M, N]`, where `N` is the rank (or spatial
       dimensionality), `M` is the number of samples and `...` is the batch
@@ -574,6 +577,7 @@ class LinearOperatorParallelMRI(tf.linalg.LinearOperatorComposition): # pylint: 
   """
   def __init__(self,
                sensitivities,
+               mask=None,
                trajectory=None,
                rank=None,
                norm=None,
@@ -595,7 +599,7 @@ class LinearOperatorParallelMRI(tf.linalg.LinearOperatorComposition): # pylint: 
       self._rank = rank
       self._is_cartesian = True
       linop_fourier = LinearOperatorFFT(
-          sensitivities.shape[-self.rank-1:], norm=norm) # pylint: disable=abstract-class-instantiated,invalid-unary-operand-type
+          sensitivities.shape[-self.rank-1:], mask=mask, norm=norm) # pylint: disable=abstract-class-instantiated,invalid-unary-operand-type
 
     # Prepare the coil sensitivity operator.
     linop_sens = LinearOperatorSensitivityModulation(

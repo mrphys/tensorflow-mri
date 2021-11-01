@@ -16,6 +16,31 @@
 
 import tensorflow as tf
 
+from tensorflow_mri.python.ops import convex_ops
+from tensorflow_mri.python.util import test_util
+
+class TotalVariationTest(test_util.TestCase):
+
+  def test_regularizer(self):
+    """Test TV regularizer."""
+    x = [[1., 2., 3.],
+         [4., 5., 6.]]
+
+    reg1 = convex_ops.TotalVariationRegularizer(0.1, [0, 1])
+    res1 = reg1(x)
+    ref1 = 1.3
+    self.assertAllClose(res1, ref1)
+
+    reg2 = convex_ops.TotalVariationRegularizer(0.1, 1)
+    res2 = reg2(x)
+    ref2 = 0.4
+    self.assertAllClose(res2, ref2)
+
+    reg3 = convex_ops.TotalVariationRegularizer(0.1, -1, ndim=1)
+    res3 = reg3(x)
+    ref3 = [0.2, 0.2]
+    self.assertAllClose(res3, ref3)
+
 
 if __name__ == '__main__':
   tf.test.main()

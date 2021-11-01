@@ -1,8 +1,6 @@
 Release 0.7.0
 =============
 
-<INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
-
 Breaking Changes
 ----------------
 
@@ -34,7 +32,10 @@ Major Features and Improvements
     whose length is less than the rank of `tensor`.
   * Added new argument `norm` to `LinearOperatorFFT`, `LinearOperatorNUFFT` and
     `LinearOperatorParallelMRI`. This argument controls FFT normalization.
+  * Added new argument `mask` to `LinearOperatorParallelMRI`.
   * Added new argument `padding_mode` to op `resize_with_crop_or_pad`.
+  * Added new method `'pics'` to `reconstruct`.
+  * Added new parameter `ndim` to `TotalVariationRegularizer`.
 
 * `tfmr.callbacks`:
 

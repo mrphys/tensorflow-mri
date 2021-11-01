@@ -137,11 +137,11 @@ class ConvexOperatorL1Norm(ConvexOperator):
 class Regularizer():
   """Base class defining a [batch of] regularizer[s]."""
   def __init__(self,
-               reg_factor=1.0,
+               factor=1.0,
                convex_operator=None,
                linear_operator=None):
     """Initialize this `Regularizer`."""
-    self._reg_factor = reg_factor
+    self._factor = factor
     self._cvx_op = convex_operator
     self._lin_op = linear_operator
 
@@ -151,20 +151,29 @@ class Regularizer():
   def call(self, x):
     """Compute the regularization term for input `x`."""
     # Apply linear transformation, then convex operator.
-    return self._reg_factor * self._cvx_op(tf.linalg.matvec(self._lin_op, x))
+    return self._factor * self._cvx_op(tf.linalg.matvec(self._lin_op, x))
 
 
 class TotalVariationRegularizer(Regularizer):
   """Regularizer calculating the total variation of a [batch of] input[s].
 
+  Returns a value for each element in batch.
+
   Args:
-    reg_factor: A `float`. The regularization factor.
+    factor: A `float`. The regularization factor.
+    axis: An `int` or a list of `int`. The axis along which to compute the
+      total variation.
+    ndim: An `int`. The number of non-batch dimensions. The last `ndim`
+      dimensions will be reduced.
   """
-  def __init__(self, reg_factor, axis):
-    super().__init__(reg_factor=reg_factor)
+  def __init__(self, factor, axis, ndim=None):
+    super().__init__(factor=factor)
     self._axis = axis
+    self._ndim = ndim
 
   def call(self, x):
-    # Override default implementation of `call` - we use a shortcut here.
-    return self._reg_factor * tf.math.reduce_sum(
-        image_ops.total_variation(x, axis=self._axis))
+    # Override default implementation of `call` - we use a shortcut here rather
+    # than the corresponding linear and convex operators.
+    return self._factor * tf.math.reduce_sum(
+        image_ops.total_variation(x, axis=self._axis, keepdims=True),
+        axis=list(range(-self._ndim, 0)) if self._ndim is not None else self._ndim)
