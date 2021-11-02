@@ -176,4 +176,5 @@ class TotalVariationRegularizer(Regularizer):
     # than the corresponding linear and convex operators.
     return self._factor * tf.math.reduce_sum(
         image_ops.total_variation(x, axis=self._axis, keepdims=True),
-        axis=list(range(-self._ndim, 0)) if self._ndim is not None else self._ndim)
+        axis=(list(range(-self._ndim, 0)) # pylint: disable=invalid-unary-operand-type
+              if self._ndim is not None else self._ndim))

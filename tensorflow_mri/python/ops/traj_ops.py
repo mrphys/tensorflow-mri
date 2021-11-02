@@ -774,10 +774,10 @@ def _next_smooth_int(n):
 
 def flatten_trajectory(trajectory):
   """Flatten a trajectory tensor.
-  
+
   Args:
     trajectory: A tensor. Must have shape `[..., views, samples, ndim]`.
-  
+
   Returns:
     A reshaped tensor with flattened views and samples dimensions, i.e. with
     shape `[..., views*samples, ndim]`.
@@ -790,10 +790,10 @@ def flatten_trajectory(trajectory):
 
 def flatten_density(density):
   """Flatten a density tensor.
-  
+
   Args:
     density: A tensor. Must have shape `[..., views, samples]`.
-  
+
   Returns:
     A reshaped tensor with flattened views and samples dimensions, i.e. with
     shape `[..., views*samples]`.

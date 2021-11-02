@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for module `conv_blocks`."""
+"""Tests for module `preproc_layers`."""
 
 from absl.testing import parameterized
 import tensorflow as tf
@@ -22,18 +22,32 @@ from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.util import test_util
 
 
-class KSpaceResamplingTest(test_util.TestCase):
+class AddChannelDimensionTest(test_util.TestCase):
+  """Tests for layer `AddChannelDimension`."""
+  @test_util.run_in_graph_and_eager_modes
+  def test_result(self):
+    """Test result."""
+    x = tf.random.uniform([10, 10], dtype=tf.float32)
+    ref = tf.expand_dims(x, -1)
 
+    layer = preproc_layers.AddChannelDimension()
+    result = layer(x)
+
+    self.assertAllClose(result, ref)
+
+
+class KSpaceResamplingTest(test_util.TestCase):
+  """Tests for layer `KSpaceResampling`."""
   @parameterized.product(dens_algo=['geometric', 'radial', 'jackson', 'pipe'])
   @test_util.run_in_graph_and_eager_modes
-  def test_radial_2d(self, dens_algo):
+  def test_radial_2d(self, dens_algo): # pylint: disable=missing-param-doc
     """Test radial 2D configuration."""
     image_shape = [256, 256]
     image = image_ops.phantom(shape=image_shape)
     image = tf.expand_dims(image, -1)
 
     layer = preproc_layers.KSpaceResampling(image_shape=image_shape,
-                                            trajectory='radial',
+                                            traj_type='radial',
                                             views=403,
                                             angle_range='half',
                                             dens_algo=dens_algo)
@@ -52,13 +66,13 @@ class KSpaceResamplingTest(test_util.TestCase):
                         rtol=1e-4, atol=1e-4)
 
   @parameterized.product(dens_algo=['geometric', 'radial', 'jackson', 'pipe'])
-  def test_radial_2d_impulse(self, dens_algo):
+  def test_radial_2d_impulse(self, dens_algo): # pylint: disable=missing-param-doc
     """Test radial 2D with impulse function."""
     image = tf.scatter_nd([[96, 96]], [1.0], [192, 192])
     image = tf.expand_dims(image, -1)
 
     layer = preproc_layers.KSpaceResampling(image_shape=[192, 192],
-                                            trajectory='radial',
+                                            traj_type='radial',
                                             views=89,
                                             angle_range='half',
                                             dens_algo=dens_algo)
@@ -78,7 +92,7 @@ class KSpaceResamplingTest(test_util.TestCase):
 
 
 class ResizeWithCropOrPadTest(test_util.TestCase):
-
+  """Tests for layer `ResizeWithCropOrPad`."""
   @test_util.run_in_graph_and_eager_modes
   def test_output_shapes(self):
     """Test output shapes."""
@@ -97,7 +111,7 @@ class ResizeWithCropOrPadTest(test_util.TestCase):
 
     output3 = layer2(input3)
     self.assertAllEqual(output3.shape, [1, 64, 64, 64, 1])
-  
+
   def test_serialize_deserialize(self):
     """Test de/serialization."""
     config = dict(
@@ -126,11 +140,11 @@ class ResizeWithCropOrPadTest(test_util.TestCase):
 
 
 class TransposeTest(test_util.TestCase):
-
+  """Tests for layer `Transpose`."""
   @parameterized.product(perm=[[0, 2, 1], [1, 0, 2]],
                          conjugate=[True, False])
   @test_util.run_in_graph_and_eager_modes
-  def test_result(self, perm, conjugate):
+  def test_result(self, perm, conjugate): # pylint: disable=missing-param-doc
     """Test result shapes."""
     input1 = tf.random.stateless_normal([4, 4, 4], [234, 231])
 

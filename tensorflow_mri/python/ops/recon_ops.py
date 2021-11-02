@@ -949,7 +949,7 @@ def _pics(kspace,
   if is_cartesian: # Cartesian imaging.
     # Number of spatial dimensions. Use `rank` parameter. If `rank` was not
     # provided, assume all dimensions are spatial dimensions.
-    rank = rank or recon_shape.rank 
+    rank = rank or recon_shape.rank
     # Number of dimensions in reconstruction (spatial dimensions plus other
     # potentially regularized dimensions such as time).
     recon_dims = recon_shape.rank
@@ -979,8 +979,8 @@ def _pics(kspace,
   # Subshapes of reconstruction shape. `image_shape` has the spatial dimensions,
   # while `time_shape` has the time dimensions (or any other non-spatial
   # dimensions).
-  image_shape = recon_shape[-rank:]
-  time_shape = recon_shape[:-rank]
+  image_shape = recon_shape[-rank:] # pylint: disable=invalid-unary-operand-type
+  time_shape = recon_shape[:-rank] # pylint: disable=invalid-unary-operand-type
 
   # The solution `x` should have shape `recon_shape` plus the additional batch
   # dimensions. The measurements `y` should be the flattened encoding
@@ -1007,14 +1007,14 @@ def _pics(kspace,
     e = linalg_ops.LinearOperatorParallelMRI(
         sensitivities,
         mask=mask,
-        trajectory=trajectory, 
+        trajectory=trajectory,
         rank=recon_shape.rank,
         norm='ortho')
   else:
     if is_cartesian:
       e = linalg_ops.LinearOperatorFFT(recon_shape, mask=mask, norm='ortho')
     else:
-      e = linalg_ops.LinearOperatorNUFFT(recon_shape, trajectory, norm='ortho')   
+      e = linalg_ops.LinearOperatorNUFFT(recon_shape, trajectory, norm='ortho')
 
   # Add density compensation to encoding operator.
   if not is_cartesian and use_density_compensation:

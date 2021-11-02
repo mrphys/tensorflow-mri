@@ -33,7 +33,7 @@ class TensorBoardImages(tf.keras.callbacks.Callback):
       `tf.data.Dataset` or a `tf.keras.utils.Sequence`.
     log_dir: The directory where to save the log files to be parsed by
       TensorBoard.
-    display_func: A callable that accepts three arguments (`x`, `y` and 
+    display_func: A callable that accepts three arguments (`x`, `y` and
       `y_pred` for a single example) and returns the image to be written to
       TensorBoard for that example. If not specified, the default function will
       concatenate `x`, `y` and `y_pred` horizontally (only suitable for basic
@@ -42,7 +42,7 @@ class TensorBoardImages(tf.keras.callbacks.Callback):
       logs. Defaults to 1.
     max_images: Maximum number of images to be written at each step. Defaults
       to 3.
-    summary_name: Name for the image summaries. Defaults to `'val_images'`. 
+    summary_name: Name for the image summaries. Defaults to `'val_images'`.
     volume_mode: Specifies how to save 3D images. Must be `None`, `'gif'` or an
       integer. If `None` (default), inputs are expected to be 2D images. In
       `'gif'` mode, each 3D volume is stored as an animated GIF. If an integer,

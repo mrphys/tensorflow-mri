@@ -69,7 +69,7 @@ def convert_shape_to_tensor(shape, name=None):
 
 def convert_partial_shape_to_tensor(shape, name=None):
   """Convert a static shape to a tensor.
-  
+
   The input shape may be partially known. Unknown dimensions are replaced by
   the special value `-1` in the output tensor.
   """

@@ -22,10 +22,10 @@ from tensorflow_mri.python.util import test_util
 
 
 class ConvBlockTest(test_util.TestCase):
-
+  """Tests for `ConvBlock`."""
   @parameterized.parameters((64, 3, 2), (32, 3, 3))
   @test_util.run_in_graph_and_eager_modes
-  def test_conv_block_creation(self, filters, kernel_size, rank):
+  def test_conv_block_creation(self, filters, kernel_size, rank): # pylint: disable=missing-param-doc
     """Test object creation."""
     inputs = tf.keras.Input(
         shape=(128,) * rank + (32,), batch_size=1)

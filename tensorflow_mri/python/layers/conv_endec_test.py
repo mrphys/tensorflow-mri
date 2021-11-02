@@ -22,13 +22,13 @@ from tensorflow_mri.python.util import test_util
 
 
 class UNetTest(test_util.TestCase):
-
+  """U-Net tests."""
   @parameterized.parameters((3, 16, 3, 2, None, True, False),
                             (2, 4, 3, 3, None, False, False),
                             (2, 8, 5, 2, 2, False, False),
                             (2, 8, 5, 2, 16, False, True))
   @test_util.run_in_graph_and_eager_modes
-  def test_unet_creation(self,
+  def test_unet_creation(self, # pylint: disable=missing-param-doc
                          scales,
                          base_filters,
                          kernel_size,

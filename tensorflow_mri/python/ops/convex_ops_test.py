@@ -20,7 +20,7 @@ from tensorflow_mri.python.ops import convex_ops
 from tensorflow_mri.python.util import test_util
 
 class TotalVariationTest(test_util.TestCase):
-
+  """Tests for `TotalVariationRegularizer`."""
   def test_regularizer(self):
     """Test TV regularizer."""
     x = [[1., 2., 3.],
