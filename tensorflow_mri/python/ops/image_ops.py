@@ -938,6 +938,9 @@ def central_crop(tensor, shape):
 
   Returns:
     A `Tensor`. Has the same type as `tensor`. The centrally cropped tensor.
+
+  Raises:
+    ValueError: If `shape` has a rank other than 1.
   """
   tensor = tf.convert_to_tensor(tensor)
   input_shape_tensor = tf.shape(tensor)
@@ -958,8 +961,9 @@ def central_crop(tensor, shape):
   # Dynamic checks.
   checks = [
       tf.debugging.assert_greater_equal(tf.rank(tensor), tf.size(shape)),
-      tf.debugging.assert_less_equal(target_shape_tensor, tf.shape(tensor), message=(
-          "Target shape cannot be greater than input shape."))
+      tf.debugging.assert_less_equal(
+          target_shape_tensor, tf.shape(tensor), message=(
+              "Target shape cannot be greater than input shape."))
   ]
   with tf.control_dependencies(checks):
     tensor = tf.identity(tensor)
@@ -1015,7 +1019,8 @@ def resize_with_crop_or_pad(tensor, shape, padding_mode='constant'):
   if not isinstance(target_shape, tf.Tensor):
     target_shape = [-1] * (input_shape.rank - len(shape)) + list(shape)
   target_shape_tensor = tf.concat([
-      tf.tile([-1], [tf.rank(tensor) - tf.size(shape)]), target_shape_tensor], 0)
+      tf.tile([-1], [tf.rank(tensor) - tf.size(shape)]),
+      target_shape_tensor], 0)
 
   # Dynamic checks.
   checks = [
@@ -1035,8 +1040,8 @@ def resize_with_crop_or_pad(tensor, shape, padding_mode='constant'):
       (tf.math.maximum(target_shape_tensor - input_shape_tensor, 0) + 1) // 2,
       0)
 
-  tensor = tf.pad(tensor, tf.transpose(tf.stack([pad_left, pad_right])),
-                  mode=padding_mode) # pylint: disable=no-value-for-parameter
+  tensor = tf.pad(tensor, tf.transpose(tf.stack([pad_left, pad_right])), # pylint: disable=no-value-for-parameter,unexpected-keyword-arg
+                  mode=padding_mode)
 
   # Crop the tensor.
   tensor = central_crop(tensor, target_shape)
@@ -1054,7 +1059,7 @@ def _compute_static_output_shape(input_shape, target_shape):
   Args:
     input_shape: The static shape of the input tensor.
     target_shape: The target shape.
-  
+
   Returns:
     The static output shape.
   """

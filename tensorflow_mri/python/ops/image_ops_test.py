@@ -647,7 +647,8 @@ class SymmetricPadOrCropTest(test_util.TestCase):
     self._assert_static_shape(get_fn([-1, 5]), [None, 3], [None, 5])
     self._assert_static_shape(get_fn([5, 5]), [None, None], [5, 5])
     self._assert_static_shape(get_fn([-1, -1]), [None, None], [None, None])
-    self._assert_static_shape(get_fn([144, 144, 144, -1]), [None, None, None, 1], [144, 144, 144, 1])
+    self._assert_static_shape(
+        get_fn([144, 144, 144, -1]), [None, None, None, 1], [144, 144, 144, 1])
 
   def _assert_static_shape(self, fn, input_shape, expected_output_shape):
     """Asserts that function returns the expected static shapes."""

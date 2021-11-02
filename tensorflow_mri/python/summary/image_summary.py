@@ -93,7 +93,7 @@ def gif(name,
           ],
           name="dimensions",
       )
-      return tf.concat([dimensions, encoded_images], axis=0)
+      return tf.concat([dimensions, encoded_images], axis=0) # pylint: disable=no-value-for-parameter,unexpected-keyword-arg
 
   # To ensure that image encoding logic is only executed when summaries
   # are written, we pass callable to `tensor` parameter.

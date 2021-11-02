@@ -20,21 +20,21 @@ from tensorflow_mri.python.layers import preproc_layers
 
 
 class KSpaceResamplingWithMotion(preproc_layers.KSpaceResampling):
+  """K-space resampling layer with motion.
 
+  Accepts the same arguments as `KSpaceResampling`, plus those defined below.
+
+  Args:
+    max_displacement: A list of floats defining the maximum displacement (in
+      pixels) along each spatial dimension. If a scalar is given, the same
+      displacement will be used in all dimensions. Each element can also be a
+      callable which takes no arguments and returns a float. This may be used
+      to obtain a different number for each call. Defaults to 0.0.
+    views_per_segment: The number of views per segment. All views in the same
+      segment share the same motion state. Defaults to 1.
+  """
   def __init__(self, *args, **kwargs):
-    """K-space resampling layer with motion.
-
-    Accepts the same arguments as `KSpaceResampling`, plus those defined below.
-
-    Args:
-      max_displacement: A list of floats defining the maximum displacement (in
-        pixels) along each spatial dimension. If a scalar is given, the same
-        displacement will be used in all dimensions. Each element can also be a
-        callable which takes no arguments and returns a float. This may be used
-        to obtain a different number for each call. Defaults to 0.0.
-      views_per_segment: The number of views per segment. All views in the same
-        segment share the same motion state. Defaults to 1.
-    """
+    """Initializes the layer."""
     # Get arguments specific to this subclass.
     self._max_displacement = kwargs.pop('max_displacement', 0.0)
     self._views_per_segment = kwargs.pop('views_per_segment', 1)
@@ -48,19 +48,27 @@ class KSpaceResamplingWithMotion(preproc_layers.KSpaceResampling):
     if (isinstance(self._max_displacement, (int, float)) or
         callable(self._max_displacement)):
       self._max_displacement = [self._max_displacement] * self._rank
-    
+
     if len(self._max_displacement) != self._rank:
       raise ValueError(f"`max_displacement` must be of length equal to the "
-                       f"number of spatial dimensions.")
+                       f"number of spatial dimensions, but got "
+                       f"{self._max_displacement}")
 
     # Number of segments: ceil(views / views_per_segment).
-    self._segments = (self._views + self._views_per_segment - 1) // self._views_per_segment
+    self._segments = (
+        (self._views + self._views_per_segment - 1) // self._views_per_segment)
 
   def process_kspace(self, kspace):
     """Adds motion to k-space.
 
     Args:
       kspace: The input k-space.
+
+    Returns:
+      The processed k-space.
+
+    Raises:
+      ValueError: If `kspace` does not have rank 2.
     """
     # `kspace` should have shape [channels, samples].
     if kspace.shape.rank != 2:

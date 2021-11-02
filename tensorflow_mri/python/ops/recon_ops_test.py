@@ -15,7 +15,6 @@
 """Tests for module `recon_ops`."""
 
 from absl.testing import parameterized
-import numpy as np
 import tensorflow as tf
 import tensorflow_nufft as tfft
 
