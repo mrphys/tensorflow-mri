@@ -6,7 +6,7 @@
 __pycache__/
 artifacts/
 third_party/spiral_waveform
-tools/docs/_*
+tools/docs/_build
 tools/docs/callbacks/*
 !tools/docs/callbacks/*.rst
 tools/docs/io/*

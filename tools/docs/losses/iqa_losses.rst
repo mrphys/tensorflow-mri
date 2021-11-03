@@ -3,13 +3,18 @@ Image Quality Assessment
 
 .. automodule:: tensorflow_mri.python.losses.iqa_losses
 
-.. currentmodule:: tfmr.losses
+.. autosummary::
+    :toctree: iqa_losses
+    :nosignatures:
+    :template: losses/function.rst
+
+    ssim_loss
+    ssim_multiscale_loss
 
 .. autosummary::
     :toctree: iqa_losses
     :nosignatures:
+    :template: losses/class.rst
     
-    StructuralSimilarityLoss
     MultiscaleStructuralSimilarityLoss
-    ssim_loss
-    ssim_multiscale_loss
+    StructuralSimilarityLoss
