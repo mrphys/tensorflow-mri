@@ -604,7 +604,7 @@ class SymmetricPadOrCropTest(test_util.TestCase):
     """Test padding."""
     shape = [7]
     x_np = np.array([1, 2, 3])
-    y_np = np.array([[3, 2, 1, 2, 3, 2, 1]])
+    y_np = np.array([3, 2, 1, 2, 3, 2, 1])
 
     y_tf = image_ops.resize_with_crop_or_pad(x_np, shape,
                                              padding_mode='reflect')

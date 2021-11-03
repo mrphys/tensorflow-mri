@@ -42,6 +42,10 @@ class KSpaceResamplingTest(test_util.TestCase):
   @test_util.run_in_graph_and_eager_modes
   def test_radial_2d(self, dens_algo): # pylint: disable=missing-param-doc
     """Test radial 2D configuration."""
+    # TODO: remove this check once the NUFFT segfault issue has been resolved.
+    if not tf.executing_eagerly():
+      self.skipTest("Skipping test due to NUFFT segfault.")
+
     image_shape = [256, 256]
     image = image_ops.phantom(shape=image_shape)
     image = tf.expand_dims(image, -1)

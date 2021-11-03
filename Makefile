@@ -33,10 +33,13 @@ wheel: $(TARGET)
 docs: $(TARGET)
 	ln -sf tensorflow_mri tfmr
 	rm -rf tools/docs/_*
+	rm -rf tools/docs/ops/*_callbacks
+	rm -rf tools/docs/ops/*_io
 	rm -rf tools/docs/ops/*_layers
 	rm -rf tools/docs/ops/*_losses
 	rm -rf tools/docs/ops/*_metrics
 	rm -rf tools/docs/ops/*_ops
+	rm -rf tools/docs/ops/*_summary
 	$(MAKE) -C tools/docs html PY_VERSION=$(PY_VERSION)
 	rm tfmr
 
