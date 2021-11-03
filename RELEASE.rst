@@ -15,12 +15,6 @@ Breaking Changes
   * `estimate_radial_density` no longer accepts the input `base_resolution`.
     However, it will now accept the optional input `readout_os`.
 
-Known Caveats
--------------
-
-* <CAVEATS REGARDING THE RELEASE (BUT NOT BREAKING CHANGES).>
-* <ADDING/BUMPING DEPENDENCIES SHOULD GO HERE>
-* <KNOWN LACK OF SUPPORT ON SOME PLATFORM, SHOULD GO HERE>
 
 Major Features and Improvements
 -------------------------------
@@ -66,6 +60,11 @@ Major Features and Improvements
 
   * Added new metrics `DiceIndex` and `JaccardIndex` (aliases of `F1Score` and
     `IoU`, respectively).
+
+* `tfmr.summary`:
+
+  * Added module.
+  * Added new function `gif`.
 
 Bug Fixes and Other Changes
 ---------------------------
