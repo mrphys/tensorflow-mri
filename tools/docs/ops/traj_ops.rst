@@ -16,3 +16,5 @@
     radial_density
     estimate_density
     estimate_radial_density
+    flatten_trajectory
+    flatten_density

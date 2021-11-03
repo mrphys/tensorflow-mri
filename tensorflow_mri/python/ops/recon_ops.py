@@ -138,7 +138,7 @@ def reconstruct(kspace,
       `"sense"` or `"cg_sense"`. For other methods, this parameter is not
       relevant.
     method: A `string`. The reconstruction method. Must be one of `"fft"`,
-      `"nufft"`, `"inufft"`, `"sense"`, `"cg_sense"` or `"grappa"`.
+      `"nufft"`, `"inufft"`, `"sense"`, `"cg_sense"`, `"grappa"` or `"pics"`.
     **kwargs: Additional method-specific keyword arguments. See Notes for the
       method-specific arguments.
 
@@ -244,7 +244,8 @@ def reconstruct(kspace,
       you can also provide `sensitivities` (note that `sensitivities` are not
       used for the GRAPPA computation, but they are used for adaptive coil
       combination). If `sensitivities` are not provided, coil combination will
-      be performed using the sum of squares method.
+      be performed using the sum of squares method. Additionally, the following
+      keyword arguments are accepted:
 
       * **kernel_size**: An `int` or list of `ints`. The size of the GRAPPA
         kernel. Must have length equal to the image rank or number of spatial
@@ -259,6 +260,25 @@ def reconstruct(kspace,
       * **return_kspace**: An optional `bool`. If `True`, returns the filled
         *k*-space without performing the Fourier transform. In this case, coils
         are not combined regardless of the value of `combine_coils`.
+
+    * For `method="pics"`, provide `kspace`, `mask` (Cartesian only),
+      `trajectory` (non-Cartesian only), `density` (non-Cartesian only,
+      optional) and `sensitivities` (optional). Additionally, the following
+      keyword arguments are accepted:
+
+      * **recon_shape**: A `tf.TensorShape` or a list of `int`. The shape of
+        the reconstructed image, including temporal dimensions but not batch
+        dimensions. This argument must be provided.
+      * **rank**: An `int`. The number of spatial dimensions.
+      * **regularizers**: A list of `tfmr.Regularizer`. The regularizers to be
+        used in the iterative reconstruction.
+      * **optimizer**: The optimizer. Must be `None` or `"lbfgs"`. If `None`,
+        the optimizer will be selected automatically.
+      * **initial_image**: A `Tensor`. The initial estimate for the iterative
+        reconstruction. Must have shape `recon_shape`.
+      * **max_iterations**: An `int`. The maximum number of iterations.
+      * **use_density_compensation**: A `bool`. If `True`, adds an explicit
+        density compensation step to the encoding operator.
 
   Returns:
     A `Tensor`. The reconstructed images. Has the same type as `kspace`. Has
@@ -279,9 +299,30 @@ def reconstruct(kspace,
       Wang, J., Kiefer, B. and Haase, A. (2002), Generalized autocalibrating
       partially parallel acquisitions (GRAPPA). Magn. Reson. Med., 47:
       1202-1210. https://doi.org/10.1002/mrm.10171
+
+    .. [4] Block, K.T., Uecker, M. and Frahm, J. (2007), Undersampled radial MRI
+      with multiple coils. Iterative image reconstruction using a total
+      variation constraint. Magn. Reson. Med., 57: 1086-1098.
+      https://doi.org/10.1002/mrm.21236
+
+    .. [5] Feng, L., Grimm, R., Block, K.T., Chandarana, H., Kim, S., Xu, J.,
+      Axel, L., Sodickson, D.K. and Otazo, R. (2014), Golden-angle radial sparse
+      parallel MRI: Combination of compressed sensing, parallel imaging, and
+      golden-angle radial sampling for fast and flexible dynamic volumetric MRI.
+      Magn. Reson. Med., 72: 707-717. https://doi.org/10.1002/mrm.24980
   """
   method = _select_reconstruction_method(
     kspace, mask, trajectory, density, calib, sensitivities, method)
+
+  kspace = tf.convert_to_tensor(kspace)
+  if mask is not None:
+    mask = tf.convert_to_tensor(mask)
+  if trajectory is not None:
+    trajectory = tf.convert_to_tensor(trajectory)
+  if density is not None:
+    density = tf.convert_to_tensor(density)
+  if sensitivities is not None:
+    sensitivities = tf.convert_to_tensor(sensitivities)
 
   args = {'mask': mask,
           'trajectory': trajectory,
@@ -357,6 +398,11 @@ def _nufft(kspace,
   if sensitivities is not None:
     sensitivities = tf.convert_to_tensor(sensitivities)
 
+  # Add channel dimension to trajectory and density.
+  trajectory = tf.expand_dims(trajectory, -3)
+  if density is not None:
+    density = tf.expand_dims(density, -2)
+
   # Infer rank from number of dimensions in trajectory.
   rank = trajectory.shape[-1]
   if rank > 3:
@@ -389,6 +435,7 @@ def _nufft(kspace,
   # Do coil combination.
   if multicoil and combine_coils:
     image = coil_ops.combine_coils(image, maps=sensitivities, coil_axis=-rank-1)
+
   return image
 
 
@@ -869,70 +916,150 @@ def _pics(kspace,
           trajectory=None,
           density=None,
           sensitivities=None,
-          image_shape=None,
+          recon_shape=None,
+          rank=None,
           regularizers=None,
           optimizer=None,
-          initial_image=None):
+          initial_image=None,
+          max_iterations=50,
+          use_density_compensation=True):
   """MR image reconstruction using parallel imaging and compressed sensing.
 
   For the parameters, see `tfmr.reconstruct`.
   """
-  # pylint: disable=unreachable
-  raise NotImplementedError("Method `pics` is not yet implemented.")
-
-  # Check inputs.
-  if image_shape is None:
+  # Check reconstruction shape.
+  if recon_shape is None:
     raise ValueError(
-        "Input `image_shape` must be provided for CS.")
+        "Input `recon_shape` must be provided for CS.")
+  recon_shape = tf.TensorShape(recon_shape)
+
+  # Check regularizers.
   if regularizers is None:
     regularizers = []
+
+  # Check optimizer.
   if optimizer is None:
-    # Choose a default optimizer.
-    optimizer = 'lbfgs'
+    optimizer = 'lbfgs' # Default optimizer.
   optimizer = check_util.validate_enum(optimizer, {'lbfgs'}, name='optimizer')
 
+  # Check what kind of reconstruction this is.
+  is_cartesian = trajectory is None
+  is_multicoil = sensitivities is not None
+
+  if is_cartesian: # Cartesian imaging.
+    # Number of spatial dimensions. Use `rank` parameter. If `rank` was not
+    # provided, assume all dimensions are spatial dimensions.
+    rank = rank or recon_shape.rank
+    # Number of dimensions in reconstruction (spatial dimensions plus other
+    # potentially regularized dimensions such as time).
+    recon_dims = recon_shape.rank
+    time_dims = recon_dims - rank
+    # Shape of `kspace` (encoding dimensions only). Shape has length N for
+    # N-dimensional imaging, or N + 1 for multicoil imaging.
+    kspace_encoding_shape = kspace.shape[-(rank + is_multicoil):]
+    # The batch shape. The shape of `kspace` without the encoding dimensions,
+    # time dimensions or coil dimension.
+    batch_shape = kspace.shape[:-(recon_dims + is_multicoil)]
+
+  else: # Non-Cartesian imaging.
+    # Infer rank from trajectory. Parameter `rank` is ignored for non-Cartesian
+    # imaging.
+    rank = trajectory.shape[-1]
+    # Number of dimensions in reconstruction (spatial dimensions plus other
+    # potentially regularized dimensions such as time).
+    recon_dims = recon_shape.rank
+    time_dims = recon_dims - rank
+    # Shape of `kspace` (encoding dimensions only). Shape has length 1, or 2 for
+    # multicoil imaging.
+    kspace_encoding_shape = kspace.shape[-(1 + is_multicoil):]
+    # The batch shape. The shape of `kspace` without the single encoding
+    # dimension, time dimensions or coil dimension.
+    batch_shape = kspace.shape[:-(time_dims + 1 + is_multicoil)]
+
+  # Subshapes of reconstruction shape. `image_shape` has the spatial dimensions,
+  # while `time_shape` has the time dimensions (or any other non-spatial
+  # dimensions).
+  image_shape = recon_shape[-rank:] # pylint: disable=invalid-unary-operand-type
+  time_shape = recon_shape[:-rank] # pylint: disable=invalid-unary-operand-type
+
+  # The solution `x` should have shape `recon_shape` plus the additional batch
+  # dimensions. The measurements `y` should be the flattened encoding
+  # dimension/s plus the time dimensions plus the batch dimensions.
+  x_shape = batch_shape + recon_shape
+  y_shape_tensor = tf.concat([batch_shape, time_shape, [-1]], 0)
+
+  # Estimate density if it was not provided.
+  if not is_cartesian and density is None and use_density_compensation:
+    density = traj_ops.estimate_density(trajectory, image_shape)
+
+  # Compute and apply weights.
+  if not is_cartesian and use_density_compensation:
+    weights = tf.math.sqrt(tf.math.reciprocal_no_nan(density))
+    if is_multicoil:
+      weights = tf.expand_dims(weights, -2) # Add the channel dimension.
+    kspace *= tf.cast(weights, kspace.dtype)
+
+  # Flatten `kspace` to a single encoding dimension.
+  y = tf.reshape(kspace, y_shape_tensor)
+
   # Select encoding operator.
-  if sensitivities is None:
-    if mask is not None and trajectory is None:
-      e = linalg_ops.LinearOperatorFFT(image_shape, mask=mask)
-    elif mask is None and trajectory is not None:
-      e = linalg_ops.LinearOperatorNUFFT(image_shape, trajectory)
+  if is_multicoil:
+    e = linalg_ops.LinearOperatorParallelMRI(
+        sensitivities,
+        mask=mask,
+        trajectory=trajectory,
+        rank=recon_shape.rank,
+        norm='ortho')
   else:
-    e = linalg_ops.LinearOperatorParallelMRI(sensitivities,
-                                             trajectory=trajectory,
-                                             rank=image_shape.rank)
+    if is_cartesian:
+      e = linalg_ops.LinearOperatorFFT(recon_shape, mask=mask, norm='ortho')
+    else:
+      e = linalg_ops.LinearOperatorNUFFT(recon_shape, trajectory, norm='ortho')
 
-  # Flatten input k-space.
-  y = tf.reshape(kspace, [-1])
-  if density is not None:
-    density = tf.reshape(density, [-1])
+  # Add density compensation to encoding operator.
+  if not is_cartesian and use_density_compensation:
+    linop_dens = linalg_ops.LinearOperatorRealWeighting(
+        weights,
+        arg_shape=kspace_encoding_shape,
+        dtype=kspace.dtype)
+    e = tf.linalg.LinearOperatorComposition([linop_dens, e])
 
+  @tf.function
   @math_ops.make_val_and_grad_fn
   def _objective(x):
+    # Reinterpret real input as complex and reshape to correct shape.
     x = math_ops.view_as_complex(x, stacked=False)
+    x = tf.reshape(x, y_shape_tensor)
+
+    # Compute data consistency terms.
     value = tf.math.abs(tf.norm(y - tf.linalg.matvec(e, x), ord=2))
-    x = tf.reshape(x, image_shape)
+
+    # Add regularization term[s].
+    x = tf.reshape(x, x_shape)
     for reg in regularizers:
       value += reg(x)
+
     return value
 
   # Prepare initial estimate.
   if initial_image is None:
-    initial_image = tf.linalg.matvec(e.H, y / density)
-  initial_image = tf.reshape(initial_image, [-1])
+    initial_image = tf.linalg.matvec(e.H, y)
+  initial_image = tf.reshape(initial_image,
+                             tf.concat([batch_shape, [-1]], 0))
   initial_image = math_ops.view_as_real(initial_image, stacked=False)
 
   # Perform optimization.
   if optimizer == 'lbfgs':
-    result = optimizer_ops.lbfgs_minimize(_objective, initial_image)
+    result = optimizer_ops.lbfgs_minimize(_objective, initial_image,
+                                          max_iterations=max_iterations)
   else:
     raise ValueError(f"Unknown optimizer: {optimizer}")
 
   # Image to correct shape and type.
-  image = tf.reshape(
-      math_ops.view_as_complex(result.position, stacked=False), image_shape)
+  recon = tf.reshape(
+      math_ops.view_as_complex(result.position, stacked=False), recon_shape)
 
-  return image
+  return recon
 
 
 def _extract_patches(images, sizes):

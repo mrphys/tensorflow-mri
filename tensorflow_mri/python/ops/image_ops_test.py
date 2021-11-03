@@ -600,6 +600,18 @@ class SymmetricPadOrCropTest(test_util.TestCase):
     self.assertAllEqual(y_tf, y_np)
 
   @test_util.run_in_graph_and_eager_modes
+  def test_padding_non_default_mode(self):
+    """Test padding."""
+    shape = [7]
+    x_np = np.array([1, 2, 3])
+    y_np = np.array([3, 2, 1, 2, 3, 2, 1])
+
+    y_tf = image_ops.resize_with_crop_or_pad(x_np, shape,
+                                             padding_mode='reflect')
+
+    self.assertAllEqual(y_tf, y_np)
+
+  @test_util.run_in_graph_and_eager_modes
   def test_padding_cropping(self):
     """Test combined cropping and padding."""
     shape = [1, 5]
@@ -624,6 +636,31 @@ class SymmetricPadOrCropTest(test_util.TestCase):
     y_tf = image_ops.resize_with_crop_or_pad(x_np, shape)
 
     self.assertAllEqual(y_tf, y_np)
+
+  def test_static_shape(self):
+    """Test static shapes."""
+    def get_fn(target_shape):
+      return lambda x: image_ops.resize_with_crop_or_pad(x, target_shape)
+
+    self._assert_static_shape(get_fn([1, -1]), [None, 3], [1, 3])
+    self._assert_static_shape(get_fn([-1, -1]), [None, 3], [None, 3])
+    self._assert_static_shape(get_fn([-1, 5]), [None, 3], [None, 5])
+    self._assert_static_shape(get_fn([5, 5]), [None, None], [5, 5])
+    self._assert_static_shape(get_fn([-1, -1]), [None, None], [None, None])
+    self._assert_static_shape(
+        get_fn([144, 144, 144, -1]), [None, None, None, 1], [144, 144, 144, 1])
+
+  def _assert_static_shape(self, fn, input_shape, expected_output_shape):
+    """Asserts that function returns the expected static shapes."""
+    @tf.function
+    def graph_fn(x):
+      return fn(x)
+
+    input_spec = tf.TensorSpec(shape=input_shape)
+    concrete_fn = graph_fn.get_concrete_function(input_spec)
+
+    self.assertAllEqual(concrete_fn.structured_outputs.shape,
+                        expected_output_shape)
 
 
 class TotalVariationTest(test_util.TestCase):

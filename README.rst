@@ -24,18 +24,16 @@ processing. TFMR provides:
 * A selection of differentiable operators for accelerated image reconstruction,
   Cartesian and non-Cartesian *k*-space sampling, and many other common MR image
   and signal processing tasks.
-* Keras objects such as metrics and losses for the creation, fitting and
-  evaluation of machine learning models.
+* Keras callbacks, layers, metrics and losses and other utilities for the
+  creation, training and evaluation of machine learning models.
 
-TFMR is aimed for scientists and researchers working with MRI data, whether they
-intend to use machine learning or not.
-
-TFMR enables prototyping and deployment of computational MRI solutions easily
-and within a single language.
+TFMR is aimed for scientists and researchers working with MRI data. Whether you
+are planning to use machine learning or not, TFMR enables prototyping and
+deployment of efficient computational MRI solutions easily and within Python.
 
 Thanks to the use of a TensorFlow backend, TFMR integrates seamlessly in machine
-learning projects. TFMR also inherits other benefits of TensorFlow, including
-high performance computation and GPU acceleration. 
+learning projects. It also inherits other benefits of TensorFlow, including high
+performance computation and GPU acceleration. 
 
 .. end-intro
 
@@ -65,6 +63,7 @@ TensorFlow MRI  TensorFlow
 v0.4            v2.6
 v0.5            v2.6
 v0.6            v2.6
+v0.7            v2.6
 ==============  ==========
 
 .. end-install

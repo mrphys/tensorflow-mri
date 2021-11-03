@@ -87,8 +87,9 @@ class RadialTrajectoryTest(test_util.TestCase):
                                    views=5,
                                    phases=None,
                                    ordering='linear')
-    ref = [[0.0625, 0.08333334, 0.125, 0.25, 1., 0.25, 0.125, 0.08333334]] * 5
-    self.assertAllClose(dens, ref)
+    ref = tf.convert_to_tensor(
+        [[0.0625, 0.08333334, 0.125, 0.25, 1., 0.25, 0.125, 0.08333334]] * 5)
+    self.assertAllClose(dens, ref * 20)
 
   def test_density_3d(self):
     """Test 3D radial density."""
@@ -288,14 +289,14 @@ class TrajOpsTest(test_util.TestCase): # pylint: disable=missing-class-docstring
 
             if phases is None and ordering == 'linear':
               expected_theta = np.array([0.0, 2.0943952, 4.1887903])
-              expected_weights = 2.0 * np.array([[4.0, 2.0, 0.5, 2.0],
+              expected_weights = 1.0 / 6.0 * np.array([[4.0, 2.0, 0.5, 2.0],
                                                  [4.0, 2.0, 0.5, 2.0],
                                                  [4.0, 2.0, 0.5, 2.0]])
             elif phases is None and ordering == 'golden':
               # phi = 2.0 / (1.0 + tf.sqrt(5.0))
               # expected_theta = (phi * tf.range(3.0) % 1.0) * 2.0 * math.pi
               expected_theta = np.array([0.0, 3.8832223, 1.4832591])
-              expected_weights = 2.0 * np.array([
+              expected_weights = 1.0 / 6.0 * np.array([
                 [4.5835924, 2.2917962, 0.5, 2.2917962],
                 [2.832816, 1.416408, 0.5, 1.416408],
                 [4.583592, 2.291796, 0.5, 2.291796]])
@@ -303,7 +304,7 @@ class TrajOpsTest(test_util.TestCase): # pylint: disable=missing-class-docstring
               # expected_theta = (
               #   1 / (phi + 7) * tf.range(3.0) % 1.0) * 2.0 * math.pi
               expected_theta = np.array([0.0, 0.8247778, 1.6495556])
-              expected_weights = 2.0 * np.array([
+              expected_weights = 1.0 / 6.0 * np.array([
                 [4.424791, 2.2123954, 0.5, 2.2123954],
                 [3.1504188, 1.5752094, 0.5, 1.5752094],
                 [4.4247904, 2.2123952, 0.5, 2.2123952]])
@@ -321,7 +322,7 @@ class TrajOpsTest(test_util.TestCase): # pylint: disable=missing-class-docstring
             elif phases == 2 and ordering == 'sorted':
               expected_theta = np.array([[0.0, 1.4832591, 3.8832223],
                                          [0.56655425, 2.9665182, 5.3664813]])
-              expected_weights = 2.0 * np.array([
+              expected_weights = 1.0 / 6.0 * np.array([
                 [[4.583592, 2.291796, 0.5, 2.291796],
                  [4.583592, 2.291796, 0.5, 2.291796],
                  [2.832816, 1.416408, 0.5, 1.416408]],
@@ -368,8 +369,8 @@ class DensityEstimationTest(test_util.TestCase):
     dens_flat = traj_ops.estimate_density(flat_traj, [128, 128])
     dens = tf.reshape(dens_flat, traj.shape[:-1])
 
-    self.assertAllClose(dens, self.data['estimate_density/density'],
-                        rtol=1e-5, atol=1e-5)
+    self.assertAllClose(dens, self.data['estimate_density/density'] * np.pi,
+                        rtol=1e-4, atol=1e-4)
 
   @test_util.run_in_graph_and_eager_modes
   def test_estimate_density_pipe(self):
@@ -383,8 +384,8 @@ class DensityEstimationTest(test_util.TestCase):
                                           max_iter=20)
     dens = tf.reshape(dens_flat, traj.shape[:-1])
 
-    self.assertAllClose(dens, self.data['estimate_density/pipe'],
-                        rtol=1e-5, atol=1e-5)
+    self.assertAllClose(dens, self.data['estimate_density/pipe'] * np.pi,
+                        rtol=1e-4, atol=1e-4)
 
   @test_util.run_in_graph_and_eager_modes
   def test_estimate_density_3d_many_points(self):

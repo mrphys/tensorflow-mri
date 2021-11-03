@@ -172,8 +172,8 @@ def _fft_internal(x, shape, axes, norm, shift, transform): # pylint: disable=mis
     checks = []
     checks.append(
         tf.debugging.assert_equal(tf.size(shape), tf.size(axes), message=(
-          "Arguments `shape` and `axes` must have equal length. "
-          "Received: {}, {}").format(shape, axes)))
+            "Arguments `shape` and `axes` must have equal length. "
+            "Received: {}, {}").format(shape, axes)))
     with tf.control_dependencies(checks):
       shape, axes = tf.identity_n([shape, axes])
 

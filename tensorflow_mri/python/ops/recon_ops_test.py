@@ -18,6 +18,7 @@ from absl.testing import parameterized
 import tensorflow as tf
 import tensorflow_nufft as tfft
 
+from tensorflow_mri.python.ops import convex_ops
 from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.ops import recon_ops
@@ -393,6 +394,28 @@ class ReconstructTest(test_util.TestCase):
                                    return_kspace=True)
     self.assertAllClose(result, self.data['grappa/2d_cine/result'],
                         rtol=1e-4, atol=1e-4)
+
+
+  def test_pics_grasp(self):
+    """Test GRASP reconstruction."""
+    # Load data.
+    data = io_util.read_hdf5(
+        'tests/data/liver_dce_2d_multicoil_radial_kspace.h5')
+    kspace = data['kspace']
+    traj = data['traj']
+    dens = data['dens']
+    sens = data['sens']
+    ref = data['recon/cs/i2']
+
+    regularizers = [convex_ops.TotalVariationRegularizer(0.001, axis=-3)]
+    recon = recon_ops.reconstruct(
+        kspace, trajectory=traj, density=dens, sensitivities=sens,
+        method='pics',
+        recon_shape=[28, 384, 384],
+        regularizers=regularizers,
+        max_iterations=2)
+
+    self.assertAllClose(recon, ref)
 
 
 class ReconstructPartialKSpaceTest(test_util.TestCase):
