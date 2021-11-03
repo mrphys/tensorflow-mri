@@ -1,0 +1,8 @@
+﻿tfmr.metrics.Recall
+===================
+
+.. currentmodule:: tensorflow_mri.python.metrics.confusion_metrics
+
+.. autoclass:: tfmr.metrics.Recall
+    :members:
+    :show-inheritance:

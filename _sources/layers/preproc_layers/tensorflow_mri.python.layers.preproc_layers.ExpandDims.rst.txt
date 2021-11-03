@@ -1,0 +1,8 @@
+﻿tfmr.layers.ExpandDims
+======================
+
+.. currentmodule:: tensorflow_mri.python.layers.preproc_layers
+
+.. autoclass:: tfmr.layers.ExpandDims
+    :members:
+    :show-inheritance:

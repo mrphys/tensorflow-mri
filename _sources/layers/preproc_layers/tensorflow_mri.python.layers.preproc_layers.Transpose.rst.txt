@@ -1,0 +1,8 @@
+﻿tfmr.layers.Transpose
+=====================
+
+.. currentmodule:: tensorflow_mri.python.layers.preproc_layers
+
+.. autoclass:: tfmr.layers.Transpose
+    :members:
+    :show-inheritance:

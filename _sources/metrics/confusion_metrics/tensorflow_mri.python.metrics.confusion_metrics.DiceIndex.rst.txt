@@ -1,0 +1,8 @@
+﻿tfmr.metrics.DiceIndex
+======================
+
+.. currentmodule:: tensorflow_mri.python.metrics.confusion_metrics
+
+.. autoclass:: tfmr.metrics.DiceIndex
+    :members:
+    :show-inheritance:

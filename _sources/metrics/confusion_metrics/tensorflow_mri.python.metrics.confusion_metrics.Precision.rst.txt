@@ -1,0 +1,8 @@
+﻿tfmr.metrics.Precision
+======================
+
+.. currentmodule:: tensorflow_mri.python.metrics.confusion_metrics
+
+.. autoclass:: tfmr.metrics.Precision
+    :members:
+    :show-inheritance:

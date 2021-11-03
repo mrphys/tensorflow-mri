@@ -1,0 +1,6 @@
+﻿tfmr.flatten\_trajectory
+========================
+
+.. currentmodule:: tfmr
+
+.. autofunction:: flatten_trajectory

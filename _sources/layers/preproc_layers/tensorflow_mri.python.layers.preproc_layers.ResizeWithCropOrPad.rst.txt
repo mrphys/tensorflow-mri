@@ -1,0 +1,8 @@
+﻿tfmr.layers.ResizeWithCropOrPad
+===============================
+
+.. currentmodule:: tensorflow_mri.python.layers.preproc_layers
+
+.. autoclass:: tfmr.layers.ResizeWithCropOrPad
+    :members:
+    :show-inheritance:

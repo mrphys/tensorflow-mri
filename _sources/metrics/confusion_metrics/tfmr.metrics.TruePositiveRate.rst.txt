@@ -1,8 +1,0 @@
-﻿tfmr.metrics.TruePositiveRate
-=============================
-  
-.. currentmodule:: tfmr
-
-.. autoclass:: tfmr.metrics.TruePositiveRate
-   :members:
-   :show-inheritance:

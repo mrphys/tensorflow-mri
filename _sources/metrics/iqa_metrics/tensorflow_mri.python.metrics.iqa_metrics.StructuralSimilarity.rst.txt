@@ -1,0 +1,8 @@
+﻿tfmr.metrics.StructuralSimilarity
+=================================
+
+.. currentmodule:: tensorflow_mri.python.metrics.iqa_metrics
+
+.. autoclass:: tfmr.metrics.StructuralSimilarity
+    :members:
+    :show-inheritance:
