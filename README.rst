@@ -54,18 +54,20 @@ TensorFlow Compatibility
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 Each TensorFlow MRI release is compiled against a specific version of
-TensorFlow. Please see the compatibility table below to see what versions of
-each package you can expect to work together.
+TensorFlow. To ensure compatibility, it is recommended to install matching
+versions of TensorFlow and TensorFlow MRI according to the table below.
 
-==============  ==========
-TensorFlow MRI  TensorFlow
-==============  ==========
-v0.4            v2.6
-v0.5            v2.6
-v0.6            v2.6
-v0.7            v2.6
-v0.8            v2.7
-==============  ==========
+======================  ========================  ============
+TensorFlow MRI Version  TensorFlow Compatibility  Release Date
+======================  ========================  ============
+v0.8.0                  v2.7.x     
+v0.7.0                  v2.6.x                    Nov 3, 2021
+v0.6.2                  v2.6.x                    Oct 13, 2021
+v0.6.1                  v2.6.x                    Sep 30, 2021
+v0.6.0                  v2.6.x                    Sep 28, 2021
+v0.5.0                  v2.6.x                    Aug 29, 2021
+v0.4.0                  v2.6.x                    Aug 18, 2021
+======================  ========================  ============
 
 .. end-install
 
