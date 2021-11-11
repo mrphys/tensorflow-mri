@@ -5,10 +5,10 @@
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="tfmr.spiral_trajectory" href="tfmr.spiral_trajectory.html" /><link rel="prev" title="k-space Trajectories" href="../traj_ops.html" />
 
-    <link rel="shortcut icon" href="../../_static/tfmr_icon.svg"/><meta name="generator" content="sphinx-4.1.2, furo 2021.08.17.beta43"/>
+    <link rel="shortcut icon" href="../../_static/tfmr_icon.svg"/><meta name="generator" content="sphinx-4.2.0, furo 2021.10.09"/>
         <title>tfmr.radial_trajectory - TensorFlow MRI Documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=910ac4ccc9d7c023151c34010d7b500fb9777a51" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=0254c309f5cadf746f1a613e7677379ac9c8cdcd" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?digest=16fb25fabf47304eee183a5e9af80b1ba98259b1" />
     
     
@@ -38,9 +38,11 @@
   
     }
   }
-</style>
-    <link media="(prefers-color-scheme: dark)" rel="stylesheet" href="../../_static/pygments_dark.css"></head>
+</style></head>
   <body>
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
     
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
   <symbol id="svg-toc" viewBox="0 0 24 24">
@@ -352,7 +354,7 @@
   </aside>
   <div class="main">
     <div class="content">
-      <article role="main">
+      <div class="article-container">
         <div class="content-icon-container">
           <div class="theme-toggle-container theme-toggle-content">
             <button class="theme-toggle">
@@ -367,11 +369,12 @@
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
         </div>
-        <section id="tfmr-radial-trajectory">
+        <article role="main">
+          <section id="tfmr-radial-trajectory">
 <h1>tfmr.radial_trajectory<a class="headerlink" href="#tfmr-radial-trajectory" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="tfmr.radial_trajectory">
-<span class="sig-prename descclassname"><span class="pre">tfmr.</span></span><span class="sig-name descname"><span class="pre">radial_trajectory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_resolution</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">views</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phases</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ordering</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'full'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readout_os</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.7.0/tensorflow_mri/python/ops/traj_ops.py#L40-L113"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.radial_trajectory" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">tfmr.</span></span><span class="sig-name descname"><span class="pre">radial_trajectory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_resolution</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">views</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phases</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ordering</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'full'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readout_os</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.8.0/tensorflow_mri/python/ops/traj_ops.py#L40-L113"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.radial_trajectory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate a radial trajectory.</p>
 <p>This function supports the following 2D ordering methods:</p>
 <ul class="simple">
@@ -446,7 +449,8 @@ sphere applied to 3D selective RF pulse design. Magn. Reson. Med.,
 </dd></dl>
 </section>
 
-      </article>
+        </article>
+      </div>
       <footer>
         
         <div class="related-pages">
@@ -473,13 +477,11 @@ sphere applied to 3D selective RF pulse design. Magn. Reson. Med.,
         </div>
 
         <div class="related-information">
-              Copyright &#169; 2021 University College London
-            |
+              Copyright &#169; 2021 University College London |
             Built with <a href="https://www.sphinx-doc.org/">Sphinx</a>
               and
               <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
-              <a href="https://github.com/pradyunsg/furo">Furo theme</a>.
-            |
+              <a href="https://github.com/pradyunsg/furo">Furo theme</a>. |
             <a class="muted-link" href="../../_sources/ops/traj_ops/tfmr.radial_trajectory.rst.txt"
                rel="nofollow">
               Show Source

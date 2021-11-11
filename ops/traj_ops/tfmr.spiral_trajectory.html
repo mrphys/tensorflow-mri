@@ -5,10 +5,10 @@
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="tfmr.radial_waveform" href="tfmr.radial_waveform.html" /><link rel="prev" title="tfmr.radial_trajectory" href="tfmr.radial_trajectory.html" />
 
-    <link rel="shortcut icon" href="../../_static/tfmr_icon.svg"/><meta name="generator" content="sphinx-4.1.2, furo 2021.08.17.beta43"/>
+    <link rel="shortcut icon" href="../../_static/tfmr_icon.svg"/><meta name="generator" content="sphinx-4.2.0, furo 2021.10.09"/>
         <title>tfmr.spiral_trajectory - TensorFlow MRI Documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=910ac4ccc9d7c023151c34010d7b500fb9777a51" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=0254c309f5cadf746f1a613e7677379ac9c8cdcd" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?digest=16fb25fabf47304eee183a5e9af80b1ba98259b1" />
     
     
@@ -38,9 +38,11 @@
   
     }
   }
-</style>
-    <link media="(prefers-color-scheme: dark)" rel="stylesheet" href="../../_static/pygments_dark.css"></head>
+</style></head>
   <body>
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
     
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
   <symbol id="svg-toc" viewBox="0 0 24 24">
@@ -352,7 +354,7 @@
   </aside>
   <div class="main">
     <div class="content">
-      <article role="main">
+      <div class="article-container">
         <div class="content-icon-container">
           <div class="theme-toggle-container theme-toggle-content">
             <button class="theme-toggle">
@@ -367,11 +369,12 @@
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
         </div>
-        <section id="tfmr-spiral-trajectory">
+        <article role="main">
+          <section id="tfmr-spiral-trajectory">
 <h1>tfmr.spiral_trajectory<a class="headerlink" href="#tfmr-spiral-trajectory" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="tfmr.spiral_trajectory">
-<span class="sig-prename descclassname"><span class="pre">tfmr.</span></span><span class="sig-name descname"><span class="pre">spiral_trajectory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_resolution</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spiral_arms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_of_view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_grad_ampl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_rise_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwell_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">views</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phases</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ordering</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'full'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readout_os</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">larmor_const</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">42.577478518</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vd_inner_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vd_outer_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vd_outer_density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vd_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.7.0/tensorflow_mri/python/ops/traj_ops.py#L116-L205"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.spiral_trajectory" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">tfmr.</span></span><span class="sig-name descname"><span class="pre">spiral_trajectory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_resolution</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spiral_arms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_of_view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_grad_ampl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_rise_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwell_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">views</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phases</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ordering</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'full'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readout_os</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">larmor_const</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">42.577478518</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vd_inner_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vd_outer_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vd_outer_density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vd_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.8.0/tensorflow_mri/python/ops/traj_ops.py#L116-L205"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.spiral_trajectory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate a spiral trajectory.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -436,7 +439,8 @@ Med, 71: 278-285. <a class="reference external" href="https://doi.org/10.1002/mr
 </dd></dl>
 </section>
 
-      </article>
+        </article>
+      </div>
       <footer>
         
         <div class="related-pages">
@@ -463,13 +467,11 @@ Med, 71: 278-285. <a class="reference external" href="https://doi.org/10.1002/mr
         </div>
 
         <div class="related-information">
-              Copyright &#169; 2021 University College London
-            |
+              Copyright &#169; 2021 University College London |
             Built with <a href="https://www.sphinx-doc.org/">Sphinx</a>
               and
               <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
-              <a href="https://github.com/pradyunsg/furo">Furo theme</a>.
-            |
+              <a href="https://github.com/pradyunsg/furo">Furo theme</a>. |
             <a class="muted-link" href="../../_sources/ops/traj_ops/tfmr.spiral_trajectory.rst.txt"
                rel="nofollow">
               Show Source

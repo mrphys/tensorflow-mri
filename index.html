@@ -6,10 +6,10 @@
 <meta content="8PySedj6KJ0kc5qC1CbO6_9blFB9Nho3SgXvbRzyVOU" name="google-site-verification" />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Callbacks" href="callbacks.html" />
 
-    <link rel="shortcut icon" href="_static/tfmr_icon.svg"/><meta name="generator" content="sphinx-4.1.2, furo 2021.08.17.beta43"/>
+    <link rel="shortcut icon" href="_static/tfmr_icon.svg"/><meta name="generator" content="sphinx-4.2.0, furo 2021.10.09"/>
         <title>TensorFlow MRI Documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=910ac4ccc9d7c023151c34010d7b500fb9777a51" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=0254c309f5cadf746f1a613e7677379ac9c8cdcd" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=16fb25fabf47304eee183a5e9af80b1ba98259b1" />
     
     
@@ -39,9 +39,11 @@
   
     }
   }
-</style>
-    <link media="(prefers-color-scheme: dark)" rel="stylesheet" href="_static/pygments_dark.css"></head>
+</style></head>
   <body>
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
     
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
   <symbol id="svg-toc" viewBox="0 0 24 24">
@@ -353,7 +355,7 @@
   </aside>
   <div class="main">
     <div class="content">
-      <article role="main">
+      <div class="article-container">
         <div class="content-icon-container">
           <div class="theme-toggle-container theme-toggle-content">
             <button class="theme-toggle">
@@ -368,8 +370,9 @@
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
         </div>
-        <section id="tensorflow-mri-release">
-<h1>TensorFlow MRI 0.7.0<a class="headerlink" href="#tensorflow-mri-release" title="Permalink to this headline">¶</a></h1>
+        <article role="main">
+          <section id="tensorflow-mri-release">
+<h1>TensorFlow MRI 0.8.0<a class="headerlink" href="#tensorflow-mri-release" title="Permalink to this headline">¶</a></h1>
 <a class="reference external image-reference" href="https://github.com/mrphys/tensorflow-mri"><img alt="View on GitHub" height="52" src="_images/view_on_github.svg" width="168"/></a>
 <div class="line-block">
 <div class="line"><br/></div>
@@ -399,30 +402,48 @@ performance computation and GPU acceleration.</p>
 <section id="tensorflow-compatibility">
 <h3>TensorFlow Compatibility<a class="headerlink" href="#tensorflow-compatibility" title="Permalink to this headline">¶</a></h3>
 <p>Each TensorFlow MRI release is compiled against a specific version of
-TensorFlow. Please see the compatibility table below to see what versions of
-each package you can expect to work together.</p>
+TensorFlow. To ensure compatibility, it is recommended to install matching
+versions of TensorFlow and TensorFlow MRI according to the table below.</p>
 <div class="table-wrapper"><table class="docutils align-default">
 <colgroup>
-<col style="width: 58%"/>
-<col style="width: 42%"/>
+<col style="width: 38%"/>
+<col style="width: 41%"/>
+<col style="width: 21%"/>
 </colgroup>
 <thead>
-<tr class="row-odd"><th class="head"><p>TensorFlow MRI</p></th>
-<th class="head"><p>TensorFlow</p></th>
+<tr class="row-odd"><th class="head"><p>TensorFlow MRI Version</p></th>
+<th class="head"><p>TensorFlow Compatibility</p></th>
+<th class="head"><p>Release Date</p></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>v0.4</p></td>
-<td><p>v2.6</p></td>
+<tr class="row-even"><td><p>v0.8.0</p></td>
+<td><p>v2.7.x</p></td>
+<td><p>Nov 11, 2021</p></td>
 </tr>
-<tr class="row-odd"><td><p>v0.5</p></td>
-<td><p>v2.6</p></td>
+<tr class="row-odd"><td><p>v0.7.0</p></td>
+<td><p>v2.6.x</p></td>
+<td><p>Nov 3, 2021</p></td>
 </tr>
-<tr class="row-even"><td><p>v0.6</p></td>
-<td><p>v2.6</p></td>
+<tr class="row-even"><td><p>v0.6.2</p></td>
+<td><p>v2.6.x</p></td>
+<td><p>Oct 13, 2021</p></td>
 </tr>
-<tr class="row-odd"><td><p>v0.7</p></td>
-<td><p>v2.6</p></td>
+<tr class="row-odd"><td><p>v0.6.1</p></td>
+<td><p>v2.6.x</p></td>
+<td><p>Sep 30, 2021</p></td>
+</tr>
+<tr class="row-even"><td><p>v0.6.0</p></td>
+<td><p>v2.6.x</p></td>
+<td><p>Sep 28, 2021</p></td>
+</tr>
+<tr class="row-odd"><td><p>v0.5.0</p></td>
+<td><p>v2.6.x</p></td>
+<td><p>Aug 29, 2021</p></td>
+</tr>
+<tr class="row-even"><td><p>v0.4.0</p></td>
+<td><p>v2.6.x</p></td>
+<td><p>Aug 18, 2021</p></td>
 </tr>
 </tbody>
 </table></div>
@@ -445,7 +466,8 @@ Debian/Ubuntu:</p>
 </section>
 </section>
 
-      </article>
+        </article>
+      </div>
       <footer>
         
         <div class="related-pages">
@@ -462,13 +484,11 @@ Debian/Ubuntu:</p>
         </div>
 
         <div class="related-information">
-              Copyright &#169; 2021 University College London
-            |
+              Copyright &#169; 2021 University College London |
             Built with <a href="https://www.sphinx-doc.org/">Sphinx</a>
               and
               <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
-              <a href="https://github.com/pradyunsg/furo">Furo theme</a>.
-            |
+              <a href="https://github.com/pradyunsg/furo">Furo theme</a>. |
             <a class="muted-link" href="_sources/index.rst.txt"
                rel="nofollow">
               Show Source
@@ -489,7 +509,7 @@ Debian/Ubuntu:</p>
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">TensorFlow MRI 0.7.0</a><ul>
+<li><a class="reference internal" href="#">TensorFlow MRI 0.8.0</a><ul>
 <li><a class="reference internal" href="#installation">Installation</a><ul>
 <li><a class="reference internal" href="#tensorflow-compatibility">TensorFlow Compatibility</a></li>
 </ul>

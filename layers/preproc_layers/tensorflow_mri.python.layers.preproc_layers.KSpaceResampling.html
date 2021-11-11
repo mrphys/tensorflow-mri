@@ -5,10 +5,10 @@
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="tfmr.layers.RepeatTensor" href="tensorflow_mri.python.layers.preproc_layers.RepeatTensor.html" /><link rel="prev" title="tfmr.layers.ExpandDims" href="tensorflow_mri.python.layers.preproc_layers.ExpandDims.html" />
 
-    <link rel="shortcut icon" href="../../_static/tfmr_icon.svg"/><meta name="generator" content="sphinx-4.1.2, furo 2021.08.17.beta43"/>
+    <link rel="shortcut icon" href="../../_static/tfmr_icon.svg"/><meta name="generator" content="sphinx-4.2.0, furo 2021.10.09"/>
         <title>tfmr.layers.KSpaceResampling - TensorFlow MRI Documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=910ac4ccc9d7c023151c34010d7b500fb9777a51" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=0254c309f5cadf746f1a613e7677379ac9c8cdcd" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?digest=16fb25fabf47304eee183a5e9af80b1ba98259b1" />
     
     
@@ -38,9 +38,11 @@
   
     }
   }
-</style>
-    <link media="(prefers-color-scheme: dark)" rel="stylesheet" href="../../_static/pygments_dark.css"></head>
+</style></head>
   <body>
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
     
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
   <symbol id="svg-toc" viewBox="0 0 24 24">
@@ -352,7 +354,7 @@
   </aside>
   <div class="main">
     <div class="content">
-      <article role="main">
+      <div class="article-container">
         <div class="content-icon-container">
           <div class="theme-toggle-container theme-toggle-content">
             <button class="theme-toggle">
@@ -367,11 +369,12 @@
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
         </div>
-        <section id="tfmr-layers-kspaceresampling">
+        <article role="main">
+          <section id="tfmr-layers-kspaceresampling">
 <h1>tfmr.layers.KSpaceResampling<a class="headerlink" href="#tfmr-layers-kspaceresampling" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="tfmr.layers.KSpaceResampling">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">tfmr.layers.</span></span><span class="sig-name descname"><span class="pre">KSpaceResampling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.7.0/tensorflow_mri/python/layers/preproc_layers.py#L76-L362"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.layers.KSpaceResampling" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">tfmr.layers.</span></span><span class="sig-name descname"><span class="pre">KSpaceResampling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.8.0/tensorflow_mri/python/layers/preproc_layers.py#L76-L362"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.layers.KSpaceResampling" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">keras.engine.base_layer.Layer</span></code></p>
 <p>K-space resampling layer.</p>
 <p>This layer receives an image, resamples its k-space according to the
@@ -442,17 +445,17 @@ trajectories (see also <code class="docutils literal notranslate"><span class="p
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tfmr.layers.KSpaceResampling.call">
-<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.7.0/tensorflow_mri/python/layers/preproc_layers.py#L280-L322"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.layers.KSpaceResampling.call" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.8.0/tensorflow_mri/python/layers/preproc_layers.py#L280-L322"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.layers.KSpaceResampling.call" title="Permalink to this definition">¶</a></dt>
 <dd><p>Runs forward pass on the input tensor.</p>
 </dd></dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tfmr.layers.KSpaceResampling.get_config">
-<span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.7.0/tensorflow_mri/python/layers/preproc_layers.py#L338-L362"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.layers.KSpaceResampling.get_config" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.8.0/tensorflow_mri/python/layers/preproc_layers.py#L338-L362"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.layers.KSpaceResampling.get_config" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets layer configuration.</p>
 </dd></dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tfmr.layers.KSpaceResampling.process_kspace">
-<span class="sig-name descname"><span class="pre">process_kspace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kspace</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.7.0/tensorflow_mri/python/layers/preproc_layers.py#L324-L336"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.layers.KSpaceResampling.process_kspace" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">process_kspace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kspace</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.8.0/tensorflow_mri/python/layers/preproc_layers.py#L324-L336"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.layers.KSpaceResampling.process_kspace" title="Permalink to this definition">¶</a></dt>
 <dd><p>Additional k-space processing.</p>
 <p>Subclasses that wish to do additional k-space processing should override
 this method.</p>
@@ -468,7 +471,8 @@ this method.</p>
 </dd></dl>
 </section>
 
-      </article>
+        </article>
+      </div>
       <footer>
         
         <div class="related-pages">
@@ -495,13 +499,11 @@ this method.</p>
         </div>
 
         <div class="related-information">
-              Copyright &#169; 2021 University College London
-            |
+              Copyright &#169; 2021 University College London |
             Built with <a href="https://www.sphinx-doc.org/">Sphinx</a>
               and
               <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
-              <a href="https://github.com/pradyunsg/furo">Furo theme</a>.
-            |
+              <a href="https://github.com/pradyunsg/furo">Furo theme</a>. |
             <a class="muted-link" href="../../_sources/layers/preproc_layers/tensorflow_mri.python.layers.preproc_layers.KSpaceResampling.rst.txt"
                rel="nofollow">
               Show Source
