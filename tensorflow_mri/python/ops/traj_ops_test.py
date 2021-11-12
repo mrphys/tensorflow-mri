@@ -51,6 +51,10 @@ class RadialTrajectoryTest(test_util.TestCase):
   @test_util.run_in_graph_and_eager_modes
   def test_trajectory(self):
     """Test radial trajectory."""
+    phi = 2.0 / (1.0 + tf.sqrt(5.0))
+    phi_7 = 1.0 / (phi + 7)
+    phi_6 = 1.0 / (phi + 6)
+
     trajectory = traj_ops.radial_trajectory(base_resolution=128,
                                             views=8,
                                             phases=4,
@@ -58,6 +62,31 @@ class RadialTrajectoryTest(test_util.TestCase):
     self.assertAllClose(trajectory,
                         _rotate_pi(self.data['radial/trajectory/golden']),
                         rtol=1e-4, atol=1e-4)
+
+    trajectory = traj_ops.radial_trajectory(base_resolution=128,
+                                            views=8,
+                                            phases=4,
+                                            ordering='tiny')
+
+    # Verify rotation angles.
+    spacing = _calculate_rotation_angles_from_radial_trajectory(trajectory)
+    self.assertAllClose(
+        spacing, phi_7 * 2.0 * np.pi * tf.ones([31]))
+    # Verify central sample.
+    self.assertAllClose(trajectory[..., 128, :], tf.zeros([4, 8, 2]))
+
+    trajectory = traj_ops.radial_trajectory(base_resolution=128,
+                                            views=8,
+                                            phases=4,
+                                            ordering='tiny',
+                                            tiny_number=6)
+
+    # Verify rotation angles.
+    spacing = _calculate_rotation_angles_from_radial_trajectory(trajectory)
+    self.assertAllClose(
+        spacing, tf.broadcast_to(phi_6 * 2.0 * np.pi, spacing.shape))
+    # Verify central sample.
+    self.assertAllClose(trajectory[..., 128, :], tf.zeros([4, 8, 2]))
 
   @test_util.run_in_graph_and_eager_modes
   def test_trajectory_3d(self):
@@ -108,6 +137,7 @@ class RadialTrajectoryTest(test_util.TestCase):
 
     phi = 2.0 / (1.0 + tf.sqrt(5.0))
     phi_7 = 1.0 / (phi + 7)
+    phi_6 = 1.0 / (phi + 6)
 
     def _calc(inc, max_, intl=False):
       res = tf.expand_dims(tf.math.floormod(
@@ -152,6 +182,16 @@ class RadialTrajectoryTest(test_util.TestCase):
     angles = traj_ops._trajectory_angles(
         4, phases=phases, ordering='tiny_half', angle_range='full')
     self.assertAllClose(angles, _calc(phi_7 * math.pi, 2.0 * math.pi))
+
+    angles = traj_ops._trajectory_angles(
+        4, phases=phases, ordering='tiny_half', angle_range='full',
+        tiny_number=6)
+    self.assertAllClose(angles, _calc(phi_6 * math.pi, 2.0 * math.pi))
+
+    with self.assertRaisesRegex(
+        ValueError, "`tiny_number` must be an integer >= 2"):
+      angles = traj_ops._trajectory_angles(
+          4, phases=phases, ordering='tiny', angle_range='full', tiny_number=1)
 
     angles = traj_ops._trajectory_angles(
         4, phases=phases, ordering='sphere_archimedean', angle_range='half')
@@ -394,6 +434,28 @@ class DensityEstimationTest(test_util.TestCase):
     rng = tf.random.Generator.from_seed(0)
     flat_traj = rng.uniform([2560000, 3], minval=-np.pi, maxval=np.pi)
     traj_ops.estimate_density(flat_traj, [128, 128, 128])
+
+
+def _calculate_rotation_angles_from_radial_trajectory(trajectory):
+  """Calculates the angles between views for a given radial trajectory.
+
+  Args:
+    trajectory: A tensor of shape `[phases, views, samples, 2]` containing a
+      radial trajectory.
+
+  Returns:
+    A tensor of shape `[phases * views - 1]` containing the angles between
+    views.
+  """
+  # Flatten views and phases.
+  trajectory = tf.reshape(trajectory, [-1] + trajectory.shape[-2:].as_list())
+  # Calculate view angles using first sample of readout.
+  angles = tf.atan2(trajectory[:, 0, 1], trajectory[:, 0, 0])
+  # Calculate rotation angle between consecutive views.
+  spacing = tf.experimental.numpy.diff(angles)
+  # Normalize to range [0, 2 * pi].
+  spacing = tf.where(spacing < 0.0, spacing + 2.0 * np.pi, spacing)
+  return spacing
 
 
 def _rotate_pi(traj):

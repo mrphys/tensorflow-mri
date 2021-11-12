@@ -42,6 +42,7 @@ def radial_trajectory(base_resolution,
                       phases=None,
                       ordering='linear',
                       angle_range='full',
+                      tiny_number=7,
                       readout_os=2.0):
   """Calculate a radial trajectory.
 
@@ -54,11 +55,13 @@ def radial_trajectory(base_resolution,
     `'half'`) [1]_.
   * **golden_half**: Variant of `'golden'` in which views are spaced by 111.25
     degrees even if `angle_range` is `'full'` [1]_.
-  * **tiny**: Consecutive views are spaced by the 7th tiny golden angle (47.26
+  * **tiny**: Consecutive views are spaced by the n-th tiny golden angle, where
+    `n` is given by `tiny_number` [2]_. The default tiny number is 7 (47.26
     degrees if `angle_range` is `'full'` and 23.63 degrees if `angle_range` is
-    `'half'`) [2]_.
-  * **tiny_half**: Variant of `'tiny'` in which views are spaced by 23.63
-    degrees even if `angle_range` is `'full'` [2]_.
+    `'half'`).
+  * **tiny_half**: Variant of `'tiny'` in which views are spaced by a half angle
+    even if `angle_range` is `'full'` [2]_ (23.63 degrees for `tiny_number`
+    equal to 7).
   * **sorted**: Like `golden`, but views within each phase are sorted by their
     angle in ascending order. Can be an alternative to `'tiny'` ordering in
     applications where small angle increments are required.
@@ -83,6 +86,8 @@ def radial_trajectory(base_resolution,
       `{'full', 'half'}`. If `angle_range` is `'full'`, the full circle/sphere
       is included in the range. If `angle_range` is `'half'`, only a
       semicircle/hemisphere is included.
+    tiny_number: An `int`. The tiny golden angle number. Only used if `ordering`
+      is `'tiny'` or `'tiny_half'`. Must be >= 2. Defaults to 7.
     readout_os: A `float`. The readout oversampling factor. Defaults to 2.0.
 
   Returns:
@@ -110,7 +115,8 @@ def radial_trajectory(base_resolution,
                             views=views,
                             phases=phases,
                             ordering=ordering,
-                            angle_range=angle_range)
+                            angle_range=angle_range,
+                            tiny_number=tiny_number)
 
 
 def spiral_trajectory(base_resolution,
@@ -123,6 +129,7 @@ def spiral_trajectory(base_resolution,
                       phases=None,
                       ordering='linear',
                       angle_range='full',
+                      tiny_number=7,
                       readout_os=2.0,
                       gradient_delay=0.0,
                       larmor_const=42.577478518,
@@ -152,6 +159,8 @@ def spiral_trajectory(base_resolution,
       `{'full', 'half'}`. If `angle_range` is `'full'`, the full circle/sphere
       is included in the range. If `angle_range` is `'half'`, only a
       semicircle/hemisphere is included.
+    tiny_number: An `int`. The tiny golden angle number. Only used if `ordering`
+      is `'tiny'` or `'tiny_half'`. Must be >= 2. Defaults to 7.
     readout_os: A `float`. The readout oversampling factor. Defaults to 2.0.
     gradient_delay: A `float`. The system's gradient delay relative to the ADC,
       in us. Defaults to 0.0.
@@ -202,7 +211,8 @@ def spiral_trajectory(base_resolution,
                             views=views,
                             phases=phases,
                             ordering=ordering,
-                            angle_range=angle_range)
+                            angle_range=angle_range,
+                            tiny_number=tiny_number)
 
 
 def _kspace_trajectory(traj_type,
@@ -210,7 +220,8 @@ def _kspace_trajectory(traj_type,
                        views=1,
                        phases=None,
                        ordering='linear',
-                       angle_range='full'):
+                       angle_range='full',
+                       tiny_number=7):
   """Calculate a k-space trajectory.
 
   Args:
@@ -264,7 +275,8 @@ def _kspace_trajectory(traj_type,
   angles = _trajectory_angles(views,
                               phases=phases,
                               ordering=ordering,
-                              angle_range=angle_range)
+                              angle_range=angle_range,
+                              tiny_number=tiny_number)
 
   # Rotate waveform.
   if rank == 3:
@@ -499,7 +511,8 @@ if sys_util.is_op_library_enabled():
 def _trajectory_angles(views,
                        phases=None,
                        ordering='linear',
-                       angle_range='full'):
+                       angle_range='full',
+                       tiny_number=7):
   """Compute angles for k-space trajectory.
 
   For the parameters, see `_kspace_trajectory`.
@@ -511,11 +524,15 @@ def _trajectory_angles(views,
   Raises:
     ValueError: If unexpected inputs are received.
   """
+  if not isinstance(tiny_number, int) or tiny_number < 2:
+    raise ValueError(
+        f"`tiny_number` must be an integer >= 2. Received: {tiny_number}")
+
   # Constants.
   pi = math.pi
   pi2 = math.pi * 2.0
-  phi = 2.0 / (1.0 + tf.sqrt(5.0))  # Golden ratio.
-  phi_7 = 1.0 / (phi + 7)           # 7th tiny golden ratio.
+  phi = 2.0 / (1.0 + tf.sqrt(5.0))    # Golden ratio.
+  phi_n = 1.0 / (phi + tiny_number)   # n-th tiny golden ratio.
 
   if angle_range == 'full':
     default_max = pi2
@@ -548,9 +565,9 @@ def _trajectory_angles(views,
     angles = _angles_2d(phi * default_max, default_max)
     angles = tf.sort(angles, axis=1)
   elif ordering == 'tiny':
-    angles = _angles_2d(phi_7 * default_max, default_max)
+    angles = _angles_2d(phi_n * default_max, default_max)
   elif ordering == 'tiny_half':
-    angles = _angles_2d(phi_7 * pi, default_max)
+    angles = _angles_2d(phi_n * pi, default_max)
   elif ordering == 'sphere_archimedean':
     projections = views * (phases or 1)
     full_projections = 2 * projections if angle_range == 'half' else projections
