@@ -211,6 +211,15 @@ class RadialTrajectoryTest(test_util.TestCase):
                      [1.4454685, 1.9361506]]]
     self.assertAllClose(angles, ref_angles)
 
+  def test_number_of_views_warning(self):
+    """Test warning about number of views for golden angle trajectories."""
+    string = "optimal k-space filling is achieved when the number of views"
+
+    with self.assertWarnsRegex(UserWarning, string):
+      traj_ops.radial_trajectory(128, views=6, ordering='golden')
+    with self.assertWarnsRegex(UserWarning, string):
+      traj_ops.radial_trajectory(128, views=9, ordering='tiny')
+
 
 class SpiralTrajectoryTest(test_util.TestCase):
   """Spiral trajectory tests."""

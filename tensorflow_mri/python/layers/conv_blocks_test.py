@@ -46,6 +46,8 @@ class ConvBlockTest(test_util.TestCase):
         strides=1,
         rank=2,
         activation='tanh',
+        out_activation='linear',
+        use_bias=False,
         kernel_initializer='ones',
         bias_initializer='ones',
         kernel_regularizer='l2',
@@ -54,6 +56,7 @@ class ConvBlockTest(test_util.TestCase):
         use_sync_bn=True,
         bn_momentum=0.98,
         bn_epsilon=0.002,
+        use_residual=True,
         name='conv_block',
         dtype='float32',
         trainable=True)

@@ -19,6 +19,7 @@ calculation of trajectories and sampling density.
 """
 
 import math
+import warnings
 
 import numpy as np
 import tensorflow as tf
@@ -28,6 +29,7 @@ from tensorflow_graphics.geometry.transformation import rotation_matrix_3d # pyl
 
 from tensorflow_mri.python.ops import geom_ops
 from tensorflow_mri.python.util import check_util
+from tensorflow_mri.python.util import math_util
 from tensorflow_mri.python.util import sys_util
 from tensorflow_mri.python.util import tensor_util
 
@@ -262,6 +264,27 @@ def _kspace_trajectory(traj_type,
     rank = 3
   else:
     rank = 2
+
+  if sys_util.is_assistant_enabled():
+    if (ordering in {'golden', 'golden_half', 'sorted'} and
+        not math_util.is_fibonacci_number(views)):
+      fibonacci_string = ', '.join(map(str, math_util.fibonacci_sequence(10)))
+      fibonacci_string += '...'
+      warnings.warn(
+          f"When using golden angle ordering, optimal k-space filling "
+          f"is achieved when the number of views is a member of the Fibonacci "
+          f"sequence: {fibonacci_string}, but the specified number ({views}) "
+          f"is not a member of this sequence.")
+    if (ordering in {'tiny', 'tiny_half'} and
+        not math_util.is_generalized_fibonacci_number(views, tiny_number)):
+      fibonacci_string = ', '.join(
+          map(str, math_util.generalized_fibonacci_sequence(10, tiny_number)))
+      fibonacci_string += '...'
+      warnings.warn(
+          f"When using tiny golden angle ordering, optimal k-space filling "
+          f"is achieved when the number of views is a member of the "
+          f"generalized Fibonacci sequence: {fibonacci_string}, but the "
+          f"specified number ({views}) is not a member of this sequence.")
 
   # Calculate waveform.
   if traj_type == 'radial':

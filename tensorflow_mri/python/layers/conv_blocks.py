@@ -52,8 +52,13 @@ class ConvBlock(tf.keras.layers.Layer):
       of the convolution along each spatial dimension. Can be a single integer
       to specify the same value for all spatial dimensions.
     rank: An integer specifying the number of spatial dimensions.
-    activation: A callable or a Keras activation identifier. Defaults to
-      `'relu'`.
+    activation: A callable or a Keras activation identifier. The activation to
+      use in all layers. Defaults to `'relu'`.
+    out_activation: A callable or a Keras activation identifier. The activation
+      to use in the last layer. Defaults to `'same'`, in which case we use the
+      same activation as in previous layers as defined by `activation`.
+    use_bias: A `bool`, whether the block's layers use bias vectors. Defaults to
+      `True`.
     kernel_initializer: A `tf.keras.initializers.Initializer` or a Keras
       initializer identifier. Initializer for convolutional kernels. Defaults to
       `'VarianceScaling'`.
@@ -79,6 +84,8 @@ class ConvBlock(tf.keras.layers.Layer):
                strides=1,
                rank=2,
                activation='relu',
+               out_activation='same',
+               use_bias=True,
                kernel_initializer='VarianceScaling',
                bias_initializer='Zeros',
                kernel_regularizer=None,
@@ -87,6 +94,7 @@ class ConvBlock(tf.keras.layers.Layer):
                use_sync_bn=False,
                bn_momentum=0.99,
                bn_epsilon=0.001,
+               use_residual=False,
                **kwargs):
     """Create a basic convolution block."""
     super().__init__(**kwargs)
@@ -96,6 +104,8 @@ class ConvBlock(tf.keras.layers.Layer):
     self._strides = strides
     self._rank = rank
     self._activation = activation
+    self._out_activation = out_activation
+    self._use_bias = use_bias
     self._kernel_initializer = kernel_initializer
     self._bias_initializer = bias_initializer
     self._kernel_regularizer = kernel_regularizer
@@ -104,6 +114,8 @@ class ConvBlock(tf.keras.layers.Layer):
     self._use_sync_bn = use_sync_bn
     self._bn_momentum = bn_momentum
     self._bn_epsilon = bn_epsilon
+    self._use_residual = use_residual
+    self._num_layers = len(self._filters)
 
     conv = layer_util.get_nd_layer('Conv', self._rank)
     if use_sync_bn:
@@ -125,6 +137,7 @@ class ConvBlock(tf.keras.layers.Layer):
                padding='same',
                data_format=None,
                activation=None,
+               use_bias=self._use_bias,
                kernel_initializer=self._kernel_initializer,
                bias_initializer=self._bias_initializer,
                kernel_regularizer=self._kernel_regularizer,
@@ -133,16 +146,32 @@ class ConvBlock(tf.keras.layers.Layer):
           bn(axis=self._channel_axis,
              momentum=self._bn_momentum,
              epsilon=self._bn_epsilon))
-      self._activation_fn = tf.keras.activations.get(activation)
+
+    self._activation_fn = tf.keras.activations.get(self._activation)
+    if self._out_activation == 'same':
+      self._out_activation_fn = self._activation_fn
+    else:
+      self._out_activation_fn = tf.keras.activations.get(self._out_activation)
 
   def call(self, inputs, training=None): # pylint: disable=unused-argument
     """Runs forward pass on the input tensor."""
     x = inputs
-    for conv, norm in zip(self._convs, self._norms):
+
+    for i, (conv, norm) in enumerate(zip(self._convs, self._norms)):
+      # Convolution.
       x = conv(x)
+      # Batch normalization.
       if self._use_batch_norm:
-        x = norm(x)
-      x = self._activation_fn(x)
+        x = norm(x, training=training)
+      # Activation.
+      if i == self._num_layers - 1: # Last layer.
+        x = self._out_activation_fn(x)
+      else:
+        x = self._activation_fn(x)
+
+    # Residual connection.
+    if self._use_residual:
+      x += inputs
     return x
 
   def get_config(self):
@@ -153,6 +182,8 @@ class ConvBlock(tf.keras.layers.Layer):
         'strides': self._strides,
         'rank': self._rank,
         'activation': self._activation,
+        'out_activation': self._out_activation,
+        'use_bias': self._use_bias,
         'kernel_initializer': self._kernel_initializer,
         'bias_initializer': self._bias_initializer,
         'kernel_regularizer': self._kernel_regularizer,
@@ -160,7 +191,8 @@ class ConvBlock(tf.keras.layers.Layer):
         'use_batch_norm': self._use_batch_norm,
         'use_sync_bn': self._use_sync_bn,
         'bn_momentum': self._bn_momentum,
-        'bn_epsilon': self._bn_epsilon
+        'bn_epsilon': self._bn_epsilon,
+        'use_residual': self._use_residual
     }
     base_config = super().get_config()
     return {**base_config, **config}
