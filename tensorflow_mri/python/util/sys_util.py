@@ -18,6 +18,9 @@ import distutils.util
 import os
 
 
+_ENABLE_ASSISTANT = True
+
+
 def is_op_library_enabled():
   """Checks whether the op library is enabled.
 
@@ -27,3 +30,26 @@ def is_op_library_enabled():
   str_value = os.getenv("TFMR_DISABLE_OP_LIBRARY", '0')
   bool_value = distutils.util.strtobool(str_value)
   return not bool_value
+
+
+def is_assistant_enabled():
+  """Check whether the TensorFlow MRI assistant is enabled.
+
+  See also `enable_assistant` and `disable_assistant`.
+
+  Note that the assistant is enabled by default.
+  """
+  global _ENABLE_ASSISTANT
+  return _ENABLE_ASSISTANT
+
+
+def enable_assistant():
+  """Enable the TensorFlow MRI assistant."""
+  global _ENABLE_ASSISTANT
+  _ENABLE_ASSISTANT = True
+
+
+def disable_assistant():
+  """Disable the TensorFlow MRI assistant."""
+  global _ENABLE_ASSISTANT
+  _ENABLE_ASSISTANT = False

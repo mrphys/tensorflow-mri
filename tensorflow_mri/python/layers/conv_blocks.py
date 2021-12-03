@@ -29,8 +29,11 @@
 # ==============================================================================
 """Convolutional neural network blocks."""
 
+import itertools
+
 import tensorflow as tf
 
+from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import layer_util
 
 
@@ -51,9 +54,14 @@ class ConvBlock(tf.keras.layers.Layer):
     strides: An integer or tuple/list of `rank` integers, specifying the strides
       of the convolution along each spatial dimension. Can be a single integer
       to specify the same value for all spatial dimensions.
-    rank: An integer specifying the number of spatial dimensions.
-    activation: A callable or a Keras activation identifier. Defaults to
-      `'relu'`.
+    rank: An integer specifying the number of spatial dimensions. Defaults to 2.
+    activation: A callable or a Keras activation identifier. The activation to
+      use in all layers. Defaults to `'relu'`.
+    out_activation: A callable or a Keras activation identifier. The activation
+      to use in the last layer. Defaults to `'same'`, in which case we use the
+      same activation as in previous layers as defined by `activation`.
+    use_bias: A `bool`, whether the block's layers use bias vectors. Defaults to
+      `True`.
     kernel_initializer: A `tf.keras.initializers.Initializer` or a Keras
       initializer identifier. Initializer for convolutional kernels. Defaults to
       `'VarianceScaling'`.
@@ -71,6 +79,16 @@ class ConvBlock(tf.keras.layers.Layer):
       normalization.
     bn_epsilon: A `float`. Small float added to variance to avoid dividing by
       zero during batch normalization.
+    use_residual: A `bool`. If `True`, the input is added to the outputs to
+      create a residual learning block. Defaults to `False`.
+    use_dropout: A `bool`. If `True`, a dropout layer is inserted after
+      each activation. Defaults to `False`.
+    dropout_rate: A `float`. The dropout rate. Only relevant if `use_dropout` is
+      `True`. Defaults to 0.3.
+    dropout_type: A `str`. The dropout type. Must be one of `'standard'` or
+      `'spatial'`. Standard dropout drops individual elements from the feature
+      maps, whereas spatial dropout drops entire feature maps. Only relevant if
+      `use_dropout` is `True`. Defaults to `'standard'`.
     **kwargs: Additional keyword arguments to be passed to base class.
   """
   def __init__(self,
@@ -79,6 +97,8 @@ class ConvBlock(tf.keras.layers.Layer):
                strides=1,
                rank=2,
                activation='relu',
+               out_activation='same',
+               use_bias=True,
                kernel_initializer='VarianceScaling',
                bias_initializer='Zeros',
                kernel_regularizer=None,
@@ -87,6 +107,10 @@ class ConvBlock(tf.keras.layers.Layer):
                use_sync_bn=False,
                bn_momentum=0.99,
                bn_epsilon=0.001,
+               use_residual=False,
+               use_dropout=False,
+               dropout_rate=0.3,
+               dropout_type='standard',
                **kwargs):
     """Create a basic convolution block."""
     super().__init__(**kwargs)
@@ -96,6 +120,8 @@ class ConvBlock(tf.keras.layers.Layer):
     self._strides = strides
     self._rank = rank
     self._activation = activation
+    self._out_activation = out_activation
+    self._use_bias = use_bias
     self._kernel_initializer = kernel_initializer
     self._bias_initializer = bias_initializer
     self._kernel_regularizer = kernel_regularizer
@@ -104,12 +130,27 @@ class ConvBlock(tf.keras.layers.Layer):
     self._use_sync_bn = use_sync_bn
     self._bn_momentum = bn_momentum
     self._bn_epsilon = bn_epsilon
+    self._use_residual = use_residual
+    self._use_dropout = use_dropout
+    self._dropout_rate = dropout_rate
+    self._dropout_type = check_util.validate_enum(
+        dropout_type, {'standard', 'spatial'}, 'dropout_type')
+    self._num_layers = len(self._filters)
 
     conv = layer_util.get_nd_layer('Conv', self._rank)
-    if use_sync_bn:
-      bn = tf.keras.layers.experimental.SyncBatchNormalization
-    else:
-      bn = tf.keras.layers.BatchNormalization
+
+    if self._use_batch_norm:
+      if self._use_sync_bn:
+        bn = tf.keras.layers.experimental.SyncBatchNormalization
+      else:
+        bn = tf.keras.layers.BatchNormalization
+
+    if self._use_dropout:
+      if self._dropout_type == 'standard':
+        dropout = tf.keras.layers.Dropout
+      elif self._dropout_type == 'spatial':
+        dropout = layer_util.get_nd_layer('SpatialDropout', self._rank)
+
     if tf.keras.backend.image_data_format() == 'channels_last':
       self._channel_axis = -1
     else:
@@ -117,6 +158,7 @@ class ConvBlock(tf.keras.layers.Layer):
 
     self._convs = []
     self._norms = []
+    self._dropouts = []
     for num_filters in self._filters:
       self._convs.append(
           conv(filters=num_filters,
@@ -125,24 +167,48 @@ class ConvBlock(tf.keras.layers.Layer):
                padding='same',
                data_format=None,
                activation=None,
+               use_bias=self._use_bias,
                kernel_initializer=self._kernel_initializer,
                bias_initializer=self._bias_initializer,
                kernel_regularizer=self._kernel_regularizer,
                bias_regularizer=self._bias_regularizer))
-      self._norms.append(
-          bn(axis=self._channel_axis,
-             momentum=self._bn_momentum,
-             epsilon=self._bn_epsilon))
-      self._activation_fn = tf.keras.activations.get(activation)
+      if self._use_batch_norm:
+        self._norms.append(
+            bn(axis=self._channel_axis,
+              momentum=self._bn_momentum,
+              epsilon=self._bn_epsilon))
+      if self._use_dropout:
+        self._dropouts.append(dropout(rate=self._dropout_rate))
 
-  def call(self, inputs, training=None): # pylint: disable=unused-argument
+    self._activation_fn = tf.keras.activations.get(self._activation)
+    if self._out_activation == 'same':
+      self._out_activation_fn = self._activation_fn
+    else:
+      self._out_activation_fn = tf.keras.activations.get(self._out_activation)
+
+  def call(self, inputs, training=None): # pylint: disable=unused-argument, missing-param-doc
     """Runs forward pass on the input tensor."""
     x = inputs
-    for conv, norm in zip(self._convs, self._norms):
+
+    for i, (conv, norm, dropout) in enumerate(
+        itertools.zip_longest(self._convs, self._norms, self._dropouts)):
+      # Convolution.
       x = conv(x)
+      # Batch normalization.
       if self._use_batch_norm:
-        x = norm(x)
-      x = self._activation_fn(x)
+        x = norm(x, training=training)
+      # Activation.
+      if i == self._num_layers - 1: # Last layer.
+        x = self._out_activation_fn(x)
+      else:
+        x = self._activation_fn(x)
+      # Dropout.
+      if self._use_dropout:
+        x = dropout(x, training=training)
+
+    # Residual connection.
+    if self._use_residual:
+      x += inputs
     return x
 
   def get_config(self):
@@ -153,6 +219,8 @@ class ConvBlock(tf.keras.layers.Layer):
         'strides': self._strides,
         'rank': self._rank,
         'activation': self._activation,
+        'out_activation': self._out_activation,
+        'use_bias': self._use_bias,
         'kernel_initializer': self._kernel_initializer,
         'bias_initializer': self._bias_initializer,
         'kernel_regularizer': self._kernel_regularizer,
@@ -160,7 +228,11 @@ class ConvBlock(tf.keras.layers.Layer):
         'use_batch_norm': self._use_batch_norm,
         'use_sync_bn': self._use_sync_bn,
         'bn_momentum': self._bn_momentum,
-        'bn_epsilon': self._bn_epsilon
+        'bn_epsilon': self._bn_epsilon,
+        'use_residual': self._use_residual,
+        'use_dropout': self._use_dropout,
+        'dropout_rate': self._dropout_rate,
+        'dropout_type': self._dropout_type
     }
     base_config = super().get_config()
     return {**base_config, **config}

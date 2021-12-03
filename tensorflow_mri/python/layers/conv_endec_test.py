@@ -78,6 +78,9 @@ class UNetTest(test_util.TestCase):
         out_channels=1,
         out_activation='relu',
         use_global_residual=True,
+        use_dropout=True,
+        dropout_rate=0.5,
+        dropout_type='spatial',
         name='conv_block',
         dtype='float32',
         trainable=True)
