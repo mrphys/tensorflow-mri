@@ -34,7 +34,7 @@ def is_op_library_enabled():
 
 def is_assistant_enabled():
   """Check whether the TensorFlow MRI assistant is enabled.
-  
+
   See also `enable_assistant` and `disable_assistant`.
 
   Note that the assistant is enabled by default.

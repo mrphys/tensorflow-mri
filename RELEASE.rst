@@ -1,21 +1,6 @@
 Release 0.9.0
 =============
 
-<INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
-
-Breaking Changes
-----------------
-
-* <DOCUMENT BREAKING CHANGES HERE>
-* <THIS SECTION SHOULD CONTAIN API, ABI AND BEHAVIORAL BREAKING CHANGES>
-
-Known Caveats
--------------
-
-* <CAVEATS REGARDING THE RELEASE (BUT NOT BREAKING CHANGES).>
-* <ADDING/BUMPING DEPENDENCIES SHOULD GO HERE>
-* <KNOWN LACK OF SUPPORT ON SOME PLATFORM, SHOULD GO HERE>
-
 Major Features and Improvements
 -------------------------------
 
@@ -37,11 +22,9 @@ Major Features and Improvements
     * Bias vectors for convolutional layers can now be disabled with
       `use_bias=False`.
     * Block can now be made residual with `use_residual=True`.
-
-
-Bug Fixes and Other Changes
----------------------------
-
-* <SIMILAR TO ABOVE SECTION, BUT FOR OTHER IMPORTANT CHANGES / BUG FIXES>
-* <IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
-* <NOTES SHOULD BE GROUPED PER AREA>
+    * Dropout layers may now be added with `use_dropout=True`. Additionally,
+      the parameters `dropout_rate` and `dropout_type` can be used to specify
+      the dropout rate and type (standard or spatial), respectively.
+    
+  * Added optional dropout layers to `UNet`. Dropout can be configured with the
+    parameters `use_dropout`, `dropout_rate` and `dropout_type`.

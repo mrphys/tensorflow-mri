@@ -57,6 +57,9 @@ class ConvBlockTest(test_util.TestCase):
         bn_momentum=0.98,
         bn_epsilon=0.002,
         use_residual=True,
+        use_dropout=True,
+        dropout_rate=0.5,
+        dropout_type='spatial',
         name='conv_block',
         dtype='float32',
         trainable=True)

@@ -17,6 +17,7 @@
 import tensorflow as tf
 
 from tensorflow_mri.python.layers import conv_blocks
+from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import layer_util
 
 
@@ -41,7 +42,7 @@ class UNet(tf.keras.layers.Layer):
     use_deconv: If `True`, transpose convolution (deconvolution) will be used
       instead of up-sampling. This increases the amount memory required during
       training. Defaults to `False`.
-    rank: An integer specifying the number of spatial dimensions.
+    rank: An integer specifying the number of spatial dimensions. Defaults to 2.
     activation: A callable or a Keras activation identifier. Defaults to
       `'relu'`.
     kernel_initializer: A `tf.keras.initializers.Initializer` or a Keras
@@ -64,7 +65,16 @@ class UNet(tf.keras.layers.Layer):
     out_channels: An `int`. The number of output channels.
     out_activation: A callable or a Keras activation identifier. The output
       activation. Defaults to `None`.
-    use_global_residual: A `bool`. If `True`, adds a global residual connection.
+    use_global_residual: A `bool`. If `True`, adds a global residual connection
+      to create a residual learning network. Defaults to `False`.
+    use_dropout: A `bool`. If `True`, a dropout layer is inserted after
+      each activation. Defaults to `False`.
+    dropout_rate: A `float`. The dropout rate. Only relevant if `use_dropout` is
+      `True`. Defaults to 0.3.
+    dropout_type: A `str`. The dropout type. Must be one of `'standard'` or
+      `'spatial'`. Standard dropout drops individual elements from the feature
+      maps, whereas spatial dropout drops entire feature maps. Only relevant if
+      `use_dropout` is `True`. Defaults to `'standard'`.
     **kwargs: Additional keyword arguments to be passed to base class.
   """
   def __init__(self,
@@ -87,6 +97,9 @@ class UNet(tf.keras.layers.Layer):
                out_channels=None,
                out_activation=None,
                use_global_residual=False,
+               use_dropout=False,
+               dropout_rate=0.3,
+               dropout_type='standard',
                **kwargs):
     """Creates a UNet layer."""
     self._scales = scales
@@ -108,6 +121,10 @@ class UNet(tf.keras.layers.Layer):
     self._out_channels = out_channels
     self._out_activation = out_activation
     self._use_global_residual = use_global_residual
+    self._use_dropout = use_dropout
+    self._dropout_rate = dropout_rate
+    self._dropout_type = check_util.validate_enum(
+        dropout_type, {'standard', 'spatial'}, 'dropout_type')
 
     block_config = dict(
         filters=None, # To be filled for each scale.
@@ -122,7 +139,10 @@ class UNet(tf.keras.layers.Layer):
         use_batch_norm=self._use_batch_norm,
         use_sync_bn=self._use_sync_bn,
         bn_momentum=self._bn_momentum,
-        bn_epsilon=self._bn_epsilon)
+        bn_epsilon=self._bn_epsilon,
+        use_dropout=self._use_dropout,
+        dropout_rate=self._dropout_rate,
+        dropout_type=self._dropout_type)
 
     pool = layer_util.get_nd_layer('MaxPool', self._rank)
     if use_deconv:
@@ -239,7 +259,10 @@ class UNet(tf.keras.layers.Layer):
         'bn_epsilon': self._bn_epsilon,
         'out_channels': self._out_channels,
         'out_activation': self._out_activation,
-        'use_global_residual': self._use_global_residual
+        'use_global_residual': self._use_global_residual,
+        'use_dropout': self._use_dropout,
+        'dropout_rate': self._dropout_rate,
+        'dropout_type': self._dropout_type
     }
     base_config = super().get_config()
     return {**base_config, **config}
