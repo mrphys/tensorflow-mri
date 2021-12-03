@@ -374,7 +374,7 @@
 <h1>tfmr.layers.UNet<a class="headerlink" href="#tfmr-layers-unet" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="tfmr.layers.UNet">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">tfmr.layers.</span></span><span class="sig-name descname"><span class="pre">UNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.8.0/tensorflow_mri/python/layers/conv_endec.py#L23-L245"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.layers.UNet" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">tfmr.layers.</span></span><span class="sig-name descname"><span class="pre">UNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.9.0/tensorflow_mri/python/layers/conv_endec.py#L24-L268"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.layers.UNet" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">keras.engine.base_layer.Layer</span></code></p>
 <p>A UNet layer.</p>
 <dl class="field-list simple">
@@ -396,7 +396,7 @@ same value for all spatial dimensions.</p></li>
 <li><p><strong>use_deconv</strong> – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, transpose convolution (deconvolution) will be used
 instead of up-sampling. This increases the amount memory required during
 training. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
-<li><p><strong>rank</strong> – An integer specifying the number of spatial dimensions.</p></li>
+<li><p><strong>rank</strong> – An integer specifying the number of spatial dimensions. Defaults to 2.</p></li>
 <li><p><strong>activation</strong> – A callable or a Keras activation identifier. Defaults to
 <code class="docutils literal notranslate"><span class="pre">'relu'</span></code>.</p></li>
 <li><p><strong>kernel_initializer</strong> – A <code class="docutils literal notranslate"><span class="pre">tf.keras.initializers.Initializer</span></code> or a Keras
@@ -419,19 +419,28 @@ zero during batch normalization.</p></li>
 <li><p><strong>out_channels</strong> – An <code class="docutils literal notranslate"><span class="pre">int</span></code>. The number of output channels.</p></li>
 <li><p><strong>out_activation</strong> – A callable or a Keras activation identifier. The output
 activation. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
-<li><p><strong>use_global_residual</strong> – A <code class="docutils literal notranslate"><span class="pre">bool</span></code>. If <code class="docutils literal notranslate"><span class="pre">True</span></code>, adds a global residual connection.</p></li>
+<li><p><strong>use_global_residual</strong> – A <code class="docutils literal notranslate"><span class="pre">bool</span></code>. If <code class="docutils literal notranslate"><span class="pre">True</span></code>, adds a global residual connection
+to create a residual learning network. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>use_dropout</strong> – A <code class="docutils literal notranslate"><span class="pre">bool</span></code>. If <code class="docutils literal notranslate"><span class="pre">True</span></code>, a dropout layer is inserted after
+each activation. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>dropout_rate</strong> – A <code class="docutils literal notranslate"><span class="pre">float</span></code>. The dropout rate. Only relevant if <code class="docutils literal notranslate"><span class="pre">use_dropout</span></code> is
+<code class="docutils literal notranslate"><span class="pre">True</span></code>. Defaults to 0.3.</p></li>
+<li><p><strong>dropout_type</strong> – A <code class="docutils literal notranslate"><span class="pre">str</span></code>. The dropout type. Must be one of <code class="docutils literal notranslate"><span class="pre">'standard'</span></code> or
+<code class="docutils literal notranslate"><span class="pre">'spatial'</span></code>. Standard dropout drops individual elements from the feature
+maps, whereas spatial dropout drops entire feature maps. Only relevant if
+<code class="docutils literal notranslate"><span class="pre">use_dropout</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>. Defaults to <code class="docutils literal notranslate"><span class="pre">'standard'</span></code>.</p></li>
 <li><p><strong>**kwargs</strong> – Additional keyword arguments to be passed to base class.</p></li>
 </ul>
 </dd>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tfmr.layers.UNet.call">
-<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.8.0/tensorflow_mri/python/layers/conv_endec.py#L192-L219"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.layers.UNet.call" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.9.0/tensorflow_mri/python/layers/conv_endec.py#L212-L239"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.layers.UNet.call" title="Permalink to this definition">¶</a></dt>
 <dd><p>Runs forward pass on the input tensors.</p>
 </dd></dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tfmr.layers.UNet.get_config">
-<span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.8.0/tensorflow_mri/python/layers/conv_endec.py#L221-L245"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.layers.UNet.get_config" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.9.0/tensorflow_mri/python/layers/conv_endec.py#L241-L268"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.layers.UNet.get_config" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets layer configuration.</p>
 </dd></dl>
 </dd></dl>

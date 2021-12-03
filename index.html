@@ -372,26 +372,44 @@
         </div>
         <article role="main">
           <section id="tensorflow-mri-release">
-<h1>TensorFlow MRI 0.8.0<a class="headerlink" href="#tensorflow-mri-release" title="Permalink to this headline">¶</a></h1>
+<h1>TensorFlow MRI 0.9.0<a class="headerlink" href="#tensorflow-mri-release" title="Permalink to this headline">¶</a></h1>
 <a class="reference external image-reference" href="https://github.com/mrphys/tensorflow-mri"><img alt="View on GitHub" height="52" src="_images/view_on_github.svg" width="168"/></a>
 <div class="line-block">
 <div class="line"><br/></div>
 </div>
-<p>TensorFlow MRI (TFMR) is a Python library for MR image reconstruction and
-processing. TFMR provides:</p>
+<p>TensorFlow MRI is a library of TensorFlow operators for computational MRI which
+includes:</p>
 <ul class="simple">
-<li><p>A selection of differentiable operators for accelerated image reconstruction,
-Cartesian and non-Cartesian <em>k</em>-space sampling, and many other common MR image
-and signal processing tasks.</p></li>
-<li><p>Keras callbacks, layers, metrics and losses and other utilities for the
-creation, training and evaluation of machine learning models.</p></li>
+<li><p>A fast, native non-uniform fast Fourier transform (NUFFT) operator (see
+also <a class="reference external" href="https://github.com/mrphys/tensorflow-nufft">TensorFlow NUFFT</a>).</p></li>
+<li><p>A unified gateway for MR image reconstruction, which supports parallel
+imaging, compressed sensing, machine learning and partial Fourier methods.</p></li>
+<li><p>Common linear and nonlinear operators, such as Fourier operators and
+regularizers, to aid in the development of novel image reconstruction
+techniques.</p></li>
+<li><p>Multicoil imaging operators, such as coil combination, coil compression and
+estimation of coil sensitivity maps.</p></li>
+<li><p>Calculation of non-Cartesian k-space trajectories and sampling density
+estimation.</p></li>
+<li><p>A collection of Keras objects including models, layers, metrics, loss
+functions and callbacks for rapid development of neural networks.</p></li>
+<li><p>Many other differentiable operators for common tasks such as array
+manipulation and image/signal processing.</p></li>
 </ul>
-<p>TFMR is aimed for scientists and researchers working with MRI data. Whether you
-are planning to use machine learning or not, TFMR enables prototyping and
-deployment of efficient computational MRI solutions easily and within Python.</p>
-<p>Thanks to the use of a TensorFlow backend, TFMR integrates seamlessly in machine
-learning projects. It also inherits other benefits of TensorFlow, including high
-performance computation and GPU acceleration.</p>
+<p>The library has a Python interface and is mostly written in Python. However,
+computations are efficiently performed by the TensorFlow backend (implemented in
+C++/CUDA), which brings together the ease of use and fast prototyping of Python
+with the speed and efficiency of optimized lower-level implementations.</p>
+<p>Being an extension of TensorFlow, TensorFlow MRI integrates seamlessly in ML
+applications. No additional interfacing is needed to include a SENSE operator
+within a neural network, or to use a trained prior as part of an iterative
+reconstruction. Therefore, the gap between ML and non-ML components of image
+processing pipelines is eliminated.</p>
+<p>Whether an application involves ML or not, TensorFlow MRI operators can take
+full advantage of the TensorFlow framework, with capabilities including
+automatic differentiation, multi-device support (CPUs and GPUs), automatic
+device placement and copying of tensor data, and conversion to fast,
+serializable graphs.</p>
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 <p>You can install TensorFlow MRI with <code class="docutils literal notranslate"><span class="pre">pip</span></code>:</p>
@@ -417,31 +435,35 @@ versions of TensorFlow and TensorFlow MRI according to the table below.</p>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>v0.8.0</p></td>
+<tr class="row-even"><td><p>v0.9.0</p></td>
+<td><p>v2.7.x</p></td>
+<td><p>Dec 3, 2021</p></td>
+</tr>
+<tr class="row-odd"><td><p>v0.8.0</p></td>
 <td><p>v2.7.x</p></td>
 <td><p>Nov 11, 2021</p></td>
 </tr>
-<tr class="row-odd"><td><p>v0.7.0</p></td>
+<tr class="row-even"><td><p>v0.7.0</p></td>
 <td><p>v2.6.x</p></td>
 <td><p>Nov 3, 2021</p></td>
 </tr>
-<tr class="row-even"><td><p>v0.6.2</p></td>
+<tr class="row-odd"><td><p>v0.6.2</p></td>
 <td><p>v2.6.x</p></td>
 <td><p>Oct 13, 2021</p></td>
 </tr>
-<tr class="row-odd"><td><p>v0.6.1</p></td>
+<tr class="row-even"><td><p>v0.6.1</p></td>
 <td><p>v2.6.x</p></td>
 <td><p>Sep 30, 2021</p></td>
 </tr>
-<tr class="row-even"><td><p>v0.6.0</p></td>
+<tr class="row-odd"><td><p>v0.6.0</p></td>
 <td><p>v2.6.x</p></td>
 <td><p>Sep 28, 2021</p></td>
 </tr>
-<tr class="row-odd"><td><p>v0.5.0</p></td>
+<tr class="row-even"><td><p>v0.5.0</p></td>
 <td><p>v2.6.x</p></td>
 <td><p>Aug 29, 2021</p></td>
 </tr>
-<tr class="row-even"><td><p>v0.4.0</p></td>
+<tr class="row-odd"><td><p>v0.4.0</p></td>
 <td><p>v2.6.x</p></td>
 <td><p>Aug 18, 2021</p></td>
 </tr>
@@ -509,7 +531,7 @@ Debian/Ubuntu:</p>
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">TensorFlow MRI 0.8.0</a><ul>
+<li><a class="reference internal" href="#">TensorFlow MRI 0.9.0</a><ul>
 <li><a class="reference internal" href="#installation">Installation</a><ul>
 <li><a class="reference internal" href="#tensorflow-compatibility">TensorFlow Compatibility</a></li>
 </ul>

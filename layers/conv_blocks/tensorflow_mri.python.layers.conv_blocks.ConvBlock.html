@@ -374,7 +374,7 @@
 <h1>tfmr.layers.ConvBlock<a class="headerlink" href="#tfmr-layers-convblock" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="tfmr.layers.ConvBlock">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">tfmr.layers.</span></span><span class="sig-name descname"><span class="pre">ConvBlock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.8.0/tensorflow_mri/python/layers/conv_blocks.py#L37-L166"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.layers.ConvBlock" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">tfmr.layers.</span></span><span class="sig-name descname"><span class="pre">ConvBlock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.9.0/tensorflow_mri/python/layers/conv_blocks.py#L40-L238"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.layers.ConvBlock" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">keras.engine.base_layer.Layer</span></code></p>
 <p>A basic convolution block.</p>
 <p>A Conv + BN + Activation block. The number of convolutional layers is
@@ -391,9 +391,14 @@ same value for all spatial dimensions.</p></li>
 <li><p><strong>strides</strong> – An integer or tuple/list of <code class="docutils literal notranslate"><span class="pre">rank</span></code> integers, specifying the strides
 of the convolution along each spatial dimension. Can be a single integer
 to specify the same value for all spatial dimensions.</p></li>
-<li><p><strong>rank</strong> – An integer specifying the number of spatial dimensions.</p></li>
-<li><p><strong>activation</strong> – A callable or a Keras activation identifier. Defaults to
-<code class="docutils literal notranslate"><span class="pre">'relu'</span></code>.</p></li>
+<li><p><strong>rank</strong> – An integer specifying the number of spatial dimensions. Defaults to 2.</p></li>
+<li><p><strong>activation</strong> – A callable or a Keras activation identifier. The activation to
+use in all layers. Defaults to <code class="docutils literal notranslate"><span class="pre">'relu'</span></code>.</p></li>
+<li><p><strong>out_activation</strong> – A callable or a Keras activation identifier. The activation
+to use in the last layer. Defaults to <code class="docutils literal notranslate"><span class="pre">'same'</span></code>, in which case we use the
+same activation as in previous layers as defined by <code class="docutils literal notranslate"><span class="pre">activation</span></code>.</p></li>
+<li><p><strong>use_bias</strong> – A <code class="docutils literal notranslate"><span class="pre">bool</span></code>, whether the block’s layers use bias vectors. Defaults to
+<code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
 <li><p><strong>kernel_initializer</strong> – A <code class="docutils literal notranslate"><span class="pre">tf.keras.initializers.Initializer</span></code> or a Keras
 initializer identifier. Initializer for convolutional kernels. Defaults to
 <code class="docutils literal notranslate"><span class="pre">'VarianceScaling'</span></code>.</p></li>
@@ -411,18 +416,28 @@ regularizer identifier. Regularizer for bias terms. Defaults to <code class="doc
 normalization.</p></li>
 <li><p><strong>bn_epsilon</strong> – A <code class="docutils literal notranslate"><span class="pre">float</span></code>. Small float added to variance to avoid dividing by
 zero during batch normalization.</p></li>
+<li><p><strong>use_residual</strong> – A <code class="docutils literal notranslate"><span class="pre">bool</span></code>. If <code class="docutils literal notranslate"><span class="pre">True</span></code>, the input is added to the outputs to
+create a residual learning block. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>use_dropout</strong> – A <code class="docutils literal notranslate"><span class="pre">bool</span></code>. If <code class="docutils literal notranslate"><span class="pre">True</span></code>, a dropout layer is inserted after
+each activation. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>dropout_rate</strong> – A <code class="docutils literal notranslate"><span class="pre">float</span></code>. The dropout rate. Only relevant if <code class="docutils literal notranslate"><span class="pre">use_dropout</span></code> is
+<code class="docutils literal notranslate"><span class="pre">True</span></code>. Defaults to 0.3.</p></li>
+<li><p><strong>dropout_type</strong> – A <code class="docutils literal notranslate"><span class="pre">str</span></code>. The dropout type. Must be one of <code class="docutils literal notranslate"><span class="pre">'standard'</span></code> or
+<code class="docutils literal notranslate"><span class="pre">'spatial'</span></code>. Standard dropout drops individual elements from the feature
+maps, whereas spatial dropout drops entire feature maps. Only relevant if
+<code class="docutils literal notranslate"><span class="pre">use_dropout</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>. Defaults to <code class="docutils literal notranslate"><span class="pre">'standard'</span></code>.</p></li>
 <li><p><strong>**kwargs</strong> – Additional keyword arguments to be passed to base class.</p></li>
 </ul>
 </dd>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tfmr.layers.ConvBlock.call">
-<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.8.0/tensorflow_mri/python/layers/conv_blocks.py#L138-L146"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.layers.ConvBlock.call" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.9.0/tensorflow_mri/python/layers/conv_blocks.py#L189-L212"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.layers.ConvBlock.call" title="Permalink to this definition">¶</a></dt>
 <dd><p>Runs forward pass on the input tensor.</p>
 </dd></dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tfmr.layers.ConvBlock.get_config">
-<span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.8.0/tensorflow_mri/python/layers/conv_blocks.py#L148-L166"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.layers.ConvBlock.get_config" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.9.0/tensorflow_mri/python/layers/conv_blocks.py#L214-L238"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tfmr.layers.ConvBlock.get_config" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets layer configuration.</p>
 </dd></dl>
 </dd></dl>
