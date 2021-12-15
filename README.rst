@@ -18,22 +18,41 @@
 
 .. start-intro
 
-TensorFlow MRI (TFMR) is a Python library for MR image reconstruction and
-processing. TFMR provides:
+TensorFlow MRI is a library of TensorFlow operators for computational MRI which
+includes: 
 
-* A selection of differentiable operators for accelerated image reconstruction,
-  Cartesian and non-Cartesian *k*-space sampling, and many other common MR image
-  and signal processing tasks.
-* Keras callbacks, layers, metrics and losses and other utilities for the
-  creation, training and evaluation of machine learning models.
+* A fast, native non-uniform fast Fourier transform (NUFFT) operator (see
+  also `TensorFlow NUFFT <https://github.com/mrphys/tensorflow-nufft>`_).
+* A unified gateway for MR image reconstruction, which supports parallel
+  imaging, compressed sensing, machine learning and partial Fourier methods. 
+* Common linear and nonlinear operators, such as Fourier operators and
+  regularizers, to aid in the development of novel image reconstruction
+  techniques. 
+* Multicoil imaging operators, such as coil combination, coil compression and
+  estimation of coil sensitivity maps. 
+* Calculation of non-Cartesian k-space trajectories and sampling density
+  estimation. 
+* A collection of Keras objects including models, layers, metrics, loss
+  functions and callbacks for rapid development of neural networks. 
+* Many other differentiable operators for common tasks such as array
+  manipulation and image/signal processing. 
 
-TFMR is aimed for scientists and researchers working with MRI data. Whether you
-are planning to use machine learning or not, TFMR enables prototyping and
-deployment of efficient computational MRI solutions easily and within Python.
+The library has a Python interface and is mostly written in Python. However,
+computations are efficiently performed by the TensorFlow backend (implemented in
+C++/CUDA), which brings together the ease of use and fast prototyping of Python
+with the speed and efficiency of optimized lower-level implementations. 
 
-Thanks to the use of a TensorFlow backend, TFMR integrates seamlessly in machine
-learning projects. It also inherits other benefits of TensorFlow, including high
-performance computation and GPU acceleration. 
+Being an extension of TensorFlow, TensorFlow MRI integrates seamlessly in ML
+applications. No additional interfacing is needed to include a SENSE operator
+within a neural network, or to use a trained prior as part of an iterative
+reconstruction. Therefore, the gap between ML and non-ML components of image
+processing pipelines is eliminated. 
+
+Whether an application involves ML or not, TensorFlow MRI operators can take
+full advantage of the TensorFlow framework, with capabilities including
+automatic differentiation, multi-device support (CPUs and GPUs), automatic
+device placement and copying of tensor data, and conversion to fast,
+serializable graphs. 
 
 .. end-intro
 
@@ -60,6 +79,7 @@ versions of TensorFlow and TensorFlow MRI according to the table below.
 ======================  ========================  ============
 TensorFlow MRI Version  TensorFlow Compatibility  Release Date
 ======================  ========================  ============
+v0.9.0                  v2.7.x                    Dec 3, 2021
 v0.8.0                  v2.7.x                    Nov 11, 2021
 v0.7.0                  v2.6.x                    Nov 3, 2021
 v0.6.2                  v2.6.x                    Oct 13, 2021
