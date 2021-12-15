@@ -84,6 +84,14 @@ class LinearOperatorImaging(tf.linalg.LinearOperator):
     return self._range_shape()
 
   @property
+  def domain_rank(self):
+    return self.domain_shape.rank
+  
+  @property
+  def range_rank(self):
+    return self.range_shape.rank
+
+  @property
   def rank(self):
     """Rank (in the sense of spatial dimensionality) of this linear operator."""
     return self._rank()
@@ -165,17 +173,9 @@ class LinearOperatorImaging(tf.linalg.LinearOperator):
 
   def _matvec(self, x, adjoint=False):
     # Default implementation of `_matvec` for imaging operator.
-    arg_batch_shape = tf.shape(x)[:-1]
-    out_batch_shape = tf.broadcast_dynamic_shape(arg_batch_shape,
-                                                 self.batch_shape_tensor())
-    if adjoint:
-      x = tf.reshape(x, tf.concat([arg_batch_shape,
-                                   self.range_shape_tensor()], 0))
-    else:
-      x = tf.reshape(x, tf.concat([arg_batch_shape,
-                                   self.domain_shape_tensor()], 0))
+    x = self.expand_output(x) if adjoint else self.expand_input(x) 
     x = self._transform(x, adjoint=adjoint)
-    x = tf.reshape(x, tf.concat([out_batch_shape, [-1]], 0))
+    x = self.flatten_input(x) if adjoint else self.flatten_output(x) 
     return x
 
   @abc.abstractmethod
@@ -183,52 +183,198 @@ class LinearOperatorImaging(tf.linalg.LinearOperator):
     # Subclasses must override this method.
     raise NotImplementedError("Method `_transform` is not implemented.")
 
+  def adjoint(self, name="adjoint"):
+    if self.is_self_adjoint:
+      return self
+    with self._name_scope(name):
+      return LinearOperatorImagingAdjoint(self)
+
+  H = property(adjoint, None)
+
+  def flatten_input(self, x):
+    self.domain_shape.assert_is_compatible_with(x.shape[-self.domain_rank:])
+
+    batch_shape = x.shape[:-self.domain_rank]
+    batch_shape_tensor = tf.shape(x)[:-self.domain_rank]
+
+    output_shape = batch_shape + self.domain_dimension
+    output_shape_tensor = tf.concat(
+        [batch_shape_tensor, [self.domain_dimension_tensor()]], axis=0)
+
+    x = tf.reshape(x, output_shape_tensor)      
+    return tf.ensure_shape(x, output_shape)
+
+  def expand_input(self, x):
+    self.domain_dimension.assert_is_compatible_with(x.shape[-1])
+
+    batch_shape = x.shape[:-1]
+    batch_shape_tensor = tf.shape(x)[:-1]
+
+    output_shape = batch_shape + self.domain_shape
+    output_shape_tensor = tf.concat([
+        batch_shape_tensor, self.domain_shape_tensor()], axis=0)
+
+    x = tf.reshape(x, output_shape_tensor)
+    return tf.ensure_shape(x, output_shape)
+
+  def flatten_output(self, x):
+    self.range_shape.assert_is_compatible_with(x.shape[-self.range_rank:])
+
+    batch_shape = x.shape[:-self.range_rank]
+    batch_shape_tensor = tf.shape(x)[:-self.range_rank]
+
+    output_shape = batch_shape + self.range_dimension
+    output_shape_tensor = tf.concat(
+        [batch_shape_tensor, [self.range_dimension_tensor()]], axis=0)
+
+    x = tf.reshape(x, output_shape_tensor)
+    return tf.ensure_shape(x, output_shape)
+
+  def expand_output(self, x):
+    self.range_dimension.assert_is_compatible_with(x.shape[-1])
+
+    batch_shape = x.shape[:-1]
+    batch_shape_tensor = tf.shape(x)[:-1]
+
+    output_shape = batch_shape + self.range_shape
+    output_shape_tensor = tf.concat([
+        batch_shape_tensor, self.range_shape_tensor()], axis=0)
+
+    x = tf.reshape(x, output_shape_tensor)
+    return tf.ensure_shape(x, output_shape)
+    
+
+class LinearOperatorImagingAdjoint(tf.linalg.LinearOperatorAdjoint,
+                                   LinearOperatorImaging):
+
+  def _domain_shape(self):
+    return self.operator.range_shape
+
+  def _range_shape(self):
+    return self.operator.domain_shape
+  
+  def _domain_shape_tensor(self):
+    return self.operator.range_shape_tensor()
+
+  def _range_shape_tensor(self):
+    return self.operator.domain_shape_tensor()
+
+  def _transform(self, x, adjoint=False):
+    return self.operator._transform(x, adjoint=(not adjoint))
+
+
+class LinearOperatorImagingComposition(tf.linalg.LinearOperatorComposition,
+                                       LinearOperatorImaging):
+
+  def _domain_shape(self):
+    return self.operators[-1].domain_shape
+
+  def _range_shape(self):
+    return self.operators[0].range_shape
+  
+  def _domain_shape_tensor(self):
+    return self.operators[-1].domain_shape_tensor()
+
+  def _range_shape_tensor(self):
+    return self.operators[0].range_shape_tensor()
+
+  def _transform(self, x, adjoint=False, adjoint_arg=False):
+    if adjoint:
+      transform_order_list = self.operators
+    else:
+      transform_order_list = list(reversed(self.operators))
+
+    result = transform_order_list[0]._transform(x, adjoint=adjoint)
+    for operator in transform_order_list[1:]:
+      result = operator._transform(result, adjoint=adjoint)
+    return result
 
 class LinearOperatorFFT(LinearOperatorImaging): # pylint: disable=abstract-method
   """Linear operator acting like a DFT matrix.
 
-  Can act like an undersampled FFT operator by providing `mask`.
+  This linear operator computes the N-dimensional discrete Fourier transform
+  (DFT) of its inputs. In other words, it acts like a DFT matrix, although the
+  corresponding dense matrix is never created. Instead, the computation is
+  performed using the fast Fourier transform (FFT) algorithm.
+
+  The adjoint of this operator computes the inverse discrete Fourier transform.
+
+  This operator can act like an undersampled DFT operator if a boolean sampling
+  mask is provided. In this case, the values for which the mask is `False` are
+  set to 0 in the output. In the adjoint operator, the values for which mask is
+  `False` are set to 0 in the input and do not contribute to the computation of
+  the transform.
 
   Args:
-    domain_shape: A `tf.TensorShape` or list of ints. The domain shape of this
-      operator.
+    domain_shape: A `TensorShape` or list of ints. The domain shape of this
+      operator. By default, the Fourier transform is computed along each of the
+      dimensions of `domain_shape`. However, `domain_shape` may contain
+      additional dimensions which should not be transformed. In this case, make
+      sure to specify the `rank` argument, which should be equal to the
+      dimensionality of the transform. For example, for a 12-coil 256 x 256
+      transform, set `domain_shape=[12, 256, 256]` and `rank=2`.
+    rank: An optional `int`. The rank (spatial dimensionality) of the transform.
+      If `None`, defaults to `domain_shape.rank`. Must be 1, 2 or 3. Make sure
+      to specify `rank` if `domain_shape` contains any additional dimensions
+      which should not be transformed.
     mask: An optional `Tensor` of type `bool`. The sampling mask.
-    norm: FFT normalization mode. Must be `None` (no normalization) or
-      `'ortho'`.
+    norm: FFT normalization mode. Must be `None` (no normalization for either
+      forward or adjoint operator) or `'ortho'` (normalization by the square
+      root of the number of pixels in both the forward and adjoint operators).
+      Defaults to `'ortho'`.
     dtype: An optional `string` or `DType`. The data type for this operator.
-      Defaults to `complex64`.
+      Must be `complex64` or `complex128`. Defaults to `complex64`.
     name: An optional `string`. A name for this operator.
   """
   def __init__(self,
                domain_shape,
+               rank=None,
                mask=None,
-               norm=None,
+               norm='ortho',
                dtype=tf.dtypes.complex64,
                name="LinearOperatorFFT"):
 
     parameters = dict(
       domain_shape=domain_shape,
+      rank=rank,
       mask=mask,
       norm=norm,
       dtype=dtype,
       name=name
     )
 
-    self._mask = tf.convert_to_tensor(mask) if mask is not None else None
-    self._mask_cast = tf.cast(self.mask, dtype) if mask is not None else None
-    self._dshape = tf.TensorShape(domain_shape)
-    self._rshape = tf.TensorShape(domain_shape)
+    # Set domain shape.
+    self._domain_shape_value = tf.TensorShape(domain_shape)
+    # Get rank from `rank` argument if provided, else infer from `domain_shape`.
+    self._rank = rank or self._domain_shape_value.rank
+    # Validate normalization mode.
     self._norm = check_util.validate_enum(norm, {None, 'ortho'}, 'norm')
 
-    if self.mask is None:
+    # Get the FFT axes.
+    self._fft_axes = list(range(-self.rank, 0))
+
+    if mask is None:
+      # Set members to `None`.
+      self._mask = None
+      self._mask_complex = None
       # If no mask, this operator has no batch shape.
-      self._bshape = tf.TensorShape([])
+      self._batch_shape_value = tf.TensorShape([])
     else:
-      # Batch shape are any leading dimensions of `mask` not included in
+      # If mask was provided, convert to tensor and cast to this operator's dtype.
+      self._mask = tf.convert_to_tensor(mask, dtype=tf.bool)
+      self._mask_complex = tf.cast(self.mask, dtype)
+      # Batch shape is any leading dimensions of `mask` not included in
       # `domain_shape`.
-      self._bshape = self.mask.shape[:-self.rank]
-      # Static check: last dimensions of `mask` must match domain shape.
-      self.mask.shape[-self.rank:].assert_is_compatible_with(self.domain_shape)
+      self._batch_shape_value = self._mask.shape[:-self._domain_shape_value.rank]
+      # Static check: last dimensions of `mask` must be broadcastable with
+      # domain shape.
+      try:
+        _ = tf.broadcast_static_shape(
+            self.mask.shape[-self._domain_shape_value.rank:], self.domain_shape)
+      except ValueError as e:
+        raise ValueError(
+            "The last dimensions of `mask` must be broadcastable with "
+            "`domain_shape`.") from e
 
     super().__init__(dtype,
                      is_non_singular=None,
@@ -245,24 +391,29 @@ class LinearOperatorFFT(LinearOperatorImaging): # pylint: disable=abstract-metho
     # normalization is never applied.
     if adjoint:
       if self.mask is not None:
-        x *= self._mask_cast
-      x = fft_ops.ifftn(x, axes=list(range(-self.rank, 0)),
+        x *= self._mask_complex
+      x = fft_ops.ifftn(x, axes=self._fft_axes,
                         norm=self.norm or 'forward', shift=True)
     else:
-      x = fft_ops.fftn(x, axes=list(range(-self.rank, 0)),
+      x = fft_ops.fftn(x, axes=self._fft_axes,
                        norm=self.norm or 'backward', shift=True)
       if self.mask is not None:
-        x *= self._mask_cast
+        x *= self._mask_complex
     return x
 
   def _domain_shape(self):
-    return self._dshape
+    return self._domain_shape_value
 
   def _range_shape(self):
-    return self._rshape
+    return self.domain_shape
 
   def _batch_shape(self):
-    return self._bshape
+    return self._batch_shape_value
+
+  @property
+  def rank(self):
+    """Rank (in the sense of spatial dimensionality) of this linear operator."""
+    return self._rank
 
   @property
   def mask(self):
@@ -271,6 +422,7 @@ class LinearOperatorFFT(LinearOperatorImaging): # pylint: disable=abstract-metho
 
   @property
   def norm(self):
+    """Normalization mode."""
     return self._norm
 
 
@@ -286,13 +438,13 @@ class LinearOperatorNUFFT(LinearOperatorImaging): # pylint: disable=abstract-met
       the number of samples and `...` is the batch shape, which can have any
       number of dimensions.
     norm: FFT normalization mode. Must be `None` (no normalization) or
-      `'ortho'`.
+      `'ortho'`. Defaults to `'ortho'`.
     name: An optional `string`. The name of this operator.
   """
   def __init__(self,
                domain_shape,
                points,
-               norm=None,
+               norm='ortho',
                name="LinearOperatorNUFFT"):
 
     parameters = dict(
@@ -302,7 +454,7 @@ class LinearOperatorNUFFT(LinearOperatorImaging): # pylint: disable=abstract-met
       name=name
     )
 
-    self._dshape = tf.TensorShape(domain_shape)
+    self._domain_shape_value = tf.TensorShape(domain_shape)
     self._points = check_util.validate_tensor_dtype(
       tf.convert_to_tensor(points), 'floating', 'points')
     self._rank = self._points.shape[-1]
@@ -317,10 +469,10 @@ class LinearOperatorNUFFT(LinearOperatorImaging): # pylint: disable=abstract-met
     points_batch_shape = self.points.shape[:-2]
 
     if nufft_batch_shape.rank == 0:
-      self._bshape = points_batch_shape
+      self._batch_shape_value = points_batch_shape
     else:
       # Take operator part of batch shape, then keep remainder.
-      self._bshape = points_batch_shape[:-nufft_batch_shape.rank] # pylint: disable=invalid-unary-operand-type
+      self._batch_shape_value = points_batch_shape[:-nufft_batch_shape.rank] # pylint: disable=invalid-unary-operand-type
       points_batch_shape = points_batch_shape[-nufft_batch_shape.rank:] # pylint: disable=invalid-unary-operand-type
       # Check that NUFFT part of points batch shape is broadcast compatible with
       # NUFFT batch shape.
@@ -335,7 +487,7 @@ class LinearOperatorNUFFT(LinearOperatorImaging): # pylint: disable=abstract-met
             f"{str(self.domain_shape[:-self.rank])} and "
             f"{str(self.points.shape[:-2])} for input and `points`, "
             f"respectively.")
-    self._rshape = nufft_batch_shape + self.points.shape[-2:-1]
+    self._range_shape_value = nufft_batch_shape + self.points.shape[-2:-1]
 
     is_square = self.domain_dimension == self.range_dimension
 
@@ -372,13 +524,13 @@ class LinearOperatorNUFFT(LinearOperatorImaging): # pylint: disable=abstract-met
     return x
 
   def _domain_shape(self):
-    return self._dshape
+    return self._domain_shape_value
 
   def _range_shape(self):
-    return self._rshape
+    return self._range_shape_value
 
   def _batch_shape(self):
-    return self._bshape
+    return self._batch_shape_value
 
   @property
   def rank(self):
@@ -472,9 +624,9 @@ class LinearOperatorSensitivityModulation(LinearOperatorImaging): # pylint: disa
     self._num_coils = self.sensitivities.shape[-self.rank-1]
     self._coil_axis = -self.rank-1
 
-    self._dshape = self.image_shape
-    self._rshape = tf.TensorShape([self.num_coils]) + self.image_shape
-    self._bshape = self.sensitivities.shape[:-self.rank-1]
+    self._domain_shape_value = self.image_shape
+    self._range_shape_value = tf.TensorShape([self.num_coils]) + self.image_shape
+    self._batch_shape_value = self.sensitivities.shape[:-self.rank-1]
 
     super().__init__(self._sensitivities.dtype,
                      is_non_singular=False,
@@ -485,13 +637,13 @@ class LinearOperatorSensitivityModulation(LinearOperatorImaging): # pylint: disa
                      parameters=parameters)
 
   def _domain_shape(self):
-    return self._dshape
+    return self._domain_shape_value
 
   def _range_shape(self):
-    return self._rshape
+    return self._range_shape_value
 
   def _batch_shape(self):
-    return self._bshape
+    return self._batch_shape_value
 
   def _transform(self, x, adjoint=False):
 
@@ -548,8 +700,11 @@ class LinearOperatorSensitivityModulation(LinearOperatorImaging): # pylint: disa
     return self._sensitivities
 
 
-class LinearOperatorParallelMRI(tf.linalg.LinearOperatorComposition): # pylint: disable=abstract-method
+class LinearOperatorParallelMRI(LinearOperatorImagingComposition): # pylint: disable=abstract-method
   """Linear operator acting like a parallel MRI matrix.
+
+  Can be used for Cartesian or non-Cartesian imaging. The operator is
+  non-Cartesian if the `trajectory` argument is passed, and Cartesian otherwise.
 
   Args:
     sensitivities: A `Tensor`. The coil sensitivity maps. Must have type
@@ -563,16 +718,20 @@ class LinearOperatorParallelMRI(tf.linalg.LinearOperatorComposition): # pylint: 
       Must have shape `[..., M, N]`, where `N` is the rank (or spatial
       dimensionality), `M` is the number of samples and `...` is the batch
       shape, which can have any number of dimensions and must be
-      broadcast-compatible with the batch shape of `sensitivities`. If `points`
-      is provided, this operator is a non-Cartesian MRI operator. Otherwise,
-      this is operator is a Cartesian MRI operator.
+      broadcast-compatible with the batch shape of `sensitivities`. If
+      `trajectory` is provided, this operator is a non-Cartesian MRI operator.
+      Otherwise, this is operator is a Cartesian MRI operator.
     rank: An optional `int`. The rank (in the sense of spatial dimensionality)
-      of this operator. If `trajectory` is not `None`, the rank is inferred from
-      `trajectory` and this argument is ignored. If `trajectory` is `None`,
-      this value defaults to `sensitivities.shape.rank - 1`. `rank` must be
-      specified if `sensitivities` has any batch dimensions.
+      of this operator. If `None`, the rank of this operator is inferred from
+      the rank of `mask` / `trajectory` (as `mask.shape.rank`) if it is
+      Cartesian, or from the static shape of `trajectory` (as
+      `trajectory.shape[-1]`) if non-Cartesian. If this fails or `mask` and/or
+      `trajectory` are `None`, the rank is inferred from `sensitivities` as
+      `sensitivities.shape.rank - 1`. `rank` should be specified if there are
+      any batch dimensions, as the inferred rank might be incorrect in this
+      case.
     norm: FFT normalization mode. Must be `None` (no normalization) or
-      `'ortho'`.
+      `'ortho'`. Defaults to 'ortho'.
     name: An optional `string`. The name of this operator.
   """
   def __init__(self,
@@ -580,26 +739,52 @@ class LinearOperatorParallelMRI(tf.linalg.LinearOperatorComposition): # pylint: 
                mask=None,
                trajectory=None,
                rank=None,
-               norm=None,
+               norm='ortho',
                name='LinearOperatorParallelMRI'):
 
     sensitivities = tf.convert_to_tensor(sensitivities)
+    self._rank = rank
+
+    if trajectory is not None:
+      self._is_cartesian = False
+      # Infer rank.
+      self._rank = self._rank or trajectory.shape[-1]
+      self._rank = self._rank or sensitivities.shape.rank - 1
+      if self._rank is None:
+        raise ValueError(
+            "Could not infer the rank of the operator. Please provide the "
+            "`rank` argument.")
+      # Validate trajectory.
+      trajectory = tf.convert_to_tensor(trajectory)
+      trajectory = check_util.validate_tensor_dtype(
+          trajectory, sensitivities.dtype.real_dtype, name='trajectory')
+      trajectory = tf.expand_dims(trajectory, -3) # Add coil dimension.
+
+    elif mask is not None:
+      self._is_cartesian = True
+      # Infer rank.
+      self._rank = self._rank or mask.shape.rank
+      self._rank = self._rank or sensitivities.shape.rank - 1
+      if self._rank is None:
+        raise ValueError(
+            "Could not infer the rank of the operator. Please provide the "
+            "`rank` argument.")
+      # Validate mask.
+      mask = tf.convert_to_tensor(mask)
+      mask = check_util.validate_tensor_dtype(
+          mask, tf.dtypes.bool, name='mask')
+      mask = tf.expand_dims(mask, -self._rank-1) # Add coil dimension.
+
+    else:
+      raise ValueError("Either `mask` or `trajectory` must be provided.")
 
     # Prepare the Fourier operator.
-    if trajectory is not None: # Non-Cartesian
-      trajectory = check_util.validate_tensor_dtype(
-          tf.convert_to_tensor(trajectory),
-          sensitivities.dtype.real_dtype, name='trajectory')
-      trajectory = tf.expand_dims(trajectory, -3) # Add coil dimension.
-      self._rank = trajectory.shape[-1]
-      self._is_cartesian = False
+    if trajectory is not None: # Non-Cartesian      
       linop_fourier = LinearOperatorNUFFT(
           sensitivities.shape[-self.rank-1:], trajectory, norm=norm) # pylint: disable=invalid-unary-operand-type
-    else: # Cartesian
-      self._rank = rank
-      self._is_cartesian = True
+    else: # Cartesian      
       linop_fourier = LinearOperatorFFT(
-          sensitivities.shape[-self.rank-1:], mask=mask, norm=norm) # pylint: disable=abstract-class-instantiated,invalid-unary-operand-type
+          sensitivities.shape[-self.rank-1:], rank=rank, mask=mask, norm=norm) # pylint: disable=abstract-class-instantiated,invalid-unary-operand-type
 
     # Prepare the coil sensitivity operator.
     linop_sens = LinearOperatorSensitivityModulation(
@@ -747,9 +932,9 @@ class LinearOperatorRealWeighting(LinearOperatorImaging): # pylint: disable=abst
       self._weights = tf.cast(self._weights, dtype)
 
     if arg_shape is None:
-      self._dshape = self._weights.shape
+      self._domain_shape_value = self._weights.shape
     else:
-      self._dshape = tf.TensorShape(arg_shape)
+      self._domain_shape_value = tf.TensorShape(arg_shape)
       # Check that the last dimensions of `shape.weights` are broadcastable to
       # this shape.
       weights_shape = self.weights.shape[-self.domain_shape.rank:]
@@ -761,8 +946,8 @@ class LinearOperatorRealWeighting(LinearOperatorImaging): # pylint: disable=abst
           f"Received shapes {str(weights_shape)} and "
           f"{str(self.domain_shape)}, respectively.")
 
-    self._rshape = self.domain_shape
-    self._bshape = self.weights.shape[:-self.domain_shape.rank]
+    self._range_shape_value = self.domain_shape
+    self._batch_shape_value = self.weights.shape[:-self.domain_shape.rank]
 
     # This operator acts like a diagonal matrix. It does not inherit from
     # `LinearOperatorDiag` for efficiency reasons, as the diagonal values may
@@ -776,13 +961,13 @@ class LinearOperatorRealWeighting(LinearOperatorImaging): # pylint: disable=abst
                      parameters=parameters)
 
   def _domain_shape(self):
-    return self._dshape
+    return self._domain_shape_value
 
   def _range_shape(self):
-    return self._rshape
+    return self._range_shape_value
 
   def _batch_shape(self):
-    return self._bshape
+    return self._batch_shape_value
 
   def _transform(self, x, adjoint=False):
     x *= self.weights
@@ -830,9 +1015,9 @@ class LinearOperatorDifference(LinearOperatorImaging): # pylint: disable=abstrac
     range_shape[self.axis] = range_shape[self.axis] - 1
     range_shape = tf.TensorShape(range_shape)
 
-    self._dshape = domain_shape
-    self._rshape = range_shape
-    self._bshape = tf.TensorShape([])
+    self._domain_shape_value = domain_shape
+    self._range_shape_value = range_shape
+    self._batch_shape_value = tf.TensorShape([])
 
     super().__init__(dtype,
                      is_non_singular=None,
@@ -863,13 +1048,13 @@ class LinearOperatorDifference(LinearOperatorImaging): # pylint: disable=abstrac
     return x
 
   def _domain_shape(self):
-    return self._dshape
+    return self._domain_shape_value
 
   def _range_shape(self):
-    return self._rshape
+    return self._range_shape_value
 
   def _batch_shape(self):
-    return self._bshape
+    return self._batch_shape_value
 
   @property
   def axis(self):
@@ -897,6 +1082,7 @@ def conjugate_gradient(operator,
                        x=None,
                        tol=1e-5,
                        max_iter=20,
+                       l2_regularizer=0.0,
                        name='conjugate_gradient'):
   r"""Conjugate gradient solver.
 
@@ -960,6 +1146,8 @@ def conjugate_gradient(operator,
 
   def cg_step(i, state):  # pylint: disable=missing-docstring
     z = tf.linalg.matvec(operator, state.p)
+    if l2_regularizer != 0.0:
+      z += tf.cast(l2_regularizer, rhs.dtype) * state.p
     alpha = state.gamma / dot(state.p, z)
     x = state.x + alpha[..., tf.newaxis] * state.p
     r = state.r - alpha[..., tf.newaxis] * z

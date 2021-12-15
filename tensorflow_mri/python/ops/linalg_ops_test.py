@@ -21,6 +21,45 @@ from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.util import test_util
 
 
+# class LinearOperatorImagingTest(test_util.TestCase):
+#   """Tests for `linalg_ops.LinearOperatorImaging`."""
+
+#   def test_adjoint(self):
+    
+#     domain_shape = [10, 20]
+#     range_shape = [4, 8, 8]
+
+#     class TestLinop(linalg_ops.LinearOperatorImaging):
+#       def _domain_shape(self):
+#         return tf.TensorShape(domain_shape)
+      
+#       def _range_shape(self):
+#         return tf.TensorShape(range_shape)
+      
+#       def _transform(self, x, adjoint=False):
+#         if adjoint:
+#           return tf.ones(domain_shape)
+#         else:
+#           return tf.ones(range_shape)
+
+#     test_linop = TestLinop(dtype=tf.float32)
+#     test_linop.strict = False
+
+#     self.assertAllClose(test_linop.domain_shape, domain_shape)
+#     self.assertAllClose(test_linop.range_shape, range_shape)
+#     self.assertAllClose(test_linop.H.domain_shape, range_shape)
+#     self.assertAllClose(test_linop.H.range_shape, domain_shape)
+
+#     self.assertAllClose(tf.linalg.matmul(test_linop, tf.ones(domain_shape)),
+#                         tf.ones(range_shape))
+#     self.assertAllClose(tf.linalg.matmul(test_linop, tf.ones(range_shape), adjoint_a=True),
+#                         tf.ones(domain_shape))
+#     self.assertAllClose(test_linop.H @ tf.ones(range_shape),
+#                         tf.ones(domain_shape))
+#     # print(test_linop.domain_shape, test_linop.range_shape)
+#     # print(test_linop.H.domain_shape, test_linop.H.range_shape)
+
+
 class LinearOperatorFFTTest(test_util.TestCase):
   """Tests for FFT linear operator."""
 
