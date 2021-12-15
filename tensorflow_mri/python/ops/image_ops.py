@@ -30,7 +30,7 @@ from tensorflow_mri.python.ops import geom_ops
 from tensorflow_mri.python.util import check_util
 
 
-def psnr(img1, img2, max_val=None, rank=None, name='psnr'):
+def psnr(img1, img2, max_val=None, rank=None, multichannel=True, name='psnr'):
   """Computes the peak signal-to-noise ratio (PSNR) between two N-D images.
 
   This function operates on batches of multi-channel inputs and returns a PSNR
@@ -56,6 +56,10 @@ def psnr(img1, img2, max_val=None, rank=None, name='psnr'):
       `img1` and `img2` should have shape `[batch, height, width, channels]`
       if processing 2D images or `[batch, depth, height, width, channels]` if
       processing 3D images.
+    multichannel: A `bool`. Whether multichannel computation is enabled. If
+      `False`, the inputs `img1` and `img2` are not expected to have a channel
+      dimension, i.e. they should have shape `batch_shape + [height, width]`
+      (2D) or `batch_shape + [depth, height, width]` (3D).
     name: Namespace to embed the computation in.
 
   Returns:
@@ -65,6 +69,9 @@ def psnr(img1, img2, max_val=None, rank=None, name='psnr'):
   with tf.name_scope(name):
     img1 = tf.convert_to_tensor(img1)
     img2 = tf.convert_to_tensor(img2)
+    if not multichannel:
+      img1 = tf.expand_dims(img1, -1)
+      img2 = tf.expand_dims(img2, -1)
     # Default `max_val` to maximum dynamic range for the input dtype.
     if max_val is None:
       max_val = _image_dynamic_range(img1.dtype)

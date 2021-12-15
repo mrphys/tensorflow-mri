@@ -32,7 +32,8 @@ class PeakSignalToNoiseRatio(tf.keras.metrics.MeanMetricWrapper):
   This metric supports 2D and 3D image inputs, `y_true` and `y_pred`. For 2D
   images, inputs must have rank >= 3 with shape
   `batch_shape + [height, width, channels]`. For 3D images, inputs must have
-  rank >= 4 with shape `batch_shape + [depth, height, width, channels]`.
+  rank >= 4 with shape `batch_shape + [depth, height, width, channels]`. If
+  `multichannel` is `False`, the channel dimension should be omitted.
 
   Args:
     max_val: The dynamic range of the images (i.e., the difference between
@@ -44,19 +45,26 @@ class PeakSignalToNoiseRatio(tf.keras.metrics.MeanMetricWrapper):
       `y_true` and `y_pred` should have shape `[batch, height, width, channels]`
       if processing 2D images or `[batch, depth, height, width, channels]` if
       processing 3D images.
+    multichannel: A `bool`. Whether multichannel computation is enabled. If
+      `False`, the inputs `y_true` and `y_pred` are not expected to have a
+      channel dimension, i.e. they should have shape
+      `batch_shape + [height, width]` (2D) or
+      `batch_shape + [depth, height, width]` (3D).
     name: String name of the metric instance.
     dtype: Data type of the metric result.
   """
   def __init__(self,
                max_val=None,
                rank=None,
+               multichannel=True,
                name='psnr',
                dtype=None):
     super().__init__(image_ops.psnr,
                      name=name,
                      dtype=dtype,
                      max_val=max_val,
-                     rank=rank)
+                     rank=rank,
+                     multichannel=multichannel)
 
 
 @tf.keras.utils.register_keras_serializable(package="MRI")
