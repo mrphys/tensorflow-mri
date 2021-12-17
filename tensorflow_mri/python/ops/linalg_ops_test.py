@@ -67,13 +67,13 @@ class LinearOperatorFFTTest(test_util.TestCase):
   def setUpClass(cls):
 
     super().setUpClass()
-    cls.linop1 = linalg_ops.LinearOperatorFFT([2, 2])
-    cls.linop2 = linalg_ops.LinearOperatorFFT([2, 2], mask=[[False, False],
-                                                            [True, True]])
+    cls.linop1 = linalg_ops.LinearOperatorFFT([2, 2], norm=None)
+    cls.linop2 = linalg_ops.LinearOperatorFFT(
+        [2, 2], mask=[[False, False], [True, True]], norm=None)
     cls.linop3 = linalg_ops.LinearOperatorFFT(
         [2, 2], mask=[[[True, True], [False, False]],
                       [[False, False], [True, True]],
-                      [[False, True], [True, False]]])
+                      [[False, True], [True, False]]], norm=None)
 
   def test_transform(self):
     """Test transform method."""
@@ -129,6 +129,32 @@ class LinearOperatorFFTTest(test_util.TestCase):
     self.assertIsInstance(self.linop3.batch_shape, tf.TensorShape)
     self.assertAllEqual(self.linop3.batch_shape, [3])
     self.assertAllEqual(self.linop3.batch_shape_tensor(), [3])
+
+  def test_norm(self):
+    """Test FFT normalization."""
+    linop = linalg_ops.LinearOperatorFFT([2, 2], norm='ortho')
+    x = tf.constant([1 + 2j, 2 - 2j, -1 - 6j, 3 + 4j], dtype=tf.complex64)
+    # With norm='ortho', subsequent application of the operator and its adjoint
+    # should not scale the input.
+    y = tf.linalg.matvec(linop.H, tf.linalg.matvec(linop, x))
+    self.assertAllClose(x, y)
+
+
+class LinearOperatorSensitivityModulationTest(test_util.TestCase):
+  """Tests for `linalg_ops.LinearOperatorSensitivityModulation`."""
+
+  def test_norm(self):
+    """Test normalization."""
+    sens = _random_normal_complex([2, 4, 4])
+    linop = linalg_ops.LinearOperatorSensitivityModulation(sens, norm=True)
+    x = _random_normal_complex([4 * 4])
+    y = tf.linalg.matvec(linop, x)
+    a = tf.linalg.matvec(linop.H, y)
+    self.assertAllClose(x, a)
+
+
+def _random_normal_complex(shape):
+  return tf.dtypes.complex(tf.random.normal(shape), tf.random.normal(shape))
 
 
 class LinearOperatorDifferenceTest(test_util.TestCase):

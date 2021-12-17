@@ -1502,3 +1502,33 @@ _PHANTOMS_3D = {
         Ellipsoid(rho=-.2, size=(.1000, .0560, .0560),
                   pos=(.625, -.100, 0), phi=(0, 0, 0))]
 }
+
+
+def extract_and_scale_complex_part(value, part, max_val):
+  """Extracts and scales parts of a complex image.
+
+  Args:
+    value: A `Tensor` of type `complex64` or `complex128`.
+    part: A `str`. The part to extract. Must be one of `'real'`, `'imag'`,
+      `'abs'` or `'angle'`.
+    max_val: A `float`. The maximum expected absolute value. Used for scaling.
+      To obtain correctly scaled parts, the input should have no elements with
+      an absolute value greater than `max_val`, but this is not enforced.
+
+  Returns:
+    The specified part of the complex input tensor, scaled to image range.
+  """
+  if part == 'real':
+    value = tf.math.real(value) # [-max_val, max_val]
+    value = (value + max_val) * 0.5 # [0, max_val]
+  elif part == 'imag':
+    value = tf.math.imag(value) # [-max_val, max_val]
+    value = (value + max_val) * 0.5 # [0, max_val]
+  elif part == 'abs':
+    value = tf.math.abs(value) # [0, max_val]
+  elif part == 'angle':
+    value = tf.math.angle(value) # [-pi, pi]
+    value = (value + np.pi) * max_val / (2. * np.pi) # [0, max_val]
+  else:
+    raise ValueError('Invalid complex part: {}'.format(part))
+  return value

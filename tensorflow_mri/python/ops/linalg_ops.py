@@ -603,16 +603,20 @@ class LinearOperatorSensitivityModulation(LinearOperatorImaging): # pylint: disa
       of this operator. Defaults to `sensitivities.shape.rank - 1`. Therefore,
       if `rank` is not specified, axis 0 is interpreted to be the coil axis
       and the remaining dimensions are interpreted to be spatial dimensions.
+    norm: A `bool`. If `True`, the coil sensitivites are normalized to have
+      unit L2 norm along the channel dimension. Defaults to `False`.
     name: An optional `string`. The name of this operator.
   """
   def __init__(self,
                sensitivities,
                rank=None,
+               norm=False,
                name='LinearOperatorSensitivityModulation'):
 
     parameters = dict(
       sensitivities=sensitivities,
       rank=rank,
+      norm=norm,
       name=name
     )
 
@@ -621,12 +625,17 @@ class LinearOperatorSensitivityModulation(LinearOperatorImaging): # pylint: disa
 
     self._rank = rank or self.sensitivities.shape.rank - 1
     self._image_shape = self.sensitivities.shape[-self.rank:]
-    self._num_coils = self.sensitivities.shape[-self.rank-1]
-    self._coil_axis = -self.rank-1
+    self._coil_axis = -(self.rank + 1)
+    self._num_coils = self.sensitivities.shape[self._coil_axis]
 
     self._domain_shape_value = self.image_shape
     self._range_shape_value = tf.TensorShape([self.num_coils]) + self.image_shape
-    self._batch_shape_value = self.sensitivities.shape[:-self.rank-1]
+    self._batch_shape_value = self.sensitivities.shape[:self._coil_axis]
+
+    self._norm = norm
+    if self._norm:
+      self._sensitivities /= tf.norm(
+          self._sensitivities, axis=self._coil_axis, keepdims=True)
 
     super().__init__(self._sensitivities.dtype,
                      is_non_singular=False,
@@ -651,7 +660,7 @@ class LinearOperatorSensitivityModulation(LinearOperatorImaging): # pylint: disa
       x *= tf.math.conj(self.sensitivities)
       x = tf.math.reduce_sum(x, axis=self._coil_axis)
     else:
-      x = tf.expand_dims(x, -self.domain_shape.rank-1)
+      x = tf.expand_dims(x, axis=self._coil_axis)
       x *= self.sensitivities
     return x
 
@@ -730,8 +739,11 @@ class LinearOperatorParallelMRI(LinearOperatorImagingComposition): # pylint: dis
       `sensitivities.shape.rank - 1`. `rank` should be specified if there are
       any batch dimensions, as the inferred rank might be incorrect in this
       case.
-    norm: FFT normalization mode. Must be `None` (no normalization) or
-      `'ortho'`. Defaults to 'ortho'.
+    fft_normalization: FFT normalization mode. Must be `None` (no normalization)
+      or `'ortho'`. Defaults to `'ortho'`.
+    normalize_sensitivities: A `bool`. If `True`, the coil sensitivity maps
+      are normalized to have unit L2 norm along the coil dimension. Defaults to
+      `False`.
     name: An optional `string`. The name of this operator.
   """
   def __init__(self,
@@ -739,7 +751,8 @@ class LinearOperatorParallelMRI(LinearOperatorImagingComposition): # pylint: dis
                mask=None,
                trajectory=None,
                rank=None,
-               norm='ortho',
+               fft_normalization='ortho',
+               normalize_sensitivities=False,
                name='LinearOperatorParallelMRI'):
 
     sensitivities = tf.convert_to_tensor(sensitivities)
@@ -781,14 +794,16 @@ class LinearOperatorParallelMRI(LinearOperatorImagingComposition): # pylint: dis
     # Prepare the Fourier operator.
     if trajectory is not None: # Non-Cartesian      
       linop_fourier = LinearOperatorNUFFT(
-          sensitivities.shape[-self.rank-1:], trajectory, norm=norm) # pylint: disable=invalid-unary-operand-type
+          sensitivities.shape[-self.rank-1:], trajectory, # pylint: disable=invalid-unary-operand-type
+          norm=fft_normalization)
     else: # Cartesian      
       linop_fourier = LinearOperatorFFT(
-          sensitivities.shape[-self.rank-1:], rank=rank, mask=mask, norm=norm) # pylint: disable=abstract-class-instantiated,invalid-unary-operand-type
+          sensitivities.shape[-self.rank-1:], rank=rank, mask=mask, # pylint: disable=abstract-class-instantiated,invalid-unary-operand-type
+          norm=fft_normalization)
 
     # Prepare the coil sensitivity operator.
     linop_sens = LinearOperatorSensitivityModulation(
-      sensitivities, rank=self.rank)
+        sensitivities, rank=self.rank, norm=normalize_sensitivities)
 
     super().__init__([linop_fourier, linop_sens], name=name)
 
