@@ -634,8 +634,9 @@ class LinearOperatorSensitivityModulation(LinearOperatorImaging): # pylint: disa
 
     self._norm = norm
     if self._norm:
-      self._sensitivities /= tf.norm(
-          self._sensitivities, axis=self._coil_axis, keepdims=True)
+      self._sensitivities = tf.math.divide_no_nan(
+          self._sensitivities,
+          tf.norm(self._sensitivities, axis=self._coil_axis, keepdims=True))
 
     super().__init__(self._sensitivities.dtype,
                      is_non_singular=False,
