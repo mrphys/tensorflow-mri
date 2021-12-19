@@ -89,9 +89,6 @@ class ConvBlock(tf.keras.layers.Layer):
       `'spatial'`. Standard dropout drops individual elements from the feature
       maps, whereas spatial dropout drops entire feature maps. Only relevant if
       `use_dropout` is `True`. Defaults to `'standard'`.
-    use_complex_conv: A `bool`. If `True`, uses complex-valued convolutions
-      when `self.dtype` is complex. If `False`, the real and imaginary parts
-      of complex inputs are concatenated along the channel axis.
     **kwargs: Additional keyword arguments to be passed to base class.
   """
   def __init__(self,
