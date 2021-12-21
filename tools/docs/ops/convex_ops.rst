@@ -9,7 +9,8 @@ Convex Operators
     :toctree: convex_ops
     :nosignatures:
 
-    ConvexOperator
-    ConvexOperatorL1Norm
+    ConvexFunction
+    ConvexFunctionL1Norm
+    ConvexFunctionL2Norm
     Regularizer
     TotalVariationRegularizer

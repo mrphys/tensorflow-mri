@@ -23,7 +23,7 @@ import tensorflow_probability as tfp
 from tensorflow_mri.python.ops import image_ops
 
 
-class ConvexOperator():
+class ConvexFunction():
   """Base class defining a [batch of] convex operator[s].
 
   Subclasses should implement the `_call` and `_prox` methods to define the
@@ -32,7 +32,7 @@ class ConvexOperator():
   def __init__(self,
                dtype,
                name=None):
-    """Initialize this `ConvexOperator`."""
+    """Initialize this `ConvexFunction`."""
     self._dtype = tf.dtypes.as_dtype(dtype)
     self._name = name or type(self).__name__
 
@@ -40,7 +40,7 @@ class ConvexOperator():
     return self.call(x)
 
   def call(self, x, name="call"):
-    """Apply this `ConvexOperator` to [batch] input `x`.
+    """Apply this `ConvexFunction` to [batch] input `x`.
 
     Args:
       x: A `Tensor` with compatible shape and same `dtype` as `self`.
@@ -55,7 +55,7 @@ class ConvexOperator():
       return self._call(x)
 
   def prox(self, x, name="prox"):
-    """Evaluate the proximal operator of this `ConvexOperator` at point `x`.
+    """Evaluate the proximal operator of this `ConvexFunction` at point `x`.
 
     Args:
       x: A `Tensor` with compatible shape and same `dtype` as `self`.
@@ -81,12 +81,12 @@ class ConvexOperator():
 
   @property
   def dtype(self):
-    """The `DType` of `Tensors` handled by this `ConvexOperator`."""
+    """The `DType` of `Tensors` handled by this `ConvexFunction`."""
     return self._dtype
 
   @property
   def name(self):
-    """Name prepended to all ops created by this `ConvexOperator`."""
+    """Name prepended to all ops created by this `ConvexFunction`."""
     return self._name
 
   @contextlib.contextmanager
@@ -106,32 +106,119 @@ class ConvexOperator():
           (self.dtype, arg.dtype, arg))
 
 
-class ConvexOperatorL1Norm(ConvexOperator):
-  """A `ConvexOperator` computing the L1-norm of a [batch of] inputs.
+class ConvexFunctionL1Norm(ConvexFunction):
+  """A `ConvexFunction` computing the L1-norm of a [batch of] inputs.
 
   Args:
     gamma: A `float`. A scaling factor. Defaults to 1.0.
-    axis: An `int` or a list of `ints`. The dimensions to reduce. If `None`,
-      reduces all dimensions. Defaults to `None`.
     dtype: A `string` or `DType`. The type of this operator. Defaults to
       `tf.float32`.
     name: A name for this operator.
   """
   def __init__(self,
                gamma=1.0,
-               axis=None,
                dtype=tf.float32,
                name=None):
 
     super().__init__(dtype, name=name)
     self._gamma = gamma
-    self._axis = axis
 
   def _call(self, x):
-    return self._gamma * tf.math.reduce_sum(tf.math.abs(x), axis=self._axis)
+    """Compute the L1-norm of [batch] input `x`.
+
+    Args:
+      x: A `Tensor` of shape `[..., n]`.
+
+    Returns:
+      A `Tensor` of shape `[...]`. The L1-norm of each element of `x`.
+    """
+    return self._gamma * tf.norm(x, ord=1, axis=-1)
 
   def _prox(self, x):
+    """Evaluate the proximal operator of the L1-norm at point `x`.
+    
+    Args:
+      x: A `Tensor` of shape `[..., n]`.
+
+    Returns:
+      A `Tensor` of shape `[..., n]`.
+    """
     return tfp.math.soft_threshold(x, self._gamma)
+
+
+class ConvexFunctionL2Norm(ConvexFunction):
+  """A `ConvexFunction` computing the L2-norm of a [batch of] inputs.
+
+  Args:
+    gamma: A `float`. A scaling factor. Defaults to 1.0.
+    dtype: A `string` or `DType`. The type of this operator. Defaults to
+      `tf.float32`.
+    name: A name for this operator.
+  """
+  def __init__(self,
+               gamma=1.0,
+               dtype=tf.float32,
+               name=None):
+
+    super().__init__(dtype, name=name)
+    self._gamma = gamma
+
+  def _call(self, x):
+    """Computes the L2-norm of `x`.
+
+    Args:
+      x: A `Tensor` of shape `[..., n]`.
+
+    Returns:
+      A `Tensor` of shape `[...]`. The L2-norm of each element of `x`.
+    """
+    return self._gamma * tf.norm(x, ord=2, axis=-1)
+
+  def _prox(self, x):
+    """Evaluates the proximal operator of the L2-norm at `x`."""
+    return block_soft_threshold(x, self._gamma)
+
+
+def soft_threshold(x, threshold, name=None):
+  """Soft thresholding operator.
+
+  In the context of proximal gradient methods, this function is the proximal
+  operator of the L1-norm.
+
+  Args:
+    x: A `Tensor` of shape `[..., n]`.
+    threshold: A `float`.
+    name: A name for this operation (optional).
+
+  Returns:
+    A `Tensor` of shape `[..., n]` and same dtype as `x`.
+  """
+  with tf.name_scope(name or 'soft_threshold'):
+    x = tf.convert_to_tensor(x, name='x')
+    threshold = tf.convert_to_tensor(threshold, dtype=x.dtype, name='threshold')
+    return tf.math.sign(x) * tf.math.maximum(tf.math.abs(x) - threshold, 0.)
+
+
+def block_soft_threshold(x, threshold, name=None):
+  """Block soft thresholding operator.
+
+  In the context of proximal gradient methods, this function is the proximal
+  operator of the L2-norm.
+
+  Args:
+    x: A `Tensor` of shape `[..., n]`.
+    threshold: A `float`.
+    name: A name for this operation (optional).
+
+  Returns:
+    A `Tensor` of shape `[..., n]` and same dtype as `x`.
+  """
+  with tf.name_scope(name or 'block_soft_threshold'):
+    x = tf.convert_to_tensor(x, name='x')
+    threshold = tf.convert_to_tensor(threshold, dtype=x.dtype, name='threshold')
+    one = tf.constant(1.0, dtype=x.dtype, name='one')
+    x_norm = tf.norm(x, ord=2, axis=-1, keepdims=True)
+    return tf.math.maximum(one - threshold / x_norm, 0.) * x
 
 
 class Regularizer():
