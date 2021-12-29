@@ -19,6 +19,7 @@ import contextlib
 
 import tensorflow as tf
 
+from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.ops import image_ops
 
 
@@ -156,6 +157,57 @@ class ConvexFunctionL2Norm(ConvexFunction):
     return block_soft_threshold(x, self._scale)
 
 
+class ConvexFunctionQuadratic(ConvexFunction):
+  """A `ConvexFunction` representing a generic quadratic function.
+
+  Represents :math:`f(x) = \frac{1}{2} x^{T} A x + b^{T} x + c`.
+
+  Args:
+    quadratic_coefficient: A `Tensor` or a `LinearOperator` representing a
+      self-adjoint, positive definite matrix `A` with shape `[..., n, n]`. The
+      coefficient of the quadratic term.
+    linear_coefficient: A `Tensor` representing a vector `b` with shape
+      `[..., n]`. The coefficient of the linear term.
+    constant_coefficient: A scalar `Tensor` representing the constant term `c`.
+    scale: A `float`. A scaling factor. Defaults to 1.0.
+    dtype: A `string` or `DType`. The type of this operator. Defaults to
+      `tf.float32`.
+    name: A name for this operator.
+  """
+  def __init__(self,
+               quadratic_coefficient,
+               linear_coefficient,
+               constant_coefficient,
+               scale=1.0,
+               dtype=tf.float32,
+               name=None):
+    super().__init__(dtype, name=name)
+    self._quadratic_coefficient = quadratic_coefficient
+    self._linear_coefficient = linear_coefficient
+    self._constant_coefficient = constant_coefficient
+    self._scale = scale
+    self._one_over_scale = 1.0 / scale
+
+    self._operator = linalg_ops.LinearOperatorAddition(
+        [self._quadratic_coefficient,
+        tf.linalg.LinearOperatorScaledIdentity(
+            num_rows=self._quadratic_coefficient.domain_dimension,
+            multiplier=self._one_over_scale)],
+        is_self_adjoint=True,
+        is_positive_definite=True)
+
+  def _call(self, x):
+    quadratic_term = 0.5 * _dot(
+        x, tf.linalg.matvec(self._quadratic_coefficient, x))
+    linear_term = _dot(self._linear_coefficient, x)
+    constant_term = self._constant_coefficient
+    return quadratic_term + linear_term + constant_term
+
+  def _prox(self, x):
+    rhs = self._one_over_scale * x - self._linear_coefficient
+    return linalg_ops.conjugate_gradient(self._operator, rhs)
+
+
 def block_soft_threshold(x, threshold, name=None):
   """Block soft thresholding operator.
 
@@ -217,6 +269,14 @@ def soft_threshold(x, threshold, name=None):
     x = tf.convert_to_tensor(x, name='x')
     threshold = tf.convert_to_tensor(threshold, dtype=x.dtype, name='threshold')
     return tf.math.sign(x) * tf.math.maximum(tf.math.abs(x) - threshold, 0.)
+
+
+def _dot(x, y):
+  """Returns the dot product of `x` and `y`."""
+  return tf.squeeze(
+      tf.linalg.matvec(
+          x[..., tf.newaxis],
+          y, adjoint_a=True), axis=-1)
 
 
 class Regularizer():
