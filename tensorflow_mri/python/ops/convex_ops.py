@@ -192,9 +192,7 @@ class ConvexFunctionQuadratic(ConvexFunction):
         [self._quadratic_coefficient,
         tf.linalg.LinearOperatorScaledIdentity(
             num_rows=self._quadratic_coefficient.domain_dimension,
-            multiplier=self._one_over_scale)],
-        is_self_adjoint=True,
-        is_positive_definite=True)
+            multiplier=self._one_over_scale)])
 
   def _call(self, x):
     quadratic_term = 0.5 * _dot(
