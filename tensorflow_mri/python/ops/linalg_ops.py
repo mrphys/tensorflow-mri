@@ -136,6 +136,24 @@ class LinearOperatorAddition(tf.linalg.LinearOperator):
             "Expected all operators to have the same dtype.  Found %s"
             % "   ".join(name_type))
 
+    # Infer operator properties.
+    if is_self_adjoint is None:
+      # If all operators are self-adjoint, so is the sum.
+      if all(operator.is_self_adjoint for operator in operators):
+        is_self_adjoint = True
+    if is_positive_definite is None:
+      # If all operators are positive definite, so is the sum.
+      if all(operator.is_positive_definite for operator in operators):
+        is_positive_definite = True
+    if is_non_singular is None:
+      # A positive definite operator is always non-singular.
+      if is_positive_definite:
+        is_non_singular = True
+    if is_square is None:
+      # If all operators are square, so is the sum.
+      if all(operator.is_square for operator in operators):
+        is_square=True
+
     if name is None:
       name = "_+_".join(operator.name for operator in operators)
     with tf.name_scope(name):

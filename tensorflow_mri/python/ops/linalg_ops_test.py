@@ -14,11 +14,44 @@
 # ==============================================================================
 """Tests for module `linalg_ops`."""
 
+from absl.testing import parameterized
 import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.util import test_util
+
+
+class LinearOperatorAdditionTest(test_util.TestCase):
+  """Tests for `linalg_ops.LinearOperatorAddition`."""
+  @parameterized.product(adjoint=[True, False], adjoint_arg=[True, False])
+  def test_operator(self, adjoint, adjoint_arg):
+    op1 = tf.linalg.LinearOperatorFullMatrix([[1., 2.], [3., 4.]])
+    op2 = tf.linalg.LinearOperatorFullMatrix([[4., 1.], [3., 2.]])
+
+    op_sum = linalg_ops.LinearOperatorAddition([op1, op2])
+
+    # Test `shape` and `shape_tensor`.
+    self.assertEqual(op_sum.shape, tf.TensorShape([2, 2]))
+    self.assertAllEqual(op_sum.shape_tensor(), tf.constant([2, 2]))
+
+    # Test `matmul`.
+    x = tf.random.normal((2, 2))
+    self.assertAllClose(
+        tf.linalg.matmul(op_sum, x, adjoint_a=adjoint, adjoint_b=adjoint_arg),
+        (tf.linalg.matmul(op1, x, adjoint_a=adjoint, adjoint_b=adjoint_arg) +
+         tf.linalg.matmul(op2, x, adjoint_a=adjoint, adjoint_b=adjoint_arg)))
+
+    # `adjoint_arg` not supported for matvec.
+    if adjoint_arg:
+      return
+
+    # Test `matvec`.
+    x = tf.random.normal((2,))
+    self.assertAllClose(
+        tf.linalg.matvec(op_sum, x, adjoint_a=adjoint),
+        (tf.linalg.matvec(op1, x, adjoint_a=adjoint) +
+         tf.linalg.matvec(op2, x, adjoint_a=adjoint)))
 
 
 # class LinearOperatorImagingTest(test_util.TestCase):
