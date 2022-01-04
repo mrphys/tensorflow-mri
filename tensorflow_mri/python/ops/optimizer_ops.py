@@ -41,7 +41,7 @@ def admm_minimize(function_f, function_g,
                   operator_a=None, operator_b=None, constant_c=None,
                   rho=1.0, abs_tolerance=1e-5, rel_tolerance=1e-5,
                   max_iterations=50):
-  """Applies the ADMM algorithm to minimize `f + g`.
+  """Applies the ADMM algorithm to minimize a separable convex function.
 
   Minimizes :math:`f(x) + g(z)`, subject to :math:`Ax + Bz = c`.
 
@@ -72,17 +72,14 @@ def admm_minimize(function_f, function_g,
   max_iterations = tf.convert_to_tensor(
       max_iterations, dtype=tf.dtypes.int32, name='max_iterations')
 
+  def stopping_condition(state):
+    return tf.math.logical_and(
+        tf.norm(state.r, axis=-1) <= state.primal_tolerance,
+        tf.norm(state.s, axis=-1) <= state.dual_tolerance)
+
   def _cond(state):
     """Returns `True` if optimization should continue."""
-    # Check tolerance condition.
-    r_norm = tf.norm(state.r, axis=-1)
-    s_norm = tf.norm(state.s, axis=-1)
-    tol_condition = tf.math.logical_and(r_norm > state.primal_tolerance,
-                                        s_norm > state.dual_tolerance)
-
-    # Check global condition with maximum of iterations.
-    iter_condition = tf.math.less(state.i, max_iterations)
-    return tf.math.logical_and(tol_condition, iter_condition)
+    return (not stopping_condition(state)) and (state.i < max_iterations)
 
   def _body(state):
     """A single ADMM step."""

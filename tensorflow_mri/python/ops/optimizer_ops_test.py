@@ -16,6 +16,27 @@
 
 import tensorflow as tf
 
+from tensorflow_mri.python.ops import convex_ops
+from tensorflow_mri.python.ops import optimizer_ops
+from tensorflow_mri.python.util import test_util
+
+
+class ADMMTest(test_util.TestCase):
+
+  def test_lasso(self):
+    operator = tf.linalg.LinearOperatorFullMatrix([[1., -10],
+                                                   [1., 10.],
+                                                   [1., 0.]])
+    rhs = tf.convert_to_tensor([2., 2., 2.])
+    lambda_ = 1.0
+
+    f = convex_ops.ConvexFunctionLeastSquares(operator, rhs)
+    g = convex_ops.ConvexFunctionL1Norm(scale=lambda_)
+
+    result = optimizer_ops.admm_minimize(f, g)
+    print(result)
+
+
 
 if __name__ == '__main__':
   tf.test.main()

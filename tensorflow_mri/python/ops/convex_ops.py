@@ -206,6 +206,38 @@ class ConvexFunctionQuadratic(ConvexFunction):
     return linalg_ops.conjugate_gradient(self._operator, rhs)
 
 
+class ConvexFunctionLeastSquares(ConvexFunctionQuadratic):
+  """A `ConvexFunction` representing a least squares function.
+  
+  Represents :math:`f(x) = \frac{1}{2} {\left \| A x - b \right \|}_{2}^{2}`.
+
+  Minimizing `f(x)` is equivalent to finding a solution to the linear system
+  :math:`Ax - b`.
+
+  Args:
+    operator: A `Tensor` or a `LinearOperator` representing a matrix `A` with
+      shape `[..., m, n]`. The linear system operator.
+    rhs: A `Tensor` representing a vector `b` with shape `[..., m]`. The
+      right-hand side of the linear system.
+    scale: A `float`. A scaling factor. Defaults to 1.0.
+    dtype: A `string` or `DType`. The type of this operator. Defaults to
+      `tf.float32`.
+    name: A name for this operator.
+  """
+  def __init__(self, operator, rhs, scale=1.0, dtype=tf.float32, name=None):
+    quadratic_coefficient = tf.linalg.LinearOperatorComposition(
+        [operator.H, operator], is_self_adjoint=True, is_positive_definite=True)
+    linear_coefficient = tf.math.negative(tf.linalg.matvec(operator, rhs,
+                                                           adjoint_a=True))
+    constant_coefficient = tf.constant(0.0, dtype=operator.dtype)
+    super().__init__(quadratic_coefficient=quadratic_coefficient,
+                     linear_coefficient=linear_coefficient,
+                     constant_coefficient=constant_coefficient,
+                     scale=scale,
+                     dtype=dtype,
+                     name=name)
+
+
 def block_soft_threshold(x, threshold, name=None):
   """Block soft thresholding operator.
 
