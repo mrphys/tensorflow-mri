@@ -64,6 +64,7 @@ def admm_minimize(function_f, function_g,
   """
   dtype = tf.dtypes.float32
   shape = (1,)
+  ndim = 1
 
   abs_tolerance = tf.convert_to_tensor(
       abs_tolerance, dtype=dtype.real_dtype, name='abs_tolerance')
@@ -72,18 +73,26 @@ def admm_minimize(function_f, function_g,
   max_iterations = tf.convert_to_tensor(
       max_iterations, dtype=tf.dtypes.int32, name='max_iterations')
 
-  def stopping_condition(state):
+  if operator_a is None:
+    operator_a = tf.linalg.LinearOperatorScaledIdentity(ndim, 1.0)
+
+  def _stopping_condition(state):
     return tf.math.logical_and(
         tf.norm(state.r, axis=-1) <= state.primal_tolerance,
         tf.norm(state.s, axis=-1) <= state.dual_tolerance)
 
   def _cond(state):
     """Returns `True` if optimization should continue."""
-    return (not stopping_condition(state)) and (state.i < max_iterations)
+    print("cond")
+    if state.x is None:
+      return True
+    return (not _stopping_condition(state)) and (state.i < max_iterations)
 
   def _body(state):
     """A single ADMM step."""
     # x-minimization step.
+    print("body")
+    print(state)
     state_bz = tf.linalg.matvec(operator_b, state.z)
     x = function_f.prox(
         tf.linalg.matvec(
@@ -132,8 +141,13 @@ def admm_minimize(function_f, function_g,
   # Initial state.
   state = AdmmOptimizerResults(
       i=tf.constant(0, dtype=tf.dtypes.int32),
+      x=None,
       z=tf.constant(0.0, dtype=dtype, shape=shape),
-      u=tf.constant(0.0, dtype=dtype, shape=shape))
+      u=tf.constant(0.0, dtype=dtype, shape=shape),
+      r=None,
+      s=None,
+      primal_tolerance=None,
+      dual_tolerance=None)
 
   return tf.while_loop(_cond, _body, [state])
 
