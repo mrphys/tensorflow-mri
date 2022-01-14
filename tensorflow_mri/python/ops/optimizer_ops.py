@@ -39,8 +39,8 @@ AdmmOptimizerResults = collections.namedtuple(
 
 def admm_minimize(function_f, function_g,
                   operator_a=None, operator_b=None, constant_c=None,
-                  rho=1.0, abs_tolerance=1e-5, rel_tolerance=1e-5,
-                  max_iterations=50):
+                  x_shape=None, rho=1.0, abs_tolerance=1e-5,
+                  rel_tolerance=1e-5, max_iterations=50):
   """Applies the ADMM algorithm to minimize a separable convex function.
 
   Minimizes :math:`f(x) + g(z)`, subject to :math:`Ax + Bz = c`.
@@ -62,9 +62,17 @@ def admm_minimize(function_f, function_g,
     max_iterations: A scalar `Tensor`. The maximum number of iterations for ADMM
       updates.
   """
-  dtype = tf.dtypes.float32
-  shape = (1,)
-  ndim = 1
+  dtype = function_f.dtype # TODO: check dtype of all inputs.
+  primal_ndim = function_f.ndim # TODO: allow different ndim for f and g?
+  dual_ndim = primal_ndim # TODO: dual ndim is equal to the range dimension of
+                          # A and B, which must be equal.
+  # TODO: Check that dimensionality of `function_g` is compatible.
+  # TODO: Raise error if `function_f` does not define dimensionality.
+  shape = tf.TensorShape([primal_ndim])
+  print("primal_ndim: ", primal_ndim)
+
+  primal_ndim_sqrt = tf.math.sqrt(tf.cast(primal_ndim, dtype.real_dtype))
+  dual_ndim_sqrt = tf.math.sqrt(tf.cast(dual_ndim, dtype.real_dtype))
 
   abs_tolerance = tf.convert_to_tensor(
       abs_tolerance, dtype=dtype.real_dtype, name='abs_tolerance')
@@ -74,9 +82,14 @@ def admm_minimize(function_f, function_g,
       max_iterations, dtype=tf.dtypes.int32, name='max_iterations')
 
   if operator_a is None:
-    operator_a = tf.linalg.LinearOperatorScaledIdentity(ndim, 1.0)
+    operator_a = tf.linalg.LinearOperatorScaledIdentity(primal_ndim, 1.0)
+  if operator_b is None:
+    operator_b = tf.linalg.LinearOperatorScaledIdentity(primal_ndim, -1.0)
+  if constant_c is None:
+    constant_c = tf.constant(0.0, dtype=dtype, shape=[dual_ndim])
 
   def _stopping_condition(state):
+    print("Residuals", state.s, state.r)
     return tf.math.logical_and(
         tf.norm(state.r, axis=-1) <= state.primal_tolerance,
         tf.norm(state.s, axis=-1) <= state.dual_tolerance)
@@ -100,6 +113,7 @@ def admm_minimize(function_f, function_g,
             adjoint_a=True))
 
     # z-minimization step.
+    print(operator_a.dtype, x.dtype, operator_a.shape, x.shape)
     ax = tf.linalg.matvec(operator_a, x)
     z = function_g.prox(
         tf.linalg.matvec(
@@ -112,32 +126,28 @@ def admm_minimize(function_f, function_g,
     u = state.u + r
     s = rho * tf.norm(tf.linalg.matvec(operator_a, bz - state_bz, adjoint_a=True), axis=-1)
 
-    # Shape of primal and dual variables.
-    n = state.x.shape[-1]
-    p = state.u.shape[-1]
-
     # Choose the primal tolerance.
-    ax_norm = tf.norm(ax, axis=-1)
-    bz_norm = tf.norm(bz, axis=-1)
-    c_norm = tf.norm(constant_c, axis=-1)
+    ax_norm = tf.math.real(tf.norm(ax, axis=-1))
+    bz_norm = tf.math.real(tf.norm(bz, axis=-1))
+    c_norm = tf.math.real(tf.norm(constant_c, axis=-1))
     max_norm = tf.math.maximum(tf.math.maximum(ax_norm, bz_norm), c_norm)
-    primal_tolerance = (abs_tolerance * tf.math.sqrt(p) +
+    primal_tolerance = (abs_tolerance * dual_ndim_sqrt +
                         rel_tolerance * max_norm)
 
     # Choose the dual tolerance. 
-    aty_norm = tf.math.norm(
+    aty_norm = tf.norm(
         tf.linalg.matvec(operator_a, rho * state.u, adjoint_a=True), axis=-1)
-    dual_tolerance = (abs_tolerance * tf.math.sqrt(n) +
+    dual_tolerance = (abs_tolerance * primal_ndim_sqrt +
                       rel_tolerance * aty_norm)
 
-    return AdmmOptimizerResults(i=state.i + 1,
+    return [AdmmOptimizerResults(i=state.i + 1,
                                 x=x,
                                 z=z,
                                 u=u,
                                 r=r,
                                 s=s,
                                 primal_tolerance=primal_tolerance,
-                                dual_tolerance=dual_tolerance)
+                                dual_tolerance=dual_tolerance)]
   # Initial state.
   state = AdmmOptimizerResults(
       i=tf.constant(0, dtype=tf.dtypes.int32),

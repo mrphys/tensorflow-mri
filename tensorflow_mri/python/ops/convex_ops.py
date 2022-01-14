@@ -21,6 +21,7 @@ import tensorflow as tf
 
 from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.ops import image_ops
+from tensorflow_mri.python.util import check_util
 
 
 class ConvexFunction():
@@ -33,10 +34,12 @@ class ConvexFunction():
   forward pass and the proximal mapping, respectively.
   """
   def __init__(self,
-               dtype,
+               ndim=None,
+               dtype=None,
                name=None):
     """Initialize this `ConvexFunction`."""
-    self._dtype = tf.dtypes.as_dtype(dtype)
+    self._ndim = check_util.validate_rank(ndim, 'ndim', accept_none=True)
+    self._dtype = tf.dtypes.as_dtype(dtype or tf.dtypes.float32)
     self._name = name or type(self).__name__
 
   def __call__(self, x):
@@ -54,6 +57,7 @@ class ConvexFunction():
     """
     with self._name_scope(name or "call"):
       x = tf.convert_to_tensor(x, name="x")
+      self._check_input_shape(x)
       self._check_input_dtype(x)
       return self._call(x)
 
@@ -69,6 +73,7 @@ class ConvexFunction():
     """
     with self._name_scope(name or "prox"):
       x = tf.convert_to_tensor(x, name="x")
+      self._check_input_shape(x)
       self._check_input_dtype(x)
       return self._prox(x)
 
@@ -81,6 +86,11 @@ class ConvexFunction():
   def _prox(self, x):
     # Must be implemented by subclasses.
     raise NotImplementedError("Method `_prox` is not implemented.")
+
+  @property
+  def ndim(self):
+    """The dimensionality of the domain of this `ConvexFunction`."""
+    return self._ndim
 
   @property
   def dtype(self):
@@ -101,6 +111,21 @@ class ConvexFunction():
     with tf.name_scope(full_name) as scope:
       yield scope
 
+  def _check_input_shape(self, arg):
+    """Check that arg.shape[-1] is compatible with self.ndim."""
+    if arg.shape.rank is None:
+      raise ValueError(
+          "Expected argument to have known rank, but found: %s in tensor %s" %
+          (arg.shape.rank, arg))
+    if arg.shape.rank < 1:
+      raise ValueError(
+          "Expected argument to have rank >= 1, but found: %s in tensor %s" %
+          (arg.shape.rank, arg))
+    if not arg.shape[-1:].is_compatible_with([self.ndim]):
+      raise ValueError(
+          "Expected argument to have last dimension %d, but found: %d in "
+          "tensor %s" % (self.ndim, arg.shape[-1], arg))
+
   def _check_input_dtype(self, arg):
     """Check that arg.dtype == self.dtype."""
     if arg.dtype.base_dtype != self.dtype:
@@ -114,16 +139,18 @@ class ConvexFunctionL1Norm(ConvexFunction):
 
   Args:
     scale: A `float`. A scaling factor. Defaults to 1.0.
-    dtype: A `string` or `DType`. The type of this operator. Defaults to
-      `tf.float32`.
-    name: A name for this operator.
+    ndim: An `int`. The dimensionality of the domain of this `ConvexFunction`.
+      Defaults to `None`.
+    dtype: A `string` or `DType`. The type of this `ConvexFunction`. Defaults to
+      `tf.dtypes.float32`.
+    name: A name for this `ConvexFunction`.
   """
   def __init__(self,
                scale=1.0,
-               dtype=tf.float32,
+               ndim=None,
+               dtype=None,
                name=None):
-
-    super().__init__(dtype, name=name)
+    super().__init__(ndim=ndim, dtype=dtype, name=name)
     self._scale = scale
 
   def _call(self, x):
@@ -138,16 +165,18 @@ class ConvexFunctionL2Norm(ConvexFunction):
 
   Args:
     scale: A `float`. A scaling factor. Defaults to 1.0.
-    dtype: A `string` or `DType`. The type of this operator. Defaults to
-      `tf.float32`.
-    name: A name for this operator.
+    ndim: An `int`. The dimensionality of the domain of this `ConvexFunction`.
+      Defaults to `None`.
+    dtype: A `string` or `DType`. The type of this `ConvexFunction`. Defaults to
+      `tf.dtypes.float32`.
+    name: A name for this `ConvexFunction`.
   """
   def __init__(self,
                scale=1.0,
-               dtype=tf.float32,
+               ndim=None,
+               dtype=None,
                name=None):
-
-    super().__init__(dtype, name=name)
+    super().__init__(ndim=ndim, dtype=dtype, name=name)
     self._scale = scale
 
   def _call(self, x):
@@ -170,40 +199,79 @@ class ConvexFunctionQuadratic(ConvexFunction):
       `[..., n]`. The coefficient of the linear term.
     constant_coefficient: A scalar `Tensor` representing the constant term `c`.
     scale: A `float`. A scaling factor. Defaults to 1.0.
-    dtype: A `string` or `DType`. The type of this operator. Defaults to
-      `tf.float32`.
-    name: A name for this operator.
+    name: A name for this `ConvexFunction`.
   """
   def __init__(self,
                quadratic_coefficient,
-               linear_coefficient,
-               constant_coefficient,
+               linear_coefficient=None,
+               constant_coefficient=None,
                scale=1.0,
-               dtype=tf.float32,
                name=None):
-    super().__init__(dtype, name=name)
+    super().__init__(ndim=quadratic_coefficient.shape[-1],
+                     dtype=quadratic_coefficient.dtype,
+                     name=name)
     self._quadratic_coefficient = quadratic_coefficient
-    self._linear_coefficient = linear_coefficient
-    self._constant_coefficient = constant_coefficient
-    self._scale = scale
-    self._one_over_scale = 1.0 / scale
+    self._linear_coefficient = self._validate_linear_coefficient(
+        linear_coefficient)
+    self._constant_coefficient = self._validate_constant_coefficient(
+        constant_coefficient)
+    self._scale = tf.convert_to_tensor(scale, dtype=self.dtype)
+    self._one_over_scale = tf.convert_to_tensor(1.0 / scale, dtype=self.dtype)
 
+    # Operator A^T A + 1 / \lambda * I, used to evaluate the proximal operator.
     self._operator = linalg_ops.LinearOperatorAddition(
         [self._quadratic_coefficient,
         tf.linalg.LinearOperatorScaledIdentity(
             num_rows=self._quadratic_coefficient.domain_dimension,
-            multiplier=self._one_over_scale)])
+            multiplier=self._one_over_scale)],
+        is_self_adjoint=True,
+        is_positive_definite=True)
 
   def _call(self, x):
-    quadratic_term = 0.5 * _dot(
+    # Calculate the quadratic term.
+    result = 0.5 * _dot(
         x, tf.linalg.matvec(self._quadratic_coefficient, x))
-    linear_term = _dot(self._linear_coefficient, x)
-    constant_term = self._constant_coefficient
-    return quadratic_term + linear_term + constant_term
+    # Add the linear term, if there is one.
+    if self._linear_coefficient is not None:
+      result += _dot(self._linear_coefficient, x)
+    # Add the constant term, if there is one.
+    if self._constant_coefficient is not None:
+      result += self._constant_coefficient
+    return self._scale * result
 
   def _prox(self, x):
-    rhs = self._one_over_scale * x - self._linear_coefficient
-    return linalg_ops.conjugate_gradient(self._operator, rhs)
+    rhs = self._one_over_scale * x
+    if self._linear_coefficient is not None:
+      rhs -= self._linear_coefficient
+    return linalg_ops.conjugate_gradient(self._operator, rhs).x
+
+  def _validate_linear_coefficient(self, coef):
+    """Validates the linear coefficient."""
+    if coef.shape.rank is None:
+      raise ValueError(
+          "Expected linear coefficient to have known rank, but found: %s in "
+          "tensor %s" % (coef.shape.rank, coef))
+    if coef.shape.rank < 1:
+      raise ValueError(
+          "Expected linear coefficient to have rank >= 1, but found: %s in "
+          "tensor %s" % (coef.shape.rank, coef))
+    if not coef.shape[-1:].is_compatible_with([self.ndim]):
+      raise ValueError(
+          "Expected linear coefficient to have last dimension %d, but found: "
+          "%d in tensor %s" % (self.ndim, coef.shape[-1], coef))
+    if coef.dtype != self.dtype:
+      raise ValueError(
+          "Expected linear coefficient to have dtype %s, but found: %s in "
+          "tensor %s" % (self.dtype, coef.dtype, coef))
+    return coef
+
+  def _validate_constant_coefficient(self, coef):
+    """Validates the constant coefficient."""
+    if coef.dtype != self.dtype:
+      raise ValueError(
+          "Expected constant coefficient to have dtype %s, but found: %s in "
+          "tensor %s" % (self.dtype, coef.dtype, coef))
+    return coef
 
 
 class ConvexFunctionLeastSquares(ConvexFunctionQuadratic):
@@ -220,11 +288,9 @@ class ConvexFunctionLeastSquares(ConvexFunctionQuadratic):
     rhs: A `Tensor` representing a vector `b` with shape `[..., m]`. The
       right-hand side of the linear system.
     scale: A `float`. A scaling factor. Defaults to 1.0.
-    dtype: A `string` or `DType`. The type of this operator. Defaults to
-      `tf.float32`.
-    name: A name for this operator.
+    name: A name for this `ConvexFunction`.
   """
-  def __init__(self, operator, rhs, scale=1.0, dtype=tf.float32, name=None):
+  def __init__(self, operator, rhs, scale=1.0, name=None):
     quadratic_coefficient = tf.linalg.LinearOperatorComposition(
         [operator.H, operator], is_self_adjoint=True, is_positive_definite=True)
     linear_coefficient = tf.math.negative(tf.linalg.matvec(operator, rhs,
@@ -234,7 +300,6 @@ class ConvexFunctionLeastSquares(ConvexFunctionQuadratic):
                      linear_coefficient=linear_coefficient,
                      constant_coefficient=constant_coefficient,
                      scale=scale,
-                     dtype=dtype,
                      name=name)
 
 
