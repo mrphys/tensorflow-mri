@@ -31,10 +31,12 @@ class ADMMTest(test_util.TestCase):
     lambda_ = 1.0
 
     f = convex_ops.ConvexFunctionLeastSquares(operator, rhs)
-    g = convex_ops.ConvexFunctionL1Norm(scale=lambda_)
+    g = convex_ops.ConvexFunctionL1Norm(scale=lambda_, ndim=2)
 
     result = optimizer_ops.admm_minimize(f, g)
     print(result)
+    print(result.x)
+    print(result.z)
 
 
 
