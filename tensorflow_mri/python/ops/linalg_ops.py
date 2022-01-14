@@ -105,7 +105,7 @@ class LinearOperatorAddition(tf.linalg.LinearOperator):
         https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices
       is_square:  Expect that this operator acts like square [batch] matrices.
       name: A name for this `LinearOperator`.  Default is the individual
-        operators names joined with `_+_`.
+        operators names joined with `_p_`.
 
     Raises:
       TypeError:  If all operators do not have the same `dtype`.
@@ -155,7 +155,7 @@ class LinearOperatorAddition(tf.linalg.LinearOperator):
         is_square=True
 
     if name is None:
-      name = "_+_".join(operator.name for operator in operators)
+      name = "_p_".join(operator.name for operator in operators)
     with tf.name_scope(name):
       super(LinearOperatorAddition, self).__init__(
           dtype=dtype,
@@ -458,6 +458,28 @@ class LinearOperatorImagingAdjoint(tf.linalg.LinearOperatorAdjoint,
     return self.operator._transform(x, adjoint=(not adjoint))
 
 
+class LinearOperatorImagingAddition(LinearOperatorAddition,
+                                    LinearOperatorImaging):
+
+  def _domain_shape(self):
+    return self.operators[0].domain_shape
+
+  def _range_shape(self):
+    return self.operators[0].range_shape
+  
+  def _domain_shape_tensor(self):
+    return self.operators[0].domain_shape_tensor()
+
+  def _range_shape_tensor(self):
+    return self.operators[0].range_shape_tensor()
+
+  def _transform(self, x, adjoint=False):
+    result = self.operators[0]._transform(x, adjoint=adjoint)
+    for operator in self.operators[1:]:
+      result += operator._transform(x, adjoint=adjoint)
+    return result
+
+
 class LinearOperatorImagingComposition(tf.linalg.LinearOperatorComposition,
                                        LinearOperatorImaging):
 
@@ -483,6 +505,7 @@ class LinearOperatorImagingComposition(tf.linalg.LinearOperatorComposition,
     for operator in transform_order_list[1:]:
       result = operator._transform(result, adjoint=adjoint)
     return result
+
 
 class LinearOperatorFFT(LinearOperatorImaging): # pylint: disable=abstract-method
   """Linear operator acting like a DFT matrix.
