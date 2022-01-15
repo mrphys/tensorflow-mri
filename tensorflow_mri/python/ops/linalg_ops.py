@@ -1348,7 +1348,7 @@ def conjugate_gradient(operator,
     name: A name scope for the operation.
 
   Returns:
-    output: A namedtuple representing the final state with fields:
+    A namedtuple representing the final state with fields:
       - i: A scalar `int32` `Tensor`. Number of iterations executed.
       - x: A rank-1 `Tensor` of shape `[..., N]` containing the computed
           solution.

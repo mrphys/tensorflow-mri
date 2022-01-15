@@ -64,15 +64,15 @@ def admm_minimize(function_f, function_g,
       updates.
 
   Returns:
-    An namedtuple containing the following fields:
-      `i`: The number of iterations of the ADMM update.
-      `x`: The first primal variable.
-      `z`: The second primal variable.
-      `u`: The scaled dual variable.
-      `r`: The primal residual.
-      `s`: The dual residual.
-      `ptol`: The primal tolerance.
-      `dtol`: The dual tolerance.
+    A namedtuple containing the following fields:
+      - `i`: The number of iterations of the ADMM update.
+      - `x`: The first primal variable.
+      - `z`: The second primal variable.
+      - `u`: The scaled dual variable.
+      - `r`: The primal residual.
+      - `s`: The dual residual.
+      - `ptol`: The primal tolerance.
+      - `dtol`: The dual tolerance.
 
   References:
     Boyd, S., Parikh, N., & Chu, E. (2011). Distributed optimization and
