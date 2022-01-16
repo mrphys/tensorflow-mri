@@ -358,7 +358,6 @@ class LinearOperatorDifferenceTest(test_util.TestCase):
   def test_matvec(self):
     """Test matvec method."""
     signal = tf.constant([1, 2, 4, 8], dtype=tf.float32)
-
     result = tf.linalg.matvec(self.linop1, signal)
     self.assertAllClose(result, [1, 2, 4])
     self.assertAllClose(result, np.diff(signal))
