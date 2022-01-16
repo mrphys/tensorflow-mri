@@ -79,6 +79,25 @@ class LinearOperatorAddition(tf.linalg.LinearOperator):
   * If `is_X == False`, callers should expect the operator to not have `X`.
   * If `is_X == None` (the default), callers should have no expectation either
     way.
+
+  Args:
+    operators: Iterable of `LinearOperator` objects, each with
+      the same shape and dtype.
+    is_non_singular: Expect that this operator is non-singular.
+    is_self_adjoint: Expect that this operator is equal to its hermitian
+      transpose.
+    is_positive_definite: Expect that this operator is positive definite,
+      meaning the quadratic form `x^H A x` has positive real part for all
+      nonzero `x`.  Note that we do not require the operator to be
+      self-adjoint to be positive-definite.  See:
+      https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices
+    is_square:  Expect that this operator acts like square [batch] matrices.
+    name: A name for this `LinearOperator`.  Default is the individual
+      operators names joined with `_p_`.
+
+  Raises:
+    TypeError: If all operators do not have the same `dtype`.
+    ValueError: If `operators` is empty.
   """
   def __init__(self,
                operators,
@@ -87,30 +106,7 @@ class LinearOperatorAddition(tf.linalg.LinearOperator):
                is_positive_definite=None,
                is_square=None,
                name=None):
-    r"""Initialize a `LinearOperatorAddition`.
-
-    `LinearOperatorAddition` is initialized with a list of operators
-    `[op_1, ..., op_J]`.
-
-    Args:
-      operators:  Iterable of `LinearOperator` objects, each with
-        the same `dtype` and composable shape.
-      is_non_singular:  Expect that this operator is non-singular.
-      is_self_adjoint:  Expect that this operator is equal to its hermitian
-        transpose.
-      is_positive_definite:  Expect that this operator is positive definite,
-        meaning the quadratic form `x^H A x` has positive real part for all
-        nonzero `x`.  Note that we do not require the operator to be
-        self-adjoint to be positive-definite.  See:
-        https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices
-      is_square:  Expect that this operator acts like square [batch] matrices.
-      name: A name for this `LinearOperator`.  Default is the individual
-        operators names joined with `_p_`.
-
-    Raises:
-      TypeError:  If all operators do not have the same `dtype`.
-      ValueError:  If `operators` is empty.
-    """
+    """Initialize a `LinearOperatorAddition`."""
     parameters = dict(
         operators=operators,
         is_non_singular=is_non_singular,
@@ -223,7 +219,354 @@ class LinearOperatorAddition(tf.linalg.LinearOperator):
     return ("operators",)
 
 
-class LinearOperatorImagingMixin(tf.linalg.LinearOperator):
+class _LinearOperatorStackBase(tf.linalg.LinearOperator):  
+  def __init__(self,
+               operators,
+               axis,
+               is_non_singular=None,
+               is_self_adjoint=None,
+               is_positive_definite=None,
+               is_square=True,
+               name=None):
+    """Initialize a `LinearOperatorStack`."""
+    parameters = dict(
+        operators=operators,
+        axis=axis,
+        is_non_singular=is_non_singular,
+        is_self_adjoint=is_self_adjoint,
+        is_positive_definite=is_positive_definite,
+        is_square=is_square,
+        name=name
+    )
+
+    # Validate operators.
+    tf.debugging.assert_proper_iterable(operators)
+    operators = list(operators)
+    if not operators:
+      raise ValueError(
+          "Expected a non-empty list of operators. Found: %s" % operators)
+    self._operators = operators
+  
+    # Validate axis.
+    self._axis = check_util.validate_enum(
+        axis, {'vertical', 'horizontal'}, 'axis')
+
+    # Define diagonal operators, for functions that are shared across blockwise
+    # `LinearOperator` types.
+    self._diagonal_operators = operators
+
+    # Validate dtype.
+    dtype = operators[0].dtype
+    for operator in operators:
+      if operator.dtype != dtype:
+        name_type = (str((o.name, o.dtype)) for o in operators)
+        raise TypeError(
+            "Expected all operators to have the same dtype.  Found %s"
+            % "   ".join(name_type))
+
+    # Validate shapes.
+    fixed_axis = -1 if self._axis == 'vertical' else -2
+    shape = operators[0].shape
+    for operator in operators:
+      if operator.shape[fixed_axis] != shape[fixed_axis]:
+        raise ValueError(
+            "Expected all operators to have the same size at dimension %s.  "
+            "Found %s" % (self._axis, [o.shape for o in operators]))
+
+    if name is None:
+      # Using s to mean stack.
+      name = "_s_".join(operator.name for operator in operators)
+    with tf.name_scope(name):
+      super().__init__(
+          dtype=dtype,
+          is_non_singular=is_non_singular,
+          is_self_adjoint=is_self_adjoint,
+          is_positive_definite=is_positive_definite,
+          is_square=is_square,
+          parameters=parameters,
+          name=name)
+
+  @property
+  def operators(self):
+    return self._operators
+
+  @property
+  def axis(self):
+    return self._axis
+
+  def _shape(self):
+    # Get final matrix shape.
+    if self.axis == 'vertical':
+      domain_dimension = self.operators[0].domain_dimension
+      range_dimension = sum(op.range_dimension for op in self.operators)
+    else:
+      domain_dimension = sum(op.domain_dimension for op in self.operators)
+      range_dimension = self.operators[0].range_dimension
+
+    matrix_shape = tf.TensorShape([range_dimension, domain_dimension])
+
+    # Get broadcast batch shape.
+    # tf.broadcast_static_shape checks for compatibility.
+    batch_shape = self.operators[0].batch_shape
+    for operator in self.operators[1:]:
+      batch_shape = tf.broadcast_static_shape(
+          batch_shape, operator.batch_shape)
+
+    return batch_shape.concatenate(matrix_shape)
+
+  def _shape_tensor(self):
+    # Avoid messy broadcasting if possible.
+    if self.shape.is_fully_defined():
+      return tf.convert_to_tensor(
+          self.shape.as_list(), dtype=tf.dtypes.int32, name="shape")
+
+    if self.axis == 'vertical':
+      domain_dimension = self.operators[0].domain_dimension_tensor()
+      range_dimension = sum(
+          op.range_dimension_tensor() for op in self.operators)
+    else:
+      domain_dimension = sum(
+          op.domain_dimension_tensor() for op in self.operators)
+      range_dimension = self.operators[0].range_dimension_tensor()
+
+    matrix_shape = tf.stack([range_dimension, domain_dimension])
+
+    # Dummy Tensor of zeros.  Will never be materialized.
+    zeros = array_ops.zeros(shape=self.operators[0].batch_shape_tensor())
+    for operator in self.operators[1:]:
+      zeros += array_ops.zeros(shape=operator.batch_shape_tensor())
+    batch_shape = array_ops.shape(zeros)
+
+    return tf.concat((batch_shape, matrix_shape), 0)
+
+  def _matmul(self, x, adjoint=False, adjoint_arg=False):
+    # H-stack or V-stack?
+    is_hstack = self.axis == 'horizontal'
+    # Exclusive OR logical operator.
+    xor = lambda a, b: bool(a) ^ bool(b)
+
+    # Apply each operator, then stack the results.
+    if xor(adjoint, is_hstack):  # Adjoint V-stack OR non-adjoint H-stack.
+      if is_hstack:  # H-stack operator.
+        size_splits = [op.domain_dimension for op in self.operators]
+      else:  # Adjoint V-stack operator.
+        size_splits = [op.range_dimension for op in self.operators]
+      tensors = tf.split(x, size_splits, axis=-2)
+      results = [op.matmul(x, adjoint=adjoint, adjoint_arg=adjoint_arg)
+                 for op, x in zip(self.operators, tensors)]
+      return tf.math.reduce_sum(tf.stack(results, axis=-1), axis=-1)
+
+    else:  # Adjoint H-stack OR non-adjoint V-stack.
+      results = [op.matmul(x, adjoint=adjoint, adjoint_arg=adjoint_arg)
+                 for op in self.operators]
+      return tf.concat(results, axis=-2)
+
+  @property
+  def _composite_tensor_fields(self):
+    return ("operators",)
+
+
+class LinearOperatorVerticalStack(_LinearOperatorStackBase):
+  """Stacks one or more `LinearOperators` vertically.
+
+  This operator combines one or more linear operators `[op1, ..., opJ]`,
+  building a new `LinearOperator`, whose underlying matrix representation
+  has all the operators stacked vertically.
+
+  #### Shape compatibility
+
+  If `opj` acts like a [batch] matrix `Aj`, then `op_combined` acts like
+  the [batch] matrix formed by stacking each matrix `Aj`.
+
+  Each `opj` is required to represent a matrix, and hence will have
+  shape `batch_shape_j + [M_j, N_j]`.
+
+  If `opj` has shape `batch_shape_j + [M_j, N_j]`, then the combined operator
+  has shape `broadcast_batch_shape + [sum M_j, N_j]` (for vertical stacking) or
+  `broadcast_batch_shape + [M_j, sum N_j]` (for horizontal stacking), where
+  `broadcast_batch_shape` is the mutual broadcast of `batch_shape_j`,
+  `j = 1,...,J`, assuming the intermediate batch shapes broadcast.
+
+  Arguments to `matmul`, `matvec`, `solve`, and `solvevec` may either be single
+  tensors or lists of tensors that are interpreted as blocks. The `j`th
+  element of a blockwise list of tensors must have dimensions that match
+  `opj` for the given method. If a list of blocks is input, then a list of
+  blocks is returned as well.
+
+  ```python
+  # Create a 4 x 4 linear operator combined of two 2 x 2 operators.
+  operator_1 = LinearOperatorFullMatrix([[1., 2.], [3., 4.]])
+  operator_2 = LinearOperatorFullMatrix([[1., 0.], [0., 1.]])
+  operator = LinearOperatorStack([operator_1, operator_2], 'vertical')
+
+  operator.to_dense()
+  ==> [[1., 2.],
+       [3., 4.],
+       [1., 0.],
+       [0., 1.]]
+
+  operator.shape
+  ==> [4, 2]
+  ```
+
+  #### Performance
+
+  The performance of `LinearOperatorStack` on any operation is equal to
+  the sum of the individual operators' operations.
+
+
+  #### Matrix property hints
+
+  This `LinearOperator` is initialized with boolean flags of the form `is_X`,
+  for `X = non_singular, self_adjoint, positive_definite, square`.
+  These have the following meaning:
+
+  * If `is_X == True`, callers should expect the operator to have the
+    property `X`.  This is a promise that should be fulfilled, but is *not* a
+    runtime assert.  For example, finite floating point precision may result
+    in these promises being violated.
+  * If `is_X == False`, callers should expect the operator to not have `X`.
+  * If `is_X == None` (the default), callers should have no expectation either
+    way.
+
+  Args:
+    operators: Iterable of `LinearOperator` objects, each with
+      the same `dtype` and stackable shape. For vertical stacking, all
+      operators must have the same domain dimension. For horizontal stacking,
+      all operator must have the same range dimension.
+    is_non_singular:  Expect that this operator is non-singular.
+    is_self_adjoint:  Expect that this operator is equal to its hermitian
+      transpose.
+    is_positive_definite:  Expect that this operator is positive definite,
+      meaning the quadratic form `x^H A x` has positive real part for all
+      nonzero `x`.  Note that we do not require the operator to be
+      self-adjoint to be positive-definite.  See:
+      https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices
+    is_square:  Expect that this operator acts like square [batch] matrices.
+      This is true by default, and will raise a `ValueError` otherwise.
+    name: A name for this `LinearOperator`.  Default is the individual
+      operators names joined with `_o_`.
+
+  Raises:
+    TypeError: If all operators do not have the same `dtype`.
+    ValueError: If `operators` is empty.
+  """
+  def __init__(self,
+               operators,
+               is_non_singular=None,
+               is_self_adjoint=None,
+               is_positive_definite=None,
+               is_square=True,
+               name=None):
+    super().__init__(operators, 'vertical',
+                     is_non_singular=is_non_singular,
+                     is_self_adjoint=is_self_adjoint,
+                     is_positive_definite=is_positive_definite,
+                     is_square=is_square,
+                     name=name)
+
+
+class LinearOperatorHorizontalStack(_LinearOperatorStackBase):
+  """Stacks one or more `LinearOperators` horizontally.
+
+  This operator combines one or more linear operators `[op1, ..., opJ]`,
+  building a new `LinearOperator`, whose underlying matrix representation
+  has all the operators stacked horizontally.
+
+  #### Shape compatibility
+
+  If `opj` acts like a [batch] matrix `Aj`, then `op_combined` acts like
+  the [batch] matrix formed by stacking each matrix `Aj`.
+
+  Each `opj` is required to represent a matrix, and hence will have
+  shape `batch_shape_j + [M_j, N_j]`.
+
+  If `opj` has shape `batch_shape_j + [M_j, N_j]`, then the combined operator
+  has shape `broadcast_batch_shape + [sum M_j, N_j]` (for vertical stacking) or
+  `broadcast_batch_shape + [M_j, sum N_j]` (for horizontal stacking), where
+  `broadcast_batch_shape` is the mutual broadcast of `batch_shape_j`,
+  `j = 1,...,J`, assuming the intermediate batch shapes broadcast.
+
+  Arguments to `matmul`, `matvec`, `solve`, and `solvevec` may either be single
+  tensors or lists of tensors that are interpreted as blocks. The `j`th
+  element of a blockwise list of tensors must have dimensions that match
+  `opj` for the given method. If a list of blocks is input, then a list of
+  blocks is returned as well.
+
+  ```python
+  # Create a 4 x 4 linear operator combined of two 2 x 2 operators.
+  operator_1 = LinearOperatorFullMatrix([[1., 2.], [3., 4.]])
+  operator_2 = LinearOperatorFullMatrix([[1., 0.], [0., 1.]])
+  operator = LinearOperatorStack([operator_1, operator_2], 'vertical')
+
+  operator.to_dense()
+  ==> [[1., 2.],
+       [3., 4.],
+       [1., 0.],
+       [0., 1.]]
+
+  operator.shape
+  ==> [4, 2]
+  ```
+
+  #### Performance
+
+  The performance of `LinearOperatorStack` on any operation is equal to
+  the sum of the individual operators' operations.
+
+
+  #### Matrix property hints
+
+  This `LinearOperator` is initialized with boolean flags of the form `is_X`,
+  for `X = non_singular, self_adjoint, positive_definite, square`.
+  These have the following meaning:
+
+  * If `is_X == True`, callers should expect the operator to have the
+    property `X`.  This is a promise that should be fulfilled, but is *not* a
+    runtime assert.  For example, finite floating point precision may result
+    in these promises being violated.
+  * If `is_X == False`, callers should expect the operator to not have `X`.
+  * If `is_X == None` (the default), callers should have no expectation either
+    way.
+
+  Args:
+    operators: Iterable of `LinearOperator` objects, each with
+      the same `dtype` and stackable shape. For vertical stacking, all
+      operators must have the same domain dimension. For horizontal stacking,
+      all operator must have the same range dimension.
+    is_non_singular:  Expect that this operator is non-singular.
+    is_self_adjoint:  Expect that this operator is equal to its hermitian
+      transpose.
+    is_positive_definite:  Expect that this operator is positive definite,
+      meaning the quadratic form `x^H A x` has positive real part for all
+      nonzero `x`.  Note that we do not require the operator to be
+      self-adjoint to be positive-definite.  See:
+      https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices
+    is_square:  Expect that this operator acts like square [batch] matrices.
+      This is true by default, and will raise a `ValueError` otherwise.
+    name: A name for this `LinearOperator`.  Default is the individual
+      operators names joined with `_o_`.
+
+  Raises:
+    TypeError: If all operators do not have the same `dtype`.
+    ValueError: If `operators` is empty.
+  """
+  def __init__(self,
+               operators,
+               is_non_singular=None,
+               is_self_adjoint=None,
+               is_positive_definite=None,
+               is_square=True,
+               name=None):
+    super().__init__(operators, 'horizontal',
+                     is_non_singular=is_non_singular,
+                     is_self_adjoint=is_self_adjoint,
+                     is_positive_definite=is_positive_definite,
+                     is_square=is_square,
+                     name=name)
+
+
+class LinalgImagingMixin(tf.linalg.LinearOperator):
   """Mixin for linear operators meant to operate on images.
 
   This mixin adds some additional methods to any linear operator to simplify
@@ -357,6 +700,19 @@ class LinearOperatorImagingMixin(tf.linalg.LinearOperator):
       return self._batch_shape_tensor()
 
   def adjoint(self, name="adjoint"):
+    """Returns the adjoint of this linear operator.
+
+    The returned operator is a valid `LinalgImagingMixin` instance.
+
+    Calling `self.adjoint()` and `self.H` are equivalent.
+
+    Args:
+      name: A name for this operation.
+
+    Returns:
+      A `LinearOperator` derived from `LinalgImagingMixin`, which
+      represents the adjoint of this linear operator.
+    """
     if self.is_self_adjoint:
       return self
     with self._name_scope(name):
@@ -423,7 +779,7 @@ class LinearOperatorImagingMixin(tf.linalg.LinearOperator):
   def _batch_shape_tensor(self):
     # Users should override this method if they need to provide a dynamic batch
     # shape.
-    raise NotImplementedError("_batch_shape_tensor is not implemented.")
+    return tf.constant([], dtype=tf.dtypes.int32)
 
   def _shape(self):
     # Default implementation of `_shape` for imaging operators. Typically
@@ -524,10 +880,19 @@ class LinearOperatorImagingMixin(tf.linalg.LinearOperator):
 
     x = tf.reshape(x, output_shape_tensor)
     return tf.ensure_shape(x, output_shape)
-    
 
-class LinearOperatorImagingAdjoint(tf.linalg.LinearOperatorAdjoint,
-                                   LinearOperatorImagingMixin):
+
+class LinearOperatorImagingAdjoint(LinalgImagingMixin,
+                                   tf.linalg.LinearOperatorAdjoint):
+  """`LinearOperator` representing the adjoint of another imaging operator.
+
+  Like `tf.linalg.LinearOperatorAdjoint`, but with the imaging extensions
+  provided by `tfmr.LinalgImagingMixin`.
+
+  For the parameters, see `tf.linalg.LinearOperatorAdjoint`.
+  """
+  def _transform(self, x, adjoint=False):
+    return self.operator._transform(x, adjoint=(not adjoint))
 
   def _domain_shape(self):
     return self.operator.range_shape
@@ -541,34 +906,26 @@ class LinearOperatorImagingAdjoint(tf.linalg.LinearOperatorAdjoint,
   def _range_shape_tensor(self):
     return self.operator.domain_shape_tensor()
 
-  def _transform(self, x, adjoint=False):
-    return self.operator._transform(x, adjoint=(not adjoint))
 
+class LinearOperatorImagingComposition(LinalgImagingMixin,
+                                       tf.linalg.LinearOperatorComposition):
+  """Composes one or more imaging `LinearOperators`.
 
-class LinearOperatorImagingAddition(LinearOperatorAddition,
-                                    LinearOperatorImagingMixin):
+  Like `tf.linalg.LinearOperatorComposition`, but with the imaging extensions
+  provided by `tfmr.LinalgImagingMixin`.
 
-  def _domain_shape(self):
-    return self.operators[0].domain_shape
+  For the parameters, see `tf.linalg.LinearOperatorComposition`.
+  """
+  def _transform(self, x, adjoint=False, adjoint_arg=False):
+    if adjoint:
+      transform_order_list = self.operators
+    else:
+      transform_order_list = list(reversed(self.operators))
 
-  def _range_shape(self):
-    return self.operators[0].range_shape
-  
-  def _domain_shape_tensor(self):
-    return self.operators[0].domain_shape_tensor()
-
-  def _range_shape_tensor(self):
-    return self.operators[0].range_shape_tensor()
-
-  def _transform(self, x, adjoint=False):
-    result = self.operators[0]._transform(x, adjoint=adjoint)
-    for operator in self.operators[1:]:
-      result += operator._transform(x, adjoint=adjoint)
+    result = transform_order_list[0]._transform(x, adjoint=adjoint)
+    for operator in transform_order_list[1:]:
+      result = operator._transform(result, adjoint=adjoint)
     return result
-
-
-class LinearOperatorImagingComposition(tf.linalg.LinearOperatorComposition,
-                                       LinearOperatorImagingMixin):
 
   def _domain_shape(self):
     return self.operators[-1].domain_shape
@@ -582,19 +939,36 @@ class LinearOperatorImagingComposition(tf.linalg.LinearOperatorComposition,
   def _range_shape_tensor(self):
     return self.operators[0].range_shape_tensor()
 
-  def _transform(self, x, adjoint=False, adjoint_arg=False):
-    if adjoint:
-      transform_order_list = self.operators
-    else:
-      transform_order_list = list(reversed(self.operators))
 
-    result = transform_order_list[0]._transform(x, adjoint=adjoint)
-    for operator in transform_order_list[1:]:
-      result = operator._transform(result, adjoint=adjoint)
+class LinearOperatorImagingAddition(LinalgImagingMixin,
+                                    LinearOperatorAddition):
+  """Adds one or more imaging `LinearOperators`.
+
+  Like `tfmr.LinearOperatorAddition`, but with the imaging extensions provided
+  by `tfmr.LinalgImagingMixin`.
+
+  For the parameters, see `tfmr.LinearOperatorAddition`.
+  """
+  def _transform(self, x, adjoint=False):
+    result = self.operators[0]._transform(x, adjoint=adjoint)
+    for operator in self.operators[1:]:
+      result += operator._transform(x, adjoint=adjoint)
     return result
 
+  def _domain_shape(self):
+    return self.operators[0].domain_shape
 
-class LinearOperatorFFT(LinearOperatorImagingMixin): # pylint: disable=abstract-method
+  def _range_shape(self):
+    return self.operators[0].range_shape
+  
+  def _domain_shape_tensor(self):
+    return self.operators[0].domain_shape_tensor()
+
+  def _range_shape_tensor(self):
+    return self.operators[0].range_shape_tensor()
+
+
+class LinearOperatorFFT(LinalgImagingMixin): # pylint: disable=abstract-method
   """Linear operator acting like a DFT matrix.
 
   This linear operator computes the N-dimensional discrete Fourier transform
@@ -731,7 +1105,7 @@ class LinearOperatorFFT(LinearOperatorImagingMixin): # pylint: disable=abstract-
     return self._norm
 
 
-class LinearOperatorNUFFT(LinearOperatorImagingMixin): # pylint: disable=abstract-method
+class LinearOperatorNUFFT(LinalgImagingMixin): # pylint: disable=abstract-method
   """Linear operator acting like a nonuniform DFT matrix.
 
   Args:
@@ -895,7 +1269,7 @@ class LinearOperatorInterp(LinearOperatorNUFFT): # pylint: disable=abstract-meth
     return x
 
 
-class LinearOperatorSensitivityModulation(LinearOperatorImagingMixin): # pylint: disable=abstract-method
+class LinearOperatorSensitivityModulation(LinalgImagingMixin): # pylint: disable=abstract-method
   """Linear operator acting like a sensitivity modulation matrix.
 
   Args:
@@ -1215,7 +1589,7 @@ class LinearOperatorParallelMRI(LinearOperatorImagingComposition): # pylint: dis
     return self.operators[1]
 
 
-class LinearOperatorRealWeighting(LinearOperatorImagingMixin): # pylint: disable=abstract-method
+class LinearOperatorRealWeighting(LinalgImagingMixin): # pylint: disable=abstract-method
   """Linear operator acting like a real weighting matrix.
 
   This is a square, self-adjoint operator.
@@ -1299,8 +1673,7 @@ class LinearOperatorRealWeighting(LinearOperatorImagingMixin): # pylint: disable
     return self._weights
 
 
-class LinearOperatorDifference(LinearOperatorImagingMixin,
-                               tf.linalg.LinearOperator): # pylint: disable=abstract-method
+class LinearOperatorDifference(LinalgImagingMixin, tf.linalg.LinearOperator):  # pylint: disable=abstract-method
   """Linear operator acting like a finite differences matrix.
 
   Args:
@@ -1327,7 +1700,6 @@ class LinearOperatorDifference(LinearOperatorImagingMixin,
 
     domain_shape = tf.TensorShape(domain_shape)
 
-    self._scalar_axis = isinstance(axis, int)
     self._axis = check_util.validate_axis(axis, domain_shape.rank,
                                           max_length=1,
                                           canonicalize="negative",
@@ -1339,7 +1711,6 @@ class LinearOperatorDifference(LinearOperatorImagingMixin,
 
     self._domain_shape_value = domain_shape
     self._range_shape_value = range_shape
-    self._batch_shape_value = tf.TensorShape([])
 
     super().__init__(dtype,
                      is_non_singular=None,
@@ -1374,9 +1745,6 @@ class LinearOperatorDifference(LinearOperatorImagingMixin,
 
   def _range_shape(self):
     return self._range_shape_value
-
-  def _batch_shape(self):
-    return self._batch_shape_value
 
   @property
   def axis(self):

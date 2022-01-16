@@ -9,7 +9,7 @@ Linear Algebra
     :toctree: linalg_ops
     :nosignatures:
 
-    LinearOperatorImagingMixin
+    LinalgImagingMixin
     LinearOperatorFFT
     LinearOperatorNUFFT
     LinearOperatorInterp
