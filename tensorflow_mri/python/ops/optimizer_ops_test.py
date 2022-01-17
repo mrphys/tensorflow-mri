@@ -17,6 +17,7 @@
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import convex_ops
+from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.ops import optimizer_ops
 from tensorflow_mri.python.util import test_util
 
@@ -24,20 +25,57 @@ from tensorflow_mri.python.util import test_util
 class ADMMTest(test_util.TestCase):
 
   def test_lasso(self):
-    operator = tf.linalg.LinearOperatorFullMatrix([[1., -10],
-                                                   [1., 10.],
-                                                   [1., 0.]])
-    rhs = tf.convert_to_tensor([2., 2., 2.])
-    lambda_ = 1.0
+    """Test ADMM can minimize lasso problem."""
+    operator = tf.linalg.LinearOperatorFullMatrix(
+        [[-0.69651254, 0.05905978, 0.26406853, -1.44617154],
+         [ 1.69614248, 1.79707178, 0.87167329, -0.70116535]])
+    x = tf.convert_to_tensor([1.16495351,
+                              0.62683908,
+                              0.07508015,
+                              0.35160690])
+    rhs = operator.matvec(x)
+    lambda_ = 0.5
+    atol = 1e-4
+    rtol = 1e-2
+    max_iterations = 100
 
-    f = convex_ops.ConvexFunctionLeastSquares(operator, rhs)
-    g = convex_ops.ConvexFunctionL1Norm(scale=lambda_, ndim=2)
+    function_f = convex_ops.ConvexFunctionLeastSquares(operator, rhs)
+    function_g = convex_ops.ConvexFunctionL1Norm(scale=lambda_, ndim=4)
 
-    result = optimizer_ops.admm_minimize(f, g)
+    result = optimizer_ops.admm_minimize(function_f, function_g,
+                                         atol=atol, rtol=rtol,
+                                         max_iterations=max_iterations)
+    expected_i = 12
+    expected_z = [1.57677657, 0., 0., 0.]
+    
+    self.assertAllClose(result.z, expected_z)
+    self.assertEqual(result.i, expected_i)
+
+  def test_total_variation(self):
+    """Test ADMM can minimize total variation problem."""
+    ndim = 4
+    operator = tf.linalg.LinearOperatorIdentity(4)
+    x = tf.convert_to_tensor([1.16495351,
+                              0.62683908,
+                              0.07508015,
+                              0.35160690])
+    rhs = operator.matvec(x)
+    lambda_ = 0.01
+    atol = 1e-4
+    rtol = 1e-2
+    max_iterations = 100
+
+    function_f = convex_ops.ConvexFunctionLeastSquares(operator, rhs)
+    function_g = convex_ops.ConvexFunctionL1Norm(scale=lambda_, ndim=3)
+
+    operator_a = linalg_ops.LinearOperatorDifference(4)
+
+    result = optimizer_ops.admm_minimize(function_f, function_g,
+                                         operator_a=operator_a,
+                                         atol=atol, rtol=rtol,
+                                         max_iterations=max_iterations)
     print(result)
-    print(result.x)
-    print(result.z)
-
+    print(rhs)
 
 
 if __name__ == '__main__':

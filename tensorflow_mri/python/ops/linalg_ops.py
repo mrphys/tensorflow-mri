@@ -732,7 +732,7 @@ class LinalgImagingMixin(tf.linalg.LinearOperator):
     # method.
     x = self.expand_range_dimension(x) if adjoint else \
         self.expand_domain_dimension(x)
-    x = self.transform(x, adjoint=adjoint)
+    x = self._transform(x, adjoint=adjoint)
     x = self.flatten_domain_shape(x) if adjoint else \
         self.flatten_range_shape(x)
     return x
@@ -1673,8 +1673,62 @@ class LinearOperatorRealWeighting(LinalgImagingMixin): # pylint: disable=abstrac
     return self._weights
 
 
-class LinearOperatorDifference(LinalgImagingMixin, tf.linalg.LinearOperator):  # pylint: disable=abstract-method
-  """Linear operator acting like a finite differences matrix.
+class LinearOperatorDifference(tf.linalg.LinearOperator):
+  """Linear operator acting like a difference operator.
+
+  Args:
+    domain_dimension: An `int`. The domain dimension of the operator.
+    dtype: An optional `string` or `DType`. The data type for this operator.
+      Defaults to `float32`.
+    name: An optional `string`. A name for this operator.
+  """
+  def __init__(self,
+               domain_dimension,
+               dtype=tf.dtypes.float32,
+               name="LinearOperatorImagingDifference"):
+
+    parameters = dict(
+      domain_dimension=domain_dimension,
+      dtype=dtype,
+      name=name
+    )
+
+    self._domain_dimension_value = domain_dimension
+    self._range_dimension_value = domain_dimension - 1
+
+    super().__init__(dtype,
+                     is_non_singular=None,
+                     is_self_adjoint=None,
+                     is_positive_definite=None,
+                     is_square=None,
+                     name=name,
+                     parameters=parameters)
+
+  def _matmul(self, x, adjoint=False, adjoint_arg=False):
+    if adjoint_arg:
+      x = tf.linalg.adjoint(x)
+    if adjoint:
+      paddings1 = [[1, 0], [0, 0]]
+      paddings2 = [[0, 1], [0, 0]]
+      x1 = tf.pad(x, paddings1)  # pylint: disable=no-value-for-parameter
+      x2 = tf.pad(x, paddings2)  # pylint: disable=no-value-for-parameter
+      x = x1 - x2
+    else:
+      slice1 = [slice(1, None), slice(None)]
+      slice2 = [slice(None, -1), slice(None)]
+      x1 = x[tuple(slice1)]
+      x2 = x[tuple(slice2)]
+      x = x1 - x2
+    return x
+
+  def _shape(self):
+    return tf.TensorShape(
+        [self._range_dimension_value, self._domain_dimension_value])
+
+
+class LinearOperatorImagingDifference(LinalgImagingMixin,
+                                      tf.linalg.LinearOperator):
+  """Linear operator acting like a difference operator.
 
   Args:
     domain_shape: A `tf.TensorShape` or list of ints. The domain shape of this
@@ -1689,7 +1743,7 @@ class LinearOperatorDifference(LinalgImagingMixin, tf.linalg.LinearOperator):  #
                domain_shape,
                axis=-1,
                dtype=tf.dtypes.float32,
-               name="LinearOperatorDifference"):
+               name="LinearOperatorImagingDifference"):
 
     parameters = dict(
       domain_shape=domain_shape,
