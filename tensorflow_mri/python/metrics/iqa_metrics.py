@@ -30,7 +30,7 @@ class _MeanMetricWrapperMRI(tf.keras.metrics.MeanMetricWrapper):
   Adds two new arguments to `MeanMetricWrapper`:
 
   * **multichannel**: If `True` (default), the input is expected to have a
-    channel dimension. If `False`, the input is not expected to not have a
+    channel dimension. If `False`, the input is not expected to have a
     channel dimension. Because the wrapped functions expect a channel
     dimension, this wrapper adds a channel dimension to the inputs if
     `multichannel` is `False`.
