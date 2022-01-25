@@ -32,7 +32,8 @@ class TensorBoardImages(tf.keras.callbacks.Callback):
   Subclasses may override the `display_image` method to customize how the images
   to display are generated. This method should accept three arguments
   (`features`, `labels` and `predictions` for a single example) and returns the
-  image to be written to TensorBoard for that example.
+  image to be written to TensorBoard for that example. Alternatively, the user
+  may pass the `display_fn` parameter to override this function.
 
   The default implementation of `display_image` concatenates the `features`,
   `labels` and `predictions` along axis -2 (horizontally). The concatenation
@@ -68,6 +69,11 @@ class TensorBoardImages(tf.keras.callbacks.Callback):
       empty list to select no predictions.
     complex_part: A `str`. One of `'real'`, `'imag'`, `'abs'` or `'angle'`.
       Specifies which part of a complex input should be displayed.
+    display_fn: A callable. A function which accepts three arguments
+      (features, labels and predictions for a single example) and returns the
+      image to be written to TensorBoard. Overrides the default function, in
+      which case `concat_axis`, `feature_keys`, `label_keys`, `prediction_keys`
+      and `complex_part` will be ignored.
   """
   def __init__(self,
                x,
@@ -80,10 +86,10 @@ class TensorBoardImages(tf.keras.callbacks.Callback):
                feature_keys=None,
                label_keys=None,
                prediction_keys=None,
-               complex_part=None):
+               complex_part=None,
+               display_fn=None):
     """Initialize callback."""
     super().__init__()
-    # Set attributes.
     self.x = x
     self.log_dir = log_dir
     self.update_freq = images_freq
@@ -95,6 +101,7 @@ class TensorBoardImages(tf.keras.callbacks.Callback):
     self.label_keys = label_keys
     self.prediction_keys = prediction_keys
     self.complex_part = complex_part
+    self.display_fn = display_fn or self.display_image
 
   def on_epoch_end(self, epoch, logs=None): # pylint: disable=unused-argument
     """Called at the end of an epoch."""
@@ -210,16 +217,28 @@ def _select_and_concatenate(arg, keys, axis, complex_part, arg_name=None):
       tensors = [arg[key] for key in keys]
     if not tensors:
       return None
+    for index, tensor in enumerate(tensors):
+      tensors[index] = _prepare_for_concat(tensor, complex_part)
     out = tf.concat(tensors, axis)
   else:  # Input is a tensor, so nothing to select/concatenate.
-    out = arg
+    out = _prepare_for_concat(arg, complex_part)
 
-  # If result is complex, convert to real.
-  if out.dtype.is_complex:
+  return out
+
+
+def _prepare_for_concat(tensor, complex_part):
+  """Prepares a tensor for concatenation."""
+  if tensor is None:
+    return None
+  # If tensor is complex, convert to real.
+  if tensor.dtype.is_complex:
     if complex_part is None:
       raise ValueError(
           f"`complex_part` must be specified for complex inputs.")
-    out = image_ops.extract_and_scale_complex_part(
-        out, complex_part, max_val=1.0)
+    tensor = image_ops.extract_and_scale_complex_part(
+        tensor, complex_part, max_val=1.0)
+  # Cast to common type (float32).
+  return tf.cast(tensor, dtype=_CONCAT_DTYPE)
 
-  return out
+
+_CONCAT_DTYPE = tf.float32

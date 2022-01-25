@@ -27,6 +27,9 @@ from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import tensor_util
 
+from tensorflow.python.ops.linalg import linear_operator
+from tensorflow.python.util import deprecation
+
 
 class LinearOperatorAddition(tf.linalg.LinearOperator):
   """Adds one or more `LinearOperators`.
@@ -1389,6 +1392,7 @@ class LinearOperatorSensitivityModulation(LinalgImagingMixin): # pylint: disable
     return self._sensitivities
 
 
+@deprecation.deprecated(None, "Use `LinearOperatorMRI` instead.")
 class LinearOperatorParallelMRI(LinearOperatorImagingComposition): # pylint: disable=abstract-method
   """Linear operator acting like a parallel MRI matrix.
 
@@ -1587,6 +1591,247 @@ class LinearOperatorParallelMRI(LinearOperatorImagingComposition): # pylint: dis
       A `LinearOperatorSensitivityModulation`.
     """
     return self.operators[1]
+
+
+@linear_operator.make_composite_tensor
+class LinearOperatorMRI(LinalgImagingMixin, tf.linalg.LinearOperator):
+  """The MR imaging operator.
+
+  The MR imaging operator is a linear operator that maps a [batch of] images to
+  a [batch of] potentially multicoil spatial frequency (*k*-space) data.
+
+  This object may represent an undersampled MRI operator and supports
+  Cartesian and non-Cartesian *k*-space sampling. The user may provide a
+  sampling `mask` to represent an undersampled Cartesian operator, or a
+  `trajectory` to represent a non-Cartesian operator.
+
+  This object may represent a multicoil MRI operator by providing coil
+  `sensitivities`. Note that `mask`, `trajectory` and `density` should never
+  have a coil dimension, including in the case of multicoil imaging. The coil
+  dimension will be handled automatically.
+
+  Args:
+    image_shape: A `TensorShape` or a list of `ints` of length 2 or 3.
+      The shape of the images that this operator acts on.
+    mask: An optional `Tensor` of type `bool`. The sampling mask. Must have
+      shape `[..., *S]`, where `S` is the `image_shape` and `...` is
+      the batch shape, which can have any number of dimensions. If `mask` is
+      passed, this operator represents an undersampled MRI operator.
+    trajectory: An optional `Tensor` of type `float32` or `float64`. Must have
+      shape `[..., M, N]`, where `N` is the rank (number of spatial dimensions),
+      `M` is the number of samples in the encoded space and `...` is the batch
+      shape, which can have any number of dimensions. If `trajectory` is passed,
+      this operator represents a non-Cartesian MRI operator.
+    density: An optional `Tensor` of type `float32` or `float64`. The sampling
+      densities. Must have shape `[..., M]`, where `M` is the number of
+      samples and `...` is the batch shape, which can have any number of
+      dimensions.
+    sensitivities: A `Tensor`. The coil sensitivity maps. Must have type
+      `complex64` or `complex128`. Must have shape `[..., C, *S]`, where `S`
+      is the `image_shape`, `C` is the number of coils and `...` is the batch
+      shape, which can have any number of dimensions.
+    fft_norm: FFT normalization mode. Must be `None` (no normalization)
+      or `'ortho'`. Defaults to `'ortho'`.
+    normalize_sensitivities: A `bool`. If `True`, the coil sensitivity maps
+      are normalized to have unit L2 norm along the coil dimension. Defaults to
+      `False`.
+    name: An optional `string`. The name of this operator.
+  """
+  def __init__(self,
+               image_shape,
+               mask=None,
+               trajectory=None,
+               density=None,
+               sensitivities=None,
+               fft_norm='ortho',
+               dtype=tf.complex64,
+               name='LinearOperatorMRI'):
+    parameters = dict(
+        image_shape=image_shape,
+        mask=mask,
+        trajectory=trajectory,
+        density=density,
+        sensitivities=sensitivities,
+        fft_norm=fft_norm,
+        dtype=dtype,
+        name=name)
+
+    # Set dtype.
+    dtype = tf.as_dtype(dtype)
+    if dtype not in (tf.complex64, tf.complex128):
+      raise ValueError(
+          f"`dtype` must be `complex64` or `complex128`, but got: {str(dtype)}") 
+
+    # Set image shape and rank.
+    self._image_shape = tf.TensorShape(image_shape)
+    if self._image_shape.rank not in (2, 3):
+      raise ValueError(
+          f"`image_shape` must have rank 2 or 3, but got: {image_shape}")
+    if not self._image_shape.is_fully_defined():
+      raise ValueError(
+          f"`image_shape` must be fully defined, but got {image_shape}.")
+    self._rank = self._image_shape.rank
+    self._image_axes = list(range(-self._rank, 0))
+    
+    # Assume scalar batch shape, then update according to inputs.
+    batch_shape = tf.TensorShape([])
+
+    # Set sampling mask after checking dtype and static shape.
+    if mask is not None:
+      mask = tf.convert_to_tensor(mask)
+      if mask.dtype != tf.bool:
+        raise TypeError(
+            f"`mask` must have dtype `bool`, but got: {str(mask.dtype)}")
+      if not mask.shape[-self._rank:].is_compatible_with(self._image_shape):
+        raise ValueError(
+            f"Expected the last dimensions of `mask` to be compatible with "
+            f"{self._image_shape}], but got: {mask.shape[-self._rank:]}")
+      batch_shape = tf.broadcast_static_shape(
+          batch_shape, mask.shape[:-self._rank])
+      self._mask_float = tf.cast(mask, dtype=dtype)
+    self._mask = mask
+
+    # Set sampling trajectory after checking dtype and static shape.
+    if trajectory is not None:
+      if mask is not None:
+        raise ValueError("`mask` and `trajectory` cannot be both passed.")
+      trajectory = tf.convert_to_tensor(trajectory)
+      if trajectory.dtype != dtype.real_dtype:
+        raise TypeError(
+            f"Expected `trajectory` to have dtype `{str(dtype.real_dtype)}`, "
+            f"but got: {str(trajectory.dtype)}")
+      if trajectory.shape[-1] != self._rank:
+        raise ValueError(
+            f"Expected the last dimension of `trajectory` to be {self._rank}, "
+            f"but got {trajectory.shape[-1]}")
+      batch_shape = tf.broadcast_static_shape(
+          batch_shape, trajectory.shape[:-2])
+    self._trajectory = trajectory
+
+    # Set sensitivity maps after checking dtype and static shape.
+    if sensitivities is not None:
+      sensitivities = tf.convert_to_tensor(sensitivities)
+      if sensitivities.dtype != dtype:
+        raise TypeError(
+            f"Expected `sensitivities` to have dtype `{str(dtype)}`, but got: "
+            f"{str(sensitivities.dtype)}")
+      if not sensitivities.shape[-self._rank:].is_compatible_with(
+          self._image_shape):
+        raise ValueError(
+            f"Expected the last dimensions of `sensitivities` to be "
+            f"compatible with {self._image_shape}, but got: "
+            f"{sensitivities.shape[-self._rank:]}")
+      batch_shape = tf.broadcast_static_shape(
+          batch_shape, sensitivities.shape[:-(self._rank + 1)])
+    self._sensitivities = sensitivities
+
+    # If multicoil, add coil dimension to mask, trajectory and density.
+    if self._sensitivities is not None:
+      if self._mask is not None:
+        self._mask = tf.expand_dims(self._mask, axis=-(self._rank + 1))
+      if self._trajectory is not None:
+        self._trajectory = tf.expand_dims(self._trajectory, axis=-3)
+
+    # Set normalization.
+    self._fft_norm = check_util.validate_enum(
+        fft_norm, {None, 'ortho'}, 'fft_norm')
+    if self._fft_norm == 'ortho':  # Compute normalization factors.
+      self._fft_norm_factor = tf.math.reciprocal(
+          tf.math.sqrt(tf.cast(self._image_shape.num_elements(), dtype)))
+
+    super().__init__(dtype, name=name, parameters=parameters)
+
+  def _transform(self, x, adjoint=False):
+    """Transform [batch] input `x`."""
+    if adjoint:
+      if self.is_non_cartesian:  # Non-Cartesian imaging, use NUFFT.
+        x = tfft.nufft(x, self._trajectory,
+                       grid_shape=self._image_shape,
+                       transform_type='type_1',
+                       fft_direction='backward')
+        if self._fft_norm is not None:
+          x *= self._fft_norm_factor
+
+      else:  # Cartesian imaging, use FFT.
+        if self._mask is not None:
+          x *= self._mask_float  # Undersampling.
+        x = fft_ops.ifftn(x, axes=self._image_axes,
+                          norm=self._fft_norm or 'forward', shift=True)
+
+      if self.is_multicoil:  # Apply sensitivity modulation.
+        x *= tf.math.conj(self._sensitivities)
+        x = tf.math.reduce_sum(x, axis=-(self._rank + 1))
+
+    else:  # Forward operator.
+      if self.is_multicoil:  # Apply sensitivity modulation.
+        x = tf.expand_dims(x, axis=-(self._rank + 1))
+        x *= self._sensitivities
+
+      if self.is_non_cartesian:  # Non-Cartesian imaging, use NUFFT.
+        x = tfft.nufft(x, self._trajectory,
+                       transform_type='type_2',
+                       fft_direction='forward')
+        if self._fft_norm is not None:
+          x *= self._fft_norm_factor
+
+      else:  # Cartesian imaging, use FFT.
+        x = fft_ops.fftn(x, axes=self._image_axes,
+                         norm=self._fft_norm or 'backward', shift=True)
+        if self._mask is not None:
+          x *= self._mask_float  # Undersampling.
+
+    return x
+  
+  def _domain_shape(self):
+    """Returns the shape of the domain space of this operator."""
+    return self._image_shape
+
+  def _range_shape(self):
+    """Returns the shape of the range space of this operator."""
+    if self.is_cartesian:
+      range_shape = self._image_shape.as_list()
+    else:
+      range_shape = [self._trajectory.shape[-2]]
+    if self.is_multicoil:
+      range_shape = [self.num_coils] + range_shape
+    return tf.TensorShape(range_shape)
+
+  @property
+  def image_shape(self):
+    """The image shape."""
+    return self._image_shape
+
+  @property
+  def rank(self):
+    """The number of spatial dimensions."""
+    return self._rank
+
+  @property
+  def is_cartesian(self):
+    """Whether this is a Cartesian MRI operator."""
+    return self._trajectory is None
+
+  @property
+  def is_non_cartesian(self):
+    """Whether this is a non-Cartesian MRI operator."""
+    return self._trajectory is not None
+
+  @property
+  def is_multicoil(self):
+    """Whether this is a multicoil MRI operator."""
+    return self._sensitivities is not None
+
+  @property
+  def num_coils(self):
+    """The number of coils."""
+    if self._sensitivities is None:
+      return None
+    return self._sensitivities.shape[-(self._rank + 1)]
+
+  @property
+  def _composite_tensor_fields(self):
+    return ("image_shape", "mask", "trajectory", "density", "sensitivities",
+            "fft_norm")
 
 
 class LinearOperatorRealWeighting(LinalgImagingMixin): # pylint: disable=abstract-method

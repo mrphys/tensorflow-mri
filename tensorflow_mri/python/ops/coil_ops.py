@@ -318,7 +318,7 @@ def _estimate_coil_sensitivities_espirit(kspace,
   kspace = tf.convert_to_tensor(kspace)
   rank = kspace.shape.rank - 1
   spatial_axes = list(range(rank))
-  num_coils = kspace.shape[-1]
+  num_coils = tf.shape(kspace)[-1]
   if image_shape is None:
     image_shape = kspace.shape[:-1]
   if calib_size is None:
@@ -395,6 +395,12 @@ def _estimate_coil_sensitivities_espirit(kspace,
   # Apply thresholding.
   mask = tf.expand_dims(values >= eigen_threshold, -2)
   maps *= tf.cast(mask, maps.dtype)
+
+  # If possible, set static number of maps.
+  if isinstance(num_maps, int):
+    maps_shape = maps.shape.as_list()
+    maps_shape[-1] = num_maps
+    maps = tf.ensure_shape(maps, maps_shape)
 
   return maps
 
@@ -597,11 +603,14 @@ def _coil_compression_matrix_svd(kspace, num_output_coils=None, tol=None):
   # Get output coils based on tol.
   if tol is not None and num_output_coils is None:
     num_output_coils = tf.math.count_nonzero(
-      tf.math.greater(tf.abs(s) / tf.abs(s[0]), tol))
+        tf.math.greater(tf.abs(s) / tf.abs(s[0]), tol))
 
   # Remove unnecessary virtual coils.
   if num_output_coils is not None:
     matrix = matrix[:, :num_output_coils]
+
+  if isinstance(num_output_coils, int):  # Set static number of output coils.
+    matrix = tf.ensure_shape(matrix, [None, num_output_coils])
 
   return matrix
 
