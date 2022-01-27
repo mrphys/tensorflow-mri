@@ -838,7 +838,7 @@ def estimate_density(points, grid_shape, method='jackson', max_iter=50):
       method, {'jackson', 'pipe'}, name='method')
 
   # We do not check inputs here, the NUFFT op will do it for us.
-  batch_shape = points.shape[:-2]
+  batch_shape = tf.shape(points)[:-2]
 
   # Calculate an appropriate grid shape.
   grid_shape = tf.TensorShape(grid_shape) # Canonicalize.
@@ -847,7 +847,7 @@ def estimate_density(points, grid_shape, method='jackson', max_iter=50):
 
   if method in ('jackson', 'pipe'):
     # Create a k-space of ones.
-    ones = tf.ones(batch_shape + points.shape[-2:-1],
+    ones = tf.ones(tf.concat([batch_shape, tf.shape(points)[-2:-1]], 0),
                    dtype=tensor_util.get_complex_dtype(points.dtype))
 
     # Spread ones to grid and interpolate back.

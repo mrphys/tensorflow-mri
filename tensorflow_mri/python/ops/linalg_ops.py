@@ -23,12 +23,14 @@ import collections
 import tensorflow as tf
 import tensorflow_nufft as tfft
 
+from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import fft_ops
+from tensorflow_mri.python.ops import traj_ops
 from tensorflow_mri.python.util import check_util
+from tensorflow_mri.python.util import deprecation_util
 from tensorflow_mri.python.util import tensor_util
 
 from tensorflow.python.ops.linalg import linear_operator
-from tensorflow.python.util import deprecation
 
 
 class LinearOperatorAddition(tf.linalg.LinearOperator):
@@ -903,11 +905,17 @@ class LinearOperatorImagingAdjoint(LinalgImagingMixin,
   def _range_shape(self):
     return self.operator.domain_shape
   
+  def _batch_shape(self):
+    return self.operator.batch_shape
+  
   def _domain_shape_tensor(self):
     return self.operator.range_shape_tensor()
 
   def _range_shape_tensor(self):
     return self.operator.domain_shape_tensor()
+
+  def _batch_shape_tensor(self):
+    return self.operator.batch_shape_tensor()
 
 
 class LinearOperatorImagingComposition(LinalgImagingMixin,
@@ -935,12 +943,20 @@ class LinearOperatorImagingComposition(LinalgImagingMixin,
 
   def _range_shape(self):
     return self.operators[0].range_shape
-  
+
+  def _batch_shape(self):
+    return array_ops.broadcast_static_shapes(
+        [operator.batch_shape for operator in self.operators])
+
   def _domain_shape_tensor(self):
     return self.operators[-1].domain_shape_tensor()
 
   def _range_shape_tensor(self):
     return self.operators[0].range_shape_tensor()
+
+  def _batch_shape_tensor(self):
+    return array_ops.broadcast_dynamic_shapes(
+        [operator.batch_shape_tensor() for operator in self.operators])
 
 
 class LinearOperatorImagingAddition(LinalgImagingMixin,
@@ -1392,7 +1408,7 @@ class LinearOperatorSensitivityModulation(LinalgImagingMixin): # pylint: disable
     return self._sensitivities
 
 
-@deprecation.deprecated(None, "Use `LinearOperatorMRI` instead.")
+@deprecation_util.deprecated(None, "Use `LinearOperatorMRI` instead.")
 class LinearOperatorParallelMRI(LinearOperatorImagingComposition): # pylint: disable=abstract-method
   """Linear operator acting like a parallel MRI matrix.
 
@@ -1625,16 +1641,21 @@ class LinearOperatorMRI(LinalgImagingMixin, tf.linalg.LinearOperator):
     density: An optional `Tensor` of type `float32` or `float64`. The sampling
       densities. Must have shape `[..., M]`, where `M` is the number of
       samples and `...` is the batch shape, which can have any number of
-      dimensions.
+      dimensions. This input is only relevant for non-Cartesian MRI operators.
+      If passed, the non-Cartesian operator will include sampling density
+      compensation. Can also be set to `'auto'` to automatically estimate
+      the sampling density from the `trajectory`. If `None`, the operator will
+      not perform sampling density compensation.
     sensitivities: A `Tensor`. The coil sensitivity maps. Must have type
       `complex64` or `complex128`. Must have shape `[..., C, *S]`, where `S`
       is the `image_shape`, `C` is the number of coils and `...` is the batch
       shape, which can have any number of dimensions.
     fft_norm: FFT normalization mode. Must be `None` (no normalization)
       or `'ortho'`. Defaults to `'ortho'`.
-    normalize_sensitivities: A `bool`. If `True`, the coil sensitivity maps
-      are normalized to have unit L2 norm along the coil dimension. Defaults to
+    sens_norm: A `bool`. Whether to normalize coil sensitivities. Defaults to
       `False`.
+    dtype: The dtype of this operator. Must be `complex64` or `complex128`.
+      Defaults to `complex64`.
     name: An optional `string`. The name of this operator.
   """
   def __init__(self,
@@ -1644,6 +1665,7 @@ class LinearOperatorMRI(LinalgImagingMixin, tf.linalg.LinearOperator):
                density=None,
                sensitivities=None,
                fft_norm='ortho',
+               sens_norm=False,
                dtype=tf.complex64,
                name='LinearOperatorMRI'):
     parameters = dict(
@@ -1653,6 +1675,7 @@ class LinearOperatorMRI(LinalgImagingMixin, tf.linalg.LinearOperator):
         density=density,
         sensitivities=sensitivities,
         fft_norm=fft_norm,
+        sens_norm=sens_norm,
         dtype=dtype,
         name=name)
 
@@ -1675,6 +1698,7 @@ class LinearOperatorMRI(LinalgImagingMixin, tf.linalg.LinearOperator):
     
     # Assume scalar batch shape, then update according to inputs.
     batch_shape = tf.TensorShape([])
+    batch_shape_tensor = tf.constant([], dtype=tf.int32)
 
     # Set sampling mask after checking dtype and static shape.
     if mask is not None:
@@ -1688,7 +1712,8 @@ class LinearOperatorMRI(LinalgImagingMixin, tf.linalg.LinearOperator):
             f"{self._image_shape}], but got: {mask.shape[-self._rank:]}")
       batch_shape = tf.broadcast_static_shape(
           batch_shape, mask.shape[:-self._rank])
-      self._mask_float = tf.cast(mask, dtype=dtype)
+      batch_shape_tensor = tf.broadcast_dynamic_shape(
+          batch_shape_tensor, tf.shape(mask)[:-self._rank])
     self._mask = mask
 
     # Set sampling trajectory after checking dtype and static shape.
@@ -1706,7 +1731,36 @@ class LinearOperatorMRI(LinalgImagingMixin, tf.linalg.LinearOperator):
             f"but got {trajectory.shape[-1]}")
       batch_shape = tf.broadcast_static_shape(
           batch_shape, trajectory.shape[:-2])
+      batch_shape_tensor = tf.broadcast_dynamic_shape(
+          batch_shape_tensor, tf.shape(trajectory)[:-2])
     self._trajectory = trajectory
+
+    # Set sampling density after checking dtype and static shape. If `'auto'`,
+    # then estimate the density from the trajectory.
+    if density is not None:
+      if density is 'auto':  # Automatic density estimation.
+        if self._trajectory is None:  # Cartesian operator: no density comp.
+          density = None
+        else:  # Non-Cartesian operator: estimate density.
+          density = traj_ops.estimate_density(
+              self._trajectory, self._image_shape)
+      else:
+        if self._trajectory is None:
+          raise ValueError("`density` must be passed with `trajectory`.")
+        density = tf.convert_to_tensor(density)
+        if density.dtype != dtype.real_dtype:
+          raise TypeError(
+              f"Expected `density` to have dtype `{str(dtype.real_dtype)}`, "
+              f"but got: {str(density.dtype)}")
+        if density.shape[-1] != self._trajectory.shape[-2]:
+          raise ValueError(
+              f"Expected the last dimension of `density` to be "
+              f"{self._trajectory.shape[-2]}, but got {density.shape[-1]}")
+        batch_shape = tf.broadcast_static_shape(
+            batch_shape, density.shape[:-1])
+        batch_shape_tensor = tf.broadcast_dynamic_shape(
+          batch_shape_tensor, tf.shape(density)[:-1])
+    self._density = density
 
     # Set sensitivity maps after checking dtype and static shape.
     if sensitivities is not None:
@@ -1723,7 +1777,13 @@ class LinearOperatorMRI(LinalgImagingMixin, tf.linalg.LinearOperator):
             f"{sensitivities.shape[-self._rank:]}")
       batch_shape = tf.broadcast_static_shape(
           batch_shape, sensitivities.shape[:-(self._rank + 1)])
+      batch_shape_tensor = tf.broadcast_dynamic_shape(
+          batch_shape_tensor, tf.shape(sensitivities)[:-(self._rank + 1)])
     self._sensitivities = sensitivities
+
+    # Set batch shapes.
+    self._batch_shape_value = batch_shape
+    self._batch_shape_tensor_value = batch_shape_tensor
 
     # If multicoil, add coil dimension to mask, trajectory and density.
     if self._sensitivities is not None:
@@ -1731,6 +1791,15 @@ class LinearOperatorMRI(LinalgImagingMixin, tf.linalg.LinearOperator):
         self._mask = tf.expand_dims(self._mask, axis=-(self._rank + 1))
       if self._trajectory is not None:
         self._trajectory = tf.expand_dims(self._trajectory, axis=-3)
+      if self._density is not None:
+        self._density = tf.expand_dims(self._density, axis=-2)
+
+    # Save some tensors for later use during computation.
+    if self._mask is not None:
+      self._mask_linop_dtype = tf.cast(self._mask, dtype)
+    if self._density is not None:
+      self._weights_linop_dtype = tf.cast(
+          tf.math.sqrt(tf.math.reciprocal_no_nan(self._density)), dtype)
 
     # Set normalization.
     self._fft_norm = check_util.validate_enum(
@@ -1739,11 +1808,22 @@ class LinearOperatorMRI(LinalgImagingMixin, tf.linalg.LinearOperator):
       self._fft_norm_factor = tf.math.reciprocal(
           tf.math.sqrt(tf.cast(self._image_shape.num_elements(), dtype)))
 
+    # Normalize coil sensitivities.
+    self._sens_norm = sens_norm
+    if self._sens_norm:
+      self._sensitivities, _ = tf.linalg.normalize(
+          sensitivities, axis=-(self._rank + 1))
+
     super().__init__(dtype, name=name, parameters=parameters)
 
   def _transform(self, x, adjoint=False):
     """Transform [batch] input `x`."""
     if adjoint:
+      # Apply density compensation.
+      if self._density is not None:
+        x *= self._weights_linop_dtype
+
+      # Apply adjoint Fourier operator.
       if self.is_non_cartesian:  # Non-Cartesian imaging, use NUFFT.
         x = tfft.nufft(x, self._trajectory,
                        grid_shape=self._image_shape,
@@ -1754,19 +1834,23 @@ class LinearOperatorMRI(LinalgImagingMixin, tf.linalg.LinearOperator):
 
       else:  # Cartesian imaging, use FFT.
         if self._mask is not None:
-          x *= self._mask_float  # Undersampling.
+          x *= self._mask_linop_dtype  # Undersampling.
         x = fft_ops.ifftn(x, axes=self._image_axes,
                           norm=self._fft_norm or 'forward', shift=True)
 
-      if self.is_multicoil:  # Apply sensitivity modulation.
+      # Apply coil combination.
+      if self.is_multicoil:
         x *= tf.math.conj(self._sensitivities)
         x = tf.math.reduce_sum(x, axis=-(self._rank + 1))
 
     else:  # Forward operator.
-      if self.is_multicoil:  # Apply sensitivity modulation.
+
+      # Apply sensitivity modulation.
+      if self.is_multicoil:
         x = tf.expand_dims(x, axis=-(self._rank + 1))
         x *= self._sensitivities
 
+      # Apply Fourier operator.
       if self.is_non_cartesian:  # Non-Cartesian imaging, use NUFFT.
         x = tfft.nufft(x, self._trajectory,
                        transform_type='type_2',
@@ -1778,7 +1862,11 @@ class LinearOperatorMRI(LinalgImagingMixin, tf.linalg.LinearOperator):
         x = fft_ops.fftn(x, axes=self._image_axes,
                          norm=self._fft_norm or 'backward', shift=True)
         if self._mask is not None:
-          x *= self._mask_float  # Undersampling.
+          x *= self._mask_linop_dtype  # Undersampling.
+
+      # Apply density compensation.
+      if self._density is not None:
+        x *= self._weights_linop_dtype
 
     return x
   
@@ -1795,6 +1883,14 @@ class LinearOperatorMRI(LinalgImagingMixin, tf.linalg.LinearOperator):
     if self.is_multicoil:
       range_shape = [self.num_coils] + range_shape
     return tf.TensorShape(range_shape)
+
+  def _batch_shape(self):
+    """Returns the static batch shape of this operator."""
+    return self._batch_shape_value
+  
+  def _batch_shape_tensor(self):
+    """Returns the dynamic batch shape of this operator."""
+    return self._batch_shape_tensor_value
 
   @property
   def image_shape(self):
@@ -2152,18 +2248,26 @@ def conjugate_gradient(operator,
     broadcast_shape = tf.broadcast_dynamic_shape(
         tf.shape(rhs)[:-1],
         operator.batch_shape_tensor())
+    static_broadcast_shape = tf.broadcast_static_shape(
+        rhs.shape[:-1],
+        operator.batch_shape)
     if preconditioner is not None:
       broadcast_shape = tf.broadcast_dynamic_shape(
           broadcast_shape,
-          preconditioner.batch_shape_tensor()
-      )
+          preconditioner.batch_shape_tensor())
+      static_broadcast_shape = tf.broadcast_static_shape(
+          static_broadcast_shape,
+          preconditioner.batch_shape)
     broadcast_rhs_shape = tf.concat([broadcast_shape, [tf.shape(rhs)[-1]]], -1)
+    static_broadcast_rhs_shape = static_broadcast_shape.concatenate(
+        [rhs.shape[-1]])
     r0 = tf.broadcast_to(rhs, broadcast_rhs_shape)
     tol *= tf.norm(r0, axis=-1)
 
     if x is None:
       x = tf.zeros(
           broadcast_rhs_shape, dtype=rhs.dtype.base_dtype)
+      x = tf.ensure_shape(x, static_broadcast_rhs_shape)
     else:
       r0 = rhs - tf.linalg.matvec(operator, x)
     if preconditioner is None:
