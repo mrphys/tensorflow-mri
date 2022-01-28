@@ -81,12 +81,12 @@ def psnr(img1, img2, max_val=None, rank=None, name='psnr'):
       rank = img1.shape.rank - 2 # Rank must be defined statically.
 
     mse = tf.math.reduce_mean(
-      tf.math.squared_difference(img1, img2), tf.range(-rank-1, 0)) # pylint: disable=invalid-unary-operand-type
+        tf.math.squared_difference(img1, img2), tf.range(-rank-1, 0)) # pylint: disable=invalid-unary-operand-type
 
     psnr_val = tf.math.subtract(
-      20 * tf.math.log(max_val) / tf.math.log(10.0),
-      np.float32(10 / np.log(10)) * tf.math.log(mse),
-      name='psnr')
+        20 * tf.math.log(max_val) / tf.math.log(10.0),
+        np.float32(10 / np.log(10)) * tf.math.log(mse),
+        name='psnr')
 
     _, _, checks = _verify_compatible_image_shapes(img1, img2, rank)
     with tf.control_dependencies(checks):
@@ -705,16 +705,7 @@ def _ssim_per_channel(img1,
     img1 = tf.identity(img1)
 
   kernel = _fspecial_gauss(filter_size, filter_sigma, rank)
-  if rank == 2:
-    kernel = tf.tile(kernel, multiples=[1, 1, shape1[-1], 1])
-  elif rank == 3:
-    # If tf.nn.depthwise_conv3d is ever implemented, the following line
-    # should be removed and replaced by the commented line below (also make
-    # the change below).
-    kernel = tf.tile(kernel, multiples=[1, 1, 1, 1, shape1[-1]])
-    # kernel = tf.tile(kernel, multiples=[1, 1, 1, shape1[-1], 1])
-  else:
-    raise ValueError("Invalid rank: {}".format(rank))
+  kernel = tf.tile(kernel, multiples=[1] * rank + [shape1[-1], 1])
 
   # The correct compensation factor is `1.0 - tf.reduce_sum(tf.square(kernel))`,
   # but to match MATLAB implementation of MS-SSIM, we use 1.0 instead.
@@ -725,15 +716,10 @@ def _ssim_per_channel(img1,
     x = tf.reshape(x, shape=tf.concat([[-1], shape[-(rank + 1):]], 0))
     if rank == 2:
       y = tf.nn.depthwise_conv2d(
-        x, kernel, strides=[1, 1, 1, 1], padding='VALID')
+          x, kernel, strides=[1, 1, 1, 1], padding='VALID')
     elif rank == 3:
-      # If tf.nn.depthwise_conv3d is ever implemented, the following line
-      # should be removed and replaced by the commented line below (also
-      # make the change above).
-      y = tf.nn.convolution(
-        x, kernel, strides=[1, 1, 1, 1, 1], padding='VALID')
-      # y = nn.depthwise_conv3d(
-      #   x, kernel, strides=[1, 1, 1, 1, 1], padding='VALID')
+      y = _depthwise_conv3d(
+          x, kernel, strides=[1, 1, 1, 1, 1], padding='VALID')
     return tf.reshape(
       y, tf.concat([shape[:-(rank + 1)], tf.shape(y)[1:]], 0))
 
@@ -857,6 +843,258 @@ def _fspecial_gauss_3d(size, sigma): # pylint: disable=missing-param-doc
   return tf.reshape(g, shape=[size, size, size, 1, 1])
 
 
+def image_gradients(image, method='sobel', norm=False, rank=2, name=None):
+  """Computes image gradients.
+
+  Args:
+    image: Image tensor with shape [batch_size, h, w, d] and type float32 or
+      float64.  The image(s) must be 2x2 or larger.
+    method: A `str`. The operator to use for gradient computation. Must be one
+      of `'prewitt'`, `'sobel'` or `'scharr'`. Defaults to `'sobel'`.
+    norm: A `bool`. If `True`, returns normalized gradients.
+    rank: An `int`. The number of spatial dimensions.
+
+  Returns:
+    Tensor holding edge maps for each channel. Returns a tensor with shape
+    [batch_size, h, w, d, 2] where the last two dimensions hold [[dy[0], dx[0]],
+    [dy[1], dx[1]], ..., [dy[d-1], dx[d-1]]] calculated using the Prewitt
+    filter.
+  """
+  with tf.name_scope(name or 'image_gradients'):
+    kernels = _gradient_operators(
+        method, norm=norm, rank=rank, dtype=image.dtype)
+    return _filter_image(image, kernels)
+
+
+def gradient_magnitude(image, method='sobel', norm=False, rank=2, name=None):
+  """Computes the gradient magnitude (GM) of an image.
+
+  Args:
+    image: A `Tensor`.
+    method: The gradient operator to use. Can be `'prewitt'`, `'sobel'` or
+      `'scharr'`. Defaults to `'sobel'`.
+    norm: A `bool`. If `True`, returns the normalized gradient magnitude.
+    rank: An `int`. The number of spatial dimensions.
+
+  Returns:
+    A `Tensor` of the same shape and type as `image`.
+  """
+  with tf.name_scope(name or 'gradient_magnitude'):
+    gradients = image_gradients(image, method=method, norm=norm, rank=rank)
+    return tf.norm(gradients, axis=-1)
+
+
+def _gradient_operators(method, norm=False, rank=2, dtype=tf.float32):
+  """Returns a set of operators to compute image gradients.
+
+  Args:
+    method: A `str`. The gradient operator. Must be one of `'prewitt'`,
+      `'sobel'` or `'scharr'`.
+    norm: A `bool`. If `True`, returns normalized kernels.
+    rank: An `int`. The dimensionality of the requested kernels. Defaults to 2.
+    dtype: The `dtype` of the returned kernels. Defaults to `tf.float32`.
+
+  Returns:
+    A `Tensor` of shape `[num_kernels] + kernel_shape`, where `kernel_shape` is
+    `[3, 3]` or `[3, 3, 3]` depending on `rank`.
+  """
+  if method == 'prewitt':
+    avg_operator = tf.constant([1, 1, 1], dtype=dtype)
+    diff_operator = tf.constant([-1, 0, 1], dtype=dtype)
+  elif method == 'sobel':
+    avg_operator = tf.constant([1, 2, 1], dtype=dtype)
+    diff_operator = tf.constant([-1, 0, 1], dtype=dtype)
+  elif method == 'scharr':
+    avg_operator = tf.constant([3, 10, 3], dtype=dtype)
+    diff_operator = tf.constant([-1, 0, 1], dtype=dtype)
+  else:
+    raise ValueError(f"Unknown method: {method}")
+  if norm:
+    avg_operator /= tf.math.reduce_sum(tf.math.abs(avg_operator))
+    diff_operator /= tf.math.reduce_sum(tf.math.abs(diff_operator))
+  kernels = [None] * rank
+  for d in range(rank):
+    kernels[d] = tf.ones([3] * rank, dtype=tf.float32)
+    for i in range(rank):
+      if i == d:
+        operator_1d = diff_operator
+      else:
+        operator_1d = avg_operator
+      operator_shape = [1] * rank
+      operator_shape[i] = operator_1d.shape[0]
+      operator_1d = tf.reshape(operator_1d, operator_shape)
+      kernels[d] *= operator_1d
+  return tf.stack(kernels, axis=0)
+
+
+def _filter_image(image, kernels):
+  """Filters an image using the specified kernels.
+
+  Arguments:
+    image: A `Tensor` with shape `[batch_size] + spatial_dims + [channels]`.
+    kernels: A `Tensor` of kernels with shape `[num_kernels] + kernel_shape`.
+
+  Returns:
+    Tensor holding edge maps for each channel. Returns a tensor with shape
+    [batch_size, h, w, d, 2] where the last two dimensions hold [[dy[0], dx[0]],
+    [dy[1], dx[1]], ..., [dy[d-1], dx[d-1]]] calculated using the Sobel filter.
+  """
+  # Infer rank.
+  rank = kernels.shape.rank - 1
+  if rank == 2:
+    depthwise_conv = tf.nn.depthwise_conv2d
+  elif rank == 3:
+    depthwise_conv = _depthwise_conv3d
+
+  # Define vertical and horizontal Sobel filters.
+  static_image_shape = image.shape
+  image_shape = tf.shape(image)
+  kernels = tf.convert_to_tensor(kernels, dtype=image.dtype)  # [num_kernels, 3, 3, [3,]]
+  kernels = tf.transpose(kernels, list(range(1, rank+1)) + [0])  # [3, 3, [3,] num_kernels]
+  kernels = tf.expand_dims(kernels, -2)  # [3, 3, [3,] 1, num_kernels]
+  num_kernels = tf.shape(kernels)[-1]
+  static_num_kernels = kernels.shape[-1]
+  kernels = tf.tile(kernels, [1] * rank + [image_shape[-1], 1])  # [3, 3, [3,] channels, num_kernels]
+
+  # Use depth-wise convolution to calculate edge maps per channel.
+  pad_sizes = [[0, 0]] + [[1, 1]] * rank + [[0, 0]]
+  padded = tf.pad(image, pad_sizes, mode='REFLECT')
+
+  # Output tensor has shape
+  # [batch_size] + spatial_dims + [channels * num_kernels].
+  strides = [1] * (rank + 2)
+  output = depthwise_conv(padded, kernels, strides, 'VALID')
+
+  # Reshape to [batch_size] + spatial_dims + [channels, num_kernels].
+  output = tf.reshape(output, tf.concat([image_shape, [num_kernels]], 0))
+  output = tf.ensure_shape(
+      output, static_image_shape.concatenate([static_num_kernels]))
+  return output
+
+
+def gmsd(img1, img2, max_val=1.0, rank=None, name=None):
+  """Computes the gradient magnitude similarity deviation (GMSD).
+
+  This is intended to be used on signals (or images). Produces a GMSD value for
+  each image in batch.
+
+  Args:
+    img1: A `Tensor`. First batch of images. For 2D images, must have rank >= 3
+      with shape `batch_shape + [height, width, channels]`. For 3D images, must
+      have rank >= 4 with shape
+      `batch_shape + [depth, height, width, channels]`. Can have integer or
+      floating point type, with values in the range `[0, max_val]`.
+    img2: A `Tensor`. Second batch of images. For 2D images, must have rank >= 3
+      with shape `batch_shape + [height, width, channels]`. For 3D images, must
+      have rank >= 4 with shape
+      `batch_shape + [depth, height, width, channels]`. Can have integer or
+      floating point type, with values in the range `[0, max_val]`.
+    max_val: The dynamic range of the images (i.e., the difference between
+      the maximum and the minimum allowed values). Defaults to 1 for floating
+      point input images and `MAX` for integer input images, where `MAX` is the
+      largest positive representable number for the data type.
+    rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
+      to `tf.rank(img1) - 2`. In other words, if rank is not explicitly set,
+      `img1` and `img2` should have shape `[batch, height, width, channels]`
+      if processing 2D images or `[batch, depth, height, width, channels]` if
+      processing 3D images.
+    name: Namespace to embed the computation in.
+
+  Returns:
+    A scalar GMSD value for each pair of images in `img1` and `img2`. The
+    returned tensor has type `tf.float32` and shape `batch_shape`.
+  """
+  with tf.name_scope(name or 'gmsd'):
+    # Check and prepare inputs.
+    (img1, img2, max_val, rank,
+     image_axes, batch_shape, static_batch_shape) = _validate_iqa_inputs(
+        img1, img2, max_val, rank)
+    
+    if rank == 2:
+      avg_pool = tf.nn.avg_pool2d
+      pool_size = [1, 2, 2, 1]
+    elif rank == 3:
+      avg_pool = tf.nn.avg_pool3d
+      pool_size = [1, 2, 2, 2, 1]
+
+    # We need the images scaled to [0, 255] for the GMSD calculation.
+    img1 *= 255.0
+    img2 *= 255.0
+
+    # Downsample the images.
+    img1 = avg_pool(img1, pool_size, pool_size, 'SAME')
+    img2 = avg_pool(img2, pool_size, pool_size, 'SAME')
+
+    # Compute the gradient magnitudes for both images.
+    gm1 = gradient_magnitude(img1, method='prewitt', norm=True, rank=rank) * 2.0
+    gm2 = gradient_magnitude(img2, method='prewitt', norm=True, rank=rank) * 2.0
+
+    # Constant for stability.
+    c = 170.0
+
+    # Compute the gradient magnitude similarity.
+    gm_sim = tf.math.divide(2.0 * gm1 * gm2 + c,
+                            gm1 ** 2 + gm2 ** 2 + c)
+
+    # Compute the gradient magnitude similarity deviation, or GMSD, for each
+    # channel.
+    gmsd_values = tf.math.reduce_std(gm_sim, image_axes)
+
+    # Compute average along channel dimension.
+    gmsd_values = tf.math.reduce_mean(gmsd_values, -1)
+
+    # Recover batch shape.
+    gmsd_values = tf.reshape(gmsd_values, batch_shape)
+    gmsd_values = tf.ensure_shape(gmsd_values, static_batch_shape)
+    return gmsd_values
+
+
+def _validate_iqa_inputs(img1, img2, max_val, rank):
+  """Validates the inputs to the IQA functions."""
+  # Prepare the inputs.
+  img1 = tf.convert_to_tensor(img1)
+  img2 = tf.convert_to_tensor(img2)
+  if max_val is None:
+    max_val = _image_dynamic_range(img1.dtype)
+
+  # Need to convert the images to float32.
+  max_val = tf.cast(max_val, img1.dtype)
+  max_val = tf.image.convert_image_dtype(max_val, tf.float32)
+  img1 = tf.image.convert_image_dtype(img1, tf.float32)
+  img2 = tf.image.convert_image_dtype(img2, tf.float32)
+
+  # Infer the number of spatial dimensions if not specified by the user, then
+  # check that the value is valid.
+  if rank is None:
+    rank = img1.shape.rank - 2  # Rank must be defined statically.
+  if rank not in (2, 3):
+    raise ValueError(f"rank must be 2 or 3, but got: {rank}")
+
+  # Check that the image shapes are compatible.
+  _, _, checks = _verify_compatible_image_shapes(img1, img2, rank)
+  with tf.control_dependencies(checks):
+    img1 = tf.identity(img1)
+
+  # Broadcast batch shapes.
+  static_batch_shape = tf.broadcast_static_shape(img1.shape[:-(rank + 1)],
+                                                 img2.shape[:-(rank + 1)])
+  batch_shape = tf.broadcast_dynamic_shape(tf.shape(img1)[:-(rank + 1)],
+                                           tf.shape(img2)[:-(rank + 1)])
+  img1 = tf.broadcast_to(
+      img1, tf.concat([batch_shape, tf.shape(img1)[-(rank + 1):]], 0))
+  img2 = tf.broadcast_to(
+      img2, tf.concat([batch_shape, tf.shape(img2)[-(rank + 1):]], 0))
+
+  # Flatten images to single batch dimension.
+  img1 = tf.reshape(img1, tf.concat([[-1], tf.shape(img1)[-(rank + 1):]], 0))
+  img2 = tf.reshape(img2, tf.concat([[-1], tf.shape(img2)[-(rank + 1):]], 0))
+
+  # The spatial axes.
+  image_axes = list(range(-(rank + 1), -1))
+
+  return img1, img2, max_val, rank, image_axes, batch_shape, static_batch_shape
+
+
 def fsim(img1, img2, max_val=None, rank=None, name=None):
   """Computes the feature similarity (FSIM) between two N-D images.
 
@@ -952,22 +1190,29 @@ def _phase_congruency(img, name=None):
     raise NotImplementedError("_phase_congruency is not implemented yet.")
 
 
-def _gradient_magnitude(img, name=None):
-  """Computes the gradient magnitude map (GM) of an image.
+def _depthwise_conv3d(inputs, filters, strides, padding):
+  """Depthwise 3-D convolution.
 
   Args:
-    img: A `Tensor`. Must be one of the following types: `float32`, `float64`.
-      A batch of images. For 2D images, must have shape `batch_shape +
-      [height, width, channels]`. For 3D images, must have shape
-      `batch_shape + [depth, height, width, channels]`.
-    name: Namespace to embed the computation in.
+    inputs: 5D `Tensor` with shape `[batch, in_depth, in_height, in_width,
+      in_channels]`.
+    filters: 5D `Tensor` with shape `[filter_depth, filter_height, filter_width,
+      in_channels, channel_multiplier]`.
+    strides: 1-D `Tensor` of size 5. The stride of the sliding window for each
+      dimension of `inputs`.
+    padding: Controls how to pad the image before applying the convolution. Can
+      be the string `"SAME"` or `"VALID"`.
 
   Returns:
-    A `Tensor` of the same shape and type as `img` containing the gradient
-    magnitude map of the input image.
+    A 5-D `Tensor` of shape `[batch, out_depth, out_height, out_width,
+      in_channels * channel_multiplier]`.
   """
-  with tf.name_scope(name or 'gradient_magnitude'):
-    raise NotImplementedError("_gradient_magnitude is not implemented yet.")
+  with tf.control_dependencies([
+      tf.assert_equal(tf.shape(inputs)[4], tf.shape(filters)[3], message=(
+          "in_channels must match for inputs and filters"))]):
+    inputs = tf.identity(inputs)
+  filters = tf.reshape(filters, tf.concat([tf.shape(filters)[:3], [1, -1]], 0))
+  return tf.nn.convolution(inputs, filters, strides=strides, padding=padding)
 
 
 def _verify_compatible_image_shapes(img1, img2, rank):
