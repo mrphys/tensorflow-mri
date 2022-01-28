@@ -857,6 +857,119 @@ def _fspecial_gauss_3d(size, sigma): # pylint: disable=missing-param-doc
   return tf.reshape(g, shape=[size, size, size, 1, 1])
 
 
+def fsim(img1, img2, max_val=None, rank=None, name=None):
+  """Computes the feature similarity (FSIM) between two N-D images.
+
+  Args:
+    img1: A `Tensor`. First batch of images. For 2D images, must have rank >= 3
+      with shape `batch_shape + [height, width, channels]`. For 3D images, must
+      have rank >= 4 with shape
+      `batch_shape + [depth, height, width, channels]`. Can have integer or
+      floating point type, with values in the range `[0, max_val]`.
+    img2: A `Tensor`. Second batch of images. For 2D images, must have rank >= 3
+      with shape `batch_shape + [height, width, channels]`. For 3D images, must
+      have rank >= 4 with shape
+      `batch_shape + [depth, height, width, channels]`. Can have integer or
+      floating point type, with values in the range `[0, max_val]`.
+    max_val: The dynamic range of the images (i.e., the difference between
+      the maximum and the minimum allowed values). Defaults to 1 for floating
+      point input images and `MAX` for integer input images, where `MAX` is the
+      largest positive representable number for the data type.
+    rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
+      to `tf.rank(img1) - 2`. In other words, if rank is not explicitly set,
+      `img1` and `img2` should have shape `[batch, height, width, channels]`
+      if processing 2D images or `[batch, depth, height, width, channels]` if
+      processing 3D images.
+    name: Namespace to embed the computation in.
+
+  Returns:
+    A `Tensor` of type `float32` and shape `batch_shape` containing an FSIM
+    value for each pair of images in `img1` and `img2`.
+
+  References:
+    .. [1] L. Zhang, L. Zhang, X. Mou and D. Zhang, "FSIM: A Feature Similarity
+      Index for Image Quality Assessment," in IEEE Transactions on Image
+      Processing, vol. 20, no. 8, pp. 2378-2386, Aug. 2011,
+      doi: 10.1109/TIP.2011.2109730.
+  """
+  with tf.name_scope(name or 'fsim'):
+    # TODO(jmontalt): add initial downsampling.
+    # TODO(jmontalt): add support for 3D images.
+    spatial_axes = [-3, -2]
+
+    # Compute phase congruency (PC) maps.
+    pc_map1 = _phase_congruency(img1)
+    pc_map2 = _phase_congruency(img2)
+
+    # Compute gradient magnitude (GM) maps.
+    gm_map1 = _gradient_magnitude(img1)
+    gm_map2 = _gradient_magnitude(img2)
+
+    # Constants to improve stability of PC and GM similarities.
+    t1 = 0.85
+    t2 = 160.0
+
+    # Compute the PC similarity.
+    pc_sim = (2.0 * pc_map1 * pc_map2 + t1) / (pc_map1 ** 2 + pc_map2 ** 2 + t1)
+
+    # Compute the GM similarity.
+    gm_sim = (2.0 * gm_map1 * gm_map2 + t2) / (gm_map1 ** 2 + gm_map2 ** 2 + t2)
+
+    # Compute combined similarity as the product of PC similarity and GM
+    # similarity. 
+    sim = pc_sim * gm_sim
+
+    # Get the maximum of both phase congruency maps.
+    pc_max = tf.math.maximum(pc_map1, pc_map2)
+
+    # Compute the overall FSIM values by combining the similarity for all
+    # pixels. The similarity is weighted by the maximum of the PC maps, since
+    # the PC value for each location represents its likely impact on HVS
+    # perception.
+    fsim_per_channel = tf.math.divide(
+        tf.math.reduce_sum(sim * pc_max, axis=spatial_axes),
+        tf.math.reduce_sum(pc_max, axis=spatial_axes))
+
+    # Compute average over the channel axis.
+    return tf.math.reduce_mean(fsim_per_channel, [-1])
+
+
+def _phase_congruency(img, name=None):
+  """Computes the phase congruency map (PC) of an image.
+
+  Args:
+    img: A `Tensor`. Must be one of the following types: `float32`, `float64`.
+      A batch of images. For 2D images, must have shape `batch_shape +
+      [height, width, channels]`. For 3D images, must have shape
+      `batch_shape + [depth, height, width, channels]`.
+    name: Namespace to embed the computation in.
+
+  Returns:
+    A `Tensor` of the same shape and type as `img` containing the phase
+    congruency map of the input image.
+  """
+  with tf.name_scope(name or 'phase_congruency'):
+    raise NotImplementedError("_phase_congruency is not implemented yet.")
+
+
+def _gradient_magnitude(img, name=None):
+  """Computes the gradient magnitude map (GM) of an image.
+
+  Args:
+    img: A `Tensor`. Must be one of the following types: `float32`, `float64`.
+      A batch of images. For 2D images, must have shape `batch_shape +
+      [height, width, channels]`. For 3D images, must have shape
+      `batch_shape + [depth, height, width, channels]`.
+    name: Namespace to embed the computation in.
+
+  Returns:
+    A `Tensor` of the same shape and type as `img` containing the gradient
+    magnitude map of the input image.
+  """
+  with tf.name_scope(name or 'gradient_magnitude'):
+    raise NotImplementedError("_gradient_magnitude is not implemented yet.")
+
+
 def _verify_compatible_image_shapes(img1, img2, rank):
   """Checks if two image tensors are compatible for the given rank.
 
