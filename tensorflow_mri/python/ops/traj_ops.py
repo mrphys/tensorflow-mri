@@ -414,6 +414,7 @@ def radial_density(base_resolution,
                    phases=None,
                    ordering='linear',
                    angle_range='full',
+                   tiny_number=7,
                    readout_os=2.0):
   """Calculate sampling density for radial trajectories.
 
@@ -436,8 +437,8 @@ def radial_density(base_resolution,
     raise ValueError(f"Ordering `{ordering}` is not implemented.")
 
   # Get angles.
-  angles = _trajectory_angles(
-      views, phases or 1, ordering=ordering, angle_range=angle_range)
+  angles = _trajectory_angles(views, phases or 1, ordering=ordering,
+                              angle_range=angle_range, tiny_number=tiny_number)
 
   # Compute weights.
   weights = tf.map_fn(
