@@ -179,10 +179,9 @@ class CoilCompressionTest(test_util.TestCase):
     kspace = self.data['cc/kspace']
     result = self.data['cc/result/svd']
 
-    matrix = coil_ops.coil_compression_matrix(kspace, num_output_coils=16)
-    self.assertAllEqual(tf.shape(matrix), [32, 16])
-
-    cc_kspace = coil_ops.compress_coils(kspace, matrix=matrix)
+    compressor = coil_ops.SVDCoilCompressor(out_coils=16)
+    compressor = compressor.fit(kspace)
+    cc_kspace = compressor.transform(kspace)
     self.assertAllClose(cc_kspace, result[..., :16], rtol=1e-2, atol=1e-2)
 
   @test_util.run_in_graph_and_eager_modes
@@ -206,7 +205,7 @@ class CoilCompressionTest(test_util.TestCase):
       tf.random.normal(shape))
 
     params = {
-      'num_output_coils': [None, 4],
+      'out_coils': [None, 4],
       'tol': [None, 0.05]}
 
     values = itertools.product(*params.values())
@@ -232,17 +231,17 @@ class CoilCompressionTest(test_util.TestCase):
         s, u, v = tf.linalg.svd(data, full_matrices=False)
         matrix = tf.cond(samples > input_coils, lambda v=v: v, lambda u=u: u)
 
-        num_output_coils = input_coils
-        if p['tol'] and not p['num_output_coils']:
-          num_output_coils = tf.math.count_nonzero(
+        out_coils = input_coils
+        if p['tol'] and not p['out_coils']:
+          out_coils = tf.math.count_nonzero(
               tf.abs(s) / tf.abs(s[0]) > p['tol'])
-        if p['num_output_coils']:
-          num_output_coils = p['num_output_coils']
-        matrix = matrix[:, :num_output_coils]
+        if p['out_coils']:
+          out_coils = p['out_coils']
+        matrix = matrix[:, :out_coils]
 
         ref_data = tf.matmul(data, matrix)
         ref_data = tf.reshape(
-            ref_data, tf.concat([encoding_dims, [num_output_coils]], 0))
+            ref_data, tf.concat([encoding_dims, [out_coils]], 0))
 
         self.assertAllClose(compressed_data, ref_data)
 

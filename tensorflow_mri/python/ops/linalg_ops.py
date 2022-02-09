@@ -23,971 +23,399 @@ import collections
 import tensorflow as tf
 import tensorflow_nufft as tfft
 
-from tensorflow_mri.python.ops import array_ops
+from tensorflow_mri.python.ops import coil_ops
 from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.ops import traj_ops
 from tensorflow_mri.python.util import check_util
-from tensorflow_mri.python.util import deprecation_util
+from tensorflow_mri.python.util import deprecation
+from tensorflow_mri.python.util import linalg_imaging
 from tensorflow_mri.python.util import tensor_util
 
 from tensorflow.python.ops.linalg import linear_operator
 
 
-class LinearOperatorAddition(tf.linalg.LinearOperator):
-  """Adds one or more `LinearOperators`.
+@linear_operator.make_composite_tensor
+class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
+                        tf.linalg.LinearOperator):
+  """The MR imaging operator.
 
-  This operator adds one or more linear operators `op1 + op2 + ... + opJ`,
-  building a new `LinearOperator` with action defined by:
+  The MR imaging operator is a linear operator that maps a [batch of] images to
+  a [batch of] potentially multicoil spatial frequency (*k*-space) data.
 
-  ```
-  op_addition(x) := op1(x) + op2(x) + op3(x)
-  ```
+  This object may represent an undersampled MRI operator and supports
+  Cartesian and non-Cartesian *k*-space sampling. The user may provide a
+  sampling `mask` to represent an undersampled Cartesian operator, or a
+  `trajectory` to represent a non-Cartesian operator.
 
-  If `opj` acts like [batch] matrix `Aj`, then `op_addition` acts like the
-  [batch] matrix formed with the addition `A1 + A2 + ... + AJ`.
-
-  If each `opj` has shape `batch_shape_j + [M, N]`, then the addition operator
-  has shape equal to `broadcast_batch_shape + [M, N]`, where
-  `broadcast_batch_shape` is the mutual broadcast of `batch_shape_j`,
-  `j = 1, ..., J`, assuming the intermediate batch shapes broadcast.
-
-  ```python
-  # Create a 2 x 2 linear operator composed of two 2 x 2 operators.
-  operator_1 = LinearOperatorFullMatrix([[1., 2.], [3., 4.]])
-  operator_2 = LinearOperatorFullMatrix([[1., 0.], [0., 1.]])
-  operator = LinearOperatorAddition([operator_1, operator_2])
-
-  operator.to_dense()
-  ==> [[2., 2.]
-       [3., 5.]]
-
-  operator.shape
-  ==> [2, 2]
-  ```
-
-  #### Performance
-
-  The performance of `LinearOperatorAddition` on any operation is equal to
-  the sum of the individual operators' operations.
-
-
-  #### Matrix property hints
-
-  This `LinearOperator` is initialized with boolean flags of the form `is_X`,
-  for `X = non_singular, self_adjoint, positive_definite, square`.
-  These have the following meaning:
-
-  * If `is_X == True`, callers should expect the operator to have the
-    property `X`.  This is a promise that should be fulfilled, but is *not* a
-    runtime assert.  For example, finite floating point precision may result
-    in these promises being violated.
-  * If `is_X == False`, callers should expect the operator to not have `X`.
-  * If `is_X == None` (the default), callers should have no expectation either
-    way.
+  This object may represent a multicoil MRI operator by providing coil
+  `sensitivities`. Note that `mask`, `trajectory` and `density` should never
+  have a coil dimension, including in the case of multicoil imaging. The coil
+  dimension will be handled automatically.
 
   Args:
-    operators: Iterable of `LinearOperator` objects, each with
-      the same shape and dtype.
-    is_non_singular: Expect that this operator is non-singular.
-    is_self_adjoint: Expect that this operator is equal to its hermitian
-      transpose.
-    is_positive_definite: Expect that this operator is positive definite,
-      meaning the quadratic form `x^H A x` has positive real part for all
-      nonzero `x`.  Note that we do not require the operator to be
-      self-adjoint to be positive-definite.  See:
-      https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices
-    is_square:  Expect that this operator acts like square [batch] matrices.
-    name: A name for this `LinearOperator`.  Default is the individual
-      operators names joined with `_p_`.
-
-  Raises:
-    TypeError: If all operators do not have the same `dtype`.
-    ValueError: If `operators` is empty.
+    image_shape: A `TensorShape` or a list of `ints` of length 2 or 3.
+      The shape of the images that this operator acts on.
+    mask: An optional `Tensor` of type `bool`. The sampling mask. Must have
+      shape `[..., *S]`, where `S` is the `image_shape` and `...` is
+      the batch shape, which can have any number of dimensions. If `mask` is
+      passed, this operator represents an undersampled MRI operator.
+    trajectory: An optional `Tensor` of type `float32` or `float64`. Must have
+      shape `[..., M, N]`, where `N` is the rank (number of spatial dimensions),
+      `M` is the number of samples in the encoded space and `...` is the batch
+      shape, which can have any number of dimensions. If `trajectory` is passed,
+      this operator represents a non-Cartesian MRI operator.
+    density: An optional `Tensor` of type `float32` or `float64`. The sampling
+      densities. Must have shape `[..., M]`, where `M` is the number of
+      samples and `...` is the batch shape, which can have any number of
+      dimensions. This input is only relevant for non-Cartesian MRI operators.
+      If passed, the non-Cartesian operator will include sampling density
+      compensation. Can also be set to `'auto'` to automatically estimate
+      the sampling density from the `trajectory`. If `None`, the operator will
+      not perform sampling density compensation.
+    sensitivities: A `Tensor`. The coil sensitivity maps. Must have type
+      `complex64` or `complex128`. Must have shape `[..., C, *S]`, where `S`
+      is the `image_shape`, `C` is the number of coils and `...` is the batch
+      shape, which can have any number of dimensions.
+    fft_norm: FFT normalization mode. Must be `None` (no normalization)
+      or `'ortho'`. Defaults to `'ortho'`.
+    sens_norm: A `bool`. Whether to normalize coil sensitivities. Defaults to
+      `False`.
+    dtype: The dtype of this operator. Must be `complex64` or `complex128`.
+      Defaults to `complex64`.
+    name: An optional `string`. The name of this operator.
   """
   def __init__(self,
-               operators,
-               is_non_singular=None,
-               is_self_adjoint=None,
-               is_positive_definite=None,
-               is_square=None,
-               name=None):
-    """Initialize a `LinearOperatorAddition`."""
+               image_shape,
+               mask=None,
+               trajectory=None,
+               density=None,
+               sensitivities=None,
+               phase=None,
+               fft_norm='ortho',
+               sens_norm=False,
+               dtype=tf.complex64,
+               name='LinearOperatorMRI'):
     parameters = dict(
-        operators=operators,
-        is_non_singular=is_non_singular,
-        is_self_adjoint=is_self_adjoint,
-        is_positive_definite=is_positive_definite,
-        is_square=is_square,
+        image_shape=image_shape,
+        mask=mask,
+        trajectory=trajectory,
+        density=density,
+        sensitivities=sensitivities,
+        fft_norm=fft_norm,
+        sens_norm=sens_norm,
+        dtype=dtype,
         name=name)
 
-    # Validate operators.
-    tf.debugging.assert_proper_iterable(operators)
-    operators = list(operators)
-    if not operators:
+    # Set dtype.
+    dtype = tf.as_dtype(dtype)
+    if dtype not in (tf.complex64, tf.complex128):
       raise ValueError(
-          "Expected a non-empty list of operators. Found: %s" % operators)
-    self._operators = operators
+          f"`dtype` must be `complex64` or `complex128`, but got: {str(dtype)}") 
 
-    # Validate dtype.
-    dtype = operators[0].dtype
-    for operator in operators:
-      if operator.dtype != dtype:
-        name_type = (str((o.name, o.dtype)) for o in operators)
-        raise TypeError(
-            "Expected all operators to have the same dtype.  Found %s"
-            % "   ".join(name_type))
-
-    # Infer operator properties.
-    if is_self_adjoint is None:
-      # If all operators are self-adjoint, so is the sum.
-      if all(operator.is_self_adjoint for operator in operators):
-        is_self_adjoint = True
-    if is_positive_definite is None:
-      # If all operators are positive definite, so is the sum.
-      if all(operator.is_positive_definite for operator in operators):
-        is_positive_definite = True
-    if is_non_singular is None:
-      # A positive definite operator is always non-singular.
-      if is_positive_definite:
-        is_non_singular = True
-    if is_square is None:
-      # If all operators are square, so is the sum.
-      if all(operator.is_square for operator in operators):
-        is_square=True
-
-    if name is None:
-      name = "_p_".join(operator.name for operator in operators)
-    with tf.name_scope(name):
-      super(LinearOperatorAddition, self).__init__(
-          dtype=dtype,
-          is_non_singular=is_non_singular,
-          is_self_adjoint=is_self_adjoint,
-          is_positive_definite=is_positive_definite,
-          is_square=is_square,
-          parameters=parameters,
-          name=name)
-
-  @property
-  def operators(self):
-    return self._operators
-
-  def _shape(self):
-    # Get final matrix shape.
-    domain_dimension = self.operators[0].domain_dimension
-    range_dimension = self.operators[1].range_dimension
-    for operator in self.operators[1:]:
-      domain_dimension.assert_is_compatible_with(operator.domain_dimension)
-      range_dimension.assert_is_compatible_with(operator.range_dimension)
-
-    matrix_shape = tf.TensorShape([range_dimension, domain_dimension])
-
-    # Get broadcast batch shape.
-    # tf.broadcast_static_shape checks for compatibility.
-    batch_shape = self.operators[0].batch_shape
-    for operator in self.operators[1:]:
-      batch_shape = tf.broadcast_static_shape(
-          batch_shape, operator.batch_shape)
-
-    return batch_shape.concatenate(matrix_shape)
-
-  def _shape_tensor(self):
-    # Avoid messy broadcasting if possible.
-    if self.shape.is_fully_defined():
-      return tf.convert_to_tensor(
-          self.shape.as_list(), dtype=tf.dtypes.int32, name="shape")
-
-    # Don't check the matrix dimensions.  That would add unnecessary Asserts to
-    # the graph.  Things will fail at runtime naturally if shapes are
-    # incompatible.
-    matrix_shape = tf.stack([
-        self.operators[0].range_dimension_tensor(),
-        self.operators[0].domain_dimension_tensor()
-    ])
-
-    # Dummy Tensor of zeros.  Will never be materialized.
-    zeros = tf.zeros(shape=self.operators[0].batch_shape_tensor())
-    for operator in self.operators[1:]:
-      zeros += tf.zeros(shape=operator.batch_shape_tensor())
-    batch_shape = tf.shape(zeros)
-
-    return tf.concat((batch_shape, matrix_shape), 0)
-
-  def _matmul(self, x, adjoint=False, adjoint_arg=False):
-    result = self.operators[0].matmul(
-        x, adjoint=adjoint, adjoint_arg=adjoint_arg)
-    for operator in self.operators[1:]:
-      result += operator.matmul(x, adjoint=adjoint, adjoint_arg=adjoint_arg)
-    return result
-
-  @property
-  def _composite_tensor_fields(self):
-    return ("operators",)
-
-
-class _LinearOperatorStackBase(tf.linalg.LinearOperator):  
-  def __init__(self,
-               operators,
-               axis,
-               is_non_singular=None,
-               is_self_adjoint=None,
-               is_positive_definite=None,
-               is_square=True,
-               name=None):
-    """Initialize a `LinearOperatorStack`."""
-    parameters = dict(
-        operators=operators,
-        axis=axis,
-        is_non_singular=is_non_singular,
-        is_self_adjoint=is_self_adjoint,
-        is_positive_definite=is_positive_definite,
-        is_square=is_square,
-        name=name
-    )
-
-    # Validate operators.
-    tf.debugging.assert_proper_iterable(operators)
-    operators = list(operators)
-    if not operators:
+    # Set image shape and rank.
+    self._image_shape = tf.TensorShape(image_shape)
+    if self._image_shape.rank not in (2, 3):
       raise ValueError(
-          "Expected a non-empty list of operators. Found: %s" % operators)
-    self._operators = operators
-  
-    # Validate axis.
-    self._axis = check_util.validate_enum(
-        axis, {'vertical', 'horizontal'}, 'axis')
+          f"`image_shape` must have rank 2 or 3, but got: {image_shape}")
+    if not self._image_shape.is_fully_defined():
+      raise ValueError(
+          f"`image_shape` must be fully defined, but got {image_shape}")
+    self._rank = self._image_shape.rank
+    self._image_axes = list(range(-self._rank, 0))
+    
+    # Assume scalar batch shape, then update according to inputs.
+    batch_shape = tf.TensorShape([])
+    batch_shape_tensor = tf.constant([], dtype=tf.int32)
 
-    # Define diagonal operators, for functions that are shared across blockwise
-    # `LinearOperator` types.
-    self._diagonal_operators = operators
-
-    # Validate dtype.
-    dtype = operators[0].dtype
-    for operator in operators:
-      if operator.dtype != dtype:
-        name_type = (str((o.name, o.dtype)) for o in operators)
+    # Set sampling mask after checking dtype and static shape.
+    if mask is not None:
+      mask = tf.convert_to_tensor(mask)
+      if mask.dtype != tf.bool:
         raise TypeError(
-            "Expected all operators to have the same dtype.  Found %s"
-            % "   ".join(name_type))
-
-    # Validate shapes.
-    fixed_axis = -1 if self._axis == 'vertical' else -2
-    shape = operators[0].shape
-    for operator in operators:
-      if operator.shape[fixed_axis] != shape[fixed_axis]:
+            f"`mask` must have dtype `bool`, but got: {str(mask.dtype)}")
+      if not mask.shape[-self._rank:].is_compatible_with(self._image_shape):
         raise ValueError(
-            "Expected all operators to have the same size at dimension %s.  "
-            "Found %s" % (self._axis, [o.shape for o in operators]))
-
-    if name is None:
-      # Using s to mean stack.
-      name = "_s_".join(operator.name for operator in operators)
-    with tf.name_scope(name):
-      super().__init__(
-          dtype=dtype,
-          is_non_singular=is_non_singular,
-          is_self_adjoint=is_self_adjoint,
-          is_positive_definite=is_positive_definite,
-          is_square=is_square,
-          parameters=parameters,
-          name=name)
-
-  @property
-  def operators(self):
-    return self._operators
-
-  @property
-  def axis(self):
-    return self._axis
-
-  def _shape(self):
-    # Get final matrix shape.
-    if self.axis == 'vertical':
-      domain_dimension = self.operators[0].domain_dimension
-      range_dimension = sum(op.range_dimension for op in self.operators)
-    else:
-      domain_dimension = sum(op.domain_dimension for op in self.operators)
-      range_dimension = self.operators[0].range_dimension
-
-    matrix_shape = tf.TensorShape([range_dimension, domain_dimension])
-
-    # Get broadcast batch shape.
-    # tf.broadcast_static_shape checks for compatibility.
-    batch_shape = self.operators[0].batch_shape
-    for operator in self.operators[1:]:
+            f"Expected the last dimensions of `mask` to be compatible with "
+            f"{self._image_shape}], but got: {mask.shape[-self._rank:]}")
       batch_shape = tf.broadcast_static_shape(
-          batch_shape, operator.batch_shape)
+          batch_shape, mask.shape[:-self._rank])
+      batch_shape_tensor = tf.broadcast_dynamic_shape(
+          batch_shape_tensor, tf.shape(mask)[:-self._rank])
+    self._mask = mask
+
+    # Set sampling trajectory after checking dtype and static shape.
+    if trajectory is not None:
+      if mask is not None:
+        raise ValueError("`mask` and `trajectory` cannot be both passed.")
+      trajectory = tf.convert_to_tensor(trajectory)
+      if trajectory.dtype != dtype.real_dtype:
+        raise TypeError(
+            f"Expected `trajectory` to have dtype `{str(dtype.real_dtype)}`, "
+            f"but got: {str(trajectory.dtype)}")
+      if trajectory.shape[-1] != self._rank:
+        raise ValueError(
+            f"Expected the last dimension of `trajectory` to be {self._rank}, "
+            f"but got {trajectory.shape[-1]}")
+      batch_shape = tf.broadcast_static_shape(
+          batch_shape, trajectory.shape[:-2])
+      batch_shape_tensor = tf.broadcast_dynamic_shape(
+          batch_shape_tensor, tf.shape(trajectory)[:-2])
+    self._trajectory = trajectory
+
+    # Set sampling density after checking dtype and static shape. If `'auto'`,
+    # then estimate the density from the trajectory.
+    if density is not None:
+      if density is 'auto':  # Automatic density estimation.
+        if self._trajectory is None:  # Cartesian operator: no density comp.
+          density = None
+        else:  # Non-Cartesian operator: estimate density.
+          density = traj_ops.estimate_density(
+              self._trajectory, self._image_shape)
+      else:
+        if self._trajectory is None:
+          raise ValueError("`density` must be passed with `trajectory`.")
+        density = tf.convert_to_tensor(density)
+        if density.dtype != dtype.real_dtype:
+          raise TypeError(
+              f"Expected `density` to have dtype `{str(dtype.real_dtype)}`, "
+              f"but got: {str(density.dtype)}")
+        if density.shape[-1] != self._trajectory.shape[-2]:
+          raise ValueError(
+              f"Expected the last dimension of `density` to be "
+              f"{self._trajectory.shape[-2]}, but got {density.shape[-1]}")
+        batch_shape = tf.broadcast_static_shape(
+            batch_shape, density.shape[:-1])
+        batch_shape_tensor = tf.broadcast_dynamic_shape(
+          batch_shape_tensor, tf.shape(density)[:-1])
+    self._density = density
+
+    # Set sensitivity maps after checking dtype and static shape.
+    if sensitivities is not None:
+      sensitivities = tf.convert_to_tensor(sensitivities)
+      if sensitivities.dtype != dtype:
+        raise TypeError(
+            f"Expected `sensitivities` to have dtype `{str(dtype)}`, but got: "
+            f"{str(sensitivities.dtype)}")
+      if not sensitivities.shape[-self._rank:].is_compatible_with(
+          self._image_shape):
+        raise ValueError(
+            f"Expected the last dimensions of `sensitivities` to be "
+            f"compatible with {self._image_shape}, but got: "
+            f"{sensitivities.shape[-self._rank:]}")
+      batch_shape = tf.broadcast_static_shape(
+          batch_shape, sensitivities.shape[:-(self._rank + 1)])
+      batch_shape_tensor = tf.broadcast_dynamic_shape(
+          batch_shape_tensor, tf.shape(sensitivities)[:-(self._rank + 1)])
+    self._sensitivities = sensitivities
+
+    # Set batch shapes.
+    self._batch_shape_value = batch_shape
+    self._batch_shape_tensor_value = batch_shape_tensor
+
+    # If multicoil, add coil dimension to mask, trajectory and density.
+    if self._sensitivities is not None:
+      if self._mask is not None:
+        self._mask = tf.expand_dims(self._mask, axis=-(self._rank + 1))
+      if self._trajectory is not None:
+        self._trajectory = tf.expand_dims(self._trajectory, axis=-3)
+      if self._density is not None:
+        self._density = tf.expand_dims(self._density, axis=-2)
+
+    # Save some tensors for later use during computation.
+    if self._mask is not None:
+      self._mask_linop_dtype = tf.cast(self._mask, dtype)
+    if self._density is not None:
+      self._weights_linop_dtype = tf.cast(
+          tf.math.sqrt(tf.math.reciprocal_no_nan(self._density)), dtype)
+
+    # Set normalization.
+    self._fft_norm = check_util.validate_enum(
+        fft_norm, {None, 'ortho'}, 'fft_norm')
+    if self._fft_norm == 'ortho':  # Compute normalization factors.
+      self._fft_norm_factor = tf.math.reciprocal(
+          tf.math.sqrt(tf.cast(self._image_shape.num_elements(), dtype)))
+
+    # Normalize coil sensitivities.
+    self._sens_norm = sens_norm
+    if self._sens_norm:
+      self._sensitivities = coil_ops.normalize_sensitivities(
+          self._sensitivities, coil_axis=-(self._rank + 1))
 
-    return batch_shape.concatenate(matrix_shape)
+    super().__init__(dtype, name=name, parameters=parameters)
 
-  def _shape_tensor(self):
-    # Avoid messy broadcasting if possible.
-    if self.shape.is_fully_defined():
-      return tf.convert_to_tensor(
-          self.shape.as_list(), dtype=tf.dtypes.int32, name="shape")
-
-    if self.axis == 'vertical':
-      domain_dimension = self.operators[0].domain_dimension_tensor()
-      range_dimension = sum(
-          op.range_dimension_tensor() for op in self.operators)
-    else:
-      domain_dimension = sum(
-          op.domain_dimension_tensor() for op in self.operators)
-      range_dimension = self.operators[0].range_dimension_tensor()
-
-    matrix_shape = tf.stack([range_dimension, domain_dimension])
-
-    # Dummy Tensor of zeros.  Will never be materialized.
-    zeros = array_ops.zeros(shape=self.operators[0].batch_shape_tensor())
-    for operator in self.operators[1:]:
-      zeros += array_ops.zeros(shape=operator.batch_shape_tensor())
-    batch_shape = array_ops.shape(zeros)
-
-    return tf.concat((batch_shape, matrix_shape), 0)
-
-  def _matmul(self, x, adjoint=False, adjoint_arg=False):
-    # H-stack or V-stack?
-    is_hstack = self.axis == 'horizontal'
-    # Exclusive OR logical operator.
-    xor = lambda a, b: bool(a) ^ bool(b)
-
-    # Apply each operator, then stack the results.
-    if xor(adjoint, is_hstack):  # Adjoint V-stack OR non-adjoint H-stack.
-      if is_hstack:  # H-stack operator.
-        size_splits = [op.domain_dimension for op in self.operators]
-      else:  # Adjoint V-stack operator.
-        size_splits = [op.range_dimension for op in self.operators]
-      tensors = tf.split(x, size_splits, axis=-2)
-      results = [op.matmul(x, adjoint=adjoint, adjoint_arg=adjoint_arg)
-                 for op, x in zip(self.operators, tensors)]
-      return tf.math.reduce_sum(tf.stack(results, axis=-1), axis=-1)
-
-    else:  # Adjoint H-stack OR non-adjoint V-stack.
-      results = [op.matmul(x, adjoint=adjoint, adjoint_arg=adjoint_arg)
-                 for op in self.operators]
-      return tf.concat(results, axis=-2)
-
-  @property
-  def _composite_tensor_fields(self):
-    return ("operators",)
-
-
-class LinearOperatorVerticalStack(_LinearOperatorStackBase):
-  """Stacks one or more `LinearOperators` vertically.
-
-  This operator combines one or more linear operators `[op1, ..., opJ]`,
-  building a new `LinearOperator`, whose underlying matrix representation
-  has all the operators stacked vertically.
-
-  #### Shape compatibility
-
-  If `opj` acts like a [batch] matrix `Aj`, then `op_combined` acts like
-  the [batch] matrix formed by stacking each matrix `Aj`.
-
-  Each `opj` is required to represent a matrix, and hence will have
-  shape `batch_shape_j + [M_j, N_j]`.
-
-  If `opj` has shape `batch_shape_j + [M_j, N_j]`, then the combined operator
-  has shape `broadcast_batch_shape + [sum M_j, N_j]` (for vertical stacking) or
-  `broadcast_batch_shape + [M_j, sum N_j]` (for horizontal stacking), where
-  `broadcast_batch_shape` is the mutual broadcast of `batch_shape_j`,
-  `j = 1,...,J`, assuming the intermediate batch shapes broadcast.
-
-  Arguments to `matmul`, `matvec`, `solve`, and `solvevec` may either be single
-  tensors or lists of tensors that are interpreted as blocks. The `j`th
-  element of a blockwise list of tensors must have dimensions that match
-  `opj` for the given method. If a list of blocks is input, then a list of
-  blocks is returned as well.
-
-  ```python
-  # Create a 4 x 4 linear operator combined of two 2 x 2 operators.
-  operator_1 = LinearOperatorFullMatrix([[1., 2.], [3., 4.]])
-  operator_2 = LinearOperatorFullMatrix([[1., 0.], [0., 1.]])
-  operator = LinearOperatorStack([operator_1, operator_2], 'vertical')
-
-  operator.to_dense()
-  ==> [[1., 2.],
-       [3., 4.],
-       [1., 0.],
-       [0., 1.]]
-
-  operator.shape
-  ==> [4, 2]
-  ```
-
-  #### Performance
-
-  The performance of `LinearOperatorStack` on any operation is equal to
-  the sum of the individual operators' operations.
-
-
-  #### Matrix property hints
-
-  This `LinearOperator` is initialized with boolean flags of the form `is_X`,
-  for `X = non_singular, self_adjoint, positive_definite, square`.
-  These have the following meaning:
-
-  * If `is_X == True`, callers should expect the operator to have the
-    property `X`.  This is a promise that should be fulfilled, but is *not* a
-    runtime assert.  For example, finite floating point precision may result
-    in these promises being violated.
-  * If `is_X == False`, callers should expect the operator to not have `X`.
-  * If `is_X == None` (the default), callers should have no expectation either
-    way.
-
-  Args:
-    operators: Iterable of `LinearOperator` objects, each with
-      the same `dtype` and stackable shape. For vertical stacking, all
-      operators must have the same domain dimension. For horizontal stacking,
-      all operator must have the same range dimension.
-    is_non_singular:  Expect that this operator is non-singular.
-    is_self_adjoint:  Expect that this operator is equal to its hermitian
-      transpose.
-    is_positive_definite:  Expect that this operator is positive definite,
-      meaning the quadratic form `x^H A x` has positive real part for all
-      nonzero `x`.  Note that we do not require the operator to be
-      self-adjoint to be positive-definite.  See:
-      https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices
-    is_square:  Expect that this operator acts like square [batch] matrices.
-      This is true by default, and will raise a `ValueError` otherwise.
-    name: A name for this `LinearOperator`.  Default is the individual
-      operators names joined with `_o_`.
-
-  Raises:
-    TypeError: If all operators do not have the same `dtype`.
-    ValueError: If `operators` is empty.
-  """
-  def __init__(self,
-               operators,
-               is_non_singular=None,
-               is_self_adjoint=None,
-               is_positive_definite=None,
-               is_square=True,
-               name=None):
-    super().__init__(operators, 'vertical',
-                     is_non_singular=is_non_singular,
-                     is_self_adjoint=is_self_adjoint,
-                     is_positive_definite=is_positive_definite,
-                     is_square=is_square,
-                     name=name)
-
-
-class LinearOperatorHorizontalStack(_LinearOperatorStackBase):
-  """Stacks one or more `LinearOperators` horizontally.
-
-  This operator combines one or more linear operators `[op1, ..., opJ]`,
-  building a new `LinearOperator`, whose underlying matrix representation
-  has all the operators stacked horizontally.
-
-  #### Shape compatibility
-
-  If `opj` acts like a [batch] matrix `Aj`, then `op_combined` acts like
-  the [batch] matrix formed by stacking each matrix `Aj`.
-
-  Each `opj` is required to represent a matrix, and hence will have
-  shape `batch_shape_j + [M_j, N_j]`.
-
-  If `opj` has shape `batch_shape_j + [M_j, N_j]`, then the combined operator
-  has shape `broadcast_batch_shape + [sum M_j, N_j]` (for vertical stacking) or
-  `broadcast_batch_shape + [M_j, sum N_j]` (for horizontal stacking), where
-  `broadcast_batch_shape` is the mutual broadcast of `batch_shape_j`,
-  `j = 1,...,J`, assuming the intermediate batch shapes broadcast.
-
-  Arguments to `matmul`, `matvec`, `solve`, and `solvevec` may either be single
-  tensors or lists of tensors that are interpreted as blocks. The `j`th
-  element of a blockwise list of tensors must have dimensions that match
-  `opj` for the given method. If a list of blocks is input, then a list of
-  blocks is returned as well.
-
-  ```python
-  # Create a 4 x 4 linear operator combined of two 2 x 2 operators.
-  operator_1 = LinearOperatorFullMatrix([[1., 2.], [3., 4.]])
-  operator_2 = LinearOperatorFullMatrix([[1., 0.], [0., 1.]])
-  operator = LinearOperatorStack([operator_1, operator_2], 'vertical')
-
-  operator.to_dense()
-  ==> [[1., 2.],
-       [3., 4.],
-       [1., 0.],
-       [0., 1.]]
-
-  operator.shape
-  ==> [4, 2]
-  ```
-
-  #### Performance
-
-  The performance of `LinearOperatorStack` on any operation is equal to
-  the sum of the individual operators' operations.
-
-
-  #### Matrix property hints
-
-  This `LinearOperator` is initialized with boolean flags of the form `is_X`,
-  for `X = non_singular, self_adjoint, positive_definite, square`.
-  These have the following meaning:
-
-  * If `is_X == True`, callers should expect the operator to have the
-    property `X`.  This is a promise that should be fulfilled, but is *not* a
-    runtime assert.  For example, finite floating point precision may result
-    in these promises being violated.
-  * If `is_X == False`, callers should expect the operator to not have `X`.
-  * If `is_X == None` (the default), callers should have no expectation either
-    way.
-
-  Args:
-    operators: Iterable of `LinearOperator` objects, each with
-      the same `dtype` and stackable shape. For vertical stacking, all
-      operators must have the same domain dimension. For horizontal stacking,
-      all operator must have the same range dimension.
-    is_non_singular:  Expect that this operator is non-singular.
-    is_self_adjoint:  Expect that this operator is equal to its hermitian
-      transpose.
-    is_positive_definite:  Expect that this operator is positive definite,
-      meaning the quadratic form `x^H A x` has positive real part for all
-      nonzero `x`.  Note that we do not require the operator to be
-      self-adjoint to be positive-definite.  See:
-      https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices
-    is_square:  Expect that this operator acts like square [batch] matrices.
-      This is true by default, and will raise a `ValueError` otherwise.
-    name: A name for this `LinearOperator`.  Default is the individual
-      operators names joined with `_o_`.
-
-  Raises:
-    TypeError: If all operators do not have the same `dtype`.
-    ValueError: If `operators` is empty.
-  """
-  def __init__(self,
-               operators,
-               is_non_singular=None,
-               is_self_adjoint=None,
-               is_positive_definite=None,
-               is_square=True,
-               name=None):
-    super().__init__(operators, 'horizontal',
-                     is_non_singular=is_non_singular,
-                     is_self_adjoint=is_self_adjoint,
-                     is_positive_definite=is_positive_definite,
-                     is_square=is_square,
-                     name=name)
-
-
-class LinalgImagingMixin(tf.linalg.LinearOperator):
-  """Mixin for linear operators meant to operate on images.
-
-  This mixin adds some additional methods to any linear operator to simplify
-  operations on images, while maintaining compatibility with the TensorFlow
-  linear algebra framework.
-
-  Inputs and outputs to operators derived from this mixin may have meaningful
-  non-vectorized N-D shapes. Thus this mixin defines the additional properties
-  `domain_shape` and `range_shape` and the methods `domain_shape_tensor` and
-  `range_shape_tensor`. These enrich the information provided by the built-in
-  properties `shape`, `domain_dimension`, `range_dimension` and methods
-  `domain_dimension_tensor` and `range_dimension_tensor`, which only have
-  information about the vectorized 1D shapes.
-
-  Subclasses of this mixin must define the methods `_domain_shape` and
-  `_range_shape`, which return the static domain and range shapes of the
-  operator. Optionally, subclasses may also define the methods
-  `_domain_shape_tensor` and `_range_shape_tensor`, which return the dynamic
-  domain and range shapes of the operator. These two methods will only be called
-  if `_domain_shape` and `_range_shape` do not return fully defined static
-  shapes.
-
-  Subclasses of this mixin must define the abstract method `_transform`, which
-  applies the operator (or its adjoint) to a batch of images. This internal
-  method is called by `transform`. In general, subclasses of this mixin should
-  not define the methods `_matvec` or `_matmul`. These have default
-  implementations which call `_transform`.
-
-  Operators derived from this mixin may be used in any of the following ways:
-
-   1. Using method `transform`, which expects a full-shaped input and returns
-      a full-shaped output, i.e. a tensor with shape `[...] + shape`, where
-      `shape` is either the `domain_shape` or the `range_shape`. This method is
-      unique to operators derived from this mixin.
-   2. Using method `matvec`, which expects a vectorized input and returns a
-      vectorized output, i.e. a tensor with shape `[..., n]` where `n` is
-      either the `domain_dimension` or the `range_dimension`. This method is
-      part of the TensorFlow linear algebra framework.
-   3. Using method `matmul`, which expects matrix inputs and returns matrix
-      outputs. Note that a matrix is just a column vector in this context, i.e.
-      a tensor with shape `[..., n, 1]`, where `n` is either the
-      `domain_dimension` or the `range_dimension`. Matrices which are not column
-      vectors (i.e. whose last dimension is not 1) are not supported. This
-      method is part of the TensorFlow linear algebra framework.
-
-  Operators derived from this mixin may also be used with the functions
-  `tf.linalg.matvec` and `tf.linalg.matmul`, which will call the corresponding
-  methods.
-
-  This mixin also provides the convenience functions `flatten_domain_shape` and
-  `flatten_range_shape` to flatten full-shaped inputs/outputs to their
-  vectorized form. Conversely, `expand_domain_dimension` and
-  `expand_range_dimension` may be used to expand vectorized inputs/outputs to
-  their full-shaped form.
-
-  Subclassing
-  ===========
-
-  Subclasses must always define `_transform`, which implements this operator's
-  functionality (and its adjoint). In general, subclasses should not define the
-  methods `_matvec` or `_matmul`. These have default implementations which call
-  `_transform`.
-
-  Subclasses must always define `_domain_shape`
-  and `_range_shape`, which return the static domain/range shapes of the
-  operator. If the subclassed operator needs to provide dynamic domain/range
-  shapes and the static shapes are not always fully-defined, it must also define
-  `_domain_shape_tensor` and `_range_shape_tensor`, which return the dynamic
-  domain/range shapes of the operator. In general, subclasses should not define
-  the methods `_shape` or `_shape_tensor`. These have default implementations.
-
-  If the subclassed operator has a non-scalar batch shape, it must also define
-  `_batch_shape` which returns the static batch shape. If the static batch shape
-  is not always fully-defined, the subclass must also define
-  `_batch_shape_tensor`, which returns the dynamic batch shape.
-
-  For the parameters, see `tf.linalg.LinearOperator`.
-  """
-  def transform(self, x, adjoint=False, name="transform"):
-    """Transform a batch of images.
-
-    Applies this operator to a batch of non-vectorized images `x`. 
-
-    Args:
-      x: A `Tensor` with compatible shape and same dtype as `self`.
-      adjoint: A `bool`. If `True`, transforms the input using the adjoint
-        of the operator, instead of the operator itself.
-      name: A name for this operation.
-
-    Returns:
-      The transformed `Tensor` with the same `dtype` as `self`.
-    """
-    with self._name_scope(name):  # pylint: disable=not-callable
-      x = tf.convert_to_tensor(x, name="x")
-      self._check_input_dtype(x)
-      input_shape = self.range_shape if adjoint else self.domain_shape
-      input_shape.assert_is_compatible_with(x.shape[-input_shape.rank:])
-      return self._transform(x, adjoint=adjoint)
-
-  @property
-  def domain_shape(self):
-    """Domain shape of this linear operator."""
-    return self._domain_shape()
-
-  @property
-  def range_shape(self):
-    """Range shape of this linear operator."""
-    return self._range_shape()
-
-  def domain_shape_tensor(self, name="domain_shape_tensor"):
-    """Domain shape of this linear operator, determined at runtime."""
-    with self._name_scope(name):  # pylint: disable=not-callable
-      # Prefer to use statically defined shape if available.
-      if self.domain_shape.is_fully_defined():
-        return tensor_util.convert_shape_to_tensor(self.domain_shape.as_list())
-      return self._domain_shape_tensor()
-
-  def range_shape_tensor(self, name="range_shape_tensor"):
-    """Range shape of this linear operator, determined at runtime."""
-    with self._name_scope(name):  # pylint: disable=not-callable
-      # Prefer to use statically defined shape if available.
-      if self.range_shape.is_fully_defined():
-        return tensor_util.convert_shape_to_tensor(self.range_shape.as_list())
-      return self._range_shape_tensor()
-
-  def batch_shape_tensor(self, name="batch_shape_tensor"):
-    """Batch shape of this linear operator, determined at runtime."""
-    with self._name_scope(name):  # pylint: disable=not-callable
-      if self.batch_shape.is_fully_defined():
-        return tensor_util.convert_shape_to_tensor(self.batch_shape.as_list())
-      return self._batch_shape_tensor()
-
-  def adjoint(self, name="adjoint"):
-    """Returns the adjoint of this linear operator.
-
-    The returned operator is a valid `LinalgImagingMixin` instance.
-
-    Calling `self.adjoint()` and `self.H` are equivalent.
-
-    Args:
-      name: A name for this operation.
-
-    Returns:
-      A `LinearOperator` derived from `LinalgImagingMixin`, which
-      represents the adjoint of this linear operator.
-    """
-    if self.is_self_adjoint:
-      return self
-    with self._name_scope(name):
-      return LinearOperatorImagingAdjoint(self)
-
-  H = property(adjoint, None)
-
-  @abc.abstractmethod
   def _transform(self, x, adjoint=False):
-    # Subclasses must override this method.
-    raise NotImplementedError("Method `_transform` is not implemented.")
+    """Transform [batch] input `x`."""
+    if adjoint:
+      # Apply density compensation.
+      if self._density is not None:
+        x *= self._weights_linop_dtype
 
-  def _matvec(self, x, adjoint=False):
-    # Default implementation of `_matvec` for imaging operator. The vectorized
-    # input `x` is first expanded to the its full shape, then transformed, then
-    # vectorized again. Typically subclasses should not need to override this
-    # method.
-    x = self.expand_range_dimension(x) if adjoint else \
-        self.expand_domain_dimension(x)
-    x = self._transform(x, adjoint=adjoint)
-    x = self.flatten_domain_shape(x) if adjoint else \
-        self.flatten_range_shape(x)
+      # Apply adjoint Fourier operator.
+      if self.is_non_cartesian:  # Non-Cartesian imaging, use NUFFT.
+        x = tfft.nufft(x, self._trajectory,
+                       grid_shape=self._image_shape,
+                       transform_type='type_1',
+                       fft_direction='backward')
+        if self._fft_norm is not None:
+          x *= self._fft_norm_factor
+
+      else:  # Cartesian imaging, use FFT.
+        if self._mask is not None:
+          x *= self._mask_linop_dtype  # Undersampling.
+        x = fft_ops.ifftn(x, axes=self._image_axes,
+                          norm=self._fft_norm or 'forward', shift=True)
+
+      # Apply coil combination.
+      if self.is_multicoil:
+        x *= tf.math.conj(self._sensitivities)
+        x = tf.math.reduce_sum(x, axis=-(self._rank + 1))
+
+    else:  # Forward operator.
+
+      # Apply sensitivity modulation.
+      if self.is_multicoil:
+        x = tf.expand_dims(x, axis=-(self._rank + 1))
+        x *= self._sensitivities
+
+      # Apply Fourier operator.
+      if self.is_non_cartesian:  # Non-Cartesian imaging, use NUFFT.
+        x = tfft.nufft(x, self._trajectory,
+                       transform_type='type_2',
+                       fft_direction='forward')
+        if self._fft_norm is not None:
+          x *= self._fft_norm_factor
+
+      else:  # Cartesian imaging, use FFT.
+        x = fft_ops.fftn(x, axes=self._image_axes,
+                         norm=self._fft_norm or 'backward', shift=True)
+        if self._mask is not None:
+          x *= self._mask_linop_dtype  # Undersampling.
+
+      # Apply density compensation.
+      if self._density is not None:
+        x *= self._weights_linop_dtype
+
     return x
-
-  def _matmul(self, x, adjoint=False, adjoint_arg=False):
-    # Default implementation of `matmul` for imaging operator. If outer
-    # dimension of argument is 1, call `matvec`. Otherwise raise an error.
-    # Typically subclasses should not need to override this method.
-    arg_outer_dim = -2 if adjoint_arg else -1
-
-    if x.shape[arg_outer_dim] != 1:
-      raise ValueError(
-        f"`{self.__class__.__name__}` does not support matrix multiplication.")
-
-    x = tf.squeeze(x, axis=arg_outer_dim)
-    x = self.matvec(x, adjoint=adjoint)
-    x = tf.expand_dims(x, axis=arg_outer_dim)
-    return x
-
-  @abc.abstractmethod
+  
   def _domain_shape(self):
-    # Users must override this method.
-    return tf.TensorShape(None)
+    """Returns the shape of the domain space of this operator."""
+    return self._image_shape
 
-  @abc.abstractmethod
   def _range_shape(self):
-    # Users must override this method.
-    return tf.TensorShape(None)
+    """Returns the shape of the range space of this operator."""
+    if self.is_cartesian:
+      range_shape = self._image_shape.as_list()
+    else:
+      range_shape = [self._trajectory.shape[-2]]
+    if self.is_multicoil:
+      range_shape = [self.num_coils] + range_shape
+    return tf.TensorShape(range_shape)
 
   def _batch_shape(self):
-    # Users should override this method if this operator has a batch shape.
-    return tf.TensorShape([])
-
-  def _domain_shape_tensor(self):
-    # Users should override this method if they need to provide a dynamic domain
-    # shape.
-    raise NotImplementedError("_domain_shape_tensor is not implemented.")
-
-  def _range_shape_tensor(self):
-    # Users should override this method if they need to provide a dynamic range
-    # shape.
-    raise NotImplementedError("_range_shape_tensor is not implemented.")
-
+    """Returns the static batch shape of this operator."""
+    return self._batch_shape_value
+  
   def _batch_shape_tensor(self):
-    # Users should override this method if they need to provide a dynamic batch
-    # shape.
-    return tf.constant([], dtype=tf.dtypes.int32)
+    """Returns the dynamic batch shape of this operator."""
+    return self._batch_shape_tensor_value
 
-  def _shape(self):
-    # Default implementation of `_shape` for imaging operators. Typically
-    # subclasses should not need to override this method.
-    return self._batch_shape() + tf.TensorShape(
-        [self.range_shape.num_elements(),
-         self.domain_shape.num_elements()])
+  @property
+  def image_shape(self):
+    """The image shape."""
+    return self._image_shape
 
-  def _shape_tensor(self):
-    # Default implementation of `_shape_tensor` for imaging operators. Typically
-    # subclasses should not need to override this method.
-    return tf.concat([self.batch_shape_tensor(),
-                      [tf.size(self.range_shape_tensor()),
-                       tf.size(self.domain_shape_tensor())]], 0)
+  @property
+  def rank(self):
+    """The number of spatial dimensions."""
+    return self._rank
 
-  def flatten_domain_shape(self, x):
-    """Flattens `x` to match the domain dimension of this operator.
+  @property
+  def is_cartesian(self):
+    """Whether this is a Cartesian MRI operator."""
+    return self._trajectory is None
 
-    Args:
-      x: A `Tensor`. Must have shape `[...] + self.domain_shape`.
+  @property
+  def is_non_cartesian(self):
+    """Whether this is a non-Cartesian MRI operator."""
+    return self._trajectory is not None
 
-    Returns:
-      The flattened `Tensor`. Has shape `[..., self.domain_dimension]`.
-    """
-    self.domain_shape.assert_is_compatible_with(
-        x.shape[-self.domain_shape.rank:])
+  @property
+  def is_multicoil(self):
+    """Whether this is a multicoil MRI operator."""
+    return self._sensitivities is not None
 
-    batch_shape = x.shape[:-self.domain_shape.rank]
-    batch_shape_tensor = tf.shape(x)[:-self.domain_shape.rank]
+  @property
+  def num_coils(self):
+    """The number of coils."""
+    if self._sensitivities is None:
+      return None
+    return self._sensitivities.shape[-(self._rank + 1)]
 
-    output_shape = batch_shape + self.domain_dimension
-    output_shape_tensor = tf.concat(
-        [batch_shape_tensor, [self.domain_dimension_tensor()]], axis=0)
-
-    x = tf.reshape(x, output_shape_tensor)      
-    return tf.ensure_shape(x, output_shape)
-
-  def flatten_range_shape(self, x):
-    """Flattens `x` to match the range dimension of this operator.
-
-    Args:
-      x: A `Tensor`. Must have shape `[...] + self.range_shape`.
-
-    Returns:
-      The flattened `Tensor`. Has shape `[..., self.range_dimension]`.
-    """
-    self.range_shape.assert_is_compatible_with(
-        x.shape[-self.range_shape.rank:])
-
-    batch_shape = x.shape[:-self.range_shape.rank]
-    batch_shape_tensor = tf.shape(x)[:-self.range_shape.rank]
-
-    output_shape = batch_shape + self.range_dimension
-    output_shape_tensor = tf.concat(
-        [batch_shape_tensor, [self.range_dimension_tensor()]], axis=0)
-
-    x = tf.reshape(x, output_shape_tensor)
-    return tf.ensure_shape(x, output_shape)
-
-  def expand_domain_dimension(self, x):
-    """Expands `x` to match the domain shape of this operator.
-
-    Args:
-      x: A `Tensor`. Must have shape `[..., self.domain_dimension]`.
-
-    Returns:
-      The expanded `Tensor`. Has shape `[...] + self.domain_shape`.
-    """
-    self.domain_dimension.assert_is_compatible_with(x.shape[-1])
-
-    batch_shape = x.shape[:-1]
-    batch_shape_tensor = tf.shape(x)[:-1]
-
-    output_shape = batch_shape + self.domain_shape
-    output_shape_tensor = tf.concat([
-        batch_shape_tensor, self.domain_shape_tensor()], axis=0)
-
-    x = tf.reshape(x, output_shape_tensor)
-    return tf.ensure_shape(x, output_shape)
-
-  def expand_range_dimension(self, x):
-    """Expands `x` to match the range shape of this operator.
-
-    Args:
-      x: A `Tensor`. Must have shape `[..., self.range_dimension]`.
-
-    Returns:
-      The expanded `Tensor`. Has shape `[...] + self.range_shape`.
-    """
-    self.range_dimension.assert_is_compatible_with(x.shape[-1])
-
-    batch_shape = x.shape[:-1]
-    batch_shape_tensor = tf.shape(x)[:-1]
-
-    output_shape = batch_shape + self.range_shape
-    output_shape_tensor = tf.concat([
-        batch_shape_tensor, self.range_shape_tensor()], axis=0)
-
-    x = tf.reshape(x, output_shape_tensor)
-    return tf.ensure_shape(x, output_shape)
+  @property
+  def _composite_tensor_fields(self):
+    return ("image_shape", "mask", "trajectory", "density", "sensitivities",
+            "fft_norm")
 
 
-class LinearOperatorImagingAdjoint(LinalgImagingMixin,
-                                   tf.linalg.LinearOperatorAdjoint):
-  """`LinearOperator` representing the adjoint of another imaging operator.
+@linear_operator.make_composite_tensor
+class LinearOperatorGramMatrix(linalg_imaging.LinalgImagingMixin,
+                               tf.linalg.LinearOperator):
+  """Gram matrix of a linear operator.
 
-  Like `tf.linalg.LinearOperatorAdjoint`, but with the imaging extensions
-  provided by `tfmr.LinalgImagingMixin`.
+  If :math:`A` is a `LinearOperator`, this operator is equivalent to
+  :math:`A^H A`.
 
-  For the parameters, see `tf.linalg.LinearOperatorAdjoint`.
+  The Gram matrix of :math:`A` appears in the normal equation
+  :math:`A^H A x = A^H b` associated with the least squares problem 
+  :math:`\min_x{\frac{1}{2} \left \| Ax-b \right \|_2^2}`.
+
+  This operator is self-adjoint and positive definite. Therefore, linear systems
+  defined by this linear operator can be solved using the conjugate gradient
+  method.
   """
+  def __init__(self,
+               operator,
+               name=None):
+    parameters = dict(
+        operator=operator,
+        name=name)
+    self._operator = operator
+    self._composed = linalg_imaging.LinearOperatorComposition(
+        [operator.H, operator])
+
+    super().__init__(operator.dtype,
+                     is_self_adjoint=True,
+                     is_positive_definite=True,
+                     is_square=True,
+                     parameters=parameters)
+
   def _transform(self, x, adjoint=False):
-    return self.operator._transform(x, adjoint=(not adjoint))
+    return self._composed.transform(x, adjoint=adjoint)
 
   def _domain_shape(self):
-    return self.operator.range_shape
+    return self.operator.domain_shape
 
   def _range_shape(self):
     return self.operator.domain_shape
   
   def _batch_shape(self):
     return self.operator.batch_shape
-  
-  def _domain_shape_tensor(self):
-    return self.operator.range_shape_tensor()
 
+  def _domain_shape_tensor(self):
+    return self.operator.domain_shape_tensor()
+  
   def _range_shape_tensor(self):
     return self.operator.domain_shape_tensor()
 
   def _batch_shape_tensor(self):
     return self.operator.batch_shape_tensor()
 
-
-class LinearOperatorImagingComposition(LinalgImagingMixin,
-                                       tf.linalg.LinearOperatorComposition):
-  """Composes one or more imaging `LinearOperators`.
-
-  Like `tf.linalg.LinearOperatorComposition`, but with the imaging extensions
-  provided by `tfmr.LinalgImagingMixin`.
-
-  For the parameters, see `tf.linalg.LinearOperatorComposition`.
-  """
-  def _transform(self, x, adjoint=False, adjoint_arg=False):
-    if adjoint:
-      transform_order_list = self.operators
-    else:
-      transform_order_list = list(reversed(self.operators))
-
-    result = transform_order_list[0]._transform(x, adjoint=adjoint)
-    for operator in transform_order_list[1:]:
-      result = operator._transform(result, adjoint=adjoint)
-    return result
-
-  def _domain_shape(self):
-    return self.operators[-1].domain_shape
-
-  def _range_shape(self):
-    return self.operators[0].range_shape
-
-  def _batch_shape(self):
-    return array_ops.broadcast_static_shapes(
-        [operator.batch_shape for operator in self.operators])
-
-  def _domain_shape_tensor(self):
-    return self.operators[-1].domain_shape_tensor()
-
-  def _range_shape_tensor(self):
-    return self.operators[0].range_shape_tensor()
-
-  def _batch_shape_tensor(self):
-    return array_ops.broadcast_dynamic_shapes(
-        [operator.batch_shape_tensor() for operator in self.operators])
+  @property
+  def operator(self):
+    return self._operator
 
 
-class LinearOperatorImagingAddition(LinalgImagingMixin,
-                                    LinearOperatorAddition):
-  """Adds one or more imaging `LinearOperators`.
-
-  Like `tfmr.LinearOperatorAddition`, but with the imaging extensions provided
-  by `tfmr.LinalgImagingMixin`.
-
-  For the parameters, see `tfmr.LinearOperatorAddition`.
-  """
-  def _transform(self, x, adjoint=False):
-    result = self.operators[0]._transform(x, adjoint=adjoint)
-    for operator in self.operators[1:]:
-      result += operator._transform(x, adjoint=adjoint)
-    return result
-
-  def _domain_shape(self):
-    return self.operators[0].domain_shape
-
-  def _range_shape(self):
-    return self.operators[0].range_shape
-  
-  def _domain_shape_tensor(self):
-    return self.operators[0].domain_shape_tensor()
-
-  def _range_shape_tensor(self):
-    return self.operators[0].range_shape_tensor()
-
-
-class LinearOperatorFFT(LinalgImagingMixin): # pylint: disable=abstract-method
+class LinearOperatorFFT(linalg_imaging.LinalgImagingMixin): # pylint: disable=abstract-method
   """Linear operator acting like a DFT matrix.
 
   This linear operator computes the N-dimensional discrete Fourier transform
@@ -1124,7 +552,7 @@ class LinearOperatorFFT(LinalgImagingMixin): # pylint: disable=abstract-method
     return self._norm
 
 
-class LinearOperatorNUFFT(LinalgImagingMixin): # pylint: disable=abstract-method
+class LinearOperatorNUFFT(linalg_imaging.LinalgImagingMixin): # pylint: disable=abstract-method
   """Linear operator acting like a nonuniform DFT matrix.
 
   Args:
@@ -1288,7 +716,7 @@ class LinearOperatorInterp(LinearOperatorNUFFT): # pylint: disable=abstract-meth
     return x
 
 
-class LinearOperatorSensitivityModulation(LinalgImagingMixin): # pylint: disable=abstract-method
+class LinearOperatorSensitivityModulation(linalg_imaging.LinalgImagingMixin): # pylint: disable=abstract-method
   """Linear operator acting like a sensitivity modulation matrix.
 
   Args:
@@ -1408,8 +836,8 @@ class LinearOperatorSensitivityModulation(LinalgImagingMixin): # pylint: disable
     return self._sensitivities
 
 
-@deprecation_util.deprecated(None, "Use `LinearOperatorMRI` instead.")
-class LinearOperatorParallelMRI(LinearOperatorImagingComposition): # pylint: disable=abstract-method
+@deprecation.deprecated(None, "Use `LinearOperatorMRI` instead.")
+class LinearOperatorParallelMRI(linalg_imaging.LinearOperatorComposition): # pylint: disable=abstract-method
   """Linear operator acting like a parallel MRI matrix.
 
   Can be used for Cartesian or non-Cartesian imaging. The operator is
@@ -1609,328 +1037,7 @@ class LinearOperatorParallelMRI(LinearOperatorImagingComposition): # pylint: dis
     return self.operators[1]
 
 
-@linear_operator.make_composite_tensor
-class LinearOperatorMRI(LinalgImagingMixin, tf.linalg.LinearOperator):
-  """The MR imaging operator.
-
-  The MR imaging operator is a linear operator that maps a [batch of] images to
-  a [batch of] potentially multicoil spatial frequency (*k*-space) data.
-
-  This object may represent an undersampled MRI operator and supports
-  Cartesian and non-Cartesian *k*-space sampling. The user may provide a
-  sampling `mask` to represent an undersampled Cartesian operator, or a
-  `trajectory` to represent a non-Cartesian operator.
-
-  This object may represent a multicoil MRI operator by providing coil
-  `sensitivities`. Note that `mask`, `trajectory` and `density` should never
-  have a coil dimension, including in the case of multicoil imaging. The coil
-  dimension will be handled automatically.
-
-  Args:
-    image_shape: A `TensorShape` or a list of `ints` of length 2 or 3.
-      The shape of the images that this operator acts on.
-    mask: An optional `Tensor` of type `bool`. The sampling mask. Must have
-      shape `[..., *S]`, where `S` is the `image_shape` and `...` is
-      the batch shape, which can have any number of dimensions. If `mask` is
-      passed, this operator represents an undersampled MRI operator.
-    trajectory: An optional `Tensor` of type `float32` or `float64`. Must have
-      shape `[..., M, N]`, where `N` is the rank (number of spatial dimensions),
-      `M` is the number of samples in the encoded space and `...` is the batch
-      shape, which can have any number of dimensions. If `trajectory` is passed,
-      this operator represents a non-Cartesian MRI operator.
-    density: An optional `Tensor` of type `float32` or `float64`. The sampling
-      densities. Must have shape `[..., M]`, where `M` is the number of
-      samples and `...` is the batch shape, which can have any number of
-      dimensions. This input is only relevant for non-Cartesian MRI operators.
-      If passed, the non-Cartesian operator will include sampling density
-      compensation. Can also be set to `'auto'` to automatically estimate
-      the sampling density from the `trajectory`. If `None`, the operator will
-      not perform sampling density compensation.
-    sensitivities: A `Tensor`. The coil sensitivity maps. Must have type
-      `complex64` or `complex128`. Must have shape `[..., C, *S]`, where `S`
-      is the `image_shape`, `C` is the number of coils and `...` is the batch
-      shape, which can have any number of dimensions.
-    fft_norm: FFT normalization mode. Must be `None` (no normalization)
-      or `'ortho'`. Defaults to `'ortho'`.
-    sens_norm: A `bool`. Whether to normalize coil sensitivities. Defaults to
-      `False`.
-    dtype: The dtype of this operator. Must be `complex64` or `complex128`.
-      Defaults to `complex64`.
-    name: An optional `string`. The name of this operator.
-  """
-  def __init__(self,
-               image_shape,
-               mask=None,
-               trajectory=None,
-               density=None,
-               sensitivities=None,
-               fft_norm='ortho',
-               sens_norm=False,
-               dtype=tf.complex64,
-               name='LinearOperatorMRI'):
-    parameters = dict(
-        image_shape=image_shape,
-        mask=mask,
-        trajectory=trajectory,
-        density=density,
-        sensitivities=sensitivities,
-        fft_norm=fft_norm,
-        sens_norm=sens_norm,
-        dtype=dtype,
-        name=name)
-
-    # Set dtype.
-    dtype = tf.as_dtype(dtype)
-    if dtype not in (tf.complex64, tf.complex128):
-      raise ValueError(
-          f"`dtype` must be `complex64` or `complex128`, but got: {str(dtype)}") 
-
-    # Set image shape and rank.
-    self._image_shape = tf.TensorShape(image_shape)
-    if self._image_shape.rank not in (2, 3):
-      raise ValueError(
-          f"`image_shape` must have rank 2 or 3, but got: {image_shape}")
-    if not self._image_shape.is_fully_defined():
-      raise ValueError(
-          f"`image_shape` must be fully defined, but got {image_shape}.")
-    self._rank = self._image_shape.rank
-    self._image_axes = list(range(-self._rank, 0))
-    
-    # Assume scalar batch shape, then update according to inputs.
-    batch_shape = tf.TensorShape([])
-    batch_shape_tensor = tf.constant([], dtype=tf.int32)
-
-    # Set sampling mask after checking dtype and static shape.
-    if mask is not None:
-      mask = tf.convert_to_tensor(mask)
-      if mask.dtype != tf.bool:
-        raise TypeError(
-            f"`mask` must have dtype `bool`, but got: {str(mask.dtype)}")
-      if not mask.shape[-self._rank:].is_compatible_with(self._image_shape):
-        raise ValueError(
-            f"Expected the last dimensions of `mask` to be compatible with "
-            f"{self._image_shape}], but got: {mask.shape[-self._rank:]}")
-      batch_shape = tf.broadcast_static_shape(
-          batch_shape, mask.shape[:-self._rank])
-      batch_shape_tensor = tf.broadcast_dynamic_shape(
-          batch_shape_tensor, tf.shape(mask)[:-self._rank])
-    self._mask = mask
-
-    # Set sampling trajectory after checking dtype and static shape.
-    if trajectory is not None:
-      if mask is not None:
-        raise ValueError("`mask` and `trajectory` cannot be both passed.")
-      trajectory = tf.convert_to_tensor(trajectory)
-      if trajectory.dtype != dtype.real_dtype:
-        raise TypeError(
-            f"Expected `trajectory` to have dtype `{str(dtype.real_dtype)}`, "
-            f"but got: {str(trajectory.dtype)}")
-      if trajectory.shape[-1] != self._rank:
-        raise ValueError(
-            f"Expected the last dimension of `trajectory` to be {self._rank}, "
-            f"but got {trajectory.shape[-1]}")
-      batch_shape = tf.broadcast_static_shape(
-          batch_shape, trajectory.shape[:-2])
-      batch_shape_tensor = tf.broadcast_dynamic_shape(
-          batch_shape_tensor, tf.shape(trajectory)[:-2])
-    self._trajectory = trajectory
-
-    # Set sampling density after checking dtype and static shape. If `'auto'`,
-    # then estimate the density from the trajectory.
-    if density is not None:
-      if density is 'auto':  # Automatic density estimation.
-        if self._trajectory is None:  # Cartesian operator: no density comp.
-          density = None
-        else:  # Non-Cartesian operator: estimate density.
-          density = traj_ops.estimate_density(
-              self._trajectory, self._image_shape)
-      else:
-        if self._trajectory is None:
-          raise ValueError("`density` must be passed with `trajectory`.")
-        density = tf.convert_to_tensor(density)
-        if density.dtype != dtype.real_dtype:
-          raise TypeError(
-              f"Expected `density` to have dtype `{str(dtype.real_dtype)}`, "
-              f"but got: {str(density.dtype)}")
-        if density.shape[-1] != self._trajectory.shape[-2]:
-          raise ValueError(
-              f"Expected the last dimension of `density` to be "
-              f"{self._trajectory.shape[-2]}, but got {density.shape[-1]}")
-        batch_shape = tf.broadcast_static_shape(
-            batch_shape, density.shape[:-1])
-        batch_shape_tensor = tf.broadcast_dynamic_shape(
-          batch_shape_tensor, tf.shape(density)[:-1])
-    self._density = density
-
-    # Set sensitivity maps after checking dtype and static shape.
-    if sensitivities is not None:
-      sensitivities = tf.convert_to_tensor(sensitivities)
-      if sensitivities.dtype != dtype:
-        raise TypeError(
-            f"Expected `sensitivities` to have dtype `{str(dtype)}`, but got: "
-            f"{str(sensitivities.dtype)}")
-      if not sensitivities.shape[-self._rank:].is_compatible_with(
-          self._image_shape):
-        raise ValueError(
-            f"Expected the last dimensions of `sensitivities` to be "
-            f"compatible with {self._image_shape}, but got: "
-            f"{sensitivities.shape[-self._rank:]}")
-      batch_shape = tf.broadcast_static_shape(
-          batch_shape, sensitivities.shape[:-(self._rank + 1)])
-      batch_shape_tensor = tf.broadcast_dynamic_shape(
-          batch_shape_tensor, tf.shape(sensitivities)[:-(self._rank + 1)])
-    self._sensitivities = sensitivities
-
-    # Set batch shapes.
-    self._batch_shape_value = batch_shape
-    self._batch_shape_tensor_value = batch_shape_tensor
-
-    # If multicoil, add coil dimension to mask, trajectory and density.
-    if self._sensitivities is not None:
-      if self._mask is not None:
-        self._mask = tf.expand_dims(self._mask, axis=-(self._rank + 1))
-      if self._trajectory is not None:
-        self._trajectory = tf.expand_dims(self._trajectory, axis=-3)
-      if self._density is not None:
-        self._density = tf.expand_dims(self._density, axis=-2)
-
-    # Save some tensors for later use during computation.
-    if self._mask is not None:
-      self._mask_linop_dtype = tf.cast(self._mask, dtype)
-    if self._density is not None:
-      self._weights_linop_dtype = tf.cast(
-          tf.math.sqrt(tf.math.reciprocal_no_nan(self._density)), dtype)
-
-    # Set normalization.
-    self._fft_norm = check_util.validate_enum(
-        fft_norm, {None, 'ortho'}, 'fft_norm')
-    if self._fft_norm == 'ortho':  # Compute normalization factors.
-      self._fft_norm_factor = tf.math.reciprocal(
-          tf.math.sqrt(tf.cast(self._image_shape.num_elements(), dtype)))
-
-    # Normalize coil sensitivities.
-    self._sens_norm = sens_norm
-    if self._sens_norm:
-      self._sensitivities, _ = tf.linalg.normalize(
-          sensitivities, axis=-(self._rank + 1))
-
-    super().__init__(dtype, name=name, parameters=parameters)
-
-  def _transform(self, x, adjoint=False):
-    """Transform [batch] input `x`."""
-    if adjoint:
-      # Apply density compensation.
-      if self._density is not None:
-        x *= self._weights_linop_dtype
-
-      # Apply adjoint Fourier operator.
-      if self.is_non_cartesian:  # Non-Cartesian imaging, use NUFFT.
-        x = tfft.nufft(x, self._trajectory,
-                       grid_shape=self._image_shape,
-                       transform_type='type_1',
-                       fft_direction='backward')
-        if self._fft_norm is not None:
-          x *= self._fft_norm_factor
-
-      else:  # Cartesian imaging, use FFT.
-        if self._mask is not None:
-          x *= self._mask_linop_dtype  # Undersampling.
-        x = fft_ops.ifftn(x, axes=self._image_axes,
-                          norm=self._fft_norm or 'forward', shift=True)
-
-      # Apply coil combination.
-      if self.is_multicoil:
-        x *= tf.math.conj(self._sensitivities)
-        x = tf.math.reduce_sum(x, axis=-(self._rank + 1))
-
-    else:  # Forward operator.
-
-      # Apply sensitivity modulation.
-      if self.is_multicoil:
-        x = tf.expand_dims(x, axis=-(self._rank + 1))
-        x *= self._sensitivities
-
-      # Apply Fourier operator.
-      if self.is_non_cartesian:  # Non-Cartesian imaging, use NUFFT.
-        x = tfft.nufft(x, self._trajectory,
-                       transform_type='type_2',
-                       fft_direction='forward')
-        if self._fft_norm is not None:
-          x *= self._fft_norm_factor
-
-      else:  # Cartesian imaging, use FFT.
-        x = fft_ops.fftn(x, axes=self._image_axes,
-                         norm=self._fft_norm or 'backward', shift=True)
-        if self._mask is not None:
-          x *= self._mask_linop_dtype  # Undersampling.
-
-      # Apply density compensation.
-      if self._density is not None:
-        x *= self._weights_linop_dtype
-
-    return x
-  
-  def _domain_shape(self):
-    """Returns the shape of the domain space of this operator."""
-    return self._image_shape
-
-  def _range_shape(self):
-    """Returns the shape of the range space of this operator."""
-    if self.is_cartesian:
-      range_shape = self._image_shape.as_list()
-    else:
-      range_shape = [self._trajectory.shape[-2]]
-    if self.is_multicoil:
-      range_shape = [self.num_coils] + range_shape
-    return tf.TensorShape(range_shape)
-
-  def _batch_shape(self):
-    """Returns the static batch shape of this operator."""
-    return self._batch_shape_value
-  
-  def _batch_shape_tensor(self):
-    """Returns the dynamic batch shape of this operator."""
-    return self._batch_shape_tensor_value
-
-  @property
-  def image_shape(self):
-    """The image shape."""
-    return self._image_shape
-
-  @property
-  def rank(self):
-    """The number of spatial dimensions."""
-    return self._rank
-
-  @property
-  def is_cartesian(self):
-    """Whether this is a Cartesian MRI operator."""
-    return self._trajectory is None
-
-  @property
-  def is_non_cartesian(self):
-    """Whether this is a non-Cartesian MRI operator."""
-    return self._trajectory is not None
-
-  @property
-  def is_multicoil(self):
-    """Whether this is a multicoil MRI operator."""
-    return self._sensitivities is not None
-
-  @property
-  def num_coils(self):
-    """The number of coils."""
-    if self._sensitivities is None:
-      return None
-    return self._sensitivities.shape[-(self._rank + 1)]
-
-  @property
-  def _composite_tensor_fields(self):
-    return ("image_shape", "mask", "trajectory", "density", "sensitivities",
-            "fft_norm")
-
-
-class LinearOperatorRealWeighting(LinalgImagingMixin): # pylint: disable=abstract-method
+class LinearOperatorRealWeighting(linalg_imaging.LinalgImagingMixin): # pylint: disable=abstract-method
   """Linear operator acting like a real weighting matrix.
 
   This is a square, self-adjoint operator.
@@ -2026,7 +1133,7 @@ class LinearOperatorDifference(tf.linalg.LinearOperator):
   def __init__(self,
                domain_dimension,
                dtype=tf.dtypes.float32,
-               name="LinearOperatorImagingDifference"):
+               name="LinearOperatorDifference"):
 
     parameters = dict(
       domain_dimension=domain_dimension,
@@ -2067,7 +1174,7 @@ class LinearOperatorDifference(tf.linalg.LinearOperator):
         [self._range_dimension_value, self._domain_dimension_value])
 
 
-class LinearOperatorImagingDifference(LinalgImagingMixin,
+class LinearOperatorImagingDifference(linalg_imaging.LinalgImagingMixin,
                                       tf.linalg.LinearOperator):
   """Linear operator acting like a difference operator.
 
@@ -2167,7 +1274,7 @@ def conjugate_gradient(operator,
                        x=None,
                        tol=1e-5,
                        max_iter=20,
-                       name='conjugate_gradient'):
+                       name=None):
   r"""Conjugate gradient solver.
 
   Solves a linear system of equations `A*x = rhs` for self-adjoint, positive
@@ -2178,9 +1285,9 @@ def conjugate_gradient(operator,
   times its initial value, i.e. \\(||rhs - A x_k|| <= tol ||rhs||\\).
 
   .. note::
-    This function is mostly equivalent to
+    This function is similar to
     `tf.linalg.experimental.conjugate_gradient`, except it adds support for
-    complex-valued linear systems.
+    complex-valued linear systems and for imaging operators.
 
   Args:
     operator: A `LinearOperator` that is self-adjoint and positive definite.
@@ -2211,6 +1318,9 @@ def conjugate_gradient(operator,
   Raises:
     ValueError: If `operator` is not self-adjoint and positive definite.
   """
+  if isinstance(operator, linalg_imaging.LinalgImagingMixin):
+    rhs = operator.flatten_domain_shape(rhs)
+
   if not (operator.is_self_adjoint and operator.is_positive_definite):
     raise ValueError('Expected a self-adjoint, positive definite operator.')
 
@@ -2244,7 +1354,7 @@ def conjugate_gradient(operator,
 
   # We now broadcast initial shapes so that we have fixed shapes per iteration.
 
-  with tf.name_scope(name):
+  with tf.name_scope(name or 'conjugate_gradient'):
     broadcast_shape = tf.broadcast_dynamic_shape(
         tf.shape(rhs)[:-1],
         operator.batch_shape_tensor())
@@ -2279,9 +1389,15 @@ def conjugate_gradient(operator,
     state = cg_state(i=i, x=x, r=r0, p=p0, gamma=gamma0)
     _, state = tf.while_loop(
         stopping_criterion, cg_step, [i, state])
+
+    if isinstance(operator, linalg_imaging.LinalgImagingMixin):
+      x = operator.expand_range_dimension(state.x)
+    else:
+      x = state.x
+
     return cg_state(
         state.i,
-        x=state.x,
+        x=x,
         r=state.r,
         p=state.p,
         gamma=state.gamma)

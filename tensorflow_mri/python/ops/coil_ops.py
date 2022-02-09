@@ -18,6 +18,7 @@ This module contains functions to operate with MR coil arrays, such as
 estimating coil sensitivities and combining multi-coil images.
 """
 
+import abc
 import collections
 import functools
 
@@ -406,10 +407,9 @@ def _estimate_coil_sensitivities_espirit(kspace,
 
 
 def compress_coils(kspace,
-                   num_output_coils=None,
-                   tol=None,
                    coil_axis=-1,
-                   matrix=None,
+                   out_coils=None,
+                   tol=None,
                    method='svd',
                    **kwargs):
   """Coil compression gateway.
@@ -443,18 +443,13 @@ def compress_coils(kspace,
       argument is set accordingly. If `method` is `"svd"`, `kspace` can be
       Cartesian or non-Cartesian. If `method` is `"geometric"` or `"espirit"`,
       `kspace` must be Cartesian.
-    num_output_coils: An `int`. The number of desired virtual output coils. If
+    coil_axis: An `int`. Defaults to -1.
+    out_coils: An `int`. The number of desired virtual output coils. If
       `None`, the number of output coils is automatically determined based on
       `tol`. If `tol` is also None, all virtual coils are returned.
     tol: A `float` between 0.0 and 1.0. Virtual coils whose singular value is
       less than `tol` times the first singular value are discarded. `tol` is
-      ignored if `num_output_coils` is also specified.
-    coil_axis: An `int`. Defaults to -1.
-    matrix: An optional `Tensor`. The coil compression matrix. If provided,
-      `matrix` is used to calculate the compressed output. Must have the same
-      type as `kspace`. Must have shape `[Cin, Cout]`, where `Cin` is the number
-      of input coils and `Cout` is the number of output coils. If `matrix` is
-      provided, arguments `num_output_coils` and `tol` are ignored.
+      ignored if `out_coils` is also specified.
     method: A `string`. The coil compression algorithm. Must be `"svd"`.
     **kwargs: Additional method-specific keyword arguments. See Notes for more
       details.
@@ -466,7 +461,7 @@ def compress_coils(kspace,
 
   Returns:
     A `Tensor` containing the compressed *k*-space data. Has shape
-    `[..., Cout]`, where `Cout` is determined based on `num_output_coils` or
+    `[..., Cout]`, where `Cout` is determined based on `out_coils` or
     `tol` and `...` are the unmodified encoding dimensions.
 
   References:
@@ -483,176 +478,164 @@ def compress_coils(kspace,
   # pylint: disable=missing-raises-doc
   kspace = tf.convert_to_tensor(kspace)
   tf.debugging.assert_rank_at_least(kspace, 2, message=(
-    f"Argument `kspace` must have rank of at least 2, but got shape: "
-    f"{kspace.shape}"))
+      f"Argument `kspace` must have rank of at least 2, but got shape: "
+      f"{kspace.shape}"))
   coil_axis = check_util.validate_type(coil_axis, int, name='coil_axis')
   method = check_util.validate_enum(
-    method, {'svd', 'geometric', 'espirit'}, name='method')
-
-  # Move coil axis to innermost dimension if not already there.
-  if coil_axis != -1:
-    rank = kspace.shape.rank
-    canonical_coil_axis = coil_axis + rank if coil_axis < 0 else coil_axis
-    perm = (
-      [ax for ax in range(rank) if not ax == canonical_coil_axis] +
-      [canonical_coil_axis])
-    kspace = tf.transpose(kspace, perm)
+      method, {'svd', 'geometric', 'espirit'}, name='method')
 
   # Calculate the compression matrix, unless one was already provided.
-  if matrix is None:
-    matrix = coil_compression_matrix(kspace,
-                                     num_output_coils=num_output_coils,
-                                     tol=tol,
-                                     method=method,
-                                     **kwargs)
+  if method == 'svd':
+    return SVDCoilCompressor(coil_axis=coil_axis,
+                             out_coils=out_coils,
+                             tol=tol,
+                             **kwargs).fit_transform(kspace)
 
-  # Apply the compression.
-  compressed_kspace = _apply_coil_compression(kspace, matrix)
-
-  # If necessary, move coil axis back to its original location.
-  if coil_axis != -1:
-    inv_perm = tf.math.invert_permutation(perm)
-    compressed_kspace = tf.transpose(compressed_kspace, inv_perm)
-
-  return compressed_kspace
+  raise NotImplementedError(f"Method {method} not implemented.")
 
 
-def coil_compression_matrix(kspace,
-                            num_output_coils=None,
-                            tol=None,
-                            coil_axis=-1,
-                            method='svd',
-                            **kwargs):
-  """Calculate a coil compression matrix.
+class _CoilCompressor():
 
-  .. note::
-    For more information, see also `tfmr.compress_coils`.
+  def __init__(self, coil_axis=-1, out_coils=None, tol=None):
+    self._coil_axis = coil_axis
+    self._out_coils = out_coils
+    self._tol = tol
+
+  @abc.abstractmethod
+  def fit(self, x):
+    pass
+
+  @abc.abstractmethod
+  def transform(self, x):
+    pass
+
+  def fit_transform(self, x):
+    return self.fit(x).transform(x)
+
+
+class SVDCoilCompressor(_CoilCompressor):
+  """SVD-based coil compression.
+
+  This class implements the SVD-based coil compression method [1]_.
+
+  Use this class to compress multi-coil *k*-space data. The method `fit` must
+  be used first to calculate the coil compression matrix. The method `transform`
+  can then be used to compress *k*-space data. If the data to be used for
+  fitting is the same data to be transformed, you can also use the method
+  `fit_transform` to fit and transform the data in one step.
 
   Args:
-    kspace: A `Tensor`. The multi-coil *k*-space data. Must have type
-      `complex64` or `complex128`. Must have shape `[..., Cin]`, where `...` are
-      the encoding dimensions and `Cin` is the number of coils. Alternatively,
-      the position of the coil axis may be different as long as the `coil_axis`
-      argument is set accordingly. If `method` is `"svd"`, `kspace` can be
-      Cartesian or non-Cartesian. If `method` is `"geometric"` or `"espirit"`,
-      `kspace` must be Cartesian.
-    num_output_coils: An `int`. The number of desired virtual output coils. If
+    coil_axis: An `int`. Defaults to -1.
+    out_coils: An `int`. The number of desired virtual output coils. If
       `None`, the number of output coils is automatically determined based on
-      `tol`. If `tol` is also `None`, all virtual coils are returned.
+      `tol`. If `tol` is also None, all virtual coils are returned.
     tol: A `float` between 0.0 and 1.0. Virtual coils whose singular value is
       less than `tol` times the first singular value are discarded. `tol` is
-      ignored if `num_output_coils` is also specified.
-    coil_axis: An `int`. Defaults to -1.
-    method: A `string`. The coil compression algorithm. Must be `"svd"`.
-    **kwargs: Additional method-specific keyword arguments. See Notes for more
-        details.
+      ignored if `out_coils` is also specified.
 
-  Notes:
-    This function also accepts the following method-specific keyword arguments:
-
-    * For `method="svd"`, no additional keyword arguments are accepted.
-
-  Returns:
-    A coil compression matrix with shape `(Cin, Cout)`.
-
-  Raises:
-    ValueError: If `method` is not one of `"svd"`, `"geometric"` or `"espirit"`.
+  References:
+    .. [1] Huang, F., Vijayakumar, S., Li, Y., Hertel, S. and Duensing, G.R.
+      (2008). A software channel compression technique for faster reconstruction
+      with many channels. Magn Reson Imaging, 26(1): 133-141.
   """
-  kspace = tf.convert_to_tensor(kspace)
-  method = check_util.validate_enum(
-    method, {'svd', 'geometric', 'espirit'}, 'method')
+  def __init__(self, coil_axis=-1, out_coils=None, tol=None):
+    super().__init__(coil_axis=coil_axis, out_coils=out_coils, tol=tol)
 
-  # Move coil axis to innermost dimension if not already there.
-  if coil_axis != -1:
-    rank = kspace.shape.rank # Rank must be known statically.
-    canonical_coil_axis = coil_axis + rank if coil_axis < 0 else coil_axis
-    perm = (
-      [ax for ax in range(rank) if not ax == canonical_coil_axis] +
-      [canonical_coil_axis])
-    kspace = tf.transpose(kspace, perm)
+  def fit(self, kspace):
+    """Fits the coil compression matrix.
 
-  if method == 'svd':
-    return _coil_compression_matrix_svd(kspace,
-                                        num_output_coils=num_output_coils,
-                                        tol=tol,
-                                        **kwargs)
-  if method == 'geometric':
-    return _coil_compression_matrix_geometric(kspace)
-  if method == 'espirit':
-    return _coil_compression_matrix_espirit(kspace)
+    Args:
+      kspace: A `Tensor`. The multi-coil *k*-space data. Must have type
+        `complex64` or `complex128`.
 
-  raise ValueError(f"Unexpected coil compression method: {method}")
+    Returns:
+      The fitted `SVDCoilCompressor` object.
+    """
+    kspace = tf.convert_to_tensor(kspace)
 
+    # Move coil axis to innermost dimension if not already there.
+    kspace, _ = self._permute_coil_axis(kspace)
 
-def _coil_compression_matrix_svd(kspace, num_output_coils=None, tol=None):
-  """Calculate coil compression matrix using SVD method.
+    # Flatten the encoding dimensions.
+    num_coils = tf.shape(kspace)[-1]
+    kspace = tf.reshape(kspace, [-1, num_coils])
+    num_samples = tf.shape(kspace)[0]
 
-  For the parameters, see `coil_compression_matrix`.
-  """
-  # Flatten the encoding dimensions.
-  num_coils = tf.shape(kspace)[-1]
-  kspace = tf.reshape(kspace, [-1, num_coils])
-  num_samples = tf.shape(kspace)[0]
+    # Compute singular-value decomposition.
+    s, u, v = tf.linalg.svd(kspace)
 
-  # Compute singular-value decomposition.
-  s, u, v = tf.linalg.svd(kspace)
+    # Compresion matrix.
+    self._matrix = tf.cond(num_samples > num_coils, lambda: v, lambda: u)
 
-  # Compresion matrix.
-  matrix = tf.cond(num_samples > num_coils, lambda: v, lambda: u)
+    # Get output coils based on tol.
+    if self._tol is not None and self._out_coils is None:
+      self._out_coils = tf.math.count_nonzero(
+          tf.math.greater(tf.abs(s) / tf.abs(s[0]), self._tol))
 
-  # Get output coils based on tol.
-  if tol is not None and num_output_coils is None:
-    num_output_coils = tf.math.count_nonzero(
-        tf.math.greater(tf.abs(s) / tf.abs(s[0]), tol))
+    # Remove unnecessary virtual coils.
+    if self._out_coils is not None:
+      self._matrix = self._matrix[:, :self._out_coils]
+    
+    # If possible, set static number of output coils.
+    if isinstance(self._out_coils, int):
+      self._matrix = tf.ensure_shape(self._matrix, [None, self._out_coils])
+  
+    return self
 
-  # Remove unnecessary virtual coils.
-  if num_output_coils is not None:
-    matrix = matrix[:, :num_output_coils]
+  def transform(self, kspace):
+    """Applies the coil compression matrix to the input *k*-space.
 
-  if isinstance(num_output_coils, int):  # Set static number of output coils.
-    matrix = tf.ensure_shape(matrix, [None, num_output_coils])
+    Args:
+      kspace: A `Tensor`. The multi-coil *k*-space data. Must have type
+        `complex64` or `complex128`.
 
-  return matrix
+    Returns:
+      The transformed k-space.
+    """
+    kspace = tf.convert_to_tensor(kspace)
+    kspace, inv_perm = self._permute_coil_axis(kspace)
 
+    # Some info.
+    encoding_dimensions = tf.shape(kspace)[:-1]
+    num_coils = tf.shape(kspace)[-1]
+    out_coils = tf.shape(self._matrix)[-1]
 
-def _coil_compression_matrix_geometric(kspace):
-  """Calculate coil compression matrix using geometric decomposition.
+    # Flatten the encoding dimensions.
+    kspace = tf.reshape(kspace, [-1, num_coils])
 
-  For the parameters, see `coil_compression_matrix`.
-  """
-  raise NotImplementedError("Geometric coil compression is not implemented.")
+    # Apply compression.
+    kspace = tf.linalg.matmul(kspace, self._matrix)
 
+    # Restore data shape.
+    kspace = tf.reshape(
+        kspace,
+        tf.concat([encoding_dimensions, [out_coils]], 0))
 
-def _coil_compression_matrix_espirit(kspace):
-  """Calculate coil compression matrix using ESPIRiT.
+    if inv_perm is not None:
+      kspace = tf.transpose(kspace, inv_perm)
 
-  For the parameters, see `coil_compression_matrix`.
-  """
-  raise NotImplementedError("ESPIRiT coil compression is not implemented.")
+    return kspace
 
+  def _permute_coil_axis(self, kspace):
+    """Permutes the coil axis to the last dimension.
 
-def _apply_coil_compression(kspace, matrix):
-  """Apply coil compression using a pre-calculated compression matrix.
+    Args:
+      kspace: A `Tensor`. The multi-coil *k*-space data.
 
-  For the parameters, see `compress_coils`.
-  """
-  # Some info.
-  encoding_dimensions = tf.shape(kspace)[:-1]
-  num_coils = tf.shape(kspace)[-1]
-  num_compressed_coils = tf.shape(matrix)[1]
-
-  # Flatten the encoding dimensions.
-  kspace = tf.reshape(kspace, [-1, num_coils])
-
-  # Apply compression.
-  compressed_kspace = tf.linalg.matmul(kspace, matrix)
-
-  # Restore data shape.
-  compressed_kspace = tf.reshape(
-      compressed_kspace,
-      tf.concat([encoding_dimensions, [num_compressed_coils]], 0))
-
-  return compressed_kspace
+    Returns:
+      A tuple of the permuted k-space and the inverse permutation.
+    """
+    if self._coil_axis != -1:
+      rank = kspace.shape.rank # Rank must be known statically.
+      canonical_coil_axis = (
+          self._coil_axis + rank if self._coil_axis < 0 else self._coil_axis)
+      perm = (
+          [ax for ax in range(rank) if not ax == canonical_coil_axis] +
+          [canonical_coil_axis])
+      kspace = tf.transpose(kspace, perm)
+      inv_perm = tf.math.invert_permutation(perm)
+      return kspace, inv_perm
+    return kspace, None
 
 
 def _apply_uniform_filter(tensor, size=5):
@@ -708,3 +691,20 @@ def _apply_uniform_filter(tensor, size=5):
 
 
 _prod = lambda iterable: functools.reduce(lambda x, y: x * y, iterable)
+
+
+def normalize_sensitivities(sensitivities, coil_axis=-1, name=None):
+  """Normalizes coil sensitivities.
+  
+  Args:
+    sensitivities: A `Tensor`.
+    coil_axis: An `int`. The axis of the coil dimension. Defaults to -1.
+    name: A `string`. The name of the op. Defaults to `normalize_sensitivities`.
+
+  Returns:
+    A `Tensor`. Has the same shape and type as `sensitivities`.
+  """
+  with tf.name_scope(name or 'normalize_sensitivities'):
+    norm = tf.norm(sensitivities, axis=coil_axis, keepdims=True)
+    norm = tf.cast(norm, sensitivities.dtype)
+    return tf.math.divide_no_nan(sensitivities, norm)
