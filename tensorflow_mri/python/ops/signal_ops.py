@@ -17,10 +17,11 @@
 import numpy as np
 import tensorflow as tf
 
+from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.util import check_util
 
 
-def hamming(arg, name='hamming'):
+def hamming(arg, name=None):
   """Calculate a Hamming window at the specified coordinates.
 
   Coordinates should be in the range `[-pi, pi]`. The center of the window
@@ -33,50 +34,83 @@ def hamming(arg, name='hamming'):
   Returns:
     The value of a Hamming window at the specified coordinates.
   """
-  return _raised_cosine(arg, 0.54, 0.46, name=name)
+  with tf.name_scope(name or 'hamming'):
+    return _raised_cosine(arg, 0.54, 0.46)
 
 
-def _raised_cosine(arg, a, b, name=None):
+def _raised_cosine(arg, a, b):
   """Helper function for computing a raised cosine window.
 
   Args:
     arg: Input tensor.
     a: The alpha parameter to the raised cosine filter.
     b: The beta parameter to the raised cosine filter.
-    name: Name to use for the scope.
 
   Returns:
     A `Tensor` of shape `arg.shape`.
   """
-  with tf.name_scope(name):
-    return a - b * tf.math.cos(arg + np.pi)
+  return a - b * tf.math.cos(arg + np.pi)
 
 
-def filter_kspace(kspace, traj, filter_type='hamming'):
+def atanfilt(arg, cutoff=np.pi, beta=100.0, name=None):
+  """Calculate an inverse tangent filter window at the specified coordinates.
+
+  Args:
+    arg: Input tensor.
+    cutoff: A `float` in the range [0, pi]. The cutoff frequency of the filter.
+    beta: A `float`. The beta parameter of the filter.
+    name: Name to use for the scope.
+
+  Returns:
+    A `Tensor` of shape `arg.shape`.
+
+  References:
+    .. [1] Pruessmann, K.P., Weiger, M., Börnert, P. and Boesiger, P. (2001),
+      Advances in sensitivity encoding with arbitrary k-space trajectories.
+      Magn. Reson. Med., 46: 638-651. https://doi.org/10.1002/mrm.1241
+  """
+  with tf.name_scope(name or 'atanfilt'):
+    return 0.5 + (1.0 / np.pi) * tf.math.atan(beta * (cutoff - arg) / cutoff)
+
+
+def filter_kspace(kspace, rank=None, traj=None,
+                  filter_type='hamming', filter_kwargs=None):
   """Filter *k*-space.
 
   Multiplies *k*-space by a filtering function.
 
   Args:
     kspace: A `Tensor` of any shape. The input *k*-space.
+    rank: An `int`. The rank of the *k*-space. Must be set for Cartesian inputs.
     traj: A `Tensor` of shape `kspace.shape + [N]`, where `N` is the number of
-      spatial dimensions.
-    filter_type: A `str`. Must be one of `"hamming"`.
+      spatial dimensions. If `None`, `kspace` is assumed to be Cartesian.
+    filter_type: A `str`. Must be one of `"hamming"` or `"atanfilt"`.
+    filter_kwargs: A `dict`. Additional keyword arguments to pass to the
+      filtering function.
 
   Returns:
     A `Tensor` of shape `kspace.shape`. The filtered *k*-space.
   """
-  # TODO: add support for Cartesian *k*-space.
   kspace = tf.convert_to_tensor(kspace)
 
+  # Make a "trajectory" for Cartesian k-spaces.
+  is_cartesian = traj is None
+  if is_cartesian:
+    if rank is None:
+      raise ValueError("`rank` must be set for Cartesian inputs.")
+    vecs = [tf.linspace(-np.pi, np.pi - (2.0 * np.pi / s), s) for s in kspace.shape[-rank:]]
+    traj = array_ops.meshgrid(*vecs)
+
   filter_type = check_util.validate_enum(
-      filter_type, valid_values={'hamming'}, name='filter_type')
+      filter_type, valid_values={'hamming', 'atanfilt'}, name='filter_type')
   filter_func = {
-      'hamming': hamming
+      'hamming': hamming,
+      'atanfilt': atanfilt
   }[filter_type]
+  filter_kwargs = filter_kwargs or {}
 
   traj_norm = tf.norm(traj, axis=-1)
-  return kspace * tf.cast(filter_func(traj_norm), kspace.dtype)
+  return kspace * tf.cast(filter_func(traj_norm, **filter_kwargs), kspace.dtype)
 
 
 def crop_kspace(kspace, traj, cutoff, mode='low_pass'):

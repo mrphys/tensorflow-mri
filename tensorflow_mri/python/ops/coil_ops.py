@@ -173,15 +173,15 @@ def combine_coils(images, maps=None, coil_axis=-1, keepdims=False):
 
   if maps is None:
     combined = tf.math.sqrt(
-      tf.math.reduce_sum(images * tf.math.conj(images),
-                         axis=coil_axis, keepdims=keepdims))
+        tf.math.reduce_sum(images * tf.math.conj(images),
+                           axis=coil_axis, keepdims=keepdims))
 
   else:
     combined = tf.math.divide_no_nan(
-      tf.math.reduce_sum(images * tf.math.conj(maps),
-                         axis=coil_axis, keepdims=keepdims),
-      tf.math.reduce_sum(maps * tf.math.conj(maps),
-                         axis=coil_axis, keepdims=keepdims))
+        tf.math.reduce_sum(images * tf.math.conj(maps),
+                           axis=coil_axis, keepdims=keepdims),
+        tf.math.reduce_sum(maps * tf.math.conj(maps),
+                           axis=coil_axis, keepdims=keepdims))
 
   return combined
 
