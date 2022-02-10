@@ -71,10 +71,11 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
       compensation. Can also be set to `'auto'` to automatically estimate
       the sampling density from the `trajectory`. If `None`, the operator will
       not perform sampling density compensation.
-    sensitivities: A `Tensor`. The coil sensitivity maps. Must have type
-      `complex64` or `complex128`. Must have shape `[..., C, *S]`, where `S`
+    sensitivities: An optional `Tensor` of type `complex64` or `complex128`.
+      The coil sensitivity maps. Must have shape `[..., C, *S]`, where `S`
       is the `image_shape`, `C` is the number of coils and `...` is the batch
       shape, which can have any number of dimensions.
+    phase: An optional `Tensor` of type `float32` or `float64`.
     fft_norm: FFT normalization mode. Must be `None` (no normalization)
       or `'ortho'`. Defaults to `'ortho'`.
     sens_norm: A `bool`. Whether to normalize coil sensitivities. Defaults to
@@ -100,6 +101,7 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
         trajectory=trajectory,
         density=density,
         sensitivities=sensitivities,
+        phase=phase,
         fft_norm=fft_norm,
         sens_norm=sens_norm,
         dtype=dtype,
@@ -374,7 +376,7 @@ class LinearOperatorGramMatrix(linalg_imaging.LinalgImagingMixin,
   """
   def __init__(self,
                operator,
-               reg_parameter=0.0,
+               reg_parameter=None,
                name=None):
     parameters = dict(
         operator=operator,
@@ -386,11 +388,11 @@ class LinearOperatorGramMatrix(linalg_imaging.LinalgImagingMixin,
     self._composed = linalg_imaging.LinearOperatorComposition(
         operators=[self._operator.H, self._operator])
 
-    if self._reg_parameter != 0.0:
+    if self._reg_parameter is not None:
       if self._reg_operator is None:
         self._reg_operator = linalg_imaging.LinearOperatorScaledIdentity(
             shape=self._operator.domain_shape,
-            multiplier=tf.cast(reg_parameter, self._operator.dtype))
+            multiplier=tf.cast(self._reg_parameter, self._operator.dtype))
       self._composed = linalg_imaging.LinearOperatorAddition(
           operators=[self._composed, self._reg_operator])
 
