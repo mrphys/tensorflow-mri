@@ -691,20 +691,3 @@ def _apply_uniform_filter(tensor, size=5):
 
 
 _prod = lambda iterable: functools.reduce(lambda x, y: x * y, iterable)
-
-
-def normalize_sensitivities(sensitivities, coil_axis=-1, name=None):
-  """Normalizes coil sensitivities.
-  
-  Args:
-    sensitivities: A `Tensor`.
-    coil_axis: An `int`. The axis of the coil dimension. Defaults to -1.
-    name: A `string`. The name of the op. Defaults to `normalize_sensitivities`.
-
-  Returns:
-    A `Tensor`. Has the same shape and type as `sensitivities`.
-  """
-  with tf.name_scope(name or 'normalize_sensitivities'):
-    norm = tf.norm(sensitivities, axis=coil_axis, keepdims=True)
-    norm = tf.cast(norm, sensitivities.dtype)
-    return tf.math.divide_no_nan(sensitivities, norm)

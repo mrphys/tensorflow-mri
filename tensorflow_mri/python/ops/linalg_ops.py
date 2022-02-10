@@ -17,14 +17,13 @@
 This module contains linear algebra operators and solvers.
 """
 
-import abc
 import collections
 
 import tensorflow as tf
 import tensorflow_nufft as tfft
 
-from tensorflow_mri.python.ops import coil_ops
 from tensorflow_mri.python.ops import fft_ops
+from tensorflow_mri.python.ops import math_ops
 from tensorflow_mri.python.ops import traj_ops
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import deprecation
@@ -238,8 +237,8 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
     # Normalize coil sensitivities.
     self._sens_norm = sens_norm
     if self._sens_norm:
-      self._sensitivities = coil_ops.normalize_sensitivities(
-          self._sensitivities, coil_axis=-(self._rank + 1))
+      self._sensitivities = math_ops.normalize_no_nan(
+          self._sensitivities, axis=-(self._rank + 1))
 
     super().__init__(dtype, name=name, parameters=parameters)
 
@@ -375,13 +374,25 @@ class LinearOperatorGramMatrix(linalg_imaging.LinalgImagingMixin,
   """
   def __init__(self,
                operator,
+               reg_parameter=0.0,
                name=None):
     parameters = dict(
         operator=operator,
+        reg_parameter=reg_parameter,
         name=name)
     self._operator = operator
+    self._reg_parameter = reg_parameter
+    self._reg_operator = None
     self._composed = linalg_imaging.LinearOperatorComposition(
-        [operator.H, operator])
+        operators=[self._operator.H, self._operator])
+
+    if self._reg_parameter != 0.0:
+      if self._reg_operator is None:
+        self._reg_operator = linalg_imaging.LinearOperatorScaledIdentity(
+            shape=self._operator.domain_shape,
+            multiplier=tf.cast(reg_parameter, self._operator.dtype))
+      self._composed = linalg_imaging.LinearOperatorAddition(
+          operators=[self._composed, self._reg_operator])
 
     super().__init__(operator.dtype,
                      is_self_adjoint=True,

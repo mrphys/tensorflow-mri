@@ -344,7 +344,7 @@ class LinearOperatorAdjoint(LinalgImagingMixin,
   """`LinearOperator` representing the adjoint of another imaging operator.
 
   Like `tf.linalg.LinearOperatorAdjoint`, but with the imaging extensions
-  provided by `tfmr.LinalgImagingMixin`.
+  provided by `LinalgImagingMixin`.
 
   For the parameters, see `tf.linalg.LinearOperatorAdjoint`.
   """
@@ -374,8 +374,8 @@ class LinearOperatorComposition(LinalgImagingMixin,
                                 tf.linalg.LinearOperatorComposition):
   """Composes one or more imaging `LinearOperators`.
 
-  Like `tf.linalg.LinearOperatorComposition`, but with the imaging extensions
-  provided by `tfmr.LinalgImagingMixin`.
+  Like `tf.linalg.LinearOperatorComposition`, but with additional imaging
+  extensions.
 
   For the parameters, see `tf.linalg.LinearOperatorComposition`.
   """
@@ -415,10 +415,10 @@ class LinearOperatorAddition(LinalgImagingMixin,
                              linalg_extension.LinearOperatorAddition):
   """Adds one or more imaging `LinearOperators`.
 
-  Like `tfmr.LinearOperatorAddition`, but with the imaging extensions provided
-  by `tfmr.LinalgImagingMixin`.
+  Like `tfmr.LinearOperatorAddition`, but with additional imaging
+  extensions.
 
-  For the parameters, see `tfmr.LinearOperatorAddition`.
+  For the parameters, see `LinearOperatorAddition`.
   """
   def _transform(self, x, adjoint=False):
     result = self.operators[0]._transform(x, adjoint=adjoint)
@@ -431,9 +431,95 @@ class LinearOperatorAddition(LinalgImagingMixin,
 
   def _range_shape(self):
     return self.operators[0].range_shape
-  
+
+  def _batch_shape(self):
+    return array_ops.broadcast_static_shapes(
+        [operator.batch_shape for operator in self.operators])
+
   def _domain_shape_tensor(self):
     return self.operators[0].domain_shape_tensor()
 
   def _range_shape_tensor(self):
     return self.operators[0].range_shape_tensor()
+
+  def _batch_shape_tensor(self):
+    return array_ops.broadcast_dynamic_shapes(
+        [operator.batch_shape_tensor() for operator in self.operators])
+
+
+class LinearOperatorScaledIdentity(LinalgImagingMixin,
+                                   tf.linalg.LinearOperatorScaledIdentity):
+  """`LinearOperator` acting like a scaled identity matrix.
+
+  Like `tf.linalg.LinearOperatorScaledIdentity`, but with additional imaging
+  extensions.
+
+  Args:
+    shape: Non-negative integer `Tensor`. The shape of the operator.
+    multiplier: A `Tensor` of shape `[B1,...,Bb]`, or `[]` (a scalar).
+    is_non_singular: Expect that this operator is non-singular.
+    is_self_adjoint: Expect that this operator is equal to its hermitian
+      transpose.
+    is_positive_definite: Expect that this operator is positive definite,
+      meaning the quadratic form `x^H A x` has positive real part for all
+      nonzero `x`.  Note that we do not require the operator to be
+      self-adjoint to be positive-definite.  See:
+      https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices
+    is_square:  Expect that this operator acts like square [batch] matrices.
+    assert_proper_shapes: Python `bool`.  If `False`, only perform static
+      checks that initialization and method arguments have proper shape.
+      If `True`, and static checks are inconclusive, add asserts to the graph.
+    name: A name for this `LinearOperator`.
+  """
+  def __init__(self,
+               shape,
+               multiplier,
+               is_non_singular=None,
+               is_self_adjoint=None,
+               is_positive_definite=None,
+               is_square=True,
+               assert_proper_shapes=False,
+               name="LinearOperatorScaledIdentity"):
+
+    self._domain_shape_tensor_value = tensor_util.convert_shape_to_tensor(
+        shape, name="shape")
+    self._domain_shape_value = tf.TensorShape(tf.get_static_value(
+        self._domain_shape_tensor_value))
+
+    super().__init__(
+        num_rows=tf.math.reduce_prod(shape),
+        multiplier=multiplier,
+        is_non_singular=is_non_singular,
+        is_self_adjoint=is_self_adjoint,
+        is_positive_definite=is_positive_definite,
+        is_square=is_square,
+        assert_proper_shapes=assert_proper_shapes,
+        name=name)
+
+  def _transform(self, x, adjoint=False):
+    domain_rank = tf.size(self.domain_shape_tensor())
+    multiplier_shape = tf.concat([
+        tf.shape(self.multiplier),
+        tf.ones((domain_rank,), dtype=tf.int32)], 0)
+    multiplier_matrix = tf.reshape(self.multiplier, multiplier_shape)
+    if adjoint:
+      multiplier_matrix = tf.math.conj(multiplier_matrix)
+    return x * multiplier_matrix
+
+  def _domain_shape(self):
+    return self._domain_shape_value
+
+  def _range_shape(self):
+    return self._domain_shape_value
+
+  def _batch_shape(self):
+    return self.multiplier.shape
+
+  def _domain_shape_tensor(self):
+    return self._domain_shape_tensor_value
+
+  def _range_shape_tensor(self):
+    return self._domain_shape_tensor_value
+
+  def _batch_shape_tensor(self):
+    return tf.shape(self.multiplier)
