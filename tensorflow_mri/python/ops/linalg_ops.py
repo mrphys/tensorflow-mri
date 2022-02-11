@@ -209,6 +209,23 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
           batch_shape_tensor, tf.shape(sensitivities)[:-(self._rank + 1)])
     self._sensitivities = sensitivities
 
+    if phase is not None:
+      phase = tf.convert_to_tensor(phase)
+      if phase.dtype != dtype.real_dtype:
+        raise TypeError(
+            f"Expected `phase` to have dtype `{str(dtype.real_dtype)}`, "
+            f"but got: {str(phase.dtype)}")
+      if not phase.shape[-self._rank:].is_compatible_with(self._image_shape):
+        raise ValueError(
+            f"Expected the last dimensions of `phase` to be "
+            f"compatible with {self._image_shape}, but got: "
+            f"{phase.shape[-self._rank:]}")
+      batch_shape = tf.broadcast_static_shape(
+          batch_shape, phase.shape[:-self._rank])
+      batch_shape_tensor = tf.broadcast_dynamic_shape(
+          batch_shape_tensor, tf.shape(phase)[:-self._rank])
+    self._phase = phase
+
     # Set batch shapes.
     self._batch_shape_value = batch_shape
     self._batch_shape_tensor_value = batch_shape_tensor
@@ -221,13 +238,18 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
         self._trajectory = tf.expand_dims(self._trajectory, axis=-3)
       if self._density is not None:
         self._density = tf.expand_dims(self._density, axis=-2)
+      if self._phase is not None:
+        self._phase = tf.expand_dims(self._phase, axis=-(self._rank + 1))
 
     # Save some tensors for later use during computation.
     if self._mask is not None:
       self._mask_linop_dtype = tf.cast(self._mask, dtype)
     if self._density is not None:
-      self._weights_linop_dtype = tf.cast(
+      self._dens_weights_sqrt = tf.cast(
           tf.math.sqrt(tf.math.reciprocal_no_nan(self._density)), dtype)
+    if self._phase is not None:
+      self._phase_rotator = tf.math.exp(
+          tf.complex(tf.constant(0.0, dtype=phase.dtype), phase))
 
     # Set normalization.
     self._fft_norm = check_util.validate_enum(
@@ -249,7 +271,7 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
     if adjoint:
       # Apply density compensation.
       if self._density is not None:
-        x *= self._weights_linop_dtype
+        x *= self._dens_weights_sqrt
 
       # Apply adjoint Fourier operator.
       if self.is_non_cartesian:  # Non-Cartesian imaging, use NUFFT.
@@ -271,7 +293,17 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
         x *= tf.math.conj(self._sensitivities)
         x = tf.math.reduce_sum(x, axis=-(self._rank + 1))
 
+      # Maybe remove phase from image.
+      if self.is_phase_constrained:
+        x *= tf.math.conj(self._phase_rotator)
+        x = tf.cast(tf.math.real(x), self.dtype)
+
     else:  # Forward operator.
+
+      # Add phase to real-valued image if reconstruction is phase-constrained.
+      if self.is_phase_constrained:
+        x = tf.cast(tf.math.real(x), self.dtype)
+        x *= self._phase_rotator
 
       # Apply sensitivity modulation.
       if self.is_multicoil:
@@ -294,7 +326,7 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
 
       # Apply density compensation.
       if self._density is not None:
-        x *= self._weights_linop_dtype
+        x *= self._dens_weights_sqrt
 
     return x
   
@@ -344,6 +376,11 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
   def is_multicoil(self):
     """Whether this is a multicoil MRI operator."""
     return self._sensitivities is not None
+
+  @property
+  def is_phase_constrained(self):
+    """Whether this is a phase-constrained MRI operator."""
+    return self._phase is not None
 
   @property
   def num_coils(self):

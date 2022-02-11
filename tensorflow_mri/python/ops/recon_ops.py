@@ -29,6 +29,7 @@ from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.ops import math_ops
 from tensorflow_mri.python.ops import optimizer_ops
+from tensorflow_mri.python.ops import signal_ops
 from tensorflow_mri.python.ops import traj_ops
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import tensor_util
@@ -1060,6 +1061,136 @@ def _pics(kspace,
       math_ops.view_as_complex(result.position, stacked=False), recon_shape)
 
   return recon
+
+
+def reconstruct_zerofill(kspace,
+                         image_shape,
+                         mask=None,
+                         trajectory=None,
+                         density=None,
+                         sensitivities=None,
+                         phase=None,
+                         sens_norm=True):
+  kspace = tf.convert_to_tensor(kspace)
+
+  # Create the linear operator.
+  operator = linalg_ops.LinearOperatorMRI(image_shape,
+                                          mask=mask,
+                                          trajectory=trajectory,
+                                          density=density,
+                                          sensitivities=sensitivities,
+                                          phase=phase,
+                                          fft_norm='ortho',
+                                          sens_norm=sens_norm)
+  rank = operator.rank
+
+  # Apply density compensation, if provided.
+  if density is not None:
+    dens_weights_sqrt = tf.math.sqrt(tf.math.reciprocal_no_nan(density))
+    dens_weights_sqrt = tf.cast(dens_weights_sqrt, kspace.dtype)
+    if operator.is_multicoil:
+      dens_weights_sqrt = tf.expand_dims(dens_weights_sqrt, axis=-2)
+    kspace *= dens_weights_sqrt
+
+  # Compute zero-filled image using the adjoint operator.
+  image = operator.H.transform(kspace)
+
+  # Apply intensity correction, if requested.
+  if operator.is_multicoil and sens_norm:
+    sens_weights_sqrt = tf.math.reciprocal_no_nan(
+        tf.norm(sensitivities, axis=-(rank + 1), keepdims=True))
+    image *= sens_weights_sqrt
+
+  return image
+
+
+def reconstruct_cgsense(kspace,
+                        image_shape,
+                        mask=None,
+                        trajectory=None,
+                        density=None,
+                        sensitivities=None,
+                        phase=None,
+                        sens_norm=True,
+                        reg_parameter=None,
+                        reg_prior=None,
+                        filter_kspace=None,
+                        tolerance=1e-5,
+                        max_iterations=50,
+                        custom_gradient=False):
+  # We don't do a lot of input checking here, since it will be done by the
+  # operator.
+  kspace = tf.convert_to_tensor(kspace)
+  if reg_parameter is not None:
+    reg_parameter = tf.cast(reg_parameter, dtype=kspace.dtype)
+  if reg_prior is None:
+    reg_prior = tf.constant(0.0, dtype=kspace.dtype)
+
+  # Create the linear operator.
+  operator = linalg_ops.LinearOperatorGramMatrix(
+      linalg_ops.LinearOperatorMRI(image_shape,
+                                   mask=mask,
+                                   trajectory=trajectory,
+                                   density=density,
+                                   sensitivities=sensitivities,
+                                   phase=phase,
+                                   fft_norm='ortho',
+                                   sens_norm=sens_norm),
+      reg_parameter=reg_parameter)
+  rank = operator.operator.rank
+
+  # Apply density compensation, if provided.
+  if density is not None:
+    kspace *= operator.operator._dens_weights_sqrt
+
+  # Compute the right-hand side.
+  rhs = operator.operator.H.transform(kspace)
+
+  # Add regularization prior to right-hand side, if needed.
+  if reg_parameter is not None:
+    rhs += reg_parameter * reg_prior
+
+  # Run CG iterations.
+  def _conjugate_gradient(x):
+    state = linalg_ops.conjugate_gradient(operator, x,
+                                          tol=tolerance,
+                                          max_iter=max_iterations)
+    return state.x
+
+  @tf.custom_gradient
+  def _conjugate_gradient_custom_grad(x):
+    y = _conjugate_gradient(x)
+    def grad(dy):
+      return _conjugate_gradient(dy)
+    return y, grad
+  
+  if custom_gradient:
+    image = _conjugate_gradient_custom_grad(rhs)
+  else:
+    image = _conjugate_gradient(rhs)
+
+  # Apply intensity correction, if requested.
+  if operator.operator.is_multicoil and sens_norm:
+    sens_weights_sqrt = tf.math.reciprocal_no_nan(
+        tf.norm(sensitivities, axis=-(rank + 1), keepdims=True))
+    image *= sens_weights_sqrt
+
+  # If necessary, filter the image to remove k-space corners. This should be
+  # done if the trajectory has circular coverage and does not cover the k-space
+  # corners. If the user has not specified whether to apply the filter, we do it
+  # only for non-Cartesian trajectories, under the assumption that non-Cartesian
+  # trajectories are likely to have circular coverage of k-space while Cartesian
+  # trajectories are likely to have rectangular coverage.
+  if filter_kspace is None:
+    is_probably_circular = operator.operator.is_non_cartesian
+    filter_kspace = is_probably_circular
+  if filter_kspace:
+    fft_axes = list(range(-rank, 0))
+    kspace = fft_ops.fftn(image, axes=fft_axes, norm='ortho', shift=True)
+    kspace = signal_ops.filter_kspace(kspace, rank=rank, filter_type='atanfilt')
+    image = fft_ops.ifftn(kspace, axes=fft_axes, norm='ortho', shift=True)
+
+  return image
 
 
 def _extract_patches(images, sizes):
