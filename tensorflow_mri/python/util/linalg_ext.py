@@ -557,7 +557,7 @@ class LinearOperatorHorizontalStack(_LinearOperatorStackBase):
                      name=name)
 
 
-class LinearOperatorDifference(tf.linalg.LinearOperator):
+class LinearOperatorFiniteDifference(tf.linalg.LinearOperator):
   """Linear operator acting like a difference operator.
 
   Args:
@@ -569,7 +569,7 @@ class LinearOperatorDifference(tf.linalg.LinearOperator):
   def __init__(self,
                domain_dimension,
                dtype=tf.dtypes.float32,
-               name="LinearOperatorDifference"):
+               name="LinearOperatorFiniteDifference"):
 
     parameters = dict(
       domain_dimension=domain_dimension,

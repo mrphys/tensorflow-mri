@@ -139,8 +139,8 @@ def admm_minimize(function_f, function_g,
         f"dimension of `operator_a`, but got: {constant_c.shape[-1]} and "
         f"{u_ndim}")
 
-  f_prox = _get_proximal_operator(function_f, operator_a, "f", "A")
-  g_prox = _get_proximal_operator(function_g, operator_b, "g", "B")
+  f_prox = _get_prox_fn(function_f, operator_a, "f", "A")
+  g_prox = _get_prox_fn(function_g, operator_b, "g", "B")
 
   x_shape = tf.TensorShape([x_ndim])
   z_shape = tf.TensorShape([z_ndim])
@@ -224,11 +224,7 @@ def admm_minimize(function_f, function_g,
   return tf.while_loop(_cond, _body, [state])[0]
 
 
-
-lbfgs_minimize = tfp.optimizer.lbfgs_minimize
-
-
-def _get_proximal_operator(function, operator, function_name, operator_name):
+def _get_prox_fn(function, operator, function_name, operator_name):
   if not isinstance(operator, tf.linalg.LinearOperatorScaledIdentity):
     if not isinstance(function, convex_ops.ConvexFunctionLeastSquares):
       raise ValueError(
@@ -252,3 +248,6 @@ def _get_proximal_operator(function, operator, function_name, operator_name):
     return _prox
 
   return function.prox
+
+
+lbfgs_minimize = tfp.optimizer.lbfgs_minimize

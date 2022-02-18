@@ -68,7 +68,7 @@ class ADMMTest(test_util.TestCase):
     function_f = convex_ops.ConvexFunctionLeastSquares(operator, rhs)
     function_g = convex_ops.ConvexFunctionL1Norm(scale=lambda_, ndim=3)
 
-    operator_a = linalg_ext.LinearOperatorDifference(4)
+    operator_a = linalg_ext.LinearOperatorFiniteDifference(4)
 
     result = optimizer_ops.admm_minimize(function_f, function_g,
                                          operator_a=operator_a,

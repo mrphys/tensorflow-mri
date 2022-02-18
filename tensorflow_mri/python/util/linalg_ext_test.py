@@ -26,7 +26,7 @@ class LinearOperatorDifferenceTest(test_util.TestCase):
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    cls.linop = linalg_ext.LinearOperatorDifference(4)
+    cls.linop = linalg_ext.LinearOperatorFiniteDifference(4)
     cls.matrix = tf.convert_to_tensor([[-1, 1, 0, 0],
                                        [0, -1, 1, 0],
                                        [0, 0, -1, 1]], dtype=tf.float32)
