@@ -19,7 +19,7 @@ import abc
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import array_ops
-from tensorflow_mri.python.util import linalg_extension
+from tensorflow_mri.python.util import linalg_ext
 from tensorflow_mri.python.util import tensor_util
 
 
@@ -412,7 +412,7 @@ class LinearOperatorComposition(LinalgImagingMixin,
 
 
 class LinearOperatorAddition(LinalgImagingMixin,
-                             linalg_extension.LinearOperatorAddition):
+                             linalg_ext.LinearOperatorAddition):
   """Adds one or more imaging `LinearOperators`.
 
   Like `tfmr.LinearOperatorAddition`, but with additional imaging

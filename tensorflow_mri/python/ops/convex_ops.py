@@ -22,6 +22,7 @@ import tensorflow as tf
 from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.util import check_util
+from tensorflow_mri.python.util import linalg_ext
 
 
 class ConvexFunction():
@@ -219,7 +220,7 @@ class ConvexFunctionQuadratic(ConvexFunction):
     self._one_over_scale = tf.convert_to_tensor(1.0 / scale, dtype=self.dtype)
 
     # Operator A^T A + 1 / \lambda * I, used to evaluate the proximal operator.
-    self._operator = linalg_ops.LinearOperatorAddition([
+    self._operator = linalg_ext.LinearOperatorAddition([
         self._quadratic_coefficient,
         tf.linalg.LinearOperatorScaledIdentity(
             num_rows=self._quadratic_coefficient.domain_dimension,
