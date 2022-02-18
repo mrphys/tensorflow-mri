@@ -86,9 +86,9 @@ def admm_minimize(function_f, function_g,
   # Infer the dtype of the variables from the dtype of f.
   dtype = tf.dtypes.as_dtype(function_f.dtype)
   if function_g.dtype != dtype:
-    raise ValueError(
-        f"`function_g` must have the same dtype as `function_f`, but "
-        f"got: {function_g.dtype} and {dtype}")
+    raise TypeError(
+        f"`function_f` and `function_g` must have the same dtype, but "
+        f"got: {dtype} and {function_g.dtype}")
 
   # Infer the dimensionality of the primal variables x, z from the
   # dimensionality of the domains and f and g.
@@ -102,9 +102,11 @@ def admm_minimize(function_f, function_g,
 
   # Provide default values for A and B.
   if operator_a is None:
-    operator_a = tf.linalg.LinearOperatorScaledIdentity(x_ndim, 1.0)
+    operator_a = tf.linalg.LinearOperatorScaledIdentity(
+        x_ndim, tf.constant(1.0, dtype=dtype))
   if operator_b is None:
-    operator_b = tf.linalg.LinearOperatorScaledIdentity(z_ndim, -1.0)
+    operator_b = tf.linalg.LinearOperatorScaledIdentity(
+        z_ndim, tf.constant(-1.0, dtype=dtype))
 
   # Check that the domain shapes of the A, B operators are consistent with f and
   # g.
@@ -161,8 +163,8 @@ def admm_minimize(function_f, function_g,
 
   def _stopping_condition(state):
     return tf.math.logical_and(
-        tf.norm(state.r, axis=-1) <= state.ptol,
-        tf.norm(state.s, axis=-1) <= state.dtol)
+        tf.math.real(tf.norm(state.r, axis=-1)) <= state.ptol,
+        tf.math.real(tf.norm(state.s, axis=-1)) <= state.dtol)
 
   def _cond(state):
     """Returns `True` if optimization should continue."""
@@ -182,11 +184,12 @@ def admm_minimize(function_f, function_g,
                          adjoint_a=False)
     z = g_prox(v, scale=one_over_rho)
 
-    # Dual variable update.
+    # Dual variable update and compute residuals.
     bz = tf.linalg.matvec(operator_b, z)
     r = ax + bz - constant_c
     u = state.u + r
-    s = penalty_rho * tf.linalg.matvec(operator_a, bz - state_bz, adjoint_a=True)
+    s = penalty_rho * tf.linalg.matvec(
+        operator_a, bz - state_bz, adjoint_a=True)
 
     # Choose the primal tolerance.
     ax_norm = tf.math.real(tf.norm(ax, axis=-1))
@@ -196,9 +199,9 @@ def admm_minimize(function_f, function_g,
     ptol = (atol * u_ndim_sqrt + rtol * max_norm)
 
     # Choose the dual tolerance. 
-    aty_norm = tf.norm(
+    aty_norm = tf.math.real(tf.norm(
         tf.linalg.matvec(operator_a, penalty_rho * state.u, adjoint_a=True),
-        axis=-1)
+        axis=-1))
     dtol = (atol * x_ndim_sqrt + rtol * aty_norm)
 
     return [AdmmOptimizerResults(i=state.i + 1,
@@ -236,7 +239,7 @@ def _get_prox_fn(function, operator, function_name, operator_name):
       # Create operator E^T E + rho * A^T A, where E is the quadratic coefficient
       # in the least squares convex function.
       scaled_identity = tf.linalg.LinearOperatorScaledIdentity(
-          operator.shape[-1], one_over_scale)
+          operator.shape[-1], tf.cast(one_over_scale, operator.dtype))
       prox_operator = tf.linalg.LinearOperatorComposition(
           [scaled_identity, operator.H, operator])
       prox_operator = linalg_ext.LinearOperatorAddition(

@@ -20,9 +20,9 @@ import contextlib
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import linalg_ops
-from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import linalg_ext
+from tensorflow_mri.python.util import linalg_imaging
 
 
 class ConvexFunction():
@@ -39,6 +39,8 @@ class ConvexFunction():
                dtype=None,
                name=None):
     """Initialize this `ConvexFunction`."""
+    if isinstance(ndim, tf.compat.v1.Dimension):
+      ndim = ndim.value
     self._ndim = check_util.validate_rank(ndim, 'ndim', accept_none=True)
     self._dtype = tf.dtypes.as_dtype(dtype or tf.dtypes.float32)
     self._name = name or type(self).__name__
@@ -303,6 +305,8 @@ class ConvexFunctionLeastSquares(ConvexFunctionQuadratic):
     name: A name for this `ConvexFunction`.
   """
   def __init__(self, operator, rhs, scale=1.0, name=None):
+    if isinstance(operator, linalg_imaging.LinalgImagingMixin):
+      rhs = operator.flatten_range_shape(rhs)
     quadratic_coefficient = tf.linalg.LinearOperatorComposition(
         [operator.H, operator], is_self_adjoint=True, is_positive_definite=True)
     linear_coefficient = tf.math.negative(
@@ -317,7 +321,7 @@ class ConvexFunctionLeastSquares(ConvexFunctionQuadratic):
   @property
   def operator(self):
     return self.quadratic_coefficient
-  
+
   @property
   def rhs(self):
     return tf.math.negative(self.linear_coefficient)
@@ -382,8 +386,10 @@ def soft_threshold(x, threshold, name=None):
   """
   with tf.name_scope(name or 'soft_threshold'):
     x = tf.convert_to_tensor(x, name='x')
-    threshold = tf.convert_to_tensor(threshold, dtype=x.dtype, name='threshold')
-    return tf.math.sign(x) * tf.math.maximum(tf.math.abs(x) - threshold, 0.)
+    threshold = tf.convert_to_tensor(threshold, dtype=x.dtype.real_dtype,
+                                     name='threshold')
+    return tf.math.sign(x) * tf.cast(
+        tf.math.maximum(tf.math.abs(x) - threshold, 0.), dtype=x.dtype)
 
 
 def _dot(x, y):
@@ -395,23 +401,41 @@ def _dot(x, y):
 
 
 class Regularizer():
-  """Base class defining a [batch of] regularizer[s]."""
+  """Base class defining a [batch of] regularizer[s].
+
+  Defines a regularization term :math:`\lambda * g(Tx)`, where :math:`\lambda`
+  is the regularization parameter, :math:`g` is a convex function and :math:`T`
+  is a linear transform.
+
+  Args:
+    parameter: A `float`. The regularization parameter.
+    convex_function: A `tfmr.ConvexFunction`.
+    linear_operator: A `tf.linalg.LinearOperator`.
+  """
   def __init__(self,
-               factor=1.0,
-               convex_operator=None,
-               linear_operator=None):
+               convex_function=None,
+               linear_operator=None,
+               parameter=1.0):
     """Initialize this `Regularizer`."""
-    self._factor = factor
-    self._cvx_op = convex_operator
-    self._lin_op = linear_operator
+    self._convex_function = convex_function
+    self._linear_operator = linear_operator
+    self._parameter = parameter
 
   def __call__(self, x):
     return self.call(x)
 
   def call(self, x):
     """Compute the regularization term for input `x`."""
-    # Apply linear transformation, then convex operator.
-    return self._factor * self._cvx_op(tf.linalg.matvec(self._lin_op, x))
+    return self._parameter * self._convex_function(
+        tf.linalg.matvec(self._linear_operator, x))
+
+  @property
+  def convex_function(self):
+    return self._convex_function
+
+  @property
+  def linear_operator(self):
+    return self._linear_operator
 
 
 class TotalVariationRegularizer(Regularizer):
@@ -420,21 +444,21 @@ class TotalVariationRegularizer(Regularizer):
   Returns a value for each element in batch.
 
   Args:
-    factor: A `float`. The regularization factor.
-    axis: An `int` or a list of `int`. The axis along which to compute the
+    image_shape: A `tf.TensorShape` or a list of ints.
+    axis: An `int` or a list of `ints`. The axes along which to compute the
       total variation.
-    ndim: An `int`. The number of non-batch dimensions. The last `ndim`
-      dimensions will be reduced.
+    parameter: A `float`. The regularization parameter.
   """
-  def __init__(self, factor, axis, ndim=None):
-    super().__init__(factor=factor)
-    self._axis = axis
-    self._ndim = ndim
-
-  def call(self, x):
-    # Override default implementation of `call` - we use a shortcut here rather
-    # than the corresponding linear and convex operators.
-    return self._factor * tf.math.reduce_sum(
-        image_ops.total_variation(x, axis=self._axis, keepdims=True),
-        axis=(list(range(-self._ndim, 0)) # pylint: disable=invalid-unary-operand-type
-              if self._ndim is not None else self._ndim))
+  def __init__(self, image_shape, axis, parameter, dtype=tf.float32):
+    image_shape = tf.TensorShape(image_shape)
+    axis = check_util.validate_axis(axis, image_shape.rank,
+                                    max_length=image_shape.rank,
+                                    canonicalize="negative")
+    operators = [linalg_imaging.LinearOperatorFiniteDifference(
+        image_shape, axis=ax, dtype=dtype) for ax in axis]
+    linear_operator = linalg_ext.LinearOperatorVerticalStack(operators)
+    convex_function = ConvexFunctionL1Norm(
+        scale=parameter, ndim=linear_operator.range_dimension, dtype=dtype)
+    super().__init__(convex_function=convex_function,
+                     linear_operator=linear_operator,
+                     parameter=1.0)

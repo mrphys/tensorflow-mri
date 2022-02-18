@@ -14,31 +14,70 @@
 # ==============================================================================
 """Tests for module `convex_ops`."""
 
+from absl.testing import parameterized
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import convex_ops
 from tensorflow_mri.python.util import test_util
 
-class TotalVariationTest(test_util.TestCase):
+
+@test_util.run_all_in_graph_and_eager_modes
+class SoftThresholdTest(test_util.TestCase):
+
+  @parameterized.parameters(
+      # x, threshold, expected_y
+      (5., 5., 0.),
+      (2., 5., 0.),
+      (-2., 5., 0.),
+      (3., 2.5, 0.5),
+      (-3., 2.5, -0.5),
+      (-1., 1., 0.),
+      (-6., 5., -1.),
+      (0., 0., 0.),
+  )
+  def test_soft_threshold(self, x, threshold, expected_y):
+    x = tf.convert_to_tensor(x, dtype=tf.float32)
+    y = convex_ops.soft_threshold(x, threshold)
+    self.assertAllClose(y, expected_y)
+  
+  @parameterized.parameters(
+      # x, threshold, expected_y
+      (2. + 0.j, 2., 0. + 0.j),
+      (3. + 0.j, 2., 1. + 0.j),
+      (0. - 4.j, 3., 0. - 1.j),
+      (4. + 3.j, 1., 3.2 + 2.4j)
+  )
+  def test_soft_threshold_complex(self, x, threshold, expected_y):
+    x = tf.convert_to_tensor(x, dtype=tf.complex64)
+    y = convex_ops.soft_threshold(x, threshold)
+    self.assertAllClose(y, expected_y)
+
+
+class TotalVariationRegularizerTest(test_util.TestCase):
   """Tests for `TotalVariationRegularizer`."""
-  def test_regularizer(self):
-    """Test TV regularizer."""
+  def test_call(self):
     x = [[1., 2., 3.],
          [4., 5., 6.]]
-
-    reg1 = convex_ops.TotalVariationRegularizer(0.1, [0, 1])
-    res1 = reg1(x)
+    x_flat = tf.reshape(x, [-1])
+    reg1 = convex_ops.TotalVariationRegularizer([2, 3],
+                                                axis=[0, 1],
+                                                parameter=0.1)
     ref1 = 1.3
+    res1 = reg1(x_flat)
     self.assertAllClose(res1, ref1)
-
-    reg2 = convex_ops.TotalVariationRegularizer(0.1, 1)
-    res2 = reg2(x)
+    
+    reg2 = convex_ops.TotalVariationRegularizer([2, 3],
+                                                axis=1,
+                                                parameter=0.1)
+    res2 = reg2(x_flat)
     ref2 = 0.4
     self.assertAllClose(res2, ref2)
 
-    reg3 = convex_ops.TotalVariationRegularizer(0.1, -1, ndim=1)
+    reg3 = convex_ops.TotalVariationRegularizer([3],
+                                                axis=-1,
+                                                parameter=0.5)
     res3 = reg3(x)
-    ref3 = [0.2, 0.2]
+    ref3 = [1.0, 1.0]
     self.assertAllClose(res3, ref3)
 
 

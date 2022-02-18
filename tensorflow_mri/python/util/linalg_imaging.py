@@ -12,13 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Linear algebra for images."""
+"""Linear algebra for images.
+
+Contains the imaging mixin and imaging extensions of basic linear operators.
+"""
 
 import abc
 
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import array_ops
+from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import linalg_ext
 from tensorflow_mri.python.util import tensor_util
 
@@ -523,3 +527,82 @@ class LinearOperatorScaledIdentity(LinalgImagingMixin,
 
   def _batch_shape_tensor(self):
     return tf.shape(self.multiplier)
+
+
+class LinearOperatorFiniteDifference(LinalgImagingMixin,
+                                     tf.linalg.LinearOperator):
+  """Linear operator acting like a finite difference operator.
+
+  Args:
+    image_shape: A `tf.TensorShape` or list of ints. The shape of the input
+      images.
+    axis: An int. The axis along which the finite difference is taken. Defaults
+      to -1.
+    dtype: An optional `string` or `DType`. The data type for this operator.
+      Defaults to `float32`.
+    name: An optional `string`. A name for this operator.
+  """
+  def __init__(self,
+               image_shape,
+               axis=-1,
+               dtype=tf.dtypes.float32,
+               name="LinearOperatorFiniteDifference"):
+
+    parameters = dict(
+      image_shape=image_shape,
+      axis=axis,
+      dtype=dtype,
+      name=name
+    )
+
+    image_shape = tf.TensorShape(image_shape)
+    self._axis = check_util.validate_axis(axis, image_shape.rank,
+                                          max_length=1,
+                                          canonicalize="negative",
+                                          scalar_to_list=False)
+
+    range_shape = image_shape.as_list()
+    range_shape[self.axis] = range_shape[self.axis] - 1
+    range_shape = tf.TensorShape(range_shape)
+
+    self._domain_shape_value = image_shape
+    self._range_shape_value = range_shape
+
+    super().__init__(dtype,
+                     is_non_singular=None,
+                     is_self_adjoint=None,
+                     is_positive_definite=None,
+                     is_square=None,
+                     name=name,
+                     parameters=parameters)
+
+  def _transform(self, x, adjoint=False):
+    
+    if adjoint:
+      paddings1 = [[0, 0]] * x.shape.rank
+      paddings2 = [[0, 0]] * x.shape.rank
+      paddings1[self.axis] = [1, 0]
+      paddings2[self.axis] = [0, 1]
+      x1 = tf.pad(x, paddings1) # pylint: disable=no-value-for-parameter
+      x2 = tf.pad(x, paddings2) # pylint: disable=no-value-for-parameter
+      x = x1 - x2
+    else:
+      slice1 = [slice(None)] * x.shape.rank
+      slice2 = [slice(None)] * x.shape.rank
+      slice1[self.axis] = slice(1, None)
+      slice2[self.axis] = slice(None, -1)
+      x1 = x[tuple(slice1)]
+      x2 = x[tuple(slice2)]
+      x = x1 - x2
+
+    return x
+
+  def _domain_shape(self):
+    return self._domain_shape_value
+
+  def _range_shape(self):
+    return self._range_shape_value
+
+  @property
+  def axis(self):
+    return self._axis

@@ -152,8 +152,8 @@ def validate_axis(value,
   Raises:
     ValueError: If `value` is not valid.
   """
-  if isinstance(value, int):
-    scalar = True
+  scalar = isinstance(value, int)
+  if scalar:
     value = [value]
 
   # Convert other iterables to list.

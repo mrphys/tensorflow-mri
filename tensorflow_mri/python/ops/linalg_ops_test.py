@@ -337,57 +337,5 @@ class LinalgImagingMixin(test_util.TestCase):
 #   return tf.dtypes.complex(tf.random.normal(shape), tf.random.normal(shape))
 
 
-class LinearOperatorImagingDifferenceTest(test_util.TestCase):
-  """Tests for difference linear operator."""
-  @classmethod
-  def setUpClass(cls):
-    super().setUpClass()
-    cls.linop1 = linalg_ops.LinearOperatorImagingDifference([4])
-    cls.linop2 = linalg_ops.LinearOperatorImagingDifference([4, 4], axis=-2)
-    cls.matrix1 = tf.convert_to_tensor([[-1, 1, 0, 0],
-                                        [0, -1, 1, 0],
-                                        [0, 0, -1, 1]], dtype=tf.float32)
-
-  def test_transform(self):
-    """Test transform method."""
-    signal = tf.random.normal([4, 4])
-    result = self.linop2.transform(signal)
-    self.assertAllClose(result, np.diff(signal, axis=-2))
-
-  def test_matvec(self):
-    """Test matvec method."""
-    signal = tf.constant([1, 2, 4, 8], dtype=tf.float32)
-    result = tf.linalg.matvec(self.linop1, signal)
-    self.assertAllClose(result, [1, 2, 4])
-    self.assertAllClose(result, np.diff(signal))
-    self.assertAllClose(result, tf.linalg.matvec(self.matrix1, signal))
-
-    signal2 = tf.range(16, dtype=tf.float32)
-    result = tf.linalg.matvec(self.linop2, signal2)
-    self.assertAllClose(result, [4] * 12)
-
-  def test_matvec_adjoint(self):
-    """Test matvec with adjoint."""
-    signal = tf.constant([1, 2, 4], dtype=tf.float32)
-    result = tf.linalg.matvec(self.linop1, signal, adjoint_a=True)
-    self.assertAllClose(result,
-                        tf.linalg.matvec(tf.transpose(self.matrix1), signal))
-
-  def test_shapes(self):
-    """Test shapes."""
-    self._test_all_shapes(self.linop1, [4], [3])
-    self._test_all_shapes(self.linop2, [4, 4], [3, 4])
-
-  def _test_all_shapes(self, linop, domain_shape, range_shape):
-    """Test shapes."""
-    self.assertIsInstance(linop.domain_shape, tf.TensorShape)
-    self.assertAllEqual(linop.domain_shape, domain_shape)
-    self.assertAllEqual(linop.domain_shape_tensor(), domain_shape)
-
-    self.assertIsInstance(linop.range_shape, tf.TensorShape)
-    self.assertAllEqual(linop.range_shape, range_shape)
-    self.assertAllEqual(linop.range_shape_tensor(), range_shape)
-
-
 if __name__ == '__main__':
   tf.test.main()

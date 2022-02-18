@@ -27,6 +27,38 @@ from tensorflow_mri.python.util import io_util
 from tensorflow_mri.python.util import test_util
 
 
+# TODO: finish implementation of this test.
+class NewPicsTest(test_util.TestCase):
+  def test_pics_grasp(self):
+    """Test GRASP reconstruction."""
+    # Load data.
+    data = io_util.read_hdf5(
+        'tests/data/liver_dce_2d_multicoil_radial_kspace.h5')
+    kspace = data['kspace'] * 100.0
+    traj = data['traj']
+    dens = data['dens']
+    sens = data['sens']
+    ref = data['recon/cs/i2']
+
+    image_shape = [28, 384, 384]
+    regularizer = convex_ops.TotalVariationRegularizer(
+        image_shape, axis=-3, parameter=0.001, dtype=tf.complex64)
+    image = recon_ops.reconstruct_pics(
+        kspace,
+        image_shape,
+        trajectory=traj,
+        density=dens,
+        sensitivities=sens,
+        regularizer=regularizer,
+        optimizer='lbfgs',
+        optimizer_kwargs=dict(max_iterations=4),
+        image_rank=2)
+
+    import scipy.io as sio
+    sio.savemat('/workspaces/mrphys/test.mat', {'image': image.numpy()})
+    # self.assertAllClose(recon, ref)
+
+
 class ReconstructTest(test_util.TestCase):
   """Tests for function `reconstruct`."""
 

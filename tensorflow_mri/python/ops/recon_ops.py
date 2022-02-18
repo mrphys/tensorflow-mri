@@ -24,6 +24,7 @@ import tensorflow_nufft as tfft
 
 from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import coil_ops
+from tensorflow_mri.python.ops import convex_ops
 from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.ops import linalg_ops
@@ -1082,7 +1083,7 @@ def reconstruct_zerofill(kspace,
                                           phase=phase,
                                           fft_norm='ortho',
                                           sens_norm=sens_norm)
-  rank = operator.rank
+  rank = operator.image_rank
 
   # Apply density compensation, if provided.
   if density is not None:
@@ -1137,7 +1138,7 @@ def reconstruct_cgsense(kspace,
                                    fft_norm='ortho',
                                    sens_norm=sens_norm),
       reg_parameter=reg_parameter)
-  rank = operator.operator.rank
+  rank = operator.operator.image_rank
 
   # Apply density compensation, if provided.
   if density is not None:
@@ -1189,6 +1190,94 @@ def reconstruct_cgsense(kspace,
     kspace = fft_ops.fftn(image, axes=fft_axes, norm='ortho', shift=True)
     kspace = signal_ops.filter_kspace(kspace, rank=rank, filter_type='atanfilt')
     image = fft_ops.ifftn(kspace, axes=fft_axes, norm='ortho', shift=True)
+
+  return image
+
+
+def reconstruct_pics(kspace,
+                     image_shape,
+                     mask=None,
+                     trajectory=None,
+                     density=None,
+                     sensitivities=None,
+                     phase=None,
+                     sens_norm=True,
+                     regularizer=None,
+                     initial_image=None,
+                     optimizer=None,
+                     optimizer_kwargs=None,
+                     image_rank=None):
+  """MR image reconstruction using parallel imaging and compressed sensing.
+
+  For the parameters, see `tfmr.reconstruct`.
+  """
+  # Check optimizer.
+  optimizer = check_util.validate_enum(
+      optimizer or 'admm', {'admm', 'lbfgs'}, name='optimizer')
+
+  # We don't do a lot of input checking here, since it will be done by the
+  # operator.
+  kspace = tf.convert_to_tensor(kspace)
+
+  # Create the linear operator.
+  operator = linalg_ops.LinearOperatorMRI(image_shape,
+                                          mask=mask,
+                                          trajectory=trajectory,
+                                          density=density,
+                                          sensitivities=sensitivities,
+                                          fft_norm='ortho',
+                                          sens_norm=sens_norm,
+                                          image_rank=image_rank)
+  image_rank = operator.image_rank
+
+  # Apply density compensation, if provided.
+  if density is not None:
+    kspace *= operator._dens_weights_sqrt
+
+  if optimizer == 'admm':
+    result = optimizer_ops.admm_minimize(
+        convex_ops.ConvexFunctionLeastSquares(operator, kspace),
+        regularizer.convex_function,
+        operator_a=regularizer.linear_operator,
+        **optimizer_kwargs)
+    image = operator.expand_domain_dimension(result.x)
+
+  elif optimizer == 'lbfgs':
+    # Prepare initial estimate.
+    y = operator.flatten_range_shape(kspace)
+    if initial_image is None:
+      initial_image = operator.matvec(y, adjoint=True)
+    # Currently L-BFGS implementation only supports real numbers, so reinterpret
+    # complex image as real (C^N -> R^2*N).
+    initial_image = math_ops.view_as_real(initial_image, stacked=False)    
+
+    # Define the objective function and its gradient.
+    @tf.function
+    @math_ops.make_val_and_grad_fn
+    def _objective(x):
+      # Reinterpret real input as complex and reshape to correct shape.
+      x = math_ops.view_as_complex(x, stacked=False)
+      # Compute data consistency and regularization terms and add.
+      dc_term = tf.math.abs(tf.norm(y - operator.matvec(x), ord=2))
+      reg_term = regularizer(x)
+      return dc_term + reg_term
+
+    # Do minimization.
+    result = optimizer_ops.lbfgs_minimize(_objective, initial_image,
+                                          **optimizer_kwargs)
+
+    # Reinterpret real result as complex and reshape image.
+    image = operator.expand_domain_dimension(
+        math_ops.view_as_complex(result.position, stacked=False))
+
+  else:
+    raise ValueError(f"Unknown optimizer: {optimizer}")
+
+  # Apply intensity correction, if requested.
+  if operator.is_multicoil and sens_norm:
+    sens_weights_sqrt = tf.math.reciprocal_no_nan(
+        tf.norm(sensitivities, axis=-(image_rank + 1), keepdims=True))
+    image *= sens_weights_sqrt
 
   return image
 
