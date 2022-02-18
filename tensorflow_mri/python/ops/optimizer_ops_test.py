@@ -17,8 +17,8 @@
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import convex_ops
-from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.ops import optimizer_ops
+from tensorflow_mri.python.util import linalg_ext
 from tensorflow_mri.python.util import test_util
 
 
@@ -47,7 +47,7 @@ class ADMMTest(test_util.TestCase):
                                          max_iterations=max_iterations)
     expected_i = 12
     expected_z = [1.57677657, 0., 0., 0.]
-    
+
     self.assertAllClose(result.z, expected_z)
     self.assertEqual(result.i, expected_i)
 
@@ -60,7 +60,7 @@ class ADMMTest(test_util.TestCase):
                               0.07508015,
                               0.35160690])
     rhs = operator.matvec(x)
-    lambda_ = 0.01
+    lambda_ = 0.1
     atol = 1e-4
     rtol = 1e-2
     max_iterations = 100
@@ -68,14 +68,18 @@ class ADMMTest(test_util.TestCase):
     function_f = convex_ops.ConvexFunctionLeastSquares(operator, rhs)
     function_g = convex_ops.ConvexFunctionL1Norm(scale=lambda_, ndim=3)
 
-    operator_a = linalg_ops.LinearOperatorDifference(4)
+    operator_a = linalg_ext.LinearOperatorDifference(4)
 
     result = optimizer_ops.admm_minimize(function_f, function_g,
                                          operator_a=operator_a,
                                          atol=atol, rtol=rtol,
                                          max_iterations=max_iterations)
-    print(result)
-    print(rhs)
+
+    expected_i = 12
+    expected_x = [1.0638748, 0.628781, 0.2630071, 0.26281652]
+
+    self.assertAllClose(result.x, expected_x)
+    self.assertEqual(result.i, expected_i)
 
 
 if __name__ == '__main__':

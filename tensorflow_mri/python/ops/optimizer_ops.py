@@ -22,6 +22,10 @@ import collections
 import tensorflow as tf
 import tensorflow_probability as tfp
 
+from tensorflow_mri.python.ops import convex_ops
+from tensorflow_mri.python.ops import linalg_ops
+from tensorflow_mri.python.util import linalg_ext
+
 
 AdmmOptimizerResults = collections.namedtuple(
     'AdmmOptimizerResults', [
@@ -135,6 +139,9 @@ def admm_minimize(function_f, function_g,
         f"dimension of `operator_a`, but got: {constant_c.shape[-1]} and "
         f"{u_ndim}")
 
+  f_prox = _get_proximal_operator(function_f, operator_a, "f", "A")
+  g_prox = _get_proximal_operator(function_g, operator_b, "g", "B")
+
   x_shape = tf.TensorShape([x_ndim])
   z_shape = tf.TensorShape([z_ndim])
   u_shape = tf.TensorShape([u_ndim])
@@ -149,6 +156,9 @@ def admm_minimize(function_f, function_g,
   max_iterations = tf.convert_to_tensor(
       max_iterations, dtype=tf.dtypes.int32, name='max_iterations')
 
+  # For convenience.
+  one_over_rho = 1.0 / penalty_rho
+
   def _stopping_condition(state):
     return tf.math.logical_and(
         tf.norm(state.r, axis=-1) <= state.ptol,
@@ -162,17 +172,15 @@ def admm_minimize(function_f, function_g,
     """A single ADMM step."""
     # x-minimization step.
     state_bz = tf.linalg.matvec(operator_b, state.z)
-    x = function_f.prox(
-        tf.linalg.matvec(
-            operator_a, constant_c - state.u - state_bz,
-            adjoint_a=True))
+    v = tf.linalg.matvec(operator_a, constant_c - state.u - state_bz,
+                         adjoint_a=True)
+    x = f_prox(v, scale=one_over_rho)
 
     # z-minimization step.
     ax = tf.linalg.matvec(operator_a, x)
-    z = function_g.prox(
-        tf.linalg.matvec(
-            operator_b, constant_c - state.u - ax,
-            adjoint_a=False))
+    v = tf.linalg.matvec(operator_b, constant_c - state.u - ax,
+                         adjoint_a=False)
+    z = g_prox(v, scale=one_over_rho)
 
     # Dual variable update.
     bz = tf.linalg.matvec(operator_b, z)
@@ -189,7 +197,8 @@ def admm_minimize(function_f, function_g,
 
     # Choose the dual tolerance. 
     aty_norm = tf.norm(
-        tf.linalg.matvec(operator_a, penalty_rho * state.u, adjoint_a=True), axis=-1)
+        tf.linalg.matvec(operator_a, penalty_rho * state.u, adjoint_a=True),
+        axis=-1)
     dtol = (atol * x_ndim_sqrt + rtol * aty_norm)
 
     return [AdmmOptimizerResults(i=state.i + 1,
@@ -217,3 +226,29 @@ def admm_minimize(function_f, function_g,
 
 
 lbfgs_minimize = tfp.optimizer.lbfgs_minimize
+
+
+def _get_proximal_operator(function, operator, function_name, operator_name):
+  if not isinstance(operator, tf.linalg.LinearOperatorScaledIdentity):
+    if not isinstance(function, convex_ops.ConvexFunctionLeastSquares):
+      raise ValueError(
+          f"A non-default operator {operator_name} is only supported if "
+          f"{function_name} is a least squares function.")
+
+    def _prox(v, scale=None):
+      one_over_scale = 1.0 / (scale or 1.0)
+      # Create operator E^T E + rho * A^T A, where E is the quadratic coefficient
+      # in the least squares convex function.
+      scaled_identity = tf.linalg.LinearOperatorScaledIdentity(
+          operator.shape[-1], one_over_scale)
+      prox_operator = tf.linalg.LinearOperatorComposition(
+          [scaled_identity, operator.H, operator])
+      prox_operator = linalg_ext.LinearOperatorAddition(
+          [function.quadratic_coefficient, prox_operator],
+          is_self_adjoint=True, is_positive_definite=True)
+      rhs = function.rhs + one_over_scale * v
+      return linalg_ops.conjugate_gradient(prox_operator, rhs).x
+
+    return _prox
+
+  return function.prox

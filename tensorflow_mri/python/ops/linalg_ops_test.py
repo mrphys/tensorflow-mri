@@ -337,53 +337,6 @@ class LinalgImagingMixin(test_util.TestCase):
 #   return tf.dtypes.complex(tf.random.normal(shape), tf.random.normal(shape))
 
 
-class LinearOperatorDifferenceTest(test_util.TestCase):
-  """Tests for difference linear operator."""
-  @classmethod
-  def setUpClass(cls):
-    super().setUpClass()
-    cls.linop = linalg_ops.LinearOperatorDifference(4)
-    cls.matrix = tf.convert_to_tensor([[-1, 1, 0, 0],
-                                       [0, -1, 1, 0],
-                                       [0, 0, -1, 1]], dtype=tf.float32)
-
-  def test_matmul(self):
-    """Test matmul method."""
-    x = tf.constant([[5, 4], [1, 4], [1, 3], [6, 2]], dtype=tf.float32)
-    self.assertAllClose(self.linop @ x, self.matrix @ x)
-
-  def test_matmul_adjoint(self):
-    """Test matmul method with adjoint."""
-    x = tf.constant([[9, 4, 1, 3], [1, 3, 1, 6], [7, 2, 2, 8]],
-                    dtype=tf.float32)
-    self.assertAllClose(
-        tf.linalg.matmul(self.linop, x, adjoint_a=True),
-        tf.linalg.matmul(self.matrix, x, adjoint_a=True))
-    self.assertAllClose(
-        tf.linalg.matmul(self.linop, x, adjoint_a=False, adjoint_b=True),
-        tf.linalg.matmul(self.matrix, x, adjoint_a=False, adjoint_b=True))
-
-  def test_matvec(self):
-    """Test matvec method."""
-    signal = tf.constant([1, 2, 4, 8], dtype=tf.float32)
-    result = tf.linalg.matvec(self.linop, signal)
-    self.assertAllClose(result, [1, 2, 4])
-    self.assertAllClose(result, np.diff(signal))
-    self.assertAllClose(result, tf.linalg.matvec(self.matrix, signal))
-
-  def test_matvec_adjoint(self):
-    """Test matvec with adjoint."""
-    signal = tf.constant([1, 2, 4], dtype=tf.float32)
-    result = tf.linalg.matvec(self.linop, signal, adjoint_a=True)
-    self.assertAllClose(
-        result, tf.linalg.matvec(tf.transpose(self.matrix), signal))
-
-  def test_shapes(self):
-    """Test shapes."""
-    self.assertAllEqual(self.linop.shape, [3, 4])
-    self.assertAllEqual(self.linop.shape_tensor(), [3, 4])
-
-
 class LinearOperatorImagingDifferenceTest(test_util.TestCase):
   """Tests for difference linear operator."""
   @classmethod

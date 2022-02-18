@@ -62,7 +62,7 @@ class ConvexFunction():
       self._check_input_dtype(x)
       return self._call(x)
 
-  def prox(self, x, name=None):
+  def prox(self, x, scale=None, name=None):
     """Evaluate the proximal operator of this `ConvexFunction` at point[s] `x`.
 
     Args:
@@ -76,7 +76,7 @@ class ConvexFunction():
       x = tf.convert_to_tensor(x, name="x")
       self._check_input_shape(x)
       self._check_input_dtype(x)
-      return self._prox(x)
+      return self._prox(x, scale=scale)
 
   @abc.abstractmethod
   def _call(self, x):
@@ -84,7 +84,7 @@ class ConvexFunction():
     raise NotImplementedError("Method `_call` is not implemented.")
 
   @abc.abstractmethod
-  def _prox(self, x):
+  def _prox(self, x, scale=None):
     # Must be implemented by subclasses.
     raise NotImplementedError("Method `_prox` is not implemented.")
 
@@ -157,8 +157,8 @@ class ConvexFunctionL1Norm(ConvexFunction):
   def _call(self, x):
     return self._scale * tf.norm(x, ord=1, axis=-1)
 
-  def _prox(self, x):
-    return soft_threshold(x, self._scale)
+  def _prox(self, x, scale=None):
+    return soft_threshold(x, self._scale * (scale or 1.0))
 
 
 class ConvexFunctionL2Norm(ConvexFunction):
@@ -183,8 +183,8 @@ class ConvexFunctionL2Norm(ConvexFunction):
   def _call(self, x):
     return self._scale * tf.norm(x, ord=2, axis=-1)
 
-  def _prox(self, x):
-    return block_soft_threshold(x, self._scale)
+  def _prox(self, x, scale=None):
+    return block_soft_threshold(x, self._scale * (scale or 1.0))
 
 
 class ConvexFunctionQuadratic(ConvexFunction):
@@ -217,16 +217,6 @@ class ConvexFunctionQuadratic(ConvexFunction):
     self._constant_coefficient = self._validate_constant_coefficient(
         constant_coefficient)
     self._scale = tf.convert_to_tensor(scale, dtype=self.dtype)
-    self._one_over_scale = tf.convert_to_tensor(1.0 / scale, dtype=self.dtype)
-
-    # Operator A^T A + 1 / \lambda * I, used to evaluate the proximal operator.
-    self._operator = linalg_ext.LinearOperatorAddition([
-        self._quadratic_coefficient,
-        tf.linalg.LinearOperatorScaledIdentity(
-            num_rows=self._quadratic_coefficient.domain_dimension,
-            multiplier=self._one_over_scale)],
-        is_self_adjoint=True,
-        is_positive_definite=True)
 
   def _call(self, x):
     # Calculate the quadratic term.
@@ -240,8 +230,17 @@ class ConvexFunctionQuadratic(ConvexFunction):
       result += self._constant_coefficient
     return self._scale * result
 
-  def _prox(self, x):
-    rhs = self._one_over_scale * x
+  def _prox(self, x, scale=None):
+    one_over_scale = 1.0 / (self._scale * (scale or 1.0))
+    # Operator A^T A + 1 / \lambda * I, used to evaluate the proximal operator.
+    self._operator = linalg_ext.LinearOperatorAddition([
+        self._quadratic_coefficient,
+        tf.linalg.LinearOperatorScaledIdentity(
+            num_rows=self._quadratic_coefficient.domain_dimension,
+            multiplier=one_over_scale)],
+        is_self_adjoint=True,
+        is_positive_definite=True)
+    rhs = one_over_scale * x
     if self._linear_coefficient is not None:
       rhs -= self._linear_coefficient
     return linalg_ops.conjugate_gradient(self._operator, rhs).x
@@ -274,6 +273,18 @@ class ConvexFunctionQuadratic(ConvexFunction):
           "tensor %s" % (self.dtype, coef.dtype, coef))
     return coef
 
+  @property
+  def quadratic_coefficient(self):
+    return self._quadratic_coefficient
+
+  @property
+  def linear_coefficient(self):
+    return self._linear_coefficient
+
+  @property
+  def constant_coefficient(self):
+    return self._constant_coefficient
+
 
 class ConvexFunctionLeastSquares(ConvexFunctionQuadratic):
   """A `ConvexFunction` representing a least squares function.
@@ -294,14 +305,22 @@ class ConvexFunctionLeastSquares(ConvexFunctionQuadratic):
   def __init__(self, operator, rhs, scale=1.0, name=None):
     quadratic_coefficient = tf.linalg.LinearOperatorComposition(
         [operator.H, operator], is_self_adjoint=True, is_positive_definite=True)
-    linear_coefficient = tf.math.negative(tf.linalg.matvec(operator, rhs,
-                                                           adjoint_a=True))
+    linear_coefficient = tf.math.negative(
+        tf.linalg.matvec(operator, rhs, adjoint_a=True))
     constant_coefficient = tf.constant(0.0, dtype=operator.dtype)
     super().__init__(quadratic_coefficient=quadratic_coefficient,
                      linear_coefficient=linear_coefficient,
                      constant_coefficient=constant_coefficient,
                      scale=scale,
                      name=name)
+
+  @property
+  def operator(self):
+    return self.quadratic_coefficient
+  
+  @property
+  def rhs(self):
+    return tf.math.negative(self.linear_coefficient)
 
 
 def block_soft_threshold(x, threshold, name=None):
