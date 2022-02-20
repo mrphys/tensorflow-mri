@@ -24,6 +24,7 @@ import collections
 
 import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import geom_ops
@@ -1140,8 +1141,8 @@ def fsim(img1, img2, max_val=None, rank=None, name=None):
     pc_map2 = _phase_congruency(img2)
 
     # Compute gradient magnitude (GM) maps.
-    gm_map1 = _gradient_magnitude(img1)
-    gm_map2 = _gradient_magnitude(img2)
+    gm_map1 = gradient_magnitude(img1)
+    gm_map2 = gradient_magnitude(img2)
 
     # Constants to improve stability of PC and GM similarities.
     t1 = 0.85
@@ -1172,22 +1173,221 @@ def fsim(img1, img2, max_val=None, rank=None, name=None):
     return tf.math.reduce_mean(fsim_per_channel, [-1])
 
 
-def _phase_congruency(img, name=None):
+def _phase_congruency(image, name=None):
   """Computes the phase congruency map (PC) of an image.
 
   Args:
-    img: A `Tensor`. Must be one of the following types: `float32`, `float64`.
+    image: A `Tensor`. Must be one of the following types: `float32`, `float64`.
       A batch of images. For 2D images, must have shape `batch_shape +
       [height, width, channels]`. For 3D images, must have shape
       `batch_shape + [depth, height, width, channels]`.
     name: Namespace to embed the computation in.
 
   Returns:
-    A `Tensor` of the same shape and type as `img` containing the phase
+    A `Tensor` of the same shape and type as `image` containing the phase
     congruency map of the input image.
   """
-  with tf.name_scope(name or 'phase_congruency'):
-    raise NotImplementedError("_phase_congruency is not implemented yet.")
+  image_shape = tf.shape(image)
+  rank = image.shape.rank
+
+  # with tf.name_scope(name or 'phase_congruency'):
+  #   raise NotImplementedError("_phase_congruency is not implemented yet.")
+  k = 2.0
+
+  # Define log-Gabor filter parameters.
+  num_scales = 4
+  num_orientations = 4
+  min_wavelength = 6
+  scaling_factor = 2.
+  sigma_freq_ratio = 0.55
+  theta_sigma_ratio = 1.2
+
+  # Compute Log-Gabor filters.
+  filters = _log_gabor_filters(
+      image_shape, num_scales, num_orientations, min_wavelength,
+      scaling_factor, sigma_freq_ratio, theta_sigma_ratio)
+
+  filters_ifft = tf.math.multiply(
+      tf.math.real(tf.signal.ifft2d(filters)),
+      tf.math.sqrt(tf.math.reduce_prod(image_shape)))
+  
+  # Convolve image with even and odd filters.
+  filt = tf.signal.ifft2d(tf.signal.fft2d(image) * filters)
+
+  # Amplitude of even and odd filter response.
+  amplitude = tf.math.abs(filt)
+
+  # Sum over scales of filter convolution results.
+  scale_axis = 0
+  orient_axis = 1
+
+  # Get mean filter response over all scales, this gives the weighted mean phase
+  # angle.
+  sum_filt = tf.math.reduce_sum(filt, axis=scale_axis)
+  mean_filt = sum_filt / (tf.math.abs(sum_filt) + eps)
+
+  # Now calculate An(cos(phase_deviation) - | sin(phase_deviation)) | by
+  # using dot and cross products between the weighted mean filter response
+  # vector and the individual filter response vectors at each scale. This
+  # quantity is phase congruency multiplied by An, which we call energy.
+  energy = tf.math.reduce_sum(
+      tf.math.real(filt) * tf.math.real(mean_filt) +
+      tf.math.imag(filt) * tf.math.imag(mean_filt) - tf.math.abs(
+          tf.math.real(filt) * tf.math.imag(mean_filt) -
+          tf.math.imag(filt) * tf.math.real(mean_filt)), axis=scale_axis)
+
+  # Compensate for noise.
+  # We estimate the noise power from the energy squared response at the
+  # smallest scale. If the noise is Gaussian the energy squared will have a
+  # Chi-squared 2DOF pdf. We calculate the median energy squared response
+  # as this is a robust statistic. From this we estimate the mean.
+  # The estimate of noise power is obtained by dividing the mean squared
+  # energy value by the mean squared filter value at the smallest scale.
+  median_energy_squared = tfp.stats.percentile(
+      tf.math.abs(filt[0, ...]) ** 2, 50.0,
+      axis=[-2, -1], interpolation='midpoint') 
+  mean_energy_squared = -median_energy_squared / tf.math.log(0.5)
+  sum_filters_squared = tf.math.reduce_sum(filters[0, 0, ...] ** 2)
+  noise_power = mean_energy_squared / sum_filters_squared
+
+  for orient_index in range(num_orientations):
+    for scale_index in range(num_scales):
+
+    noise_energy = 2.0 * noise_power * sum_est_sum_an_2 + 4.0 * noise_power * sum_est_sum_ai_aj
+
+    tau = tf.math.sqrt(noise_energy / 2)
+    noise_energy_mean = tau * tf.math.sqrt(np.pi / 2.0)
+    noise_energy_std = tf.math.sqrt((2.0 - np.pi / 2.0) * tau ** 2.0)
+
+    noise_threshold = noise_energy_mean + k * noise_energy_std
+    noise_threshold /= 1.7
+    energy = tf.math.maximum(energy - noise_threshold, 0.0)
+    sum_energy += energy
+    sum_amplitude += amplitude
+  return sum_energy / sum_amplitude
+
+
+def _log_gabor_filters(shape,
+                       num_scales,
+                       num_orientations,
+                       min_wavelength,
+                       scaling_factor,
+                       sigma_freq_ratio,
+                       theta_sigma_ratio):
+  """Log-Gabor filters.
+  
+  Filters are constructed in terms of two components.
+    - The radial component, which controls the frequency band that the filter
+      responds to.
+    - The angular component, which controls the orientation that the filter
+      responds to.
+
+  The two components are multiplied together to construct the overall filter.
+
+  Args:
+    shape: A `Tensor`. The filter shape.
+    num_scales: An `int`. The number of wavelet scales.
+    num_orientations: An `int`. The number of filter orientations.
+    min_wavelength: A `float`. The wavelength of the smallest scale filter.
+    scaling_factor: A `float`. The scaling factor between successive filters.
+    sigma_freq_ratio: A `float`. Ratio of the standard deviation of the Gaussian
+      describing the log Gabor filter's transfer function in the frequency
+      domain to the filter center frequency.
+    theta_sigma_ratio: A `float`. Ratio of angular interval between filter
+      orientations and the standard deviation of the angular Gaussian
+      function used to construct filters in the frequency plane.
+
+  Returns:
+    A `Tensor` of shape `[num_scales, num_orientations] + shape`, containing
+    the log-Gabor filters for each scale and orientation.
+  """
+  shape = tf.convert_to_tensor(shape)
+  rank = shape.shape[0]
+  if rank != 2:
+    raise NotImplementedError(
+        f"{rank}-D log-Gabor filters are not implemented.")
+  # Standard deviation of the angular Gaussian function used to construct
+  # filters in the frequency plane.
+  theta_std = np.pi / num_orientations / theta_sigma_ratio
+
+  # Create radius and azimuth grids.
+  vecs = [tf.range(-s // 2, s // 2 - 1) / s if s % 2 == 0 else
+          tf.range(-(s-1) // 2, (s-1) // 2) / (s-1) for s in shape]
+  grid = array_ops.meshgrid(*vecs)
+  radius = tf.norm(grid, axis=-1)
+  theta = tf.math.atan2(-grid[..., 1], grid[..., 0])
+  # Quadrant shift radius and theta so that filters are constructed with 0
+  # frequency at the corners.
+  radius = tf.signal.ifftshift(radius)
+  theta = tf.signal.ifftshift(theta)
+  # Get rid of the 0 radius value at the 0 frequency point (now at the top-left
+  # corner) so that taking the log of the radius will not cause trouble.
+  indices = tf.zeros((1, rank,), dtype=tf.int32)
+  updates = tf.ones((1,), dtype=radius.dtype)
+  radius = tf.tensor_scatter_nd_update(radius, indices, updates)
+
+  lowpass_filter = _pc_lowpass_filter(shape, 0.45, 15)
+
+  central_frequencies = tf.math.reciprocal(
+      min_wavelength * scaling_factor ** tf.range(num_scales))
+  central_frequencies = tf.reshape(central_frequencies,
+                                   [num_scales] + [1] * rank)
+
+  filters_radial = tf.math.exp(tf.math.divide(
+      -tf.math.log(radius / central_frequencies) ** 2,
+      2 * tf.math.log(sigma_freq_ratio) ** 2))
+  filters_radial *= lowpass_filter
+
+  # Set the value at the zero frequency point of the filter back to zero (undo
+  # the radius fudge).
+  indices = tf.zeros((1, rank,), dtype=tf.int32)
+  updates = tf.zeros((1, num_scales,), dtype=filters_radial.dtype)
+  filters_radial = tf.tensor_scatter_nd_update(filters_radial, indices, updates)
+
+  # Compute the angular component
+  orientations = tf.range(num_orientations) * np.pi / num_orientations
+  orientations = tf.reshape(orientations,
+                            [num_orientations] + [1] * rank)
+
+  sin_theta = tf.math.sin(theta)
+  cos_theta = tf.math.cos(theta)
+  sin_orient = tf.math.sin(orientations)
+  cos_orient = tf.math.cos(orientations)
+  angular_distance = tf.math.abs(tf.math.atan2(
+      sin_theta * cos_orient - cos_theta * sin_orient,
+      cos_theta * cos_orient + sin_theta * sin_orient))
+  filters_angular = tf.math.exp((-angular_distance ** 2) / (2 * theta_std ** 2))
+
+  # Add an extra axis to radial component so that we get a filter bank of shape
+  # [num_scales, num_orientations] + image_shape.
+  filters_radial = tf.expand_dims(filters_radial, -(rank + 1))
+  return filters_radial * filters_angular
+
+
+def _pc_lowpass_filter(shape, cutoff, order):
+  """"""
+  checks = [
+      tf.debugging.assert_rank(cutoff, 0, message=(
+          "cutoff must be a scalar")),
+      tf.debugging.assert_greater_equal(cutoff, 0.0, message=(
+          "cutoff must be >= 0.0")),
+      tf.debugging.assert_less_equal(cutoff, 0.5, message=(
+          "cutoff must be <= 0.5")),
+      tf.debugging.assert_rank(order, 0, message=(
+          "order must be a scalar")),
+      tf.debugging.assert_greater_equal(order, 1, message=(
+          "order must be >= 1"))
+  ]
+  with tf.control_dependencies(checks):
+    cutoff, order = tf.identity_n([cutoff, order])
+  
+  shape = tf.convert_to_tensor(shape)
+  vecs = [tf.range(-s // 2, s // 2 - 1) / s if s % 2 == 0 else
+          tf.range(-(s-1) // 2, (s-1) // 2) / (s-1) for s in shape]
+  grid = array_ops.meshgrid(*vecs)
+  radius = tf.norm(grid, axis=-1)
+  filt = 1.0 / (1.0 + (radius / cutoff) ** (2.0 * order))
+  return tf.signal.ifftshift(filt)
 
 
 def _depthwise_conv3d(inputs, filters, strides, padding):

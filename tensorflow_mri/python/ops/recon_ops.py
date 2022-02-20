@@ -12,9 +12,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Image reconstruction operations.
+"""Operators for MR image reconstruction.
 
-This module contains functions for MR image reconstruction.
+Image reconstruction operators accept *k*-space data and additional
+application-dependent inputs and return an image.
+
+This module contains 4 operators for image reconstruction, all of which support
+Cartesian and non-Cartesian inputs.
+
+  * `tfmri.reconstruct_adj`: Reconstructs an image by applying the adjoint MRI
+    operator to the *k*-space data. This typically involves an inverse FFT or
+    a (density-compensated) NUFFT, and coil combination for multicoil inputs.
+    This type of reconstruction is often called zero-filled reconstruction,
+    because missing *k*-space samples are assumed to be zero. Therefore, the
+    resulting image is likely to display aliasing artefacts if *k*-space is not
+    sufficiently sampled according to the Nyquist criterion.
+
+  * `tfmri.reconstruct_lstsq`: Reconstructs an image by formulating a (possibly
+    regularized) least squares problem, which is solved iteratively. Since the
+    problem may be ill-posed, different types of regularizers may be used to
+    incorporate prior knowledge. Depending on the regularizer, the optimization
+    problem may be linear or nonlinear. For sparsity-based regularizers, this
+    is also called a compressed sensing reconstruction. This is a powerful
+    operator which can often produce high-quality images even from highly
+    undersampled *k*-space data. However, it may be time-consuming, depending
+    on the characteristics of the problem.
+  
+  * `tfmri.reconstruct_ai`: Reconstructs an image using an AI model.
+
+  * `tfmri.reconstruct_legacy`: Reconstructs an image using legacy methods such
+    as SENSE or GRAPPA.
 """
 
 import collections
@@ -1064,14 +1091,15 @@ def _pics(kspace,
   return recon
 
 
-def reconstruct_zerofill(kspace,
-                         image_shape,
-                         mask=None,
-                         trajectory=None,
-                         density=None,
-                         sensitivities=None,
-                         phase=None,
-                         sens_norm=True):
+def reconstruct_adj(kspace,
+                    image_shape,
+                    mask=None,
+                    trajectory=None,
+                    density=None,
+                    sensitivities=None,
+                    phase=None,
+                    sens_norm=True):
+  """Reconstructs an image by applying the adjoint MRI operator."""
   kspace = tf.convert_to_tensor(kspace)
 
   # Create the linear operator.
@@ -1194,23 +1222,20 @@ def reconstruct_cgsense(kspace,
   return image
 
 
-def reconstruct_pics(kspace,
-                     image_shape,
-                     mask=None,
-                     trajectory=None,
-                     density=None,
-                     sensitivities=None,
-                     phase=None,
-                     sens_norm=True,
-                     regularizer=None,
-                     initial_image=None,
-                     optimizer=None,
-                     optimizer_kwargs=None,
-                     image_rank=None):
-  """MR image reconstruction using parallel imaging and compressed sensing.
-
-  For the parameters, see `tfmr.reconstruct`.
-  """
+def reconstruct_lstsq(kspace,
+                      image_shape,
+                      mask=None,
+                      trajectory=None,
+                      density=None,
+                      sensitivities=None,
+                      phase=None,
+                      sens_norm=True,
+                      regularizer=None,
+                      initial_image=None,
+                      optimizer=None,
+                      optimizer_kwargs=None,
+                      image_rank=None):
+  """Reconstructs an image by solving a least-squares problem."""
   # Check optimizer.
   optimizer = check_util.validate_enum(
       optimizer or 'admm', {'admm', 'lbfgs'}, name='optimizer')
