@@ -419,7 +419,7 @@ class LinearOperatorAddition(LinalgImagingMixin,
                              linalg_ext.LinearOperatorAddition):
   """Adds one or more imaging `LinearOperators`.
 
-  Like `tfmr.LinearOperatorAddition`, but with additional imaging
+  Like `tfmri.LinearOperatorAddition`, but with additional imaging
   extensions.
 
   For the parameters, see `LinearOperatorAddition`.

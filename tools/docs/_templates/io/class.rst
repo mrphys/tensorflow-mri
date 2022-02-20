@@ -1,7 +1,7 @@
-tfmr.io.{{ objname | escape | underline }}========
+tfmri.io.{{ objname | escape | underline }}========
 
 .. currentmodule:: {{ module }}
 
-.. auto{{ objtype }}:: tfmr.io.{{ objname }}
+.. auto{{ objtype }}:: tfmri.io.{{ objname }}
     :members:
     :show-inheritance:

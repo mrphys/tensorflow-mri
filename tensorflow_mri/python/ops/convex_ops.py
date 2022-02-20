@@ -343,10 +343,14 @@ def block_soft_threshold(x, threshold, name=None):
   """
   with tf.name_scope(name or 'block_soft_threshold'):
     x = tf.convert_to_tensor(x, name='x')
-    threshold = tf.convert_to_tensor(threshold, dtype=x.dtype, name='threshold')
-    one = tf.constant(1.0, dtype=x.dtype, name='one')
-    x_norm = tf.norm(x, ord=2, axis=-1, keepdims=True)
-    return tf.math.maximum(one - threshold / x_norm, 0.) * x
+    threshold = tf.convert_to_tensor(threshold, dtype=x.dtype.real_dtype,
+                                     name='threshold')
+    one = tf.constant(1.0, dtype=x.dtype.real_dtype, name='one')
+    reduction_axis = -1 if x.shape.rank > 0 else None
+    x_norm = tf.math.real(
+        tf.norm(x, ord=2, axis=reduction_axis, keepdims=True))
+    return x * tf.cast(tf.math.maximum(
+        one - tf.math.divide_no_nan(threshold, x_norm), 0.), x.dtype)
 
 
 def shrinkage(x, threshold, name=None):
@@ -409,25 +413,26 @@ class Regularizer():
 
   Args:
     parameter: A `float`. The regularization parameter.
-    convex_function: A `tfmr.ConvexFunction`.
+    convex_function: A `tfmri.ConvexFunction`.
     linear_operator: A `tf.linalg.LinearOperator`.
   """
   def __init__(self,
+               parameter=1.0,
                convex_function=None,
-               linear_operator=None,
-               parameter=1.0):
+               linear_operator=None):
     """Initialize this `Regularizer`."""
+    self._parameter = parameter
     self._convex_function = convex_function
     self._linear_operator = linear_operator
-    self._parameter = parameter
 
   def __call__(self, x):
     return self.call(x)
 
   def call(self, x):
-    """Compute the regularization term for input `x`."""
-    return self._parameter * self._convex_function(
-        tf.linalg.matvec(self._linear_operator, x))
+    """Evaluates the regularizer for input `x`."""
+    if self._linear_operator is not None:
+      x = tf.linalg.matvec(self._linear_operator, x)
+    return self._parameter * self._convex_function(x)
 
   @property
   def convex_function(self):
@@ -438,18 +443,58 @@ class Regularizer():
     return self._linear_operator
 
 
+class TikhonovRegularizer(Regularizer):
+  """Tikhonov regularizer.
+
+  For a given input :math:`x`, computes
+  :math:`\lambda \left\| T(x - x_0) \right\|_2`, where :math:`\lambda` is a
+  regularization parameter, :math:`T` is any linear operator and :math:`x_0` is
+  a prior estimate.
+
+  Args:
+    parameter: A `float`. The regularization parameter.
+    transform: A `tf.linalg.LinearOperator`. The Tikhonov operator :math:`T`.
+      Defaults to the identity operator.
+    prior: A `tf.Tensor`. The prior estimate :math:`x_0`. Defaults to 0.
+
+  References:
+    .. [1] L. Ying, D. Xu and Z. . -P. Liang, "On Tikhonov regularization for
+      image reconstruction in parallel MRI," The 26th Annual International
+      Conference of the IEEE Engineering in Medicine and Biology Society, 2004,
+      pp. 1056-1059, doi: 10.1109/IEMBS.2004.1403345.
+  """
+  def __init__(self, parameter, transform=None, prior=None, dtype=tf.float32):
+    convex_function = ConvexFunctionL2Norm(
+        scale=parameter, ndim=None, dtype=dtype)
+    if prior is not None:
+      self._prior = tf.convert_to_tensor(prior, dtype=dtype)
+    else:
+      self._prior = None
+    super().__init__(parameter=1.0,
+                     convex_function=convex_function,
+                     linear_operator=transform)
+
+  def call(self, x):
+    """Evaluates the regularizer for input `x`."""
+    if self._prior is not None:
+      x -= self._prior
+    return super().call(x)
+
+
 class TotalVariationRegularizer(Regularizer):
   """Regularizer calculating the total variation of a [batch of] input[s].
 
-  Returns a value for each element in batch.
+  For a given input :math:`x`, computes :math:`\lambda \left\| Dx \right\|_1`,
+  where :math:`\lambda` is a regularization parameter and :math:`D` is the
+  finite difference operator.
 
   Args:
+    parameter: A `float`. The regularization parameter.
     image_shape: A `tf.TensorShape` or a list of ints.
     axis: An `int` or a list of `ints`. The axes along which to compute the
       total variation.
-    parameter: A `float`. The regularization parameter.
   """
-  def __init__(self, image_shape, axis, parameter, dtype=tf.float32):
+  def __init__(self, parameter, image_shape, axis, dtype=tf.float32):
     image_shape = tf.TensorShape(image_shape)
     axis = check_util.validate_axis(axis, image_shape.rank,
                                     max_length=image_shape.rank,
@@ -459,6 +504,6 @@ class TotalVariationRegularizer(Regularizer):
     linear_operator = linalg_ext.LinearOperatorVerticalStack(operators)
     convex_function = ConvexFunctionL1Norm(
         scale=parameter, ndim=linear_operator.range_dimension, dtype=dtype)
-    super().__init__(convex_function=convex_function,
-                     linear_operator=linear_operator,
-                     parameter=1.0)
+    super().__init__(parameter=1.0,
+                     convex_function=convex_function,
+                     linear_operator=linear_operator)

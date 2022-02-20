@@ -3,7 +3,7 @@ Coil Arrays
 
 .. automodule:: tensorflow_mri.python.ops.coil_ops
 
-.. currentmodule:: tfmr
+.. currentmodule:: tfmri
 
 .. autosummary::
     :toctree: coil_ops

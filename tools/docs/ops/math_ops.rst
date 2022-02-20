@@ -3,7 +3,7 @@ Math
 
 .. automodule:: tensorflow_mri.python.ops.math_ops
 
-.. currentmodule:: tfmr
+.. currentmodule:: tfmri
 
 .. autosummary::
     :toctree: math_ops

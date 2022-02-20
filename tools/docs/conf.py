@@ -92,7 +92,7 @@ html_theme_options = {
 }
 
 
-import tfmr
+import tfmri
 
 
 def linkcode_resolve(domain, info):
@@ -105,17 +105,17 @@ def linkcode_resolve(domain, info):
     Returns:
         The GitHub URL to the object, or `None` if not relevant.
     """
-    # Split `tfmr` part of module from submodules.
+    # Split `tfmri` part of module from submodules.
     module = info['module'].split('.', maxsplit=1)
     if len(module) == 2:
-        # If length two, we have `tfmr` followed by submodule name.
+        # If length two, we have `tfmri` followed by submodule name.
         module, submodule = module
     else:
-        # Otherwise, we have just `tfmr` without submodule.
+        # Otherwise, we have just `tfmri` without submodule.
         module = module[0]
         submodule = None
-    # Hopefully we're not documenting anything outside the TFMR package!
-    if module != 'tfmr':
+    # Hopefully we're not documenting anything outside the TFMRI package!
+    if module != 'tfmri':
         raise ValueError(f"Unexpected module: {module}")
     # If there is a submodule, add to the object name.
     objname = info['fullname']
@@ -123,7 +123,7 @@ def linkcode_resolve(domain, info):
         objname = submodule + '.' + objname
 
     # Get the object.
-    obj = operator.attrgetter(objname)(tfmr)
+    obj = operator.attrgetter(objname)(tfmri)
     # We only add links to classes (type `type`) and functions
     # (type `types.FunctionType`).
     if not isinstance(obj, (type, types.FunctionType)):

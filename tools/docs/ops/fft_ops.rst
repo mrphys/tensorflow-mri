@@ -3,7 +3,7 @@ Fourier Transform
 
 .. automodule:: tensorflow_mri.python.ops.fft_ops
 
-.. currentmodule:: tfmr
+.. currentmodule:: tfmri
 
 .. autosummary::
     :toctree: fft_ops

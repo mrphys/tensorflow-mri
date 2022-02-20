@@ -3,7 +3,7 @@
 
 .. automodule:: tensorflow_mri.python.ops.traj_ops
 
-.. currentmodule:: tfmr
+.. currentmodule:: tfmri
 
 .. autosummary::
     :toctree: traj_ops

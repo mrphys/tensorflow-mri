@@ -42,7 +42,7 @@ class NewPicsTest(test_util.TestCase):
 
     image_shape = [28, 384, 384]
     regularizer = convex_ops.TotalVariationRegularizer(
-        image_shape, axis=-3, parameter=0.001, dtype=tf.complex64)
+        parameter=0.001, image_shape=image_shape, axis=-3, dtype=tf.complex64)
     image = recon_ops.reconstruct_pics(
         kspace,
         image_shape,

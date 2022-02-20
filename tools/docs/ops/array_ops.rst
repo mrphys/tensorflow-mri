@@ -3,7 +3,7 @@ Array Manipulation
 
 .. automodule:: tensorflow_mri.python.ops.array_ops
 
-.. currentmodule:: tfmr
+.. currentmodule:: tfmri
 
 .. autosummary::
     :toctree: array_ops

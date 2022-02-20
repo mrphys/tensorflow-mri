@@ -3,7 +3,7 @@ Image Processing
 
 .. automodule:: tensorflow_mri.python.ops.image_ops
 
-.. currentmodule:: tfmr
+.. currentmodule:: tfmri
 
 .. autosummary::
     :toctree: image_ops

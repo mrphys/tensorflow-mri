@@ -3,7 +3,7 @@ Convex Operators
 
 .. automodule:: tensorflow_mri.python.ops.convex_ops
 
-.. currentmodule:: tfmr
+.. currentmodule:: tfmri
 
 .. autosummary::
     :toctree: convex_ops
@@ -12,5 +12,8 @@ Convex Operators
     ConvexFunction
     ConvexFunctionL1Norm
     ConvexFunctionL2Norm
+    ConvexFunctionLeastSquares
+    ConvexFunctionQuadratic
     Regularizer
+    TikhonovRegularizer
     TotalVariationRegularizer

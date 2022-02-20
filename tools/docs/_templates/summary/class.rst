@@ -1,7 +1,7 @@
-tfmr.summary.{{ objname | escape | underline }}=============
+tfmri.summary.{{ objname | escape | underline }}=============
 
 .. currentmodule:: {{ module }}
 
-.. auto{{ objtype }}:: tfmr.summary.{{ objname }}
+.. auto{{ objtype }}:: tfmri.summary.{{ objname }}
     :members:
     :show-inheritance:

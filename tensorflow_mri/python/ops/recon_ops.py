@@ -116,7 +116,7 @@ def reconstruct(kspace,
     This function supports batches of inputs, which are processed in parallel
     whenever possible.
 
-  See also `tfmr.estimate_coil_sensitivities` and `tfmr.combine_coils`.
+  See also `tfmri.estimate_coil_sensitivities` and `tfmri.combine_coils`.
 
   Args:
     kspace: A `Tensor`. The *k*-space samples. Must have type `complex64` or
@@ -176,7 +176,7 @@ def reconstruct(kspace,
 
     * For `method="fft"`, provide `kspace` and, optionally, `sensitivities`.
       If provided, `sensitivities` are used for adaptive coil combination (see
-      `tfmr.combine_coils`). If not provided, multi-coil inputs are combined
+      `tfmri.combine_coils`). If not provided, multi-coil inputs are combined
       using the sum of squares method. In addition, the following keyword
       arguments are accepted:
 
@@ -193,8 +193,8 @@ def reconstruct(kspace,
 
     * For `method="nufft"`, provide `kspace`, `trajectory` and, optionally,
       `density` and `sensitivities`. If `density` is not provided, an estimate
-      will be used (see `tfmr.estimate_density`). If provided, `sensitivities`
-      are used for adaptive coil combination (see `tfmr.combine_coils`). If not
+      will be used (see `tfmri.estimate_density`). If provided, `sensitivities`
+      are used for adaptive coil combination (see `tfmri.combine_coils`). If not
       provided, multi-coil inputs are combined using the sum of squares method.
       In addition, the following keyword arguments are accepted:
 
@@ -209,7 +209,7 @@ def reconstruct(kspace,
 
     * For `method="inufft"`, provide `kspace`, `trajectory` and, optionally,
       `sensitivities`. If provided, `sensitivities` are used for adaptive coil
-      combination (see `tfmr.combine_coils`). If not provided, multi-coil inputs
+      combination (see `tfmri.combine_coils`). If not provided, multi-coil inputs
       are combined using the sum of squares method. In addition, the following
       arguments are accepted:
 
@@ -222,7 +222,7 @@ def reconstruct(kspace,
       * **return_cg_state**: An optional `bool`. Defaults to `False`. If `True`,
         return a tuple containing the image and an object describing the final
         state of the CG iteration. For more details about the CG state, see
-        `tfmr.conjugate_gradient`. If `False`, only the image is returned.
+        `tfmri.conjugate_gradient`. If `False`, only the image is returned.
       * **multicoil**: An optional `bool`. Whether the input *k*-space has a
         coil dimension. Defaults to `True` if `sensitivities` were specified,
         `False` otherwise.
@@ -257,7 +257,7 @@ def reconstruct(kspace,
 
     * For `method="cg_sense"`, provide `kspace`, `trajectory`, `density`
       (optional) and `sensitivities`. If `density` is not provided, an estimate
-      will be used (see `tfmr.estimate_density`). In addition, the following
+      will be used (see `tfmri.estimate_density`). In addition, the following
       keyword arguments are accepted:
 
       * **tol**: An optional `float`. The convergence tolerance for the
@@ -267,7 +267,7 @@ def reconstruct(kspace,
       * **return_cg_state**: An optional `bool`. Defaults to `False`. If `True`,
         return a tuple containing the image and an object describing the final
         state of the CG iteration. For more details about the CG state, see
-        `tfmr.conjugate_gradient`. If `False`, only the image is returned.
+        `tfmri.conjugate_gradient`. If `False`, only the image is returned.
 
     * For `method="grappa"`, provide `kspace`, `mask` and `calib`. Optionally,
       you can also provide `sensitivities` (note that `sensitivities` are not
@@ -299,7 +299,7 @@ def reconstruct(kspace,
         the reconstructed image, including temporal dimensions but not batch
         dimensions. This argument must be provided.
       * **rank**: An `int`. The number of spatial dimensions.
-      * **regularizers**: A list of `tfmr.Regularizer`. The regularizers to be
+      * **regularizers**: A list of `tfmri.Regularizer`. The regularizers to be
         used in the iterative reconstruction.
       * **optimizer**: The optimizer. Must be `None` or `"lbfgs"`. If `None`,
         the optimizer will be selected automatically.
@@ -371,7 +371,7 @@ def _fft(kspace,
          combine_coils=True):
   """MR image reconstruction using FFT.
 
-  For the parameters, see `tfmr.reconstruct`.
+  For the parameters, see `tfmri.reconstruct`.
   """
   kspace = tf.convert_to_tensor(kspace)
   if sensitivities is not None:
@@ -418,7 +418,7 @@ def _nufft(kspace,
            combine_coils=True):
   """MR image reconstruction using density-compensated adjoint NUFFT.
 
-  For the parameters, see `tfmr.reconstruct`.
+  For the parameters, see `tfmri.reconstruct`.
   """
   kspace = tf.convert_to_tensor(kspace)
   trajectory = tf.convert_to_tensor(trajectory)
@@ -479,7 +479,7 @@ def _inufft(kspace,
             combine_coils=True):
   """MR image reconstruction using iterative inverse NUFFT.
 
-  For the parameters, see `tfmr.reconstruct`.
+  For the parameters, see `tfmri.reconstruct`.
   """
   kspace = tf.convert_to_tensor(kspace)
   trajectory = tf.convert_to_tensor(trajectory)
@@ -539,7 +539,7 @@ def _sense(kspace,
            fast=True):
   """MR image reconstruction using SENSitivity Encoding (SENSE).
 
-  For the parameters, see `tfmr.reconstruct`.
+  For the parameters, see `tfmri.reconstruct`.
   """
   # Parse inputs.
   kspace = tf.convert_to_tensor(kspace)
@@ -668,7 +668,7 @@ def _cg_sense(kspace,
               return_cg_state=False):
   """MR image reconstruction using conjugate gradient SENSE (CG-SENSE).
 
-  For the parameters, see `tfmr.reconstruct`.
+  For the parameters, see `tfmri.reconstruct`.
   """
   if sensitivities is None:
     raise ValueError("Argument `sensitivities` must be specified for CG-SENSE.")
@@ -782,7 +782,7 @@ def _grappa(kspace,
             return_kspace=False):
   """MR image reconstruction using GRAPPA.
 
-  For the parameters, see `tfmr.reconstruct`.
+  For the parameters, see `tfmri.reconstruct`.
   """
   if mask is None:
     raise ValueError("Argument `mask` must be provided.")
@@ -954,7 +954,7 @@ def _pics(kspace,
           use_density_compensation=True):
   """MR image reconstruction using parallel imaging and compressed sensing.
 
-  For the parameters, see `tfmr.reconstruct`.
+  For the parameters, see `tfmri.reconstruct`.
   """
   # Check reconstruction shape.
   if recon_shape is None:
@@ -1406,7 +1406,7 @@ def _select_reconstruction_method(kspace, # pylint: disable=unused-argument
                                   method):
   """Select an appropriate reconstruction method based on user inputs.
 
-  For the parameters, see `tfmr.reconstruct`.
+  For the parameters, see `tfmri.reconstruct`.
   """
   # If user selected a method, use it. We do not check that inputs are valid
   # here, this will be done by the methods themselves.

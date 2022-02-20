@@ -1,7 +1,7 @@
 .. image:: https://raw.githubusercontent.com/mrphys/tensorflow-mri/v0.6.0/tools/assets/tfmr_logo.svg?sanitize=true
   :align: center
   :scale: 100 %
-  :alt: TFMR logo
+  :alt: TFMRI logo
 
 |
 

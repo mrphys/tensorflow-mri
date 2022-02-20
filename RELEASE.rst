@@ -27,7 +27,7 @@ Known Caveats
 Major Features and Improvements
 -------------------------------
 
-* ``tfmr``:
+* ``tfmri``:
 
   * Added new op ``extract_and_scale_complex_part`` to extract and scale to
     image range parts from complex tensors.
@@ -37,7 +37,7 @@ Major Features and Improvements
     ``LinearOperatorParallelMRI``, used to control whether coil sensitivity maps
     should be normalized.
 
-* ``tfmr.metrics``:
+* ``tfmri.metrics``:
 
   * Added new argument ``multichannel`` to ``PeakSignalToNoiseRatio``,
     ``StructuralSimilarity`` and ``MultiscaleStructuralSimilarity``. This
@@ -48,7 +48,7 @@ Major Features and Improvements
     enables these metrics to accept complex inputs and calculate the metric
     from the specified part. 
 
-* ``tfmr.callbacks``:
+* ``tfmri.callbacks``:
 
   * Added new callback ``TensorBoardImagesRecon``, which may be used to store
     images from MRI reconstruction models to TensorBoard.

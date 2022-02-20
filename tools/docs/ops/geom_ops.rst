@@ -3,7 +3,7 @@ Geometry
 
 .. automodule:: tensorflow_mri.python.ops.geom_ops
 
-.. currentmodule:: tfmr
+.. currentmodule:: tfmri
 
 .. autosummary::
     :toctree: geom_ops

@@ -1250,21 +1250,21 @@ def _phase_congruency(image, name=None):
   sum_filters_squared = tf.math.reduce_sum(filters[0, 0, ...] ** 2)
   noise_power = mean_energy_squared / sum_filters_squared
 
-  for orient_index in range(num_orientations):
-    for scale_index in range(num_scales):
+  # for orient_index in range(num_orientations):
+  #   for scale_index in range(num_scales):
 
-    noise_energy = 2.0 * noise_power * sum_est_sum_an_2 + 4.0 * noise_power * sum_est_sum_ai_aj
+  #   noise_energy = 2.0 * noise_power * sum_est_sum_an_2 + 4.0 * noise_power * sum_est_sum_ai_aj
 
-    tau = tf.math.sqrt(noise_energy / 2)
-    noise_energy_mean = tau * tf.math.sqrt(np.pi / 2.0)
-    noise_energy_std = tf.math.sqrt((2.0 - np.pi / 2.0) * tau ** 2.0)
+  #   tau = tf.math.sqrt(noise_energy / 2)
+  #   noise_energy_mean = tau * tf.math.sqrt(np.pi / 2.0)
+  #   noise_energy_std = tf.math.sqrt((2.0 - np.pi / 2.0) * tau ** 2.0)
 
-    noise_threshold = noise_energy_mean + k * noise_energy_std
-    noise_threshold /= 1.7
-    energy = tf.math.maximum(energy - noise_threshold, 0.0)
-    sum_energy += energy
-    sum_amplitude += amplitude
-  return sum_energy / sum_amplitude
+  #   noise_threshold = noise_energy_mean + k * noise_energy_std
+  #   noise_threshold /= 1.7
+  #   energy = tf.math.maximum(energy - noise_threshold, 0.0)
+  #   sum_energy += energy
+  #   sum_amplitude += amplitude
+  # return sum_energy / sum_amplitude
 
 
 def _log_gabor_filters(shape,

@@ -135,10 +135,10 @@ class KSpaceResampling(tf.keras.layers.Layer):
       `'hanning'`. Only relevant for spiral trajectories.
     dens_algo: A `str`. The density estimation algorithm. Must be one of
       `'geometric'`, `'radial'`, `'jackson'` or `'pipe'`. `'geometric'` supports
-      2D radial trajectories only (see also `tfmr.radial_density`). `'radial'`
+      2D radial trajectories only (see also `tfmri.radial_density`). `'radial'`
       supports 2D/3D radial trajectories (see also
-      `tfmr.estimate_radial_density`). `'jackson'` and `'pipe'` support all
-      trajectories (see also `tfmr.estimate_density`).
+      `tfmri.estimate_radial_density`). `'jackson'` and `'pipe'` support all
+      trajectories (see also `tfmri.estimate_density`).
     **kwargs: Additional keyword arguments to be passed to base class.
   """
   def __init__(self,
