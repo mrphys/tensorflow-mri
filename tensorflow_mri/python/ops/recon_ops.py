@@ -1099,7 +1099,7 @@ def reconstruct_adj(kspace,
                     sensitivities=None,
                     phase=None,
                     sens_norm=True):
-  """Reconstructs an image by applying the adjoint MRI operator."""
+  """Reconstructs an image using the adjoint MRI operator."""
   kspace = tf.convert_to_tensor(kspace)
 
   # Create the linear operator.
@@ -1235,7 +1235,7 @@ def reconstruct_lstsq(kspace,
                       optimizer=None,
                       optimizer_kwargs=None,
                       image_rank=None):
-  """Reconstructs an image by solving a least-squares problem."""
+  """Reconstructs an image using a least-squares formulation."""
   # Check optimizer.
   optimizer = check_util.validate_enum(
       optimizer or 'admm', {'admm', 'lbfgs'}, name='optimizer')
