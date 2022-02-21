@@ -35,6 +35,7 @@ class ConvexFunction():
   forward pass and the proximal mapping, respectively.
   """
   def __init__(self,
+               scale=None,
                ndim=None,
                dtype=None,
                name=None):
@@ -44,6 +45,7 @@ class ConvexFunction():
     self._ndim = check_util.validate_rank(ndim, 'ndim', accept_none=True)
     self._dtype = tf.dtypes.as_dtype(dtype or tf.dtypes.float32)
     self._name = name or type(self).__name__
+    self._scale = tf.convert_to_tensor(scale or 1.0, dtype=self.dtype)
 
   def __call__(self, x):
     return self.call(x)
@@ -149,12 +151,11 @@ class ConvexFunctionL1Norm(ConvexFunction):
     name: A name for this `ConvexFunction`.
   """
   def __init__(self,
-               scale=1.0,
+               scale=None,
                ndim=None,
                dtype=None,
                name=None):
-    super().__init__(ndim=ndim, dtype=dtype, name=name)
-    self._scale = scale
+    super().__init__(scale=scale, ndim=ndim, dtype=dtype, name=name)
 
   def _call(self, x):
     return self._scale * tf.norm(x, ord=1, axis=-1)
@@ -175,7 +176,32 @@ class ConvexFunctionL2Norm(ConvexFunction):
     name: A name for this `ConvexFunction`.
   """
   def __init__(self,
-               scale=1.0,
+               scale=None,
+               ndim=None,
+               dtype=None,
+               name=None):
+    super().__init__(scale=scale, ndim=ndim, dtype=dtype, name=name)
+
+  def _call(self, x):
+    return self._scale * tf.norm(x, ord=2, axis=-1)
+
+  def _prox(self, x, scale=None):
+    return block_soft_threshold(x, self._scale * (scale or 1.0))
+
+
+class ConvexFunctionL2NormSquared(ConvexFunction):
+  """A `ConvexFunction` computing the [scaled] squared L2-norm of an input.
+
+  Args:
+    scale: A `float`. A scaling factor. Defaults to 1.0.
+    ndim: An `int`. The dimensionality of the domain of this `ConvexFunction`.
+      Defaults to `None`.
+    dtype: A `string` or `DType`. The type of this `ConvexFunction`. Defaults to
+      `tf.dtypes.float32`.
+    name: A name for this `ConvexFunction`.
+  """
+  def __init__(self,
+               scale=None,
                ndim=None,
                dtype=None,
                name=None):
@@ -183,10 +209,89 @@ class ConvexFunctionL2Norm(ConvexFunction):
     self._scale = scale
 
   def _call(self, x):
-    return self._scale * tf.norm(x, ord=2, axis=-1)
+    return self._scale * tf.math.reduce_sum(x * tf.math.conj(x), axis=-1)
 
   def _prox(self, x, scale=None):
-    return block_soft_threshold(x, self._scale * (scale or 1.0))
+    scale = self._scale * (scale or 1.0)
+    return x / (1.0 + 2.0 * scale)
+
+
+class ConvexFunctionTikhonov(ConvexFunctionL2NormSquared):
+  """Tikhonov convex function.
+
+  For a given input :math:`x`, computes
+  :math:`\lambda \left\| T(x - x_0) \right\|_2^2`, where :math:`\lambda` is a
+  scaling factor, :math:`T` is any linear operator and :math:`x_0` is
+  a prior estimate.
+
+  Args:
+    scale: A `float`. The scaling factor.
+    transform: A `tf.linalg.LinearOperator`. The Tikhonov operator :math:`T`.
+      Defaults to the identity operator.
+    prior: A `tf.Tensor`. The prior estimate :math:`x_0`. Defaults to 0.
+    ndim: An `int`. The dimensionality of the domain of this `ConvexFunction`.
+      Defaults to `None`.
+    dtype: A `tf.DType`. The dtype of the inputs.
+    name: A name for this `ConvexFunction`.
+  """
+  def __init__(self,
+               scale,
+               transform=None,
+               prior=None,
+               ndim=None,
+               dtype=tf.float32,
+               name=None):    
+    super().__init__(scale=scale, ndim=ndim, dtype=dtype, name=name)
+    self._transform = transform
+    self._prior = prior
+
+  def _call(self, x):
+    if self._prior is not None:
+      x -= self._prior
+    if self._transform is not None:
+      x = tf.linalg.matvec(self._transform, x)
+    return super()._call(x)
+
+  def _prox(self, x, scale=None):
+    if (self._transform is None or
+        isinstance(self._transform, tf.linalg.LinearOperatorIdentity)):
+      # When the transform is the identity, this reduces to the (possibly
+      # translated) squared L2-norm. Using the translation property for proximal
+      # operators:
+      return super().prox(x - self._prior, scale=scale) + self._prior
+    # In the general case, the prox operator cannot be easily evaluated.
+    raise NotImplementedError(
+        f"The proximal operator of `{self.name}` does not have a "
+        f"closed form expression for arbitrary transforms.")
+
+
+class ConvexFunctionTotalVariation(ConvexFunctionL1Norm):
+  """Total variation convex function.
+
+  For a given input :math:`x`, computes :math:`\lambda \left\| Dx \right\|_1`,
+  where :math:`\lambda` is a scaling factor and :math:`D` is the finite
+  difference operator.
+
+  Args:
+    scale: A `float`. A scaling factor.
+    input_shape: A `tf.TensorShape` or a list of ints.
+    axis: An `int` or a list of `ints`. The axes along which to compute the
+      total variation. Defaults to -1.
+    dtype: A `tf.DType`. The dtype of the inputs.
+  """
+  def __init__(self, scale, input_shape, axis=-1, dtype=tf.float32):
+    input_shape = tf.TensorShape(input_shape)
+    axis = check_util.validate_axis(axis, input_shape.rank,
+                                    max_length=input_shape.rank,
+                                    canonicalize="negative")
+    operators = [linalg_imaging.LinearOperatorFiniteDifference(
+        input_shape, axis=ax, dtype=dtype) for ax in axis]
+    linear_operator = linalg_ext.LinearOperatorVerticalStack(operators)
+    convex_function = ConvexFunctionL1Norm(
+        scale=parameter, ndim=linear_operator.range_dimension, dtype=dtype)
+    super().__init__(scale=1.0,
+                     convex_function=convex_function,
+                     linear_operator=linear_operator)
 
 
 class ConvexFunctionQuadratic(ConvexFunction):
@@ -208,9 +313,10 @@ class ConvexFunctionQuadratic(ConvexFunction):
                quadratic_coefficient,
                linear_coefficient=None,
                constant_coefficient=None,
-               scale=1.0,
+               scale=None,
                name=None):
-    super().__init__(ndim=quadratic_coefficient.shape[-1],
+    super().__init__(scale=scale,
+                     ndim=quadratic_coefficient.shape[-1],
                      dtype=quadratic_coefficient.dtype,
                      name=name)
     self._quadratic_coefficient = quadratic_coefficient
@@ -218,7 +324,6 @@ class ConvexFunctionQuadratic(ConvexFunction):
         linear_coefficient)
     self._constant_coefficient = self._validate_constant_coefficient(
         constant_coefficient)
-    self._scale = tf.convert_to_tensor(scale, dtype=self.dtype)
 
   def _call(self, x):
     # Calculate the quadratic term.
@@ -234,7 +339,7 @@ class ConvexFunctionQuadratic(ConvexFunction):
 
   def _prox(self, x, scale=None):
     one_over_scale = 1.0 / (self._scale * (scale or 1.0))
-    # Operator A^T A + 1 / \lambda * I, used to evaluate the proximal operator.
+    # Operator A^T A + 1 / \lambda * I.
     self._operator = linalg_ext.LinearOperatorAddition([
         self._quadratic_coefficient,
         tf.linalg.LinearOperatorScaledIdentity(
@@ -304,7 +409,7 @@ class ConvexFunctionLeastSquares(ConvexFunctionQuadratic):
     scale: A `float`. A scaling factor. Defaults to 1.0.
     name: A name for this `ConvexFunction`.
   """
-  def __init__(self, operator, rhs, scale=1.0, name=None):
+  def __init__(self, operator, rhs, scale=None, name=None):
     if isinstance(operator, linalg_imaging.LinalgImagingMixin):
       rhs = operator.flatten_range_shape(rhs)
     quadratic_coefficient = tf.linalg.LinearOperatorComposition(
@@ -402,108 +507,3 @@ def _dot(x, y):
       tf.linalg.matvec(
           x[..., tf.newaxis],
           y, adjoint_a=True), axis=-1)
-
-
-class Regularizer():
-  """Base class defining a [batch of] regularizer[s].
-
-  Defines a regularization term :math:`\lambda * g(Tx)`, where :math:`\lambda`
-  is the regularization parameter, :math:`g` is a convex function and :math:`T`
-  is a linear transform.
-
-  Args:
-    parameter: A `float`. The regularization parameter.
-    convex_function: A `tfmri.ConvexFunction`.
-    linear_operator: A `tf.linalg.LinearOperator`.
-  """
-  def __init__(self,
-               parameter=1.0,
-               convex_function=None,
-               linear_operator=None):
-    """Initialize this `Regularizer`."""
-    self._parameter = parameter
-    self._convex_function = convex_function
-    self._linear_operator = linear_operator
-
-  def __call__(self, x):
-    return self.call(x)
-
-  def call(self, x):
-    """Evaluates the regularizer for input `x`."""
-    if self._linear_operator is not None:
-      x = tf.linalg.matvec(self._linear_operator, x)
-    return self._parameter * self._convex_function(x)
-
-  @property
-  def convex_function(self):
-    return self._convex_function
-
-  @property
-  def linear_operator(self):
-    return self._linear_operator
-
-
-class TikhonovRegularizer(Regularizer):
-  """Tikhonov regularizer.
-
-  For a given input :math:`x`, computes
-  :math:`\lambda \left\| T(x - x_0) \right\|_2`, where :math:`\lambda` is a
-  regularization parameter, :math:`T` is any linear operator and :math:`x_0` is
-  a prior estimate.
-
-  Args:
-    parameter: A `float`. The regularization parameter.
-    transform: A `tf.linalg.LinearOperator`. The Tikhonov operator :math:`T`.
-      Defaults to the identity operator.
-    prior: A `tf.Tensor`. The prior estimate :math:`x_0`. Defaults to 0.
-
-  References:
-    .. [1] L. Ying, D. Xu and Z. . -P. Liang, "On Tikhonov regularization for
-      image reconstruction in parallel MRI," The 26th Annual International
-      Conference of the IEEE Engineering in Medicine and Biology Society, 2004,
-      pp. 1056-1059, doi: 10.1109/IEMBS.2004.1403345.
-  """
-  def __init__(self, parameter, transform=None, prior=None, dtype=tf.float32):
-    convex_function = ConvexFunctionL2Norm(
-        scale=parameter, ndim=None, dtype=dtype)
-    if prior is not None:
-      self._prior = tf.convert_to_tensor(prior, dtype=dtype)
-    else:
-      self._prior = None
-    super().__init__(parameter=1.0,
-                     convex_function=convex_function,
-                     linear_operator=transform)
-
-  def call(self, x):
-    """Evaluates the regularizer for input `x`."""
-    if self._prior is not None:
-      x -= self._prior
-    return super().call(x)
-
-
-class TotalVariationRegularizer(Regularizer):
-  """Regularizer calculating the total variation of a [batch of] input[s].
-
-  For a given input :math:`x`, computes :math:`\lambda \left\| Dx \right\|_1`,
-  where :math:`\lambda` is a regularization parameter and :math:`D` is the
-  finite difference operator.
-
-  Args:
-    parameter: A `float`. The regularization parameter.
-    image_shape: A `tf.TensorShape` or a list of ints.
-    axis: An `int` or a list of `ints`. The axes along which to compute the
-      total variation.
-  """
-  def __init__(self, parameter, image_shape, axis, dtype=tf.float32):
-    image_shape = tf.TensorShape(image_shape)
-    axis = check_util.validate_axis(axis, image_shape.rank,
-                                    max_length=image_shape.rank,
-                                    canonicalize="negative")
-    operators = [linalg_imaging.LinearOperatorFiniteDifference(
-        image_shape, axis=ax, dtype=dtype) for ax in axis]
-    linear_operator = linalg_ext.LinearOperatorVerticalStack(operators)
-    convex_function = ConvexFunctionL1Norm(
-        scale=parameter, ndim=linear_operator.range_dimension, dtype=dtype)
-    super().__init__(parameter=1.0,
-                     convex_function=convex_function,
-                     linear_operator=linear_operator)

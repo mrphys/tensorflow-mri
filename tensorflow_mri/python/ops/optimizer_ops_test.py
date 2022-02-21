@@ -53,7 +53,6 @@ class ADMMTest(test_util.TestCase):
 
   def test_total_variation(self):
     """Test ADMM can minimize total variation problem."""
-    ndim = 4
     operator = tf.linalg.LinearOperatorIdentity(4)
     x = tf.convert_to_tensor([1.16495351,
                               0.62683908,
@@ -80,6 +79,35 @@ class ADMMTest(test_util.TestCase):
 
     self.assertAllClose(result.x, expected_x)
     self.assertEqual(result.i, expected_i)
+
+  def test_linearized(self):
+    operator = tf.linalg.LinearOperatorIdentity(4)
+    x = tf.convert_to_tensor([1.16495351,
+                              0.62683908,
+                              0.07508015,
+                              0.35160690])
+    rhs = operator.matvec(x)
+    lambda_ = 0.1
+    atol = 1e-4
+    rtol = 1e-2
+    max_iterations = 100
+
+    function_f = convex_ops.ConvexFunctionLeastSquares(operator, rhs)
+    function_g = convex_ops.ConvexFunctionL1Norm(scale=lambda_, ndim=3)
+
+    operator_a = linalg_ext.LinearOperatorFiniteDifference(4)
+
+    result = optimizer_ops.admm_minimize(function_f, function_g,
+                                         operator_a=operator_a,
+                                         atol=atol, rtol=rtol,
+                                         max_iterations=max_iterations,
+                                         linearized=True)
+
+    expected_i = 100
+    expected_x = [1.064954, 0.626839, 0.27508 , 0.251607]
+
+    self.assertAllClose(expected_x, result.x)
+    self.assertEqual(expected_i, result.i)
 
 
 if __name__ == '__main__':

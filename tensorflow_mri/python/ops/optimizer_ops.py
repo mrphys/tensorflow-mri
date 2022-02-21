@@ -41,10 +41,16 @@ AdmmOptimizerResults = collections.namedtuple(
 )
 
 
-def admm_minimize(function_f, function_g,
-                  operator_a=None, operator_b=None, constant_c=None,
-                  x_shape=None, penalty_rho=1.0, atol=1e-5,
-                  rtol=1e-5, max_iterations=50):
+def admm_minimize(function_f,
+                  function_g,
+                  operator_a=None,
+                  operator_b=None,
+                  constant_c=None,
+                  penalty_rho=1.0,
+                  atol=1e-5,
+                  rtol=1e-5,
+                  max_iterations=50,
+                  linearized=False):
   """Applies the ADMM algorithm to minimize a separable convex function.
 
   Minimizes :math:`f(x) + g(z)`, subject to :math:`Ax + Bz = c`.
@@ -66,6 +72,12 @@ def admm_minimize(function_f, function_g,
     rtol: A scalar `Tensor`. The relative tolerance. Defaults to 1e-5.
     max_iterations: A scalar `Tensor`. The maximum number of iterations for ADMM
       updates.
+    linearized: A `bool`. If `True`, use linearized variant of the ADMM
+      algorithm. Linearized ADMM solves problems of the form
+      :math:`f(x) + g(Ax)` and only requires evaluation of the proximal operator
+      of `g(x)`. This is useful when the proximal operator of `g(Ax)` cannot be
+      easily evaluated, but the proximal operator of `g(x)` can. Defaults to
+      `False`.
 
   Returns:
     A namedtuple containing the following fields:
@@ -79,10 +91,18 @@ def admm_minimize(function_f, function_g,
       - `dtol`: The dual tolerance.
 
   References:
-    Boyd, S., Parikh, N., & Chu, E. (2011). Distributed optimization and
-    statistical learning via the alternating direction method of multipliers.
-    Now Publishers Inc.
+    .. [1] Boyd, S., Parikh, N., & Chu, E. (2011). Distributed optimization and
+      statistical learning via the alternating direction method of multipliers.
+      Now Publishers Inc.
   """
+  if linearized:
+    if operator_b is not None:
+      raise ValueError(
+          "Linearized ADMM does not support the use of `operator_b`.")
+    if constant_c is not None:
+      raise ValueError(
+          "Linearized ADMM does not support the use of `constant_c`.")
+
   # Infer the dtype of the variables from the dtype of f.
   dtype = tf.dtypes.as_dtype(function_f.dtype)
   if function_g.dtype != dtype:
@@ -141,8 +161,12 @@ def admm_minimize(function_f, function_g,
         f"dimension of `operator_a`, but got: {constant_c.shape[-1]} and "
         f"{u_ndim}")
 
-  f_prox = _get_prox_fn(function_f, operator_a, "f", "A")
-  g_prox = _get_prox_fn(function_g, operator_b, "g", "B")
+  if linearized:
+    x_update_fn = function_f.prox
+    z_update_fn = function_g.prox
+  else:
+    x_update_fn = _get_admm_update_fn(function_f, operator_a)
+    z_update_fn = _get_admm_update_fn(function_g, operator_b)
 
   x_shape = tf.TensorShape([x_ndim])
   z_shape = tf.TensorShape([z_ndim])
@@ -158,9 +182,6 @@ def admm_minimize(function_f, function_g,
   max_iterations = tf.convert_to_tensor(
       max_iterations, dtype=tf.dtypes.int32, name='max_iterations')
 
-  # For convenience.
-  one_over_rho = 1.0 / penalty_rho
-
   def _stopping_condition(state):
     return tf.math.logical_and(
         tf.math.real(tf.norm(state.r, axis=-1)) <= state.ptol,
@@ -174,15 +195,22 @@ def admm_minimize(function_f, function_g,
     """A single ADMM step."""
     # x-minimization step.
     state_bz = tf.linalg.matvec(operator_b, state.z)
-    v = tf.linalg.matvec(operator_a, constant_c - state.u - state_bz,
-                         adjoint_a=True)
-    x = f_prox(v, scale=one_over_rho)
+    if linearized:
+      v = state.x - tf.linalg.matvec(
+          operator_a,
+          tf.linalg.matvec(operator_a, state.x) - state.z + state.u,
+          adjoint_a=True)
+    else:
+      v = constant_c - state_bz - state.u
+    x = x_update_fn(v, penalty_rho)
 
     # z-minimization step.
     ax = tf.linalg.matvec(operator_a, x)
-    v = tf.linalg.matvec(operator_b, constant_c - state.u - ax,
-                         adjoint_a=False)
-    z = g_prox(v, scale=one_over_rho)
+    if linearized:
+      v = ax + state.u
+    else:
+      v = constant_c - ax - state.u
+    z = z_update_fn(v, penalty_rho)
 
     # Dual variable update and compute residuals.
     bz = tf.linalg.matvec(operator_b, z)
@@ -227,30 +255,54 @@ def admm_minimize(function_f, function_g,
   return tf.while_loop(_cond, _body, [state])[0]
 
 
-def _get_prox_fn(function, operator, function_name, operator_name):
-  if not isinstance(operator, tf.linalg.LinearOperatorScaledIdentity):
-    if not isinstance(function, convex_ops.ConvexFunctionLeastSquares):
-      raise ValueError(
-          f"A non-default operator {operator_name} is only supported if "
-          f"{function_name} is a least squares function.")
+def _get_admm_update_fn(function, operator):
+  """Returns a function for the ADMM update.
 
-    def _prox(v, scale=None):
-      one_over_scale = 1.0 / (scale or 1.0)
-      # Create operator E^T E + rho * A^T A, where E is the quadratic coefficient
-      # in the least squares convex function.
+  The returned function evaluates the expression
+  :math:`{\mathop{\mathrm{argmin}}_x \left ( f(x) + \frac{\rho}{2} \left\| Ax - v \right\|_2^2 \right )`
+  for a given input :math:`v` and penalty parameter :math:`\rho`.
+
+  This function will raise an error if the above expression cannot be easily
+  evaluated for the specified convex function and linear operator.
+  """
+  if isinstance(operator, tf.linalg.LinearOperatorIdentity):
+    def _update_fn(x, rho):
+      return function.prox(x, scale=1.0 / rho)
+    return _update_fn
+
+  if isinstance(operator, tf.linalg.LinearOperatorScaledIdentity):
+    # This is equivalent to multiplication by a scalar, which can be taken out
+    # of the norm and pooled with `rho`. If multiplier is negative, we also
+    # change the sign of `v` in order to obtain the expression of the proximal
+    # operator of f.
+    multiplier = operator.multiplier
+    def _update_fn(v, rho):
+      return function.prox(
+          tf.math.sign(multiplier) * v, scale=tf.math.abs(multiplier) / rho)
+    return _update_fn
+
+  if isinstance(function, convex_ops.ConvexFunctionQuadratic):
+    # See ref. [1], section 4.2.
+    def _update_fn(v, rho):
+      # Create operator Q + rho * A^T A, where Q is the quadratic coefficient
+      # of the quadratic convex function.
       scaled_identity = tf.linalg.LinearOperatorScaledIdentity(
-          operator.shape[-1], tf.cast(one_over_scale, operator.dtype))
-      prox_operator = tf.linalg.LinearOperatorComposition(
+          operator.shape[-1], tf.cast(rho, operator.dtype))
+      ls_operator = tf.linalg.LinearOperatorComposition(
           [scaled_identity, operator.H, operator])
-      prox_operator = linalg_ext.LinearOperatorAddition(
-          [function.quadratic_coefficient, prox_operator],
+      ls_operator = linalg_ext.LinearOperatorAddition(
+          [function.quadratic_coefficient, ls_operator],
           is_self_adjoint=True, is_positive_definite=True)
-      rhs = function.rhs + one_over_scale * v
-      return linalg_ops.conjugate_gradient(prox_operator, rhs).x
+      # Compute the right-hand side of the linear system.
+      rhs = (rho * tf.linalg.matvec(operator, v, adjoint_a=True) -
+             function.linear_coefficient)
+      # Solve the linear system using CG (see ref [1], section 4.3.4).
+      return linalg_ops.conjugate_gradient(ls_operator, rhs).x
+    return _update_fn
 
-    return _prox
-
-  return function.prox
+  raise NotImplementedError(
+      f"No rules to evaluate the ADMM update for function "
+      f"{function.name} and operator {operator.name}.")
 
 
 lbfgs_minimize = tfp.optimizer.lbfgs_minimize

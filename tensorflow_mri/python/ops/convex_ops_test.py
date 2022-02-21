@@ -22,6 +22,128 @@ from tensorflow_mri.python.util import test_util
 
 
 @test_util.run_all_in_graph_and_eager_modes
+class ConvexFunctionL1NormTest(test_util.TestCase):
+
+  @parameterized.parameters(
+      # x, scale, expected
+      ([3., 4.], 2.0, 14.0),
+      ([3., 4.], 1.0, 7.0),
+      ([[6., 8.], [4., 3.]], 1.0, [14.0, 7.0]),
+      ([3., -4.], 1.0, 7.0)
+  )
+  def test_call(self, x, scale, expected):
+    f = convex_ops.ConvexFunctionL1Norm(scale=scale)
+    self.assertAllClose(expected, f(x))
+
+  @parameterized.parameters(
+      # x, scale, expected
+      ([3., 4.], 2.0, [1., 2.]),
+      ([3., 4.], 5.0, [0., 0.]),
+      ([[6., 8.], [4., 3.]], 1.0, [[5., 7.], [3., 2.]]),
+      ([3., -4.], 2.0, [1., -2.])
+  )
+  def test_prox(self, x, scale, expected):
+    f = convex_ops.ConvexFunctionL1Norm(scale=scale)
+    self.assertAllClose(expected, f.prox(x))
+
+
+@test_util.run_all_in_graph_and_eager_modes
+class ConvexFunctionL2NormTest(test_util.TestCase):
+
+  @parameterized.parameters(
+      # x, scale, expected
+      ([3., 4.], 2.0, 10.0),
+      ([3., 4.], 1.0, 5.0),
+      ([[6., 8.], [4., 3.]], 1.0, [10.0, 5.0])
+  )
+  def test_call(self, x, scale, expected):
+    f = convex_ops.ConvexFunctionL2Norm(scale=scale)
+    self.assertAllClose(expected, f(x))
+
+  @parameterized.parameters(
+      # x, scale, expected
+      ([3., 4.], 2.0, [1.8, 2.4]),
+      ([3., 4.], 1.0, [2.4, 3.2]),
+      ([[6., 8.], [4., 3.]], 1.0, [[5.4, 7.2], [3.2, 2.4]])
+  )
+  def test_prox(self, x, scale, expected):
+    f = convex_ops.ConvexFunctionL2Norm(scale=scale)
+    self.assertAllClose(expected, f.prox(x))
+
+
+@test_util.run_all_in_graph_and_eager_modes
+class ConvexFunctionL2NormSquaredTest(test_util.TestCase):
+
+  @parameterized.parameters(
+      # x, scale, expected
+      ([1., 2., 3.], 1.0, 14.0),
+      ([1., 2., 3.], 0.5, 7.0),
+      ([[1., 2.], [3., 4.]], 1.0, [5.0, 25.0])
+  )
+  def test_call(self, x, scale, expected):
+    f = convex_ops.ConvexFunctionL2NormSquared(scale=scale)
+    self.assertAllClose(expected, f(x))
+
+  @parameterized.parameters(
+      # x, scale, expected
+      ([1.5, 3.0, 4.5], 1.0, [0.5, 1.0, 1.5]),
+      ([1.0, 2.0, 3.0], 2.0, [0.2, 0.4, 0.6])
+  )
+  def test_prox(self, x, scale, expected):
+    f = convex_ops.ConvexFunctionL2NormSquared(scale=scale)
+    self.assertAllClose(expected, f.prox(x))
+
+
+@test_util.run_all_in_graph_and_eager_modes
+class ConvexFunctionTikhonovTest(test_util.TestCase):
+  """Tests for `ConvexFunctionTikhonov`."""
+  @parameterized.parameters(
+      # x, scale, transform, prior, expected
+      ([3.0, 4.0], 2.0, None, None, 50.0),
+      ([3.0, 4.0], 0.5, None, None, 12.5),
+      ([3.0, 4.0], 0.5, 2.0, None, 50.0),
+      ([3.0, 4.0], 2.0, None, [3.0, 2.0], 8.0)
+  )
+  def test_call(self, x, scale, transform, prior, expected):
+    if isinstance(transform, float):
+      x = tf.convert_to_tensor(x)
+      transform = tf.linalg.LinearOperatorScaledIdentity(x.shape[-1], transform)
+    f = convex_ops.ConvexFunctionTikhonov(
+        scale=scale,
+        transform=transform,
+        prior=prior)
+    self.assertAllClose(expected, f(x))
+
+
+class ConvexFunctionTotalVariationTest(test_util.TestCase):
+  """Tests for `TotalVariationRegularizer`."""
+  def test_call(self):
+    x = [[1., 2., 3.],
+         [4., 5., 6.]]
+    x_flat = tf.reshape(x, [-1])
+    reg1 = convex_ops.ConvexFunctionTotalVariation(parameter=0.1,
+                                                   image_shape=[2, 3],
+                                                   axis=[0, 1])
+    ref1 = 1.3
+    res1 = reg1(x_flat)
+    self.assertAllClose(res1, ref1)
+    
+    reg2 = convex_ops.ConvexFunctionTotalVariation(parameter=0.1,
+                                                   image_shape=[2, 3],
+                                                   axis=1)
+    res2 = reg2(x_flat)
+    ref2 = 0.4
+    self.assertAllClose(res2, ref2)
+
+    reg3 = convex_ops.ConvexFunctionTotalVariation(parameter=0.5,
+                                                   image_shape=[3],
+                                                   axis=-1)
+    res3 = reg3(x)
+    ref3 = [1.0, 1.0]
+    self.assertAllClose(res3, ref3)
+
+
+@test_util.run_all_in_graph_and_eager_modes
 class BlockSoftThresholdTest(test_util.TestCase):
 
   @parameterized.parameters(
@@ -85,54 +207,6 @@ class SoftThresholdTest(test_util.TestCase):
     x = tf.convert_to_tensor(x, dtype=tf.complex64)
     y = convex_ops.soft_threshold(x, threshold)
     self.assertAllClose(y, expected_y)
-
-
-class TikhonovRegularizerTest(test_util.TestCase):
-  """Tests for `TikhonovRegularizer`."""
-  @parameterized.parameters(
-      # x, parameter, transform, prior, expected
-      ([3.0, 4.0], 2.0, None, None, 10.0),
-      ([3.0, 4.0], 0.5, None, None, 2.5),
-      ([3.0, 4.0], 0.5, tf.linalg.LinearOperatorScaledIdentity(2, 2.0), None, 5.0),
-      ([3.0, 4.0], 2.0, None, [3.0, 2.0], 4.0),
-  )
-  def test_call(self, x, parameter, transform, prior, expected):
-
-    reg = convex_ops.TikhonovRegularizer(
-        parameter=parameter,
-        transform=transform,
-        prior=prior)
-
-    result = reg(x)
-    self.assertAllClose(result, expected)
-
-
-class TotalVariationRegularizerTest(test_util.TestCase):
-  """Tests for `TotalVariationRegularizer`."""
-  def test_call(self):
-    x = [[1., 2., 3.],
-         [4., 5., 6.]]
-    x_flat = tf.reshape(x, [-1])
-    reg1 = convex_ops.TotalVariationRegularizer(parameter=0.1,
-                                                image_shape=[2, 3],
-                                                axis=[0, 1])
-    ref1 = 1.3
-    res1 = reg1(x_flat)
-    self.assertAllClose(res1, ref1)
-    
-    reg2 = convex_ops.TotalVariationRegularizer(parameter=0.1,
-                                                image_shape=[2, 3],
-                                                axis=1)
-    res2 = reg2(x_flat)
-    ref2 = 0.4
-    self.assertAllClose(res2, ref2)
-
-    reg3 = convex_ops.TotalVariationRegularizer(parameter=0.5,
-                                                image_shape=[3],
-                                                axis=-1)
-    res3 = reg3(x)
-    ref3 = [1.0, 1.0]
-    self.assertAllClose(res3, ref3)
 
 
 if __name__ == '__main__':
