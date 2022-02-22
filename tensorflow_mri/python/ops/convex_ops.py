@@ -94,6 +94,11 @@ class ConvexFunction():
     raise NotImplementedError("Method `_prox` is not implemented.")
 
   @property
+  def scale(self):
+    """The scaling factor."""
+    return self._scale
+
+  @property
   def ndim(self):
     """The dimensionality of the domain of this `ConvexFunction`."""
     return self._ndim
@@ -182,6 +187,18 @@ class ConvexFunctionAffineMappingComposition(ConvexFunction):
     raise NotImplementedError(
        f"The proximal operator of {self.name} is not implemented or "
        f"does not have a closed form expression.")
+
+  @property
+  def function(self):
+    return self._function
+
+  @property
+  def operator(self):
+    return self._operator
+
+  @property
+  def constant(self):
+    return self._constant
 
 
 class ConvexFunctionLinearOperatorComposition(ConvexFunctionAffineMappingComposition):
@@ -305,10 +322,10 @@ class ConvexFunctionTikhonov(ConvexFunctionAffineMappingComposition):
   a prior estimate.
 
   Args:
-    scale: A `float`. The scaling factor.
     transform: A `tf.linalg.LinearOperator`. The Tikhonov operator :math:`T`.
       Defaults to the identity operator.
     prior: A `tf.Tensor`. The prior estimate :math:`x_0`. Defaults to 0.
+    scale: A `float`. The scaling factor.
     ndim: An `int`. The dimensionality of the domain of this `ConvexFunction`.
       Defaults to `None`.
     dtype: A `tf.DType`. The dtype of the inputs. Defaults to `float32`.
@@ -326,14 +343,28 @@ class ConvexFunctionTikhonov(ConvexFunctionAffineMappingComposition):
     function = ConvexFunctionL2NormSquared(scale=scale,
                                            ndim=ndim,
                                            dtype=dtype)
-    if prior is not None:
-      prior = tf.math.negative(prior)
-      if transform is not None:
-        prior = tf.matvec(transform, prior)
+    # Stored only for external access. Not actually used for computation.
+    self._transform = transform
+    self._prior = prior
+    # Convert to affine transform.
+    operator = self._transform
+    constant = self._prior
+    if self._prior is not None:
+      constant = tf.math.negative(constant)
+      if operator is not None:
+        constant = tf.linalg.matvec(operator, constant)
     super().__init__(function,
-                     operator=transform,
-                     constant=prior,
+                     operator=operator,
+                     constant=constant,
                      name=name)
+
+  @property
+  def transform(self):
+    return self._transform
+
+  @property
+  def prior(self):
+    return self._prior
 
 
 class ConvexFunctionTotalVariation(ConvexFunctionLinearOperatorComposition):

@@ -51,9 +51,22 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
   have a coil dimension, including in the case of multicoil imaging. The coil
   dimension will be handled automatically.
 
+  The domain shape of this operator is `extra_shape + image_shape`. The range
+  of this operator is `extra_shape + [num_coils] + image_shape`, for
+  Cartesian imaging, or `extra_shape + [num_coils] + [num_samples]`, for
+  non-Cartesian imaging. `[num_coils]` is optional and only present for
+  multicoil operators. This operator supports batches of images and will
+  vectorize operations when possible.
+
   Args:
-    image_shape: A `TensorShape` or a list of `ints` of length 2 or 3.
-      The shape of the images that this operator acts on.
+    image_shape: A `TensorShape` or a list of `ints`. The shape of the images
+      that this operator acts on. Must have length 2 or 3.
+    extra_shape: An optional `TensorShape` or list of `ints`. Additional
+      dimensions that should be included within the operator domain. Note that
+      `extra_shape` is not needed to reconstruct independent batches of images.
+      However, it is useful when this operator is used as part of a
+      reconstruction that performs computation along non-spatial dimensions,
+      e.g. for temporal regularization. Defaults to `None`.
     mask: An optional `Tensor` of type `bool`. The sampling mask. Must have
       shape `[..., *S]`, where `S` is the `image_shape` and `...` is
       the batch shape, which can have any number of dimensions. If `mask` is
@@ -75,20 +88,20 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
       The coil sensitivity maps. Must have shape `[..., C, *S]`, where `S`
       is the `image_shape`, `C` is the number of coils and `...` is the batch
       shape, which can have any number of dimensions.
-    phase: An optional `Tensor` of type `float32` or `float64`.
+    phase: An optional `Tensor` of type `float32` or `float64`. A phase
+      estimate for the image. If provided, this operator will be
+      phase-constrained.
     fft_norm: FFT normalization mode. Must be `None` (no normalization)
       or `'ortho'`. Defaults to `'ortho'`.
     sens_norm: A `bool`. Whether to normalize coil sensitivities. Defaults to
       `False`.
-    image_rank: An `int`. The number of spatial dimensions. Defaults to
-      `image_shape.rank`. This should be specified if `image_shape` contains
-      any non-spatial dimensions.
     dtype: The dtype of this operator. Must be `complex64` or `complex128`.
       Defaults to `complex64`.
     name: An optional `string`. The name of this operator.
   """
   def __init__(self,
                image_shape,
+               extra_shape=None,
                mask=None,
                trajectory=None,
                density=None,
@@ -96,11 +109,11 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
                phase=None,
                fft_norm='ortho',
                sens_norm=False,
-               image_rank=None,
                dtype=tf.complex64,
                name='LinearOperatorMRI'):
     parameters = dict(
         image_shape=image_shape,
+        extra_shape=extra_shape,
         mask=mask,
         trajectory=trajectory,
         density=density,
@@ -108,7 +121,6 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
         phase=phase,
         fft_norm=fft_norm,
         sens_norm=sens_norm,
-        image_rank=image_rank,
         dtype=dtype,
         name=name)
 
@@ -118,22 +130,22 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
       raise ValueError(
           f"`dtype` must be `complex64` or `complex128`, but got: {str(dtype)}") 
 
-    # Set image shape and rank.
+    # Set image shape, rank and extra shape.
     image_shape = tf.TensorShape(image_shape)
-    image_rank = image_rank or image_shape.rank
-    if image_rank not in (2, 3):
+    rank = image_shape.rank
+    if rank not in (2, 3):
       raise ValueError(
-          f"Rank must be 2 or 3, but got: {image_rank}")
+          f"Rank must be 2 or 3, but got: {rank}")
     if not image_shape.is_fully_defined():
       raise ValueError(
           f"`image_shape` must be fully defined, but got {image_shape}")
-    self._image_rank = image_rank
-    self._image_shape = image_shape[-self._image_rank:]
-    self._image_axes = list(range(-self._image_rank, 0))
-    self._inner_batch_shape = image_shape[:-self._image_rank]
+    self._rank = rank
+    self._image_shape = image_shape
+    self._image_axes = list(range(-self._rank, 0))
+    self._extra_shape = tf.TensorShape(extra_shape)
     
-    # Assume scalar batch shape, then update according to inputs.
-    batch_shape = self._inner_batch_shape
+    # Set initial batch shape, then update according to inputs.
+    batch_shape = self._extra_shape
     batch_shape_tensor = tensor_util.convert_shape_to_tensor(batch_shape)
 
     # Set sampling mask after checking dtype and static shape.
@@ -142,14 +154,14 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
       if mask.dtype != tf.bool:
         raise TypeError(
             f"`mask` must have dtype `bool`, but got: {str(mask.dtype)}")
-      if not mask.shape[-self._image_rank:].is_compatible_with(self._image_shape):
+      if not mask.shape[-self._rank:].is_compatible_with(self._image_shape):
         raise ValueError(
             f"Expected the last dimensions of `mask` to be compatible with "
-            f"{self._image_shape}], but got: {mask.shape[-self._image_rank:]}")
+            f"{self._image_shape}], but got: {mask.shape[-self._rank:]}")
       batch_shape = tf.broadcast_static_shape(
-          batch_shape, mask.shape[:-self._image_rank])
+          batch_shape, mask.shape[:-self._rank])
       batch_shape_tensor = tf.broadcast_dynamic_shape(
-          batch_shape_tensor, tf.shape(mask)[:-self._image_rank])
+          batch_shape_tensor, tf.shape(mask)[:-self._rank])
     self._mask = mask
 
     # Set sampling trajectory after checking dtype and static shape.
@@ -161,10 +173,10 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
         raise TypeError(
             f"Expected `trajectory` to have dtype `{str(dtype.real_dtype)}`, "
             f"but got: {str(trajectory.dtype)}")
-      if trajectory.shape[-1] != self._image_rank:
+      if trajectory.shape[-1] != self._rank:
         raise ValueError(
             f"Expected the last dimension of `trajectory` to be "
-            f"{self._image_rank}, but got {trajectory.shape[-1]}")
+            f"{self._rank}, but got {trajectory.shape[-1]}")
       batch_shape = tf.broadcast_static_shape(
           batch_shape, trajectory.shape[:-2])
       batch_shape_tensor = tf.broadcast_dynamic_shape(
@@ -205,16 +217,16 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
         raise TypeError(
             f"Expected `sensitivities` to have dtype `{str(dtype)}`, but got: "
             f"{str(sensitivities.dtype)}")
-      if not sensitivities.shape[-self._image_rank:].is_compatible_with(
+      if not sensitivities.shape[-self._rank:].is_compatible_with(
           self._image_shape):
         raise ValueError(
             f"Expected the last dimensions of `sensitivities` to be "
             f"compatible with {self._image_shape}, but got: "
-            f"{sensitivities.shape[-self._image_rank:]}")
+            f"{sensitivities.shape[-self._rank:]}")
       batch_shape = tf.broadcast_static_shape(
-          batch_shape, sensitivities.shape[:-(self._image_rank + 1)])
+          batch_shape, sensitivities.shape[:-(self._rank + 1)])
       batch_shape_tensor = tf.broadcast_dynamic_shape(
-          batch_shape_tensor, tf.shape(sensitivities)[:-(self._image_rank + 1)])
+          batch_shape_tensor, tf.shape(sensitivities)[:-(self._rank + 1)])
     self._sensitivities = sensitivities
 
     if phase is not None:
@@ -223,16 +235,16 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
         raise TypeError(
             f"Expected `phase` to have dtype `{str(dtype.real_dtype)}`, "
             f"but got: {str(phase.dtype)}")
-      if not phase.shape[-self._image_rank:].is_compatible_with(
+      if not phase.shape[-self._rank:].is_compatible_with(
           self._image_shape):
         raise ValueError(
             f"Expected the last dimensions of `phase` to be "
             f"compatible with {self._image_shape}, but got: "
-            f"{phase.shape[-self._image_rank:]}")
+            f"{phase.shape[-self._rank:]}")
       batch_shape = tf.broadcast_static_shape(
-          batch_shape, phase.shape[:-self._image_rank])
+          batch_shape, phase.shape[:-self._rank])
       batch_shape_tensor = tf.broadcast_dynamic_shape(
-          batch_shape_tensor, tf.shape(phase)[:-self._image_rank])
+          batch_shape_tensor, tf.shape(phase)[:-self._rank])
     self._phase = phase
 
     # Set batch shapes.
@@ -242,13 +254,13 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
     # If multicoil, add coil dimension to mask, trajectory and density.
     if self._sensitivities is not None:
       if self._mask is not None:
-        self._mask = tf.expand_dims(self._mask, axis=-(self._image_rank + 1))
+        self._mask = tf.expand_dims(self._mask, axis=-(self._rank + 1))
       if self._trajectory is not None:
         self._trajectory = tf.expand_dims(self._trajectory, axis=-3)
       if self._density is not None:
         self._density = tf.expand_dims(self._density, axis=-2)
       if self._phase is not None:
-        self._phase = tf.expand_dims(self._phase, axis=-(self._image_rank + 1))
+        self._phase = tf.expand_dims(self._phase, axis=-(self._rank + 1))
 
     # Save some tensors for later use during computation.
     if self._mask is not None:
@@ -271,7 +283,7 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
     self._sens_norm = sens_norm
     if self._sens_norm:
       self._sensitivities = math_ops.normalize_no_nan(
-          self._sensitivities, axis=-(self._image_rank + 1))
+          self._sensitivities, axis=-(self._rank + 1))
 
     super().__init__(dtype, name=name, parameters=parameters)
 
@@ -300,7 +312,7 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
       # Apply coil combination.
       if self.is_multicoil:
         x *= tf.math.conj(self._sensitivities)
-        x = tf.math.reduce_sum(x, axis=-(self._image_rank + 1))
+        x = tf.math.reduce_sum(x, axis=-(self._rank + 1))
 
       # Maybe remove phase from image.
       if self.is_phase_constrained:
@@ -316,7 +328,7 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
 
       # Apply sensitivity modulation.
       if self.is_multicoil:
-        x = tf.expand_dims(x, axis=-(self._image_rank + 1))
+        x = tf.expand_dims(x, axis=-(self._rank + 1))
         x *= self._sensitivities
 
       # Apply Fourier operator.
@@ -341,7 +353,7 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
   
   def _domain_shape(self):
     """Returns the shape of the domain space of this operator."""
-    return self._inner_batch_shape.concatenate(self._image_shape)
+    return self._extra_shape.concatenate(self._image_shape)
 
   def _range_shape(self):
     """Returns the shape of the range space of this operator."""
@@ -351,15 +363,15 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
       range_shape = [self._trajectory.shape[-2]]
     if self.is_multicoil:
       range_shape = [self.num_coils] + range_shape
-    return self._inner_batch_shape.concatenate(range_shape)
+    return self._extra_shape.concatenate(range_shape)
 
   def _batch_shape(self):
     """Returns the static batch shape of this operator."""
-    return self._batch_shape_value[:-self._inner_batch_shape.rank]
+    return self._batch_shape_value[:-self._extra_shape.rank]
 
   def _batch_shape_tensor(self):
     """Returns the dynamic batch shape of this operator."""
-    return self._batch_shape_tensor_value[:-self._inner_batch_shape.rank]
+    return self._batch_shape_tensor_value[:-self._extra_shape.rank]
 
   @property
   def image_shape(self):
@@ -367,9 +379,9 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
     return self._image_shape
 
   @property
-  def image_rank(self):
+  def rank(self):
     """The number of spatial dimensions."""
-    return self._image_rank
+    return self._rank
 
   @property
   def is_cartesian(self):
@@ -396,82 +408,12 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
     """The number of coils."""
     if self._sensitivities is None:
       return None
-    return self._sensitivities.shape[-(self._image_rank + 1)]
+    return self._sensitivities.shape[-(self._rank + 1)]
 
   @property
   def _composite_tensor_fields(self):
     return ("image_shape", "mask", "trajectory", "density", "sensitivities",
             "fft_norm")
-
-
-@linear_operator.make_composite_tensor
-class LinearOperatorGramMatrix(linalg_imaging.LinalgImagingMixin,
-                               tf.linalg.LinearOperator):
-  """Gram matrix of a linear operator.
-
-  If :math:`A` is a `LinearOperator`, this operator is equivalent to
-  :math:`A^H A`.
-
-  The Gram matrix of :math:`A` appears in the normal equation
-  :math:`A^H A x = A^H b` associated with the least squares problem 
-  :math:`\min_x{\frac{1}{2} \left \| Ax-b \right \|_2^2}`.
-
-  This operator is self-adjoint and positive definite. Therefore, linear systems
-  defined by this linear operator can be solved using the conjugate gradient
-  method.
-  """
-  def __init__(self,
-               operator,
-               reg_parameter=None,
-               name=None):
-    parameters = dict(
-        operator=operator,
-        reg_parameter=reg_parameter,
-        name=name)
-    self._operator = operator
-    self._reg_parameter = reg_parameter
-    self._reg_operator = None
-    self._composed = linalg_imaging.LinearOperatorComposition(
-        operators=[self._operator.H, self._operator])
-
-    if self._reg_parameter is not None:
-      if self._reg_operator is None:
-        self._reg_operator = linalg_imaging.LinearOperatorScaledIdentity(
-            shape=self._operator.domain_shape,
-            multiplier=tf.cast(self._reg_parameter, self._operator.dtype))
-      self._composed = linalg_imaging.LinearOperatorAddition(
-          operators=[self._composed, self._reg_operator])
-
-    super().__init__(operator.dtype,
-                     is_self_adjoint=True,
-                     is_positive_definite=True,
-                     is_square=True,
-                     parameters=parameters)
-
-  def _transform(self, x, adjoint=False):
-    return self._composed.transform(x, adjoint=adjoint)
-
-  def _domain_shape(self):
-    return self.operator.domain_shape
-
-  def _range_shape(self):
-    return self.operator.domain_shape
-  
-  def _batch_shape(self):
-    return self.operator.batch_shape
-
-  def _domain_shape_tensor(self):
-    return self.operator.domain_shape_tensor()
-  
-  def _range_shape_tensor(self):
-    return self.operator.domain_shape_tensor()
-
-  def _batch_shape_tensor(self):
-    return self.operator.batch_shape_tensor()
-
-  @property
-  def operator(self):
-    return self._operator
 
 
 class LinearOperatorFFT(linalg_imaging.LinalgImagingMixin): # pylint: disable=abstract-method

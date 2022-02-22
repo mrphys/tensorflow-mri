@@ -40,19 +40,18 @@ class NewPicsTest(test_util.TestCase):
     sens = data['sens']
     ref = data['recon/cs/i2']
 
-    image_shape = [28, 384, 384]
-    regularizer = convex_ops.TotalVariationRegularizer(
-        parameter=0.001, image_shape=image_shape, axis=-3, dtype=tf.complex64)
+    regularizer = convex_ops.ConvexFunctionTotalVariation(
+        scale=0.001, ndim=[28, 384, 384], axis=-3, dtype=tf.complex64)
     image = recon_ops.reconstruct_pics(
         kspace,
-        image_shape,
+        image_shape=[384, 384],
+        extra_shape=[28],
         trajectory=traj,
         density=dens,
         sensitivities=sens,
         regularizer=regularizer,
         optimizer='lbfgs',
-        optimizer_kwargs=dict(max_iterations=4),
-        image_rank=2)
+        optimizer_kwargs=dict(max_iterations=4))
 
     import scipy.io as sio
     sio.savemat('/workspaces/mrphys/test.mat', {'image': image.numpy()})

@@ -529,6 +529,75 @@ class LinearOperatorScaledIdentity(LinalgImagingMixin,
     return tf.shape(self.multiplier)
 
 
+class LinearOperatorGramMatrix(LinalgImagingMixin,
+                               tf.linalg.LinearOperator):
+  """Gram matrix of a linear operator.
+
+  If :math:`A` is a `LinearOperator`, this operator is equivalent to
+  :math:`A^H A`.
+
+  The Gram matrix of :math:`A` appears in the normal equation
+  :math:`A^H A x = A^H b` associated with the least squares problem 
+  :math:`\min_x{\frac{1}{2} \left \| Ax-b \right \|_2^2}`.
+
+  This operator is self-adjoint and positive definite. Therefore, linear systems
+  defined by this linear operator can be solved using the conjugate gradient
+  method.
+  """
+  def __init__(self,
+               operator,
+               reg_parameter=None,
+               name=None):
+    parameters = dict(
+        operator=operator,
+        reg_parameter=reg_parameter,
+        name=name)
+    self._operator = operator
+    self._reg_parameter = reg_parameter
+    self._reg_operator = None
+    self._composed = LinearOperatorComposition(
+        operators=[self._operator.H, self._operator])
+
+    if self._reg_parameter is not None:
+      if self._reg_operator is None:
+        self._reg_operator = LinearOperatorScaledIdentity(
+            shape=self._operator.domain_shape,
+            multiplier=tf.cast(self._reg_parameter, self._operator.dtype))
+      self._composed = LinearOperatorAddition(
+          operators=[self._composed, self._reg_operator])
+
+    super().__init__(operator.dtype,
+                     is_self_adjoint=True,
+                     is_positive_definite=True,
+                     is_square=True,
+                     parameters=parameters)
+
+  def _transform(self, x, adjoint=False):
+    return self._composed.transform(x, adjoint=adjoint)
+
+  def _domain_shape(self):
+    return self.operator.domain_shape
+
+  def _range_shape(self):
+    return self.operator.domain_shape
+  
+  def _batch_shape(self):
+    return self.operator.batch_shape
+
+  def _domain_shape_tensor(self):
+    return self.operator.domain_shape_tensor()
+  
+  def _range_shape_tensor(self):
+    return self.operator.domain_shape_tensor()
+
+  def _batch_shape_tensor(self):
+    return self.operator.batch_shape_tensor()
+
+  @property
+  def operator(self):
+    return self._operator
+
+
 class LinearOperatorFiniteDifference(LinalgImagingMixin,
                                      tf.linalg.LinearOperator):
   """Linear operator acting like a finite difference operator.

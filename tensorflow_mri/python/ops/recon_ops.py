@@ -60,6 +60,7 @@ from tensorflow_mri.python.ops import optimizer_ops
 from tensorflow_mri.python.ops import signal_ops
 from tensorflow_mri.python.ops import traj_ops
 from tensorflow_mri.python.util import check_util
+from tensorflow_mri.python.util import linalg_imaging
 from tensorflow_mri.python.util import tensor_util
 
 
@@ -1111,7 +1112,7 @@ def reconstruct_adj(kspace,
                                           phase=phase,
                                           fft_norm='ortho',
                                           sens_norm=sens_norm)
-  rank = operator.image_rank
+  rank = operator.rank
 
   # Apply density compensation, if provided.
   if density is not None:
@@ -1166,7 +1167,7 @@ def reconstruct_cgsense(kspace,
                                    fft_norm='ortho',
                                    sens_norm=sens_norm),
       reg_parameter=reg_parameter)
-  rank = operator.operator.image_rank
+  rank = operator.operator.rank
 
   # Apply density compensation, if provided.
   if density is not None:
@@ -1204,26 +1205,14 @@ def reconstruct_cgsense(kspace,
         tf.norm(sensitivities, axis=-(rank + 1), keepdims=True))
     image *= sens_weights_sqrt
 
-  # If necessary, filter the image to remove k-space corners. This should be
-  # done if the trajectory has circular coverage and does not cover the k-space
-  # corners. If the user has not specified whether to apply the filter, we do it
-  # only for non-Cartesian trajectories, under the assumption that non-Cartesian
-  # trajectories are likely to have circular coverage of k-space while Cartesian
-  # trajectories are likely to have rectangular coverage.
-  if filter_kspace is None:
-    is_probably_circular = operator.operator.is_non_cartesian
-    filter_kspace = is_probably_circular
-  if filter_kspace:
-    fft_axes = list(range(-rank, 0))
-    kspace = fft_ops.fftn(image, axes=fft_axes, norm='ortho', shift=True)
-    kspace = signal_ops.filter_kspace(kspace, rank=rank, filter_type='atanfilt')
-    image = fft_ops.ifftn(kspace, axes=fft_axes, norm='ortho', shift=True)
+  
 
   return image
 
 
 def reconstruct_lstsq(kspace,
                       image_shape,
+                      extra_shape=None,
                       mask=None,
                       trajectory=None,
                       density=None,
@@ -1231,14 +1220,84 @@ def reconstruct_lstsq(kspace,
                       phase=None,
                       sens_norm=True,
                       regularizer=None,
-                      initial_image=None,
                       optimizer=None,
                       optimizer_kwargs=None,
-                      image_rank=None):
-  """Reconstructs an image using a least-squares formulation."""
+                      initial_image=None):
+  """Reconstructs an image using a least-squares formulation.
+
+  This is an iterative reconstruction method which formulates the image
+  reconstruction problem as follows:
+
+  .. math::
+    \hat{x} = {\mathop{\mathrm{argmin}}_x \left (\left\| Ax - y \right\|_2^2 + g(x) \right )
+
+  where :math:`A` is the MRI `LinearOperator`, :math:`x` is the solution, `y` is
+  the measured *k*-space data, and :math:`g(x)` is an optional `ConvexFunction`
+  used for regularization.
+
+  This function supports linear and non-linear reconstruction, depending on the
+  selected regularizer. The MRI operator is constructed internally and does not
+  need to be provided.
+
+  Args:
+    image_shape: A `TensorShape` or a list of `ints`. Must have length 2 or 3.
+      The shape of the reconstructed image[s].
+    extra_shape: An optional `TensorShape` or list of `ints`. Additional
+      dimensions that should be included within the solution domain. Note
+      that `extra_shape` is not needed to reconstruct independent batches of
+      images. However, it should be provided when performing a reconstruction
+      that operates along non-spatial dimensions, e.g. for temporal
+      regularization. Defaults to `None`.
+    mask: An optional `Tensor` of type `bool`. The sampling mask. Must have
+      shape `[..., *S]`, where `S` is the `image_shape` and `...` is
+      the batch shape, which can have any number of dimensions. `mask` should
+      be passed for reconstruction from undersampled Cartesian *k*-space.
+    trajectory: An optional `Tensor` of type `float32` or `float64`. Must have
+      shape `[..., M, N]`, where `N` is the rank (number of spatial dimensions),
+      `M` is the number of samples in the encoded space and `...` is the batch
+      shape, which can have any number of dimensions. `trajectory` should be
+      passed for reconstruction from non-Cartesian *k*-space.
+    density: An optional `Tensor` of type `float32` or `float64`. The sampling
+      densities. Must have shape `[..., M]`, where `M` is the number of
+      samples and `...` is the batch shape, which can have any number of
+      dimensions. This input is only relevant for non-Cartesian MRI
+      reconstruction. If passed, the MRI linear operator will include sampling
+      density compensation. Can also be set to `'auto'` to automatically
+      estimate the sampling density from the `trajectory`. If `None`, the MRI
+      operator will not perform sampling density compensation.
+    sensitivities: An optional `Tensor` of type `complex64` or `complex128`.
+      The coil sensitivity maps. Must have shape `[..., C, *S]`, where `S`
+      is the `image_shape`, `C` is the number of coils and `...` is the batch
+      shape, which can have any number of dimensions.
+    phase: An optional `Tensor` of type `float32` or `float64`. A phase
+      estimate for the reconstructed image. If provided, a phase-constrained
+      reconstruction will be performed. This improves the conditioning of the
+      reconstruction problem in applications where there is no interest in the
+      phase data. However, artefacts may appear if an inaccurate phase estimate
+      is passed.
+    sens_norm: A `bool`. Whether to normalize coil sensitivities. Defaults to
+      `False`.
+    regularizer: A `ConvexFunction`. The regularization term added to
+      least-squares objective.
+    optimizer: A `str`. One of `'cg'` (conjugate gradient), `'admm'`
+      (alternating direction method of multipliers) of `'lbfgs'`
+      (limited-memory Broyden-Fletcher-Goldfarb-Shanno). If `None`, the
+      optimizer is selected heuristically depending on other inputs. Note that
+      this heuristic may change in the future, so specify an optimizer if you
+      wish to ensure it will always be used in future versions. Not all
+      optimizers are compatible with all configurations.
+    initial_image:
+  """
+  # Choose a default optimizer.
+  if optimizer is None:
+    if regularizer is None or isinstance(regularizer,
+                                         convex_ops.ConvexFunctionTikhonov):
+      optimizer = 'cg'
+    else:
+      optimizer = 'admm'
   # Check optimizer.
-  optimizer = check_util.validate_enum(
-      optimizer or 'admm', {'admm', 'lbfgs'}, name='optimizer')
+    optimizer = check_util.validate_enum(
+        optimizer, {'cg', 'admm', 'lbfgs'}, name='optimizer')
 
   # We don't do a lot of input checking here, since it will be done by the
   # operator.
@@ -1246,20 +1305,42 @@ def reconstruct_lstsq(kspace,
 
   # Create the linear operator.
   operator = linalg_ops.LinearOperatorMRI(image_shape,
+                                          extra_shape=extra_shape,
                                           mask=mask,
                                           trajectory=trajectory,
                                           density=density,
                                           sensitivities=sensitivities,
+                                          phase=phase,
                                           fft_norm='ortho',
-                                          sens_norm=sens_norm,
-                                          image_rank=image_rank)
-  image_rank = operator.image_rank
+                                          sens_norm=sens_norm)
+  rank = operator.rank
 
   # Apply density compensation, if provided.
   if density is not None:
     kspace *= operator._dens_weights_sqrt
 
-  if optimizer == 'admm':
+  initial_image = operator.H.transform(kspace)
+
+  if optimizer == 'cg':
+    if regularizer is not None:
+      if not isinstance(regularizer, convex_ops.ConvexFunctionTikhonov):
+        raise ValueError(
+            f"Regularizer {regularizer.name} is incompatible with "
+            f"CG optimizer.")
+      reg_kwargs = {
+          'reg_parameter': regularizer.function.scale,
+          'reg_transform': regularizer.transform,
+          'reg_prior': regularizer.prior
+      }
+    else:
+      reg_kwargs = {}
+    
+    operator = linalg_imaging.LinearOperatorGramMatrix(operator, **reg_kwargs)
+    rhs = initial_image + reg_kwargs['reg_parameter'] * reg_kwargs['reg_prior']
+    state = linalg_ops.conjugate_gradient(operator, rhs, **optimizer_kwargs)
+    image = state.x
+
+  elif optimizer == 'admm':
     result = optimizer_ops.admm_minimize(
         convex_ops.ConvexFunctionLeastSquares(operator, kspace),
         regularizer.convex_function,
@@ -1301,8 +1382,23 @@ def reconstruct_lstsq(kspace,
   # Apply intensity correction, if requested.
   if operator.is_multicoil and sens_norm:
     sens_weights_sqrt = tf.math.reciprocal_no_nan(
-        tf.norm(sensitivities, axis=-(image_rank + 1), keepdims=True))
+        tf.norm(sensitivities, axis=-(rank + 1), keepdims=True))
     image *= sens_weights_sqrt
+
+  # If necessary, filter the image to remove k-space corners. This should be
+  # done if the trajectory has circular coverage and does not cover the k-space
+  # corners. If the user has not specified whether to apply the filter, we do it
+  # only for non-Cartesian trajectories, under the assumption that non-Cartesian
+  # trajectories are likely to have circular coverage of k-space while Cartesian
+  # trajectories are likely to have rectangular coverage.
+  if filter_kspace is None:
+    is_probably_circular = operator.operator.is_non_cartesian
+    filter_kspace = is_probably_circular
+  if filter_kspace:
+    fft_axes = list(range(-rank, 0))
+    kspace = fft_ops.fftn(image, axes=fft_axes, norm='ortho', shift=True)
+    kspace = signal_ops.filter_kspace(kspace, rank=rank, filter_type='atanfilt')
+    image = fft_ops.ifftn(kspace, axes=fft_axes, norm='ortho', shift=True)
 
   return image
 
