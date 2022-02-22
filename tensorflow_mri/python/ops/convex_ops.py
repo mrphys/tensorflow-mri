@@ -32,7 +32,8 @@ class ConvexFunction():
   :math:`$f : \mathbb{R}^{n}\rightarrow \mathbb{R}$`.
 
   Subclasses should implement the `_call` and `_prox` methods to define the
-  forward pass and the proximal mapping, respectively.
+  forward pass and the proximal mapping, respectively. Gradients are
+  provided by TensorFlow's automatic differentiation feature.
   """
   def __init__(self,
                scale=None,
@@ -139,6 +140,73 @@ class ConvexFunction():
           (self.dtype, arg.dtype, arg))
 
 
+class ConvexFunctionAffineMappingComposition(ConvexFunction):
+  """Composes a convex function and an affine mapping.
+
+  Represents :math:`f(Ax + b)`, where :math:`f` is a `ConvexFunction`,
+  :math:`A` is a `LinearOperator` and :math:`b` is a constant `Tensor`.
+
+  Args:
+    function: A `ConvexFunction`.
+    operator: A `LinearOperator`. Defaults to the identity.
+    constant: A `Tensor`. Defaults to 0.
+    scale: A `float`. A scaling factor.
+    name: A name for this operation.
+  """
+  def __init__(self,
+               function,
+               operator=None,
+               constant=None,
+               scale=None,
+               name=None):
+    ndim = operator.domain_dimension if operator is not None else function.ndim
+    super().__init__(scale=scale,
+                     ndim=ndim,
+                     dtype=function.dtype,
+                     name=name)
+    self._function = function
+    self._operator = operator
+    self._constant = constant
+
+  def _call(self, x):
+    if self._operator is not None:
+      x = self._operator.matvec(x)
+    if self._constant is not None:
+      x += self._constant
+    return self._scale * self._function._call(x)
+
+  def _prox(self, x, scale=None):
+    # Prox difficult to evaluate for general linear operators.
+    # TODO(jmontalt): implement prox for specific cases such as orthogonal
+    # operators.
+    raise NotImplementedError(
+       f"The proximal operator of {self.name} is not implemented or "
+       f"does not have a closed form expression.")
+
+
+class ConvexFunctionLinearOperatorComposition(ConvexFunctionAffineMappingComposition):
+  """Composes a convex function and a linear operator.
+
+  Represents :math:`f(Ax + b)`, where :math:`f` is a `ConvexFunction`,
+  :math:`A` is a `LinearOperator` and :math:`b` is a constant `Tensor`.
+
+  Args:
+    function: A `ConvexFunction`.
+    operator: A `LinearOperator`. Defaults to the identity.
+    scale: A `float`. A scaling factor.
+    name: A name for this operation.
+  """
+  def __init__(self,
+               function,
+               operator=None,
+               scale=None,
+               name=None):
+    super().__init__(function,
+                     operator=operator,
+                     scale=scale,
+                     name=name)
+
+
 class ConvexFunctionL1Norm(ConvexFunction):
   """A `ConvexFunction` computing the [scaled] L1-norm of a [batch of] inputs.
 
@@ -149,6 +217,10 @@ class ConvexFunctionL1Norm(ConvexFunction):
     dtype: A `string` or `DType`. The type of this `ConvexFunction`. Defaults to
       `tf.dtypes.float32`.
     name: A name for this `ConvexFunction`.
+
+  References:
+    .. [1] Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
+      Trends in optimization, 1(3), 127-239.
   """
   def __init__(self,
                scale=None,
@@ -174,6 +246,10 @@ class ConvexFunctionL2Norm(ConvexFunction):
     dtype: A `string` or `DType`. The type of this `ConvexFunction`. Defaults to
       `tf.dtypes.float32`.
     name: A name for this `ConvexFunction`.
+
+  References:
+    .. [1] Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
+      Trends in optimization, 1(3), 127-239.
   """
   def __init__(self,
                scale=None,
@@ -199,6 +275,10 @@ class ConvexFunctionL2NormSquared(ConvexFunction):
     dtype: A `string` or `DType`. The type of this `ConvexFunction`. Defaults to
       `tf.dtypes.float32`.
     name: A name for this `ConvexFunction`.
+
+  References:
+    .. [1] Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
+      Trends in optimization, 1(3), 127-239.
   """
   def __init__(self,
                scale=None,
@@ -216,7 +296,7 @@ class ConvexFunctionL2NormSquared(ConvexFunction):
     return x / (1.0 + 2.0 * scale)
 
 
-class ConvexFunctionTikhonov(ConvexFunctionL2NormSquared):
+class ConvexFunctionTikhonov(ConvexFunctionAffineMappingComposition):
   """Tikhonov convex function.
 
   For a given input :math:`x`, computes
@@ -231,41 +311,32 @@ class ConvexFunctionTikhonov(ConvexFunctionL2NormSquared):
     prior: A `tf.Tensor`. The prior estimate :math:`x_0`. Defaults to 0.
     ndim: An `int`. The dimensionality of the domain of this `ConvexFunction`.
       Defaults to `None`.
-    dtype: A `tf.DType`. The dtype of the inputs.
+    dtype: A `tf.DType`. The dtype of the inputs. Defaults to `float32`.
     name: A name for this `ConvexFunction`.
   """
   def __init__(self,
-               scale,
                transform=None,
                prior=None,
+               scale=None,
                ndim=None,
                dtype=tf.float32,
-               name=None):    
-    super().__init__(scale=scale, ndim=ndim, dtype=dtype, name=name)
-    self._transform = transform
-    self._prior = prior
-
-  def _call(self, x):
-    if self._prior is not None:
-      x -= self._prior
-    if self._transform is not None:
-      x = tf.linalg.matvec(self._transform, x)
-    return super()._call(x)
-
-  def _prox(self, x, scale=None):
-    if (self._transform is None or
-        isinstance(self._transform, tf.linalg.LinearOperatorIdentity)):
-      # When the transform is the identity, this reduces to the (possibly
-      # translated) squared L2-norm. Using the translation property for proximal
-      # operators:
-      return super().prox(x - self._prior, scale=scale) + self._prior
-    # In the general case, the prox operator cannot be easily evaluated.
-    raise NotImplementedError(
-        f"The proximal operator of `{self.name}` does not have a "
-        f"closed form expression for arbitrary transforms.")
+               name=None):
+    if ndim is None and transform is not None:
+      ndim = transform.range_dimension
+    function = ConvexFunctionL2NormSquared(scale=scale,
+                                           ndim=ndim,
+                                           dtype=dtype)
+    if prior is not None:
+      prior = tf.math.negative(prior)
+      if transform is not None:
+        prior = tf.matvec(transform, prior)
+    super().__init__(function,
+                     operator=transform,
+                     constant=prior,
+                     name=name)
 
 
-class ConvexFunctionTotalVariation(ConvexFunctionL1Norm):
+class ConvexFunctionTotalVariation(ConvexFunctionLinearOperatorComposition):
   """Total variation convex function.
 
   For a given input :math:`x`, computes :math:`\lambda \left\| Dx \right\|_1`,
@@ -274,24 +345,32 @@ class ConvexFunctionTotalVariation(ConvexFunctionL1Norm):
 
   Args:
     scale: A `float`. A scaling factor.
-    input_shape: A `tf.TensorShape` or a list of ints.
+    ndim: An `int`, or a list of `ints`. The dimensionality of the domain.
+      The domain may have multiple axes.
     axis: An `int` or a list of `ints`. The axes along which to compute the
       total variation. Defaults to -1.
     dtype: A `tf.DType`. The dtype of the inputs.
+    name: A name for this `ConvexFunction`.
   """
-  def __init__(self, scale, input_shape, axis=-1, dtype=tf.float32):
-    input_shape = tf.TensorShape(input_shape)
-    axis = check_util.validate_axis(axis, input_shape.rank,
-                                    max_length=input_shape.rank,
+  def __init__(self,
+               scale=None,
+               ndim=None,
+               axis=-1,
+               dtype=tf.float32,
+               name=None):
+    domain_shape = tf.TensorShape(ndim)
+    axis = check_util.validate_axis(axis, domain_shape.rank,
+                                    max_length=domain_shape.rank,
                                     canonicalize="negative")
     operators = [linalg_imaging.LinearOperatorFiniteDifference(
-        input_shape, axis=ax, dtype=dtype) for ax in axis]
-    linear_operator = linalg_ext.LinearOperatorVerticalStack(operators)
-    convex_function = ConvexFunctionL1Norm(
-        scale=parameter, ndim=linear_operator.range_dimension, dtype=dtype)
-    super().__init__(scale=1.0,
-                     convex_function=convex_function,
-                     linear_operator=linear_operator)
+        domain_shape, axis=ax, dtype=dtype) for ax in axis]
+    operator = linalg_ext.LinearOperatorVerticalStack(operators)
+    function = ConvexFunctionL1Norm(scale=scale,
+                                    ndim=operator.range_dimension,
+                                    dtype=dtype)
+    super().__init__(function,
+                     operator=operator,
+                     name=name)
 
 
 class ConvexFunctionQuadratic(ConvexFunction):

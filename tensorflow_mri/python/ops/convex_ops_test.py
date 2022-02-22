@@ -121,22 +121,22 @@ class ConvexFunctionTotalVariationTest(test_util.TestCase):
     x = [[1., 2., 3.],
          [4., 5., 6.]]
     x_flat = tf.reshape(x, [-1])
-    reg1 = convex_ops.ConvexFunctionTotalVariation(parameter=0.1,
-                                                   image_shape=[2, 3],
+    reg1 = convex_ops.ConvexFunctionTotalVariation(scale=0.1,
+                                                   ndim=[2, 3],
                                                    axis=[0, 1])
     ref1 = 1.3
     res1 = reg1(x_flat)
     self.assertAllClose(res1, ref1)
     
-    reg2 = convex_ops.ConvexFunctionTotalVariation(parameter=0.1,
-                                                   image_shape=[2, 3],
+    reg2 = convex_ops.ConvexFunctionTotalVariation(scale=0.1,
+                                                   ndim=[2, 3],
                                                    axis=1)
     res2 = reg2(x_flat)
     ref2 = 0.4
     self.assertAllClose(res2, ref2)
 
-    reg3 = convex_ops.ConvexFunctionTotalVariation(parameter=0.5,
-                                                   image_shape=[3],
+    reg3 = convex_ops.ConvexFunctionTotalVariation(scale=0.5,
+                                                   ndim=[3],
                                                    axis=-1)
     res3 = reg3(x)
     ref3 = [1.0, 1.0]

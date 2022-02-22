@@ -6,5 +6,5 @@ tensorboard
 tensorflow>=2.7.0,<2.8.0
 tensorflow-graphics
 tensorflow-io
-tensorflow-nufft
-tensorflow-probability
+tensorflow-nufft>=0.6.0,<0.7.0
+tensorflow-probability>=0.15.0,<0.16.0
