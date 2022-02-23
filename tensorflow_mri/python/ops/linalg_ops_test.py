@@ -320,19 +320,6 @@ class LinalgImagingMixin(test_util.TestCase):
 #     self.assertAllClose(x, y)
 
 
-# class LinearOperatorSensitivityModulationTest(test_util.TestCase):
-#   """Tests for `linalg_ops.LinearOperatorSensitivityModulation`."""
-
-#   def test_norm(self):
-#     """Test normalization."""
-#     sens = _random_normal_complex([2, 4, 4])
-#     linop = linalg_ops.LinearOperatorSensitivityModulation(sens, norm=True)
-#     x = _random_normal_complex([4 * 4])
-#     y = tf.linalg.matvec(linop, x)
-#     a = tf.linalg.matvec(linop.H, y)
-#     self.assertAllClose(x, a)
-
-
 # def _random_normal_complex(shape):
 #   return tf.dtypes.complex(tf.random.normal(shape), tf.random.normal(shape))
 

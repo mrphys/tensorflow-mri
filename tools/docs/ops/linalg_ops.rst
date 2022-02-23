@@ -10,11 +10,4 @@ Linear Algebra
     :nosignatures:
 
     LinalgImagingMixin
-    LinearOperatorFFT
-    LinearOperatorNUFFT
-    LinearOperatorInterp
-    LinearOperatorSensitivityModulation
-    LinearOperatorParallelMRI
-    LinearOperatorRealWeighting
-    LinearOperatorImagingDifference
     conjugate_gradient

@@ -46,7 +46,8 @@ class ConvexFunction():
     self._ndim = check_util.validate_rank(ndim, 'ndim', accept_none=True)
     self._dtype = tf.dtypes.as_dtype(dtype or tf.dtypes.float32)
     self._name = name or type(self).__name__
-    self._scale = tf.convert_to_tensor(scale or 1.0, dtype=self.dtype)
+    self._scale = tf.convert_to_tensor(scale or 1.0,
+                                       dtype=self.dtype.real_dtype)
 
   def __call__(self, x):
     return self.call(x)
@@ -247,7 +248,7 @@ class ConvexFunctionL1Norm(ConvexFunction):
     super().__init__(scale=scale, ndim=ndim, dtype=dtype, name=name)
 
   def _call(self, x):
-    return self._scale * tf.norm(x, ord=1, axis=-1)
+    return self._scale * tf.math.real(tf.norm(x, ord=1, axis=-1))
 
   def _prox(self, x, scale=None):
     return soft_threshold(x, self._scale * (scale or 1.0))
@@ -276,7 +277,7 @@ class ConvexFunctionL2Norm(ConvexFunction):
     super().__init__(scale=scale, ndim=ndim, dtype=dtype, name=name)
 
   def _call(self, x):
-    return self._scale * tf.norm(x, ord=2, axis=-1)
+    return self._scale * tf.math.real(tf.norm(x, ord=2, axis=-1))
 
   def _prox(self, x, scale=None):
     return block_soft_threshold(x, self._scale * (scale or 1.0))
