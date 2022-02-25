@@ -26,7 +26,7 @@ from tensorflow_mri.python.util import linalg_imaging
 
 
 class ConvexFunction():
-  """Base class defining a [batch of] convex function[s].
+  r"""Base class defining a [batch of] convex function[s].
 
   Represents a closed proper convex function
   :math:`$f : \mathbb{R}^{n}\rightarrow \mathbb{R}$`.
@@ -73,6 +73,7 @@ class ConvexFunction():
 
     Args:
       x: A `Tensor` of shape `[..., n]` and same dtype as `self`.
+      scale: A scalar `float`. Additional scaling factor.
       name: A name for this operation (optional).
 
     Returns:
@@ -123,7 +124,7 @@ class ConvexFunction():
     with tf.name_scope(full_name) as scope:
       yield scope
 
-  def _check_input_shape(self, arg):
+  def _check_input_shape(self, arg):  # pylint: disable=missing-param-doc
     """Check that arg.shape[-1] is compatible with self.ndim."""
     if arg.shape.rank is None:
       raise ValueError(
@@ -179,7 +180,7 @@ class ConvexFunctionAffineMappingComposition(ConvexFunction):
       x = self._operator.matvec(x)
     if self._constant is not None:
       x += self._constant
-    return self._scale * self._function._call(x)
+    return self._scale * self._function._call(x)  # pylint: disable=protected-access
 
   def _prox(self, x, scale=None):
     # Prox difficult to evaluate for general linear operators.
@@ -202,8 +203,9 @@ class ConvexFunctionAffineMappingComposition(ConvexFunction):
     return self._constant
 
 
-class ConvexFunctionLinearOperatorComposition(ConvexFunctionAffineMappingComposition):
-  """Composes a convex function and a linear operator.
+class ConvexFunctionLinearOperatorComposition(  # pylint: disable=abstract-method
+    ConvexFunctionAffineMappingComposition):
+  r"""Composes a convex function and a linear operator.
 
   Represents :math:`f(Ax + b)`, where :math:`f` is a `ConvexFunction`,
   :math:`A` is a `LinearOperator` and :math:`b` is a constant `Tensor`.
@@ -314,8 +316,8 @@ class ConvexFunctionL2NormSquared(ConvexFunction):
     return x / (1.0 + 2.0 * scale)
 
 
-class ConvexFunctionTikhonov(ConvexFunctionAffineMappingComposition):
-  """Tikhonov convex function.
+class ConvexFunctionTikhonov(ConvexFunctionAffineMappingComposition):  # pylint: disable=abstract-method
+  r"""Tikhonov convex function.
 
   For a given input :math:`x`, computes
   :math:`\lambda \left\| T(x - x_0) \right\|_2^2`, where :math:`\lambda` is a
@@ -368,8 +370,8 @@ class ConvexFunctionTikhonov(ConvexFunctionAffineMappingComposition):
     return self._prior
 
 
-class ConvexFunctionTotalVariation(ConvexFunctionLinearOperatorComposition):
-  """Total variation convex function.
+class ConvexFunctionTotalVariation(ConvexFunctionLinearOperatorComposition):  # pylint: disable=abstract-method
+  r"""Total variation convex function.
 
   For a given input :math:`x`, computes :math:`\lambda \left\| Dx \right\|_1`,
   where :math:`\lambda` is a scaling factor and :math:`D` is the finite
@@ -406,7 +408,7 @@ class ConvexFunctionTotalVariation(ConvexFunctionLinearOperatorComposition):
 
 
 class ConvexFunctionQuadratic(ConvexFunction):
-  """A `ConvexFunction` representing a generic quadratic function.
+  r"""A `ConvexFunction` representing a generic quadratic function.
 
   Represents :math:`f(x) = \frac{1}{2} x^{T} A x + b^{T} x + c`.
 
@@ -463,7 +465,7 @@ class ConvexFunctionQuadratic(ConvexFunction):
       rhs -= self._linear_coefficient
     return linalg_ops.conjugate_gradient(self._operator, rhs).x
 
-  def _validate_linear_coefficient(self, coef):
+  def _validate_linear_coefficient(self, coef):  # pylint: disable=missing-param-doc
     """Validates the linear coefficient."""
     if coef.shape.rank is None:
       raise ValueError(
@@ -483,7 +485,7 @@ class ConvexFunctionQuadratic(ConvexFunction):
           "tensor %s" % (self.dtype, coef.dtype, coef))
     return coef
 
-  def _validate_constant_coefficient(self, coef):
+  def _validate_constant_coefficient(self, coef):  # pylint: disable=missing-param-doc
     """Validates the constant coefficient."""
     if coef.dtype != self.dtype:
       raise ValueError(
@@ -505,8 +507,8 @@ class ConvexFunctionQuadratic(ConvexFunction):
 
 
 class ConvexFunctionLeastSquares(ConvexFunctionQuadratic):
-  """A `ConvexFunction` representing a least squares function.
-  
+  r"""A `ConvexFunction` representing a least squares function.
+
   Represents :math:`f(x) = \frac{1}{2} {\left \| A x - b \right \|}_{2}^{2}`.
 
   Minimizing `f(x)` is equivalent to finding a solution to the linear system
@@ -544,7 +546,7 @@ class ConvexFunctionLeastSquares(ConvexFunctionQuadratic):
 
 
 def block_soft_threshold(x, threshold, name=None):
-  """Block soft thresholding operator.
+  r"""Block soft thresholding operator.
 
   In the context of proximal gradient methods, this function is the proximal
   operator of :math:`f = {\left\| x \right\|}_{2}` (L2 norm).
@@ -570,7 +572,7 @@ def block_soft_threshold(x, threshold, name=None):
 
 
 def shrinkage(x, threshold, name=None):
-  """Shrinkage operator.
+  r"""Shrinkage operator.
 
   In the context of proximal gradient methods, this function is the proximal
   operator of :math:`f = \frac{1}{2}{\left\| x \right\|}_{2}^{2}`.
@@ -591,7 +593,7 @@ def shrinkage(x, threshold, name=None):
 
 
 def soft_threshold(x, threshold, name=None):
-  """Soft thresholding operator.
+  r"""Soft thresholding operator.
 
   In the context of proximal gradient methods, this function is the proximal
   operator of :math:`f = {\left\| x \right\|}_{1}` (L1 norm).
@@ -609,7 +611,7 @@ def soft_threshold(x, threshold, name=None):
     threshold = tf.convert_to_tensor(threshold, dtype=x.dtype.real_dtype,
                                      name='threshold')
     return tf.math.sign(x) * tf.cast(
-        tf.math.maximum(tf.math.abs(x) - threshold, 0.), dtype=x.dtype)
+        tf.math.maximum(tf.math.abs(x) - threshold, 0.), x.dtype)
 
 
 def _dot(x, y):

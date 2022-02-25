@@ -726,8 +726,8 @@ class ExtractGlimpsesTest(test_util.TestCase):
     self.assertAllEqual(patches, expected)
 
 
-class ImagesGradientsTest(test_util.TestCase):
-
+class ImageGradientsTest(test_util.TestCase):
+  """Tests for the `image_gradients` op."""
   def test_prewitt(self):
     expected_plane = np.reshape([[[0, 0], [0, 7], [0, 11], [0, 0]],
                                  [[5, 0], [-2, 5], [-1, 4], [-8, 0]],
@@ -749,7 +749,7 @@ class ImagesGradientsTest(test_util.TestCase):
                                 [1, 3, 4, 1, 2])
     self._test_generic('scharr', expected_plane)
 
-  def _test_generic(self, method, expected_plane):
+  def _test_generic(self, method, expected_plane):  # pylint: disable=missing-function-docstring
     batch_size = 5
     plane = np.reshape([[1, 3, 6, 2],
                         [4, 1, 5, 7],
@@ -768,6 +768,7 @@ class ImagesGradientsTest(test_util.TestCase):
 
 
 class BaseTestCases():
+  """Namespace of abstract base test cases."""
   class IQATest(test_util.TestCase):
     """Tests for an IQA op (abstract base class)."""
     @classmethod
@@ -911,7 +912,7 @@ class BaseTestCases():
 
 
 class GMSDTest(BaseTestCases.IQATest):
-  
+
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
     self.test_fn = image_ops.gmsd

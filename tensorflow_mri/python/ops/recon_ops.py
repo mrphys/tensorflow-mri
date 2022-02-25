@@ -17,8 +17,7 @@
 Image reconstruction operators accept *k*-space data and additional
 application-dependent inputs and return an image.
 
-This module contains 4 operators for image reconstruction, all of which support
-Cartesian and non-Cartesian inputs.
+This module contains several operators for image reconstruction.
 
   * `tfmri.reconstruct_adj`: Reconstructs an image by applying the adjoint MRI
     operator to the *k*-space data. This typically involves an inverse FFT or
@@ -26,7 +25,8 @@ Cartesian and non-Cartesian inputs.
     This type of reconstruction is often called zero-filled reconstruction,
     because missing *k*-space samples are assumed to be zero. Therefore, the
     resulting image is likely to display aliasing artefacts if *k*-space is not
-    sufficiently sampled according to the Nyquist criterion.
+    sufficiently sampled according to the Nyquist criterion. Supports Cartesian
+    and non-Cartesian *k*-space data.
 
   * `tfmri.reconstruct_lstsq`: Reconstructs an image by formulating a (possibly
     regularized) least squares problem, which is solved iteratively. Since the
@@ -36,18 +36,19 @@ Cartesian and non-Cartesian inputs.
     is also called a compressed sensing reconstruction. This is a powerful
     operator which can often produce high-quality images even from highly
     undersampled *k*-space data. However, it may be time-consuming, depending
-    on the characteristics of the problem.
-  
-  * `tfmri.reconstruct_ai`: Reconstructs an image using an AI model.
+    on the characteristics of the problem. Supports Cartesian and non-Cartesian
+    *k*-space data.
 
-  * `tfmri.reconstruct_legacy`: Reconstructs an image using legacy methods such
-    as SENSE or GRAPPA.
+  * `tfmri.reconstruct_sense`: Reconstructs an image using sensitivity encoding
+    (SENSE).
+
+  * `tfmri.reconstruct_grappa`: Reconstructs an image using generalized
+    autocalibrating partially parallel acquisition (GRAPPA).
 """
 
 import collections
 
 import tensorflow as tf
-import tensorflow_nufft as tfft
 
 from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import coil_ops
@@ -58,156 +59,343 @@ from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.ops import math_ops
 from tensorflow_mri.python.ops import optimizer_ops
 from tensorflow_mri.python.ops import signal_ops
-from tensorflow_mri.python.ops import traj_ops
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import linalg_imaging
-from tensorflow_mri.python.util import tensor_util
 
 
-def reconstruct_legacy(kspace,
-                       mask=None,
-                       sensitivities=None,
-                       calib=None,
-                       method=None,
-                       **kwargs):
-  """MR image reconstruction gateway (legacy).
+def reconstruct_adj(kspace,
+                    image_shape,
+                    mask=None,
+                    trajectory=None,
+                    density=None,
+                    sensitivities=None,
+                    phase=None,
+                    sens_norm=True):
+  r"""Reconstructs an image using the adjoint MRI operator.
 
-  Reconstructs an image given the corresponding *k*-space measurements.
+  Given *k*-space data :math:`b`, this function estimates the corresponding
+  image as :math:`x = A^H b`, where :math:`A` is the MRI linear operator.
 
-  This is a gateway function to different image reconstruction methods. The
-  reconstruction method can be selected with the `method` argument. If the
-  `method` argument is not specified, a method is automatically selected based
-  on the input arguments.
+  Additional density compensation and intensity correction steps are applied
+  depending on the input arguments.
 
-  Supported methods are:
-
-  * **sense**: SENSitivity Encoding (SENSE) [1]_ reconstruction for Cartesian
-    *k*-space data. This is the default method if `kspace` and `sensitivities`
-    are given.
-  * **grappa**: Generalized autocalibrating partially parallel acquisitions [3]_
-    reconstruction for Cartesian *k*-space data. This is the default method if
-    `kspace`, `calib` and (optionally) `sensitivities` are given.
-
-  .. note::
-    This function supports CPU and GPU computation.
-
-  .. note::
-    This function supports batches of inputs, which are processed in parallel
-    whenever possible.
+  This operator supports batched inputs. All batch shapes should be
+  broadcastable with each other.
 
   Args:
     kspace: A `Tensor`. The *k*-space samples. Must have type `complex64` or
       `complex128`. `kspace` can be either Cartesian or non-Cartesian. A
-      Cartesian `kspace` must have shape `[..., C, *K]`, where `K` is the shape
-      of the spatial frequency dimensions, `C` is the number of coils and `...`
-      is the batch shape, which can have any rank. Note that `K` should be the
-      reduced or undersampled shape, i.e., no zero-filling of any kind should be
-      included. A non-Cartesian `kspace` must have shape `[..., C, M]`, where
-      `M` is the number of samples, `C` is the number of coils and `...` is the
-      batch shape, which can have any rank.
-    mask: A `Tensor`. The sampling mask. Must have type `bool`. Must have shape
-      `S`, where `S` is the shape of the spatial dimensions. In other words,
-      `mask` should have the shape of a fully sampled *k*-space. For each point,
-      `mask` should be `True` if the corresponding *k*-space sample was measured
-      and `False` otherwise. `True` entries should correspond to the data in
-      `kspace`, and the result of dropping all `False` entries from `mask`
-      should have shape `K`. `mask` is required if `method` is `"grappa"`, or
-      if `method` is `"pics"` and `kspace` is Cartesian. For other methods or
-      for non-Cartesian `kspace`, this parameter is not relevant.
-    sensitivities: A `Tensor`. The coil sensitivity maps. Must have type
-      `complex64` or `complex128`. Must have shape `[..., C, *S]`, where `S` is
-      shape of the spatial dimensions, `C` is the number of coils and `...` is
-      the batch shape, which can have any rank and must be broadcastable to the
-      batch shape of `kspace`. `sensitivities` is required when `method` is
-      `"sense"` or `"cg_sense"`. For other methods, this parameter is not
-      relevant.
-    calib: A `Tensor`. The calibration data. Must have type `complex64` or
-      `complex128`. Must have shape `[..., C, *R]`, where `R` is the shape of
-      the calibration region, `C` is the number of coils and `...` is the batch
-      shape, which can have any rank and must be broadcastable to the batch
-      shape of `kspace`. `calib` is required when `method` is `"grappa"`. For
-      other methods, this parameter is not relevant.
-    method: A `string`. The reconstruction method. Must be one of `"sense"` or
-      `"grappa"`.
-    **kwargs: Additional method-specific keyword arguments. See Notes for the
-      method-specific arguments.
-
-  Notes:
-    This function accepts several method dependent arguments:
-
-    * For `method="sense"`, provide `kspace` and `sensitivities`. In addition,
-      the following keyword arguments are accepted:
-
-      * **reduction_axis**: An `int` or a list of `ints`. The reduced axes. This
-        parameter must be provided.
-      * **reduction_factor**: An `int` or a list of `ints`. The reduction
-        factors corresponding to each reduction axis. The output image will have
-        dimension `kspace.shape[ax] * r` for each pair `ax` and `r` in
-        `reduction_axis` and `reduction_factor`. This parameter must be
-        provided.
-      * **rank**: An optional `int`. The rank (in the sense of spatial
-        dimensionality) of this operation. Defaults to `kspace.shape.rank - 1`.
-        Therefore, if `rank` is not specified, axis 0 is interpreted to be the
-        coil axis and the remaining dimensions are interpreted to be spatial
-        dimensions. You must specify `rank` if you intend to provide any batch
-        dimensions in `kspace` and/or `sensitivities`.
-      * **l2_regularizer**: An optional `float`. The L2 regularization factor
-        used when solving the linear least-squares problem. Ignored if
-        `fast=False`. Defaults to 0.0.
-      * **fast**: An optional `bool`. Defaults to `True`. If `False`, use a
-        numerically robust orthogonal decomposition method to solve the linear
-        least-squares. This algorithm finds the solution even for rank deficient
-        matrices, but is significantly slower. For more details, see
-        `tf.linalg.lstsq`.
-
-    * For `method="grappa"`, provide `kspace`, `mask` and `calib`. Optionally,
-      you can also provide `sensitivities` (note that `sensitivities` are not
-      used for the GRAPPA computation, but they are used for adaptive coil
-      combination). If `sensitivities` are not provided, coil combination will
-      be performed using the sum of squares method. Additionally, the following
-      keyword arguments are accepted:
-
-      * **kernel_size**: An `int` or list of `ints`. The size of the GRAPPA
-        kernel. Must have length equal to the image rank or number of spatial
-        dimensions. If a scalar `int` is provided, the same size is used in all
-        dimensions.
-      * **weights_l2_regularizer**: An optional `float`. The regularization
-        factor for the L2 regularization term used to fit the GRAPPA weights.
-        If 0.0, no regularization is applied.
-      * **combine_coils**: An optional `bool`. If `True`, multi-coil images
-        are combined. Otherwise, the uncombined images are returned. Defaults to
-        `True`.
-      * **return_kspace**: An optional `bool`. If `True`, returns the filled
-        *k*-space without performing the Fourier transform. In this case, coils
-        are not combined regardless of the value of `combine_coils`.
+      Cartesian `kspace` must have shape
+      `[..., num_coils, *image_shape]`, where `...` are batch dimensions. A
+      non-Cartesian `kspace` must have shape `[..., num_coils, num_samples]`.
+    image_shape: A `TensorShape` or a list of `ints`. Must have length 2 or 3.
+      The shape of the reconstructed image[s].
+    mask: An optional `Tensor` of type `bool`. The sampling mask. Must have
+      shape `[..., image_shape]`. `mask` should be passed for reconstruction
+      from undersampled Cartesian *k*-space. For each point, `mask` should be
+      `True` if the corresponding *k*-space sample was measured and `False`
+      otherwise.
+    trajectory: An optional `Tensor` of type `float32` or `float64`. Must have
+      shape `[..., num_samples, rank]`. `trajectory` should be passed for
+      reconstruction from non-Cartesian *k*-space.
+    density: An optional `Tensor` of type `float32` or `float64`. The sampling
+      densities. Must have shape `[..., num_samples]`. This input is only
+      relevant for non-Cartesian MRI reconstruction. If passed, the MRI linear
+      operator will include sampling density compensation. If `None`, the MRI
+      operator will not perform sampling density compensation.
+    sensitivities: An optional `Tensor` of type `complex64` or `complex128`.
+      The coil sensitivity maps. Must have shape
+      `[..., num_coils, *image_shape]`. If provided, a multi-coil parallel
+      imaging reconstruction will be performed.
+    phase: An optional `Tensor` of type `float32` or `float64`. Must have shape
+      `[..., *image_shape]`. A phase estimate for the reconstructed image. If
+      provided, a phase-constrained reconstruction will be performed. This
+      improves the conditioning of the reconstruction problem in applications
+      where there is no interest in the phase data. However, artefacts may
+      appear if an inaccurate phase estimate is passed.
+    sens_norm: A `bool`. Whether to normalize coil sensitivities. Defaults to
+      `False`.
 
   Returns:
-    A `Tensor`. The reconstructed images. Has the same type as `kspace`. Has
-    shape `[..., S]`, where `...` is the batch shape of `kspace` and `S` is the
-    spatial shape.
+    A `Tensor`. The reconstructed image. Has the same type as `kspace` and
+    shape `[..., *image_shape]`, where `...` is the broadcasted batch shape of
+    all inputs.
   """
-  method = _select_reconstruction_method(
-    kspace, mask, trajectory, density, calib, sensitivities, method)
-
   kspace = tf.convert_to_tensor(kspace)
-  if mask is not None:
-    mask = tf.convert_to_tensor(mask)
-  if trajectory is not None:
-    trajectory = tf.convert_to_tensor(trajectory)
+
+  # Create the linear operator.
+  operator = linalg_ops.LinearOperatorMRI(image_shape,
+                                          mask=mask,
+                                          trajectory=trajectory,
+                                          density=density,
+                                          sensitivities=sensitivities,
+                                          phase=phase,
+                                          fft_norm='ortho',
+                                          sens_norm=sens_norm)
+  rank = operator.rank
+
+  # Apply density compensation, if provided.
   if density is not None:
-    density = tf.convert_to_tensor(density)
-  if sensitivities is not None:
-    sensitivities = tf.convert_to_tensor(sensitivities)
+    dens_weights_sqrt = tf.math.sqrt(tf.math.reciprocal_no_nan(density))
+    dens_weights_sqrt = tf.cast(dens_weights_sqrt, kspace.dtype)
+    if operator.is_multicoil:
+      dens_weights_sqrt = tf.expand_dims(dens_weights_sqrt, axis=-2)
+    kspace *= dens_weights_sqrt
 
-  args = {'mask': mask,
-          'trajectory': trajectory,
-          'density': density,
-          'calib': calib,
-          'sensitivities': sensitivities}
+  # Compute zero-filled image using the adjoint operator.
+  image = operator.H.transform(kspace)
 
-  args = {name: arg for name, arg in args.items() if arg is not None}
+  # Apply intensity correction, if requested.
+  if operator.is_multicoil and sens_norm:
+    sens_weights_sqrt = tf.math.reciprocal_no_nan(
+        tf.norm(sensitivities, axis=-(rank + 1), keepdims=False))
+    image *= sens_weights_sqrt
 
-  return _MRI_RECON_LEGACY_METHODS[method](kspace, **{**args, **kwargs})
+  return image
+
+
+def reconstruct_lstsq(kspace,
+                      image_shape,
+                      extra_shape=None,
+                      mask=None,
+                      trajectory=None,
+                      density=None,
+                      sensitivities=None,
+                      phase=None,
+                      sens_norm=True,
+                      regularizer=None,
+                      optimizer=None,
+                      optimizer_kwargs=None,
+                      filter_corners=False):
+  r"""Reconstructs an image using a least-squares formulation.
+
+  This is an iterative reconstruction method which formulates the image
+  reconstruction problem as follows:
+
+  .. math::
+    \hat{x} = {\mathop{\mathrm{argmin}}_x} \left (\left\| Ax - y \right\|_2^2 + g(x) \right )
+
+  where :math:`A` is the MRI `LinearOperator`, :math:`x` is the solution, `y` is
+  the measured *k*-space data, and :math:`g(x)` is an optional `ConvexFunction`
+  used for regularization.
+
+  This function supports linear and non-linear reconstruction, depending on the
+  selected regularizer. The MRI operator is constructed internally and does not
+  need to be provided.
+
+  This operator supports batched inputs. All batch shapes should be
+  broadcastable with each other.
+
+  Args:
+    kspace: A `Tensor`. The *k*-space samples. Must have type `complex64` or
+      `complex128`. `kspace` can be either Cartesian or non-Cartesian. A
+      Cartesian `kspace` must have shape
+      `[..., num_coils, *image_shape]`, where `...` are batch dimensions. A
+      non-Cartesian `kspace` must have shape `[..., num_coils, num_samples]`.
+    image_shape: A `TensorShape` or a list of `ints`. Must have length 2 or 3.
+      The shape of the reconstructed image[s].
+    extra_shape: An optional `TensorShape` or list of `ints`. Additional
+      dimensions that should be included within the solution domain. Note
+      that `extra_shape` is not needed to reconstruct independent batches of
+      images. However, it should be provided when performing a reconstruction
+      that operates along non-spatial dimensions, e.g. for temporal
+      regularization. Defaults to `[]`.
+    mask: An optional `Tensor` of type `bool`. The sampling mask. Must have
+      shape `[..., image_shape]`. `mask` should be passed for reconstruction
+      from undersampled Cartesian *k*-space. For each point, `mask` should be
+      `True` if the corresponding *k*-space sample was measured and `False`
+      otherwise.
+    trajectory: An optional `Tensor` of type `float32` or `float64`. Must have
+      shape `[..., num_samples, rank]`. `trajectory` should be passed for
+      reconstruction from non-Cartesian *k*-space.
+    density: An optional `Tensor` of type `float32` or `float64`. The sampling
+      densities. Must have shape `[..., num_samples]`. This input is only
+      relevant for non-Cartesian MRI reconstruction. If passed, the MRI linear
+      operator will include sampling density compensation. If `None`, the MRI
+      operator will not perform sampling density compensation.
+    sensitivities: An optional `Tensor` of type `complex64` or `complex128`.
+      The coil sensitivity maps. Must have shape
+      `[..., num_coils, *image_shape]`. If provided, a multi-coil parallel
+      imaging reconstruction will be performed.
+    phase: An optional `Tensor` of type `float32` or `float64`. Must have shape
+      `[..., *image_shape]`. A phase estimate for the reconstructed image. If
+      provided, a phase-constrained reconstruction will be performed. This
+      improves the conditioning of the reconstruction problem in applications
+      where there is no interest in the phase data. However, artefacts may
+      appear if an inaccurate phase estimate is passed.
+    sens_norm: A `bool`. Whether to normalize coil sensitivities. Defaults to
+      `False`.
+    regularizer: A `ConvexFunction`. The regularization term added to
+      least-squares objective.
+    optimizer: A `str`. One of `'cg'` (conjugate gradient), `'admm'`
+      (alternating direction method of multipliers) of `'lbfgs'`
+      (limited-memory Broyden-Fletcher-Goldfarb-Shanno). If `None`, the
+      optimizer is selected heuristically depending on other inputs. Note that
+      this heuristic may change in the future, so specify an optimizer if you
+      wish to ensure it will always be used in future versions. Not all
+      optimizers are compatible with all configurations.
+    optimizer_kwargs: An optional `dict`. Additional arguments to pass to the
+      optimizer.
+    filter_corners: A `bool`. Whether to filter out the *k*-space corners in
+      reconstructed image. This may be done for trajectories with a circular
+      *k*-space coverage. Defaults to `False`.
+
+  Returns:
+    A `Tensor`. The reconstructed image. Has the same type as `kspace` and
+    shape `[..., *extra_shape, *image_shape]`, where `...` is the broadcasted
+    batch shape of all inputs.
+
+  Raises:
+    ValueError: If passed incompatible inputs.
+
+  References:
+    .. [1] Pruessmann, K.P., Weiger, M., Börnert, P. and Boesiger, P. (2001),
+      Advances in sensitivity encoding with arbitrary k-space trajectories.
+      Magn. Reson. Med., 46: 638-651. https://doi.org/10.1002/mrm.1241
+
+    .. [2] Block, K.T., Uecker, M. and Frahm, J. (2007), Undersampled radial MRI
+      with multiple coils. Iterative image reconstruction using a total
+      variation constraint. Magn. Reson. Med., 57: 1086-1098.
+      https://doi.org/10.1002/mrm.21236
+
+    .. [3] Feng, L., Grimm, R., Block, K.T., Chandarana, H., Kim, S., Xu, J.,
+      Axel, L., Sodickson, D.K. and Otazo, R. (2014), Golden-angle radial sparse
+      parallel MRI: Combination of compressed sensing, parallel imaging, and
+      golden-angle radial sampling for fast and flexible dynamic volumetric MRI.
+      Magn. Reson. Med., 72: 707-717. https://doi.org/10.1002/mrm.24980
+  """  # pylint: disable=line-too-long
+  # Choose a default optimizer.
+  if optimizer is None:
+    if regularizer is None or isinstance(regularizer,
+                                         convex_ops.ConvexFunctionTikhonov):
+      optimizer = 'cg'
+    else:
+      optimizer = 'admm'
+  # Check optimizer.
+    optimizer = check_util.validate_enum(
+        optimizer, {'cg', 'admm', 'lbfgs'}, name='optimizer')
+  optimizer_kwargs = optimizer_kwargs or {}
+
+  # We don't do a lot of input checking here, since it will be done by the
+  # operator.
+  kspace = tf.convert_to_tensor(kspace)
+
+  # Create the linear operator.
+  operator = linalg_ops.LinearOperatorMRI(image_shape,
+                                          extra_shape=extra_shape,
+                                          mask=mask,
+                                          trajectory=trajectory,
+                                          density=density,
+                                          sensitivities=sensitivities,
+                                          phase=phase,
+                                          fft_norm='ortho',
+                                          sens_norm=sens_norm)
+  rank = operator.rank
+
+  # Apply density compensation, if provided.
+  if density is not None:
+    kspace *= operator._dens_weights_sqrt  # pylint: disable=protected-access
+
+  initial_image = operator.H.transform(kspace)
+
+  # Optimizer-specific logic.
+  if optimizer == 'cg':
+    if regularizer is not None:
+      if not isinstance(regularizer, convex_ops.ConvexFunctionTikhonov):
+        raise ValueError(
+            f"Regularizer {regularizer.name} is incompatible with "
+            f"CG optimizer.")
+      reg_parameter = regularizer.function.scale
+      reg_operator = regularizer.transform
+      reg_prior = regularizer.prior
+    else:
+      reg_parameter = None
+      reg_operator = None
+      reg_prior = None
+
+    operator_gm = linalg_imaging.LinearOperatorGramMatrix(
+        operator, reg_parameter=reg_parameter, reg_operator=reg_operator)
+    rhs = initial_image
+    # Update the rhs with the a priori estimate, if provided.
+    if reg_prior is not None:
+      if reg_operator is not None:
+        reg_prior = reg_operator.transform(
+            reg_operator.transform(reg_prior), adjoint=True)
+      rhs += reg_parameter * reg_prior
+    # Solve the (maybe regularized) linear system.
+    result = linalg_ops.conjugate_gradient(operator_gm, rhs, **optimizer_kwargs)
+    image = result.x
+
+  elif optimizer == 'admm':
+    # Create the least-squares objective.
+    function_f = convex_ops.ConvexFunctionLeastSquares(operator, kspace)
+    # Configure ADMM formulation depending on regularizer.
+    if isinstance(regularizer,
+                  convex_ops.ConvexFunctionLinearOperatorComposition):
+      function_g = regularizer.function
+      operator_a = regularizer.operator
+    else:
+      function_g = regularizer
+      operator_a = None
+    # Run ADMM minimization.
+    result = optimizer_ops.admm_minimize(function_f, function_g,
+                                         operator_a=operator_a,
+                                         **optimizer_kwargs)
+    image = operator.expand_domain_dimension(result.x)
+
+  elif optimizer == 'lbfgs':
+    # Flatten k-space and initial estimate.
+    initial_image = operator.flatten_domain_shape(initial_image)
+    y = operator.flatten_range_shape(kspace)
+
+    # Currently L-BFGS implementation only supports real numbers, so reinterpret
+    # complex image as real (C^N -> R^2*N).
+    initial_image = math_ops.view_as_real(initial_image, stacked=False)
+
+    # Define the objective function and its gradient.
+    @tf.function
+    @math_ops.make_val_and_grad_fn
+    def _objective(x):
+      # Reinterpret real input as complex.
+      x = math_ops.view_as_complex(x, stacked=False)
+      # Compute data consistency and regularization terms and add.
+      dc_term = tf.math.abs(tf.norm(y - operator.matvec(x), ord=2))
+      reg_term = regularizer(x)
+      return dc_term + reg_term
+
+    # Do minimization.
+    result = optimizer_ops.lbfgs_minimize(_objective, initial_image,
+                                          **optimizer_kwargs)
+
+    # Reinterpret real result as complex and reshape image.
+    image = operator.expand_domain_dimension(
+        math_ops.view_as_complex(result.position, stacked=False))
+
+  else:
+    raise ValueError(f"Unknown optimizer: {optimizer}")
+
+  # Apply intensity correction, if requested.
+  if operator.is_multicoil and sens_norm:
+    sens_weights_sqrt = tf.math.reciprocal_no_nan(
+        tf.norm(sensitivities, axis=-(rank + 1), keepdims=False))
+    image *= sens_weights_sqrt
+
+  # If necessary, filter the image to remove k-space corners. This can be
+  # done if the trajectory has circular coverage and does not cover the k-space
+  # corners. If the user has not specified whether to apply the filter, we do it
+  # only for non-Cartesian trajectories, under the assumption that non-Cartesian
+  # trajectories are likely to have circular coverage of k-space while Cartesian
+  # trajectories are likely to have rectangular coverage.
+  if filter_corners is None:
+    is_probably_circular = operator.is_non_cartesian
+    filter_corners = is_probably_circular
+  if filter_corners:
+    fft_axes = list(range(-rank, 0))  # pylint: disable=invalid-unary-operand-type
+    kspace = fft_ops.fftn(image, axes=fft_axes, norm='ortho', shift=True)
+    kspace = signal_ops.filter_kspace(kspace, rank=rank, filter_type='atanfilt')
+    image = fft_ops.ifftn(kspace, axes=fft_axes, norm='ortho', shift=True)
+
+  return image
 
 
 def reconstruct_sense(kspace,
@@ -217,9 +405,48 @@ def reconstruct_sense(kspace,
                       rank=None,
                       l2_regularizer=0.0,
                       fast=True):
-  """MR image reconstruction using SENSitivity Encoding (SENSE).
+  r"""MR image reconstruction using sensitivity encoding (SENSE).
 
-  For the parameters, see `tfmri.reconstruct`.
+  Args:
+    kspace: A `Tensor`. The *k*-space samples. Must have type `complex64` or
+      `complex128`. Must have shape `[..., C, *K]`, where `K` is the shape
+      of the spatial frequency dimensions, `C` is the number of coils and `...`
+      is the batch shape, which can have any rank. Note that `K` is the
+      reduced or undersampled shape.
+    sensitivities: A `Tensor`. The coil sensitivity maps. Must have type
+      `complex64` or `complex128`. Must have shape `[..., C, *S]`, where `S` is
+      shape of the spatial dimensions, `C` is the number of coils and `...` is
+      the batch shape, which can have any rank and must be broadcastable to the
+      batch shape of `kspace`.
+    reduction_axis: An `int` or a list of `ints`. The reduced axes. This
+        parameter must be provided.
+    reduction_factor: An `int` or a list of `ints`. The reduction
+      factors corresponding to each reduction axis. The output image will have
+      dimension `kspace.shape[ax] * r` for each pair `ax` and `r` in
+      `reduction_axis` and `reduction_factor`. This parameter must be
+      provided.
+    rank: An optional `int`. The rank (in the sense of spatial
+      dimensionality) of this operation. Defaults to `kspace.shape.rank - 1`.
+      Therefore, if `rank` is not specified, axis 0 is interpreted to be the
+      coil axis and the remaining dimensions are interpreted to be spatial
+      dimensions. You must specify `rank` if you intend to provide any batch
+      dimensions in `kspace` and/or `sensitivities`.
+    l2_regularizer: An optional `float`. The L2 regularization factor
+      used when solving the linear least-squares problem. Ignored if
+      `fast=False`. Defaults to 0.0.
+    fast: An optional `bool`. Defaults to `True`. If `False`, use a
+      numerically robust orthogonal decomposition method to solve the linear
+      least-squares. This algorithm finds the solution even for rank deficient
+      matrices, but is significantly slower. For more details, see
+      `tf.linalg.lstsq`.
+
+  Returns:
+    A `Tensor`. The reconstructed images. Has the same type as `kspace`. Has
+    shape `[..., S]`, where `...` is the reconstruction batch shape and `S` is
+    the spatial shape.
+
+  Raises:
+    ValueError: If `kspace` and `sensitivities` have incompatible batch shapes.
 
   References:
     .. [1] Pruessmann, K.P., Weiger, M., Scheidegger, M.B. and Boesiger, P.
@@ -348,14 +575,58 @@ def reconstruct_sense(kspace,
 def reconstruct_grappa(kspace,
                        mask,
                        calib,
-                       sensitivities=None,
                        kernel_size=5,
                        weights_l2_regularizer=0.0,
                        combine_coils=True,
+                       sensitivities=None,
                        return_kspace=False):
   """MR image reconstruction using GRAPPA.
 
-  For the parameters, see `tfmri.reconstruct`.
+  Args:
+    kspace: A `Tensor`. The *k*-space samples. Must have type `complex64` or
+      `complex128`. Must have shape `[..., C, *K]`, where `K` is the shape
+      of the spatial frequency dimensions, `C` is the number of coils and `...`
+      is the batch shape, which can have any rank. Note that `K` is the
+      reduced or undersampled shape.
+    mask: A `Tensor`. The sampling mask. Must have type `bool`. Must have shape
+      `S`, where `S` is the shape of the spatial dimensions. In other words,
+      `mask` should have the shape of a fully sampled *k*-space. For each point,
+      `mask` should be `True` if the corresponding *k*-space sample was measured
+      and `False` otherwise. `True` entries should correspond to the data in
+      `kspace`, and the result of dropping all `False` entries from `mask`
+      should have shape `K`.
+    calib: A `Tensor`. The calibration data. Must have type `complex64` or
+      `complex128`. Must have shape `[..., C, *R]`, where `R` is the shape of
+      the calibration region, `C` is the number of coils and `...` is the batch
+      shape, which can have any rank and must be broadcastable to the batch
+      shape of `kspace`. `calib` is required when `method` is `"grappa"`. For
+      other methods, this parameter is not relevant.
+    kernel_size: An `int` or list of `ints`. The size of the GRAPPA
+      kernel. Must have length equal to the image rank or number of spatial
+      dimensions. If a scalar `int` is provided, the same size is used in all
+      dimensions.
+    weights_l2_regularizer: An optional `float`. The regularization
+      factor for the L2 regularization term used to fit the GRAPPA weights.
+      If 0.0, no regularization is applied.
+    combine_coils: An optional `bool`. If `True`, multi-coil images
+      are combined. Otherwise, the uncombined images are returned. Defaults to
+      `True`.
+    sensitivities: A `Tensor`. The coil sensitivity maps. Must have type
+      `complex64` or `complex128`. Must have shape `[..., C, *S]`, where `S` is
+      shape of the spatial dimensions, `C` is the number of coils and `...` is
+      the batch shape, which can have any rank and must be broadcastable to the
+      batch shape of `kspace`. Note that `sensitivities` are not used for the
+      GRAPPA computation, but they are used for adaptive coil combination. If
+      `sensitivities` are not provided, coil combination will be performed using
+      the sum of squares method.
+    return_kspace: An optional `bool`. If `True`, returns the filled
+      *k*-space without performing the Fourier transform. In this case, coils
+      are not combined regardless of the value of `combine_coils`.
+
+  Returns:
+    A `Tensor`. The reconstructed images. Has the same type as `kspace`. Has
+    shape `[..., S]`, where `...` is the reconstruction batch shape and `S` is
+    the spatial shape.
 
   References:
     .. [1] Griswold, M.A., Jakob, P.M., Heidemann, R.M., Nittka, M., Jellus, V.,
@@ -514,291 +785,6 @@ def reconstruct_grappa(kspace,
   return result
 
 
-def reconstruct_adj(kspace,
-                    image_shape,
-                    mask=None,
-                    trajectory=None,
-                    density=None,
-                    sensitivities=None,
-                    phase=None,
-                    sens_norm=True):
-  """Reconstructs an image using the adjoint MRI operator.
-
-  .. note::
-    This function supports CPU and GPU computation.
-
-  .. note::
-    This function supports batches of inputs, which are processed in parallel
-    whenever possible.
-  """
-  kspace = tf.convert_to_tensor(kspace)
-
-  # Create the linear operator.
-  operator = linalg_ops.LinearOperatorMRI(image_shape,
-                                          mask=mask,
-                                          trajectory=trajectory,
-                                          density=density,
-                                          sensitivities=sensitivities,
-                                          phase=phase,
-                                          fft_norm='ortho',
-                                          sens_norm=sens_norm)
-  rank = operator.rank
-
-  # Apply density compensation, if provided.
-  if density is not None:
-    dens_weights_sqrt = tf.math.sqrt(tf.math.reciprocal_no_nan(density))
-    dens_weights_sqrt = tf.cast(dens_weights_sqrt, kspace.dtype)
-    if operator.is_multicoil:
-      dens_weights_sqrt = tf.expand_dims(dens_weights_sqrt, axis=-2)
-    kspace *= dens_weights_sqrt
-
-  # Compute zero-filled image using the adjoint operator.
-  image = operator.H.transform(kspace)
-
-  # Apply intensity correction, if requested.
-  if operator.is_multicoil and sens_norm:
-    sens_weights_sqrt = tf.math.reciprocal_no_nan(
-        tf.norm(sensitivities, axis=-(rank + 1), keepdims=False))
-    image *= sens_weights_sqrt
-
-  return image
-
-
-def reconstruct_lstsq(kspace,
-                      image_shape,
-                      extra_shape=None,
-                      mask=None,
-                      trajectory=None,
-                      density=None,
-                      sensitivities=None,
-                      phase=None,
-                      sens_norm=True,
-                      regularizer=None,
-                      optimizer=None,
-                      optimizer_kwargs=None,
-                      initial_image=None,
-                      filter_output=False):
-  """Reconstructs an image using a least-squares formulation.
-
-  This is an iterative reconstruction method which formulates the image
-  reconstruction problem as follows:
-
-  .. math::
-    \hat{x} = {\mathop{\mathrm{argmin}}_x} \left (\left\| Ax - y \right\|_2^2 + g(x) \right )
-
-  where :math:`A` is the MRI `LinearOperator`, :math:`x` is the solution, `y` is
-  the measured *k*-space data, and :math:`g(x)` is an optional `ConvexFunction`
-  used for regularization.
-
-  This function supports linear and non-linear reconstruction, depending on the
-  selected regularizer. The MRI operator is constructed internally and does not
-  need to be provided.
-
-  .. note::
-    This function supports CPU and GPU computation.
-
-  .. note::
-    This function supports batches of inputs, which are processed in parallel
-    whenever possible.
-
-  Args:
-    image_shape: A `TensorShape` or a list of `ints`. Must have length 2 or 3.
-      The shape of the reconstructed image[s].
-    extra_shape: An optional `TensorShape` or list of `ints`. Additional
-      dimensions that should be included within the solution domain. Note
-      that `extra_shape` is not needed to reconstruct independent batches of
-      images. However, it should be provided when performing a reconstruction
-      that operates along non-spatial dimensions, e.g. for temporal
-      regularization. Defaults to `None`.
-    mask: An optional `Tensor` of type `bool`. The sampling mask. Must have
-      shape `[..., *S]`, where `S` is the `image_shape` and `...` is
-      the batch shape, which can have any number of dimensions. `mask` should
-      be passed for reconstruction from undersampled Cartesian *k*-space.
-    trajectory: An optional `Tensor` of type `float32` or `float64`. Must have
-      shape `[..., M, N]`, where `N` is the rank (number of spatial dimensions),
-      `M` is the number of samples in the encoded space and `...` is the batch
-      shape, which can have any number of dimensions. `trajectory` should be
-      passed for reconstruction from non-Cartesian *k*-space.
-    density: An optional `Tensor` of type `float32` or `float64`. The sampling
-      densities. Must have shape `[..., M]`, where `M` is the number of
-      samples and `...` is the batch shape, which can have any number of
-      dimensions. This input is only relevant for non-Cartesian MRI
-      reconstruction. If passed, the MRI linear operator will include sampling
-      density compensation. Can also be set to `'auto'` to automatically
-      estimate the sampling density from the `trajectory`. If `None`, the MRI
-      operator will not perform sampling density compensation.
-    sensitivities: An optional `Tensor` of type `complex64` or `complex128`.
-      The coil sensitivity maps. Must have shape `[..., C, *S]`, where `S`
-      is the `image_shape`, `C` is the number of coils and `...` is the batch
-      shape, which can have any number of dimensions.
-    phase: An optional `Tensor` of type `float32` or `float64`. A phase
-      estimate for the reconstructed image. If provided, a phase-constrained
-      reconstruction will be performed. This improves the conditioning of the
-      reconstruction problem in applications where there is no interest in the
-      phase data. However, artefacts may appear if an inaccurate phase estimate
-      is passed.
-    sens_norm: A `bool`. Whether to normalize coil sensitivities. Defaults to
-      `False`.
-    regularizer: A `ConvexFunction`. The regularization term added to
-      least-squares objective.
-    optimizer: A `str`. One of `'cg'` (conjugate gradient), `'admm'`
-      (alternating direction method of multipliers) of `'lbfgs'`
-      (limited-memory Broyden-Fletcher-Goldfarb-Shanno). If `None`, the
-      optimizer is selected heuristically depending on other inputs. Note that
-      this heuristic may change in the future, so specify an optimizer if you
-      wish to ensure it will always be used in future versions. Not all
-      optimizers are compatible with all configurations.
-
-  References:
-    .. [1] Pruessmann, K.P., Weiger, M., Börnert, P. and Boesiger, P. (2001),
-      Advances in sensitivity encoding with arbitrary k-space trajectories.
-      Magn. Reson. Med., 46: 638-651. https://doi.org/10.1002/mrm.1241
-
-    .. [2] Block, K.T., Uecker, M. and Frahm, J. (2007), Undersampled radial MRI
-      with multiple coils. Iterative image reconstruction using a total
-      variation constraint. Magn. Reson. Med., 57: 1086-1098.
-      https://doi.org/10.1002/mrm.21236
-
-    .. [3] Feng, L., Grimm, R., Block, K.T., Chandarana, H., Kim, S., Xu, J.,
-      Axel, L., Sodickson, D.K. and Otazo, R. (2014), Golden-angle radial sparse
-      parallel MRI: Combination of compressed sensing, parallel imaging, and
-      golden-angle radial sampling for fast and flexible dynamic volumetric MRI.
-      Magn. Reson. Med., 72: 707-717. https://doi.org/10.1002/mrm.24980
-  """
-  # Choose a default optimizer.
-  if optimizer is None:
-    if regularizer is None or isinstance(regularizer,
-                                         convex_ops.ConvexFunctionTikhonov):
-      optimizer = 'cg'
-    else:
-      optimizer = 'admm'
-  # Check optimizer.
-    optimizer = check_util.validate_enum(
-        optimizer, {'cg', 'admm', 'lbfgs'}, name='optimizer')
-  optimizer_kwargs = optimizer_kwargs or {}
-
-  # We don't do a lot of input checking here, since it will be done by the
-  # operator.
-  kspace = tf.convert_to_tensor(kspace)
-
-  # Create the linear operator.
-  operator = linalg_ops.LinearOperatorMRI(image_shape,
-                                          extra_shape=extra_shape,
-                                          mask=mask,
-                                          trajectory=trajectory,
-                                          density=density,
-                                          sensitivities=sensitivities,
-                                          phase=phase,
-                                          fft_norm='ortho',
-                                          sens_norm=sens_norm)
-  rank = operator.rank
-
-  # Apply density compensation, if provided.
-  if density is not None:
-    kspace *= operator._dens_weights_sqrt
-
-  initial_image = operator.H.transform(kspace)
-
-  # Optimizer-specific logic.
-  if optimizer == 'cg':
-    if regularizer is not None:
-      if not isinstance(regularizer, convex_ops.ConvexFunctionTikhonov):
-        raise ValueError(
-            f"Regularizer {regularizer.name} is incompatible with "
-            f"CG optimizer.")
-      reg_parameter = regularizer.function.scale
-      reg_operator = regularizer.transform
-      reg_prior = regularizer.prior
-    else:
-      reg_parameter = None
-      reg_operator = None
-      reg_prior = None
-
-    operator_gm = linalg_imaging.LinearOperatorGramMatrix(
-        operator, reg_parameter=reg_parameter, reg_operator=reg_operator)
-    rhs = initial_image
-    # Update the rhs with the a priori estimate, if provided.
-    if reg_prior is not None:
-      if reg_operator is not None:
-        reg_prior = reg_operator.transform(
-            reg_operator.transform(reg_prior), adjoint=True)
-      rhs += reg_parameter * reg_prior
-    # Solve the (maybe regularized) linear system.
-    result = linalg_ops.conjugate_gradient(operator_gm, rhs, **optimizer_kwargs)
-    image = result.x
-
-  elif optimizer == 'admm':
-    # Create the least-squares objective.
-    function_f = convex_ops.ConvexFunctionLeastSquares(operator, kspace)
-    # Configure ADMM formulation depending on regularizer.
-    if isinstance(regularizer,
-                  convex_ops.ConvexFunctionLinearOperatorComposition):
-      function_g = regularizer.function
-      operator_a = regularizer.operator
-    else:
-      function_g = regularizer
-      operator_a = None
-    # Run ADMM minimization.
-    result = optimizer_ops.admm_minimize(function_f, function_g,
-                                         operator_a=operator_a,
-                                         **optimizer_kwargs)
-    image = operator.expand_domain_dimension(result.x)
-
-  elif optimizer == 'lbfgs':
-    # Flatten k-space and initial estimate.
-    initial_image = operator.flatten_domain_shape(initial_image)
-    y = operator.flatten_range_shape(kspace)
-    
-    # Currently L-BFGS implementation only supports real numbers, so reinterpret
-    # complex image as real (C^N -> R^2*N).
-    initial_image = math_ops.view_as_real(initial_image, stacked=False)    
-
-    # Define the objective function and its gradient.
-    @tf.function
-    @math_ops.make_val_and_grad_fn
-    def _objective(x):
-      # Reinterpret real input as complex.
-      x = math_ops.view_as_complex(x, stacked=False)
-      # Compute data consistency and regularization terms and add.
-      dc_term = tf.math.abs(tf.norm(y - operator.matvec(x), ord=2))
-      reg_term = regularizer(x)
-      return dc_term + reg_term
-
-    # Do minimization.
-    result = optimizer_ops.lbfgs_minimize(_objective, initial_image,
-                                          **optimizer_kwargs)
-
-    # Reinterpret real result as complex and reshape image.
-    image = operator.expand_domain_dimension(
-        math_ops.view_as_complex(result.position, stacked=False))
-
-  else:
-    raise ValueError(f"Unknown optimizer: {optimizer}")
-
-  # Apply intensity correction, if requested.
-  if operator.is_multicoil and sens_norm:
-    sens_weights_sqrt = tf.math.reciprocal_no_nan(
-        tf.norm(sensitivities, axis=-(rank + 1), keepdims=False))
-    image *= sens_weights_sqrt
-
-  # If necessary, filter the image to remove k-space corners. This can be
-  # done if the trajectory has circular coverage and does not cover the k-space
-  # corners. If the user has not specified whether to apply the filter, we do it
-  # only for non-Cartesian trajectories, under the assumption that non-Cartesian
-  # trajectories are likely to have circular coverage of k-space while Cartesian
-  # trajectories are likely to have rectangular coverage.
-  if filter_output is None:
-    is_probably_circular = operator.is_non_cartesian
-    filter_output = is_probably_circular
-  if filter_output:
-    fft_axes = list(range(-rank, 0))
-    kspace = fft_ops.fftn(image, axes=fft_axes, norm='ortho', shift=True)
-    kspace = signal_ops.filter_kspace(kspace, rank=rank, filter_type='atanfilt')
-    image = fft_ops.ifftn(kspace, axes=fft_axes, norm='ortho', shift=True)
-
-  return image
-
-
 def _extract_patches(images, sizes):
   """Extract patches from N-D image.
 
@@ -887,58 +873,6 @@ def _flatten_last_dimensions(x):
   Returns an array of rank `tf.rank(x) - 1`.
   """
   return tf.reshape(x, tf.concat([tf.shape(x)[:-2], [-1]], 0))
-
-
-def _select_reconstruction_method(kspace, # pylint: disable=unused-argument
-                                  mask,
-                                  trajectory,
-                                  density,
-                                  calib,
-                                  sensitivities,
-                                  method):
-  """Select an appropriate reconstruction method based on user inputs.
-
-  For the parameters, see `tfmri.reconstruct`.
-  """
-  # If user selected a method, use it. We do not check that inputs are valid
-  # here, this will be done by the methods themselves.
-  if method is not None:
-    if method not in _MR_RECON_METHODS:
-      return ValueError(
-        f"Could not find a reconstruction method named: `{method}`")
-    return method
-
-  # No method was specified: choose a default one.
-  if (sensitivities is None and
-      trajectory is None and
-      density is None and
-      calib is None and
-      mask is None):
-    return 'fft'
-
-  if (sensitivities is None and
-      trajectory is not None and
-      calib is None and
-      mask is None):
-    return 'nufft'
-
-  if (sensitivities is not None and
-      trajectory is None and
-      density is None and
-      calib is None and
-      mask is None):
-    return 'sense'
-
-  if (trajectory is None and
-      density is None and
-      calib is not None and
-      mask is not None):
-    return 'grappa'
-
-  # Nothing worked.
-  raise ValueError(
-    "Could not find any reconstruction method that supports the specified "
-    "combination of inputs.")
 
 
 def reconstruct_partial_kspace(kspace,

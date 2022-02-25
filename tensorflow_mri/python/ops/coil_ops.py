@@ -451,13 +451,8 @@ def compress_coils(kspace,
       less than `tol` times the first singular value are discarded. `tol` is
       ignored if `out_coils` is also specified.
     method: A `string`. The coil compression algorithm. Must be `"svd"`.
-    **kwargs: Additional method-specific keyword arguments. See Notes for more
-      details.
-
-  Notes:
-    This function also accepts the following method-specific keyword arguments:
-
-    * For `method="svd"`, no additional keyword arguments are accepted.
+    **kwargs: Additional method-specific keyword arguments to be passed to the
+      coil compressor.
 
   Returns:
     A `Tensor` containing the compressed *k*-space data. Has shape
@@ -495,22 +490,32 @@ def compress_coils(kspace,
 
 
 class _CoilCompressor():
+  """Base class for coil compressors.
 
+  Args:
+    coil_axis: An `int`. The axis of the coil dimension.
+    out_coils: An `int`. The number of virtual output coils. If `None`, the
+      number of output coils is automatically determined based on `tol`. If
+      `tol` is also None, all virtual coils are returned.
+    tol: A `float` between 0.0 and 1.0. Virtual coils whose singular value is
+      less than `tol` times the first singular value are discarded. `tol` is
+      ignored if `out_coils` is also specified.
+  """
   def __init__(self, coil_axis=-1, out_coils=None, tol=None):
     self._coil_axis = coil_axis
     self._out_coils = out_coils
     self._tol = tol
 
   @abc.abstractmethod
-  def fit(self, x):
+  def fit(self, kspace):
     pass
 
   @abc.abstractmethod
-  def transform(self, x):
+  def transform(self, kspace):
     pass
 
-  def fit_transform(self, x):
-    return self.fit(x).transform(x)
+  def fit_transform(self, kspace):
+    return self.fit(kspace).transform(kspace)
 
 
 class SVDCoilCompressor(_CoilCompressor):
@@ -575,11 +580,11 @@ class SVDCoilCompressor(_CoilCompressor):
     # Remove unnecessary virtual coils.
     if self._out_coils is not None:
       self._matrix = self._matrix[:, :self._out_coils]
-    
+
     # If possible, set static number of output coils.
     if isinstance(self._out_coils, int):
       self._matrix = tf.ensure_shape(self._matrix, [None, self._out_coils])
-  
+
     return self
 
   def transform(self, kspace):

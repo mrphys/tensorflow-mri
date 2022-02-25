@@ -322,7 +322,7 @@ class ReconstructTest(test_util.TestCase):
                         transform_type='type_2',
                         fft_direction='forward')
 
-    image = recon_ops.reconstruct_lstsq(kspace, 
+    image = recon_ops.reconstruct_lstsq(kspace,
                                         image_shape,
                                         trajectory=traj,
                                         sensitivities=sens)
@@ -406,8 +406,8 @@ class ReconstructTest(test_util.TestCase):
       ('admm',),
       ('lbfgs',)
   )
-  def test_lstsq_grasp(self, optimizer):
-    """Test GRASP reconstruction."""
+  def test_lstsq_grasp(self, optimizer):  # pylint: disable=missing-param-doc,missing-param-doc
+    """Test GRASP reconstruction."""  # pylint: disable=missing-param-doc
     # Load data.
     data = io_util.read_hdf5(
         'tests/data/liver_dce_2d_multicoil_radial_kspace.h5')

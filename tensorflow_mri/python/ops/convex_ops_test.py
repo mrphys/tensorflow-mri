@@ -23,7 +23,8 @@ from tensorflow_mri.python.util import test_util
 
 @test_util.run_all_in_graph_and_eager_modes
 class ConvexFunctionL1NormTest(test_util.TestCase):
-
+  """Tests for `ConvexFunctionL1Norm`."""
+  # pylint: disable=missing-function-docstring
   @parameterized.parameters(
       # x, scale, expected
       ([3., 4.], 2.0, 14.0),
@@ -49,7 +50,8 @@ class ConvexFunctionL1NormTest(test_util.TestCase):
 
 @test_util.run_all_in_graph_and_eager_modes
 class ConvexFunctionL2NormTest(test_util.TestCase):
-
+  """Tests for `ConvexFunctionL2Norm`."""
+  # pylint: disable=missing-function-docstring
   @parameterized.parameters(
       # x, scale, expected
       ([3., 4.], 2.0, 10.0),
@@ -73,7 +75,8 @@ class ConvexFunctionL2NormTest(test_util.TestCase):
 
 @test_util.run_all_in_graph_and_eager_modes
 class ConvexFunctionL2NormSquaredTest(test_util.TestCase):
-
+  """Tests for `ConvexFunctionL2NormSquared`."""
+  # pylint: disable=missing-function-docstring
   @parameterized.parameters(
       # x, scale, expected
       ([1., 2., 3.], 1.0, 14.0),
@@ -97,13 +100,13 @@ class ConvexFunctionL2NormSquaredTest(test_util.TestCase):
 @test_util.run_all_in_graph_and_eager_modes
 class ConvexFunctionTikhonovTest(test_util.TestCase):
   """Tests for `ConvexFunctionTikhonov`."""
+  # pylint: disable=missing-function-docstring
   @parameterized.parameters(
       # x, scale, transform, prior, expected
       ([3.0, 4.0], 2.0, None, None, 50.0),
       ([3.0, 4.0], 0.5, None, None, 12.5),
       ([3.0, 4.0], 0.5, 2.0, None, 50.0),
-      ([3.0, 4.0], 2.0, None, [3.0, 2.0], 8.0)
-  )
+      ([3.0, 4.0], 2.0, None, [3.0, 2.0], 8.0))
   def test_call(self, x, scale, transform, prior, expected):
     if isinstance(transform, float):
       x = tf.convert_to_tensor(x)
@@ -116,7 +119,8 @@ class ConvexFunctionTikhonovTest(test_util.TestCase):
 
 
 class ConvexFunctionTotalVariationTest(test_util.TestCase):
-  """Tests for `TotalVariationRegularizer`."""
+  """Tests for `ConvexFunctionTotalVariation`."""
+  # pylint: disable=missing-function-docstring
   def test_call(self):
     x = [[1., 2., 3.],
          [4., 5., 6.]]
@@ -127,7 +131,7 @@ class ConvexFunctionTotalVariationTest(test_util.TestCase):
     ref1 = 1.3
     res1 = reg1(x_flat)
     self.assertAllClose(res1, ref1)
-    
+
     reg2 = convex_ops.ConvexFunctionTotalVariation(scale=0.1,
                                                    ndim=[2, 3],
                                                    axis=1)
@@ -145,7 +149,8 @@ class ConvexFunctionTotalVariationTest(test_util.TestCase):
 
 @test_util.run_all_in_graph_and_eager_modes
 class BlockSoftThresholdTest(test_util.TestCase):
-
+  """Tests for `block_soft_threshold` operator."""
+  # pylint: disable=missing-function-docstring
   @parameterized.parameters(
       # x, threshold, expected_y
       (5., 5., 0.),
@@ -162,7 +167,7 @@ class BlockSoftThresholdTest(test_util.TestCase):
     x = tf.convert_to_tensor(x, dtype=tf.float32)
     y = convex_ops.block_soft_threshold(x, threshold)
     self.assertAllClose(y, expected_y)
-  
+
   @parameterized.parameters(
       # x, threshold, expected_y
       (2. + 0.j, 2., 0. + 0.j),
@@ -178,7 +183,8 @@ class BlockSoftThresholdTest(test_util.TestCase):
 
 @test_util.run_all_in_graph_and_eager_modes
 class SoftThresholdTest(test_util.TestCase):
-
+  """Tests for `soft_threshold` operator."""
+  # pylint: disable=missing-function-docstring
   @parameterized.parameters(
       # x, threshold, expected_y
       (5., 5., 0.),
@@ -195,7 +201,7 @@ class SoftThresholdTest(test_util.TestCase):
     x = tf.convert_to_tensor(x, dtype=tf.float32)
     y = convex_ops.soft_threshold(x, threshold)
     self.assertAllClose(y, expected_y)
-  
+
   @parameterized.parameters(
       # x, threshold, expected_y
       (2. + 0.j, 2., 0. + 0.j),

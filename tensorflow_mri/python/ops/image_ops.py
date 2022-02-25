@@ -24,7 +24,6 @@ import collections
 
 import numpy as np
 import tensorflow as tf
-import tensorflow_probability as tfp
 
 from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import geom_ops
@@ -844,44 +843,48 @@ def _fspecial_gauss_3d(size, sigma): # pylint: disable=missing-param-doc
   return tf.reshape(g, shape=[size, size, size, 1, 1])
 
 
-def image_gradients(image, method='sobel', norm=False, rank=2, name=None):
+def image_gradients(image, method='sobel', norm=False, name=None):
   """Computes image gradients.
 
   Args:
-    image: Image tensor with shape [batch_size, h, w, d] and type float32 or
-      float64.  The image(s) must be 2x2 or larger.
+    image: A `Tensor` of shape `[batch_size] + spatial_dims + [channels]`.
     method: A `str`. The operator to use for gradient computation. Must be one
       of `'prewitt'`, `'sobel'` or `'scharr'`. Defaults to `'sobel'`.
     norm: A `bool`. If `True`, returns normalized gradients.
-    rank: An `int`. The number of spatial dimensions.
+    name: A name for the operation (optional).
 
   Returns:
-    Tensor holding edge maps for each channel. Returns a tensor with shape
-    [batch_size, h, w, d, 2] where the last two dimensions hold [[dy[0], dx[0]],
-    [dy[1], dx[1]], ..., [dy[d-1], dx[d-1]]] calculated using the Prewitt
-    filter.
+    A `Tensor` of shape `image.shape + [len(spatial_dims)]` holding the image
+    gradients along each spatial dimension.
+
+  Raises:
+    ValueError: If `image` has unknown static rank.
   """
   with tf.name_scope(name or 'image_gradients'):
+    if image.shape.rank is None:
+      raise ValueError('Rank of input image must be known statically.')
+    rank = image.shape.rank - 2
     kernels = _gradient_operators(
         method, norm=norm, rank=rank, dtype=image.dtype)
     return _filter_image(image, kernels)
 
 
-def gradient_magnitude(image, method='sobel', norm=False, rank=2, name=None):
+def gradient_magnitude(image, method='sobel', norm=False, name=None):
   """Computes the gradient magnitude (GM) of an image.
 
   Args:
-    image: A `Tensor`.
+    image: A `Tensor` of shape `[batch_size] + spatial_dims + [channels]`.
     method: The gradient operator to use. Can be `'prewitt'`, `'sobel'` or
       `'scharr'`. Defaults to `'sobel'`.
     norm: A `bool`. If `True`, returns the normalized gradient magnitude.
-    rank: An `int`. The number of spatial dimensions.
+    name: A name for the operation (optional).
 
   Returns:
-    A `Tensor` of the same shape and type as `image`.
+    A `Tensor` of the same shape and type as `image` holding the gradient
+    magnitude of the input image.
   """
   with tf.name_scope(name or 'gradient_magnitude'):
-    gradients = image_gradients(image, method=method, norm=norm, rank=rank)
+    gradients = image_gradients(image, method=method, norm=norm)
     return tf.norm(gradients, axis=-1)
 
 
@@ -897,7 +900,10 @@ def _gradient_operators(method, norm=False, rank=2, dtype=tf.float32):
 
   Returns:
     A `Tensor` of shape `[num_kernels] + kernel_shape`, where `kernel_shape` is
-    `[3, 3]` or `[3, 3, 3]` depending on `rank`.
+    `[3] * rank`.
+
+  Raises:
+    ValueError: If passed an invalid `method`.
   """
   if method == 'prewitt':
     avg_operator = tf.constant([1, 1, 1], dtype=dtype)
@@ -936,12 +942,21 @@ def _filter_image(image, kernels):
     kernels: A `Tensor` of kernels with shape `[num_kernels] + kernel_shape`.
 
   Returns:
-    Tensor holding edge maps for each channel. Returns a tensor with shape
-    [batch_size, h, w, d, 2] where the last two dimensions hold [[dy[0], dx[0]],
-    [dy[1], dx[1]], ..., [dy[d-1], dx[d-1]]] calculated using the Sobel filter.
+    A `Tensor` holding a filtered image for each kernel. Has shape
+    `image.shape + [num_kernels]`.
+
+  Raises:
+    ValueError: If `image` or `kernels` have invalid or incompatible ranks.
   """
-  # Infer rank.
-  rank = kernels.shape.rank - 1
+  if image.shape.rank not in (4, 5):
+    raise ValueError(
+        f"Expected `image` to have rank 4 or 5, got {image.shape.rank}")
+  rank = image.shape.rank - 2
+
+  if kernels.shape.rank - 1 != rank:
+    raise ValueError(
+        f"Expected rank {rank + 1} for kernels, got {kernels.shape.rank}")
+
   if rank == 2:
     depthwise_conv = tf.nn.depthwise_conv2d
   elif rank == 3:
@@ -959,7 +974,7 @@ def _filter_image(image, kernels):
 
   # Use depth-wise convolution to calculate edge maps per channel.
   pad_sizes = [[0, 0]] + [[1, 1]] * rank + [[0, 0]]
-  padded = tf.pad(image, pad_sizes, mode='REFLECT')
+  padded = tf.pad(image, pad_sizes, mode='REFLECT')  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
 
   # Output tensor has shape
   # [batch_size] + spatial_dims + [channels * num_kernels].
@@ -1010,7 +1025,7 @@ def gmsd(img1, img2, max_val=1.0, rank=None, name=None):
     (img1, img2, max_val, rank,
      image_axes, batch_shape, static_batch_shape) = _validate_iqa_inputs(
         img1, img2, max_val, rank)
-    
+
     if rank == 2:
       avg_pool = tf.nn.avg_pool2d
       pool_size = [1, 2, 2, 1]
@@ -1027,8 +1042,8 @@ def gmsd(img1, img2, max_val=1.0, rank=None, name=None):
     img2 = avg_pool(img2, pool_size, pool_size, 'SAME')
 
     # Compute the gradient magnitudes for both images.
-    gm1 = gradient_magnitude(img1, method='prewitt', norm=True, rank=rank) * 2.0
-    gm2 = gradient_magnitude(img2, method='prewitt', norm=True, rank=rank) * 2.0
+    gm1 = gradient_magnitude(img1, method='prewitt', norm=True) * 2.0
+    gm2 = gradient_magnitude(img2, method='prewitt', norm=True) * 2.0
 
     # Constant for stability.
     c = 170.0
@@ -1051,7 +1066,45 @@ def gmsd(img1, img2, max_val=1.0, rank=None, name=None):
 
 
 def _validate_iqa_inputs(img1, img2, max_val, rank):
-  """Validates the inputs to the IQA functions."""
+  """Validates the inputs to the IQA functions.
+
+  Args:
+    img1: A `Tensor`. First batch of images. For 2D images, must have rank >= 3
+      with shape `batch_shape + [height, width, channels]`. For 3D images, must
+      have rank >= 4 with shape
+      `batch_shape + [depth, height, width, channels]`. Can have integer or
+      floating point type, with values in the range `[0, max_val]`.
+    img2: A `Tensor`. Second batch of images. For 2D images, must have rank >= 3
+      with shape `batch_shape + [height, width, channels]`. For 3D images, must
+      have rank >= 4 with shape
+      `batch_shape + [depth, height, width, channels]`. Can have integer or
+      floating point type, with values in the range `[0, max_val]`.
+    max_val: The dynamic range of the images (i.e., the difference between
+      the maximum and the minimum allowed values). Defaults to 1 for floating
+      point input images and `MAX` for integer input images, where `MAX` is the
+      largest positive representable number for the data type.
+    rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
+      to `tf.rank(img1) - 2`. In other words, if rank is not explicitly set,
+      `img1` and `img2` should have shape `[batch, height, width, channels]`
+      if processing 2D images or `[batch, depth, height, width, channels]` if
+      processing 3D images.
+
+  Returns:
+    A tuple of:
+      - First image reshaped to `[batch_size] + spatial_dims + [channels]`,
+        i.e. with one and only one batch dimension.
+      - Second image reshaped to `[batch_size] + spatial_dims + [channels]`,
+        i.e. with one and only one batch dimension.
+      - Maximum value as a `Tensor`, converted to `float32` image dtype.
+      - Rank of the images, as specified by user or inferred from images.
+      - Image or spatial axes as a list of `int`s.
+      - The broadcast batch shape of both input images shape as a `Tensor`.
+      - The static broadcast batch shape of both input images shape as a
+        `TensorShape`.
+
+  Raises:
+    ValueError: If rank is not 2 or 3.
+  """
   # Prepare the inputs.
   img1 = tf.convert_to_tensor(img1)
   img2 = tf.convert_to_tensor(img2)
@@ -1094,300 +1147,6 @@ def _validate_iqa_inputs(img1, img2, max_val, rank):
   image_axes = list(range(-(rank + 1), -1))
 
   return img1, img2, max_val, rank, image_axes, batch_shape, static_batch_shape
-
-
-def fsim(img1, img2, max_val=None, rank=None, name=None):
-  """Computes the feature similarity (FSIM) between two N-D images.
-
-  Args:
-    img1: A `Tensor`. First batch of images. For 2D images, must have rank >= 3
-      with shape `batch_shape + [height, width, channels]`. For 3D images, must
-      have rank >= 4 with shape
-      `batch_shape + [depth, height, width, channels]`. Can have integer or
-      floating point type, with values in the range `[0, max_val]`.
-    img2: A `Tensor`. Second batch of images. For 2D images, must have rank >= 3
-      with shape `batch_shape + [height, width, channels]`. For 3D images, must
-      have rank >= 4 with shape
-      `batch_shape + [depth, height, width, channels]`. Can have integer or
-      floating point type, with values in the range `[0, max_val]`.
-    max_val: The dynamic range of the images (i.e., the difference between
-      the maximum and the minimum allowed values). Defaults to 1 for floating
-      point input images and `MAX` for integer input images, where `MAX` is the
-      largest positive representable number for the data type.
-    rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
-      to `tf.rank(img1) - 2`. In other words, if rank is not explicitly set,
-      `img1` and `img2` should have shape `[batch, height, width, channels]`
-      if processing 2D images or `[batch, depth, height, width, channels]` if
-      processing 3D images.
-    name: Namespace to embed the computation in.
-
-  Returns:
-    A `Tensor` of type `float32` and shape `batch_shape` containing an FSIM
-    value for each pair of images in `img1` and `img2`.
-
-  References:
-    .. [1] L. Zhang, L. Zhang, X. Mou and D. Zhang, "FSIM: A Feature Similarity
-      Index for Image Quality Assessment," in IEEE Transactions on Image
-      Processing, vol. 20, no. 8, pp. 2378-2386, Aug. 2011,
-      doi: 10.1109/TIP.2011.2109730.
-  """
-  with tf.name_scope(name or 'fsim'):
-    # TODO(jmontalt): add initial downsampling.
-    # TODO(jmontalt): add support for 3D images.
-    spatial_axes = [-3, -2]
-
-    # Compute phase congruency (PC) maps.
-    pc_map1 = _phase_congruency(img1)
-    pc_map2 = _phase_congruency(img2)
-
-    # Compute gradient magnitude (GM) maps.
-    gm_map1 = gradient_magnitude(img1)
-    gm_map2 = gradient_magnitude(img2)
-
-    # Constants to improve stability of PC and GM similarities.
-    t1 = 0.85
-    t2 = 160.0
-
-    # Compute the PC similarity.
-    pc_sim = (2.0 * pc_map1 * pc_map2 + t1) / (pc_map1 ** 2 + pc_map2 ** 2 + t1)
-
-    # Compute the GM similarity.
-    gm_sim = (2.0 * gm_map1 * gm_map2 + t2) / (gm_map1 ** 2 + gm_map2 ** 2 + t2)
-
-    # Compute combined similarity as the product of PC similarity and GM
-    # similarity. 
-    sim = pc_sim * gm_sim
-
-    # Get the maximum of both phase congruency maps.
-    pc_max = tf.math.maximum(pc_map1, pc_map2)
-
-    # Compute the overall FSIM values by combining the similarity for all
-    # pixels. The similarity is weighted by the maximum of the PC maps, since
-    # the PC value for each location represents its likely impact on HVS
-    # perception.
-    fsim_per_channel = tf.math.divide(
-        tf.math.reduce_sum(sim * pc_max, axis=spatial_axes),
-        tf.math.reduce_sum(pc_max, axis=spatial_axes))
-
-    # Compute average over the channel axis.
-    return tf.math.reduce_mean(fsim_per_channel, [-1])
-
-
-def _phase_congruency(image, name=None):
-  """Computes the phase congruency map (PC) of an image.
-
-  Args:
-    image: A `Tensor`. Must be one of the following types: `float32`, `float64`.
-      A batch of images. For 2D images, must have shape `batch_shape +
-      [height, width, channels]`. For 3D images, must have shape
-      `batch_shape + [depth, height, width, channels]`.
-    name: Namespace to embed the computation in.
-
-  Returns:
-    A `Tensor` of the same shape and type as `image` containing the phase
-    congruency map of the input image.
-  """
-  image_shape = tf.shape(image)
-  rank = image.shape.rank
-
-  # with tf.name_scope(name or 'phase_congruency'):
-  #   raise NotImplementedError("_phase_congruency is not implemented yet.")
-  k = 2.0
-
-  # Define log-Gabor filter parameters.
-  num_scales = 4
-  num_orientations = 4
-  min_wavelength = 6
-  scaling_factor = 2.
-  sigma_freq_ratio = 0.55
-  theta_sigma_ratio = 1.2
-
-  # Compute Log-Gabor filters.
-  filters = _log_gabor_filters(
-      image_shape, num_scales, num_orientations, min_wavelength,
-      scaling_factor, sigma_freq_ratio, theta_sigma_ratio)
-
-  filters_ifft = tf.math.multiply(
-      tf.math.real(tf.signal.ifft2d(filters)),
-      tf.math.sqrt(tf.math.reduce_prod(image_shape)))
-  
-  # Convolve image with even and odd filters.
-  filt = tf.signal.ifft2d(tf.signal.fft2d(image) * filters)
-
-  # Amplitude of even and odd filter response.
-  amplitude = tf.math.abs(filt)
-
-  # Sum over scales of filter convolution results.
-  scale_axis = 0
-  orient_axis = 1
-
-  # Get mean filter response over all scales, this gives the weighted mean phase
-  # angle.
-  sum_filt = tf.math.reduce_sum(filt, axis=scale_axis)
-  mean_filt = sum_filt / (tf.math.abs(sum_filt) + eps)
-
-  # Now calculate An(cos(phase_deviation) - | sin(phase_deviation)) | by
-  # using dot and cross products between the weighted mean filter response
-  # vector and the individual filter response vectors at each scale. This
-  # quantity is phase congruency multiplied by An, which we call energy.
-  energy = tf.math.reduce_sum(
-      tf.math.real(filt) * tf.math.real(mean_filt) +
-      tf.math.imag(filt) * tf.math.imag(mean_filt) - tf.math.abs(
-          tf.math.real(filt) * tf.math.imag(mean_filt) -
-          tf.math.imag(filt) * tf.math.real(mean_filt)), axis=scale_axis)
-
-  # Compensate for noise.
-  # We estimate the noise power from the energy squared response at the
-  # smallest scale. If the noise is Gaussian the energy squared will have a
-  # Chi-squared 2DOF pdf. We calculate the median energy squared response
-  # as this is a robust statistic. From this we estimate the mean.
-  # The estimate of noise power is obtained by dividing the mean squared
-  # energy value by the mean squared filter value at the smallest scale.
-  median_energy_squared = tfp.stats.percentile(
-      tf.math.abs(filt[0, ...]) ** 2, 50.0,
-      axis=[-2, -1], interpolation='midpoint') 
-  mean_energy_squared = -median_energy_squared / tf.math.log(0.5)
-  sum_filters_squared = tf.math.reduce_sum(filters[0, 0, ...] ** 2)
-  noise_power = mean_energy_squared / sum_filters_squared
-
-  # for orient_index in range(num_orientations):
-  #   for scale_index in range(num_scales):
-
-  #   noise_energy = 2.0 * noise_power * sum_est_sum_an_2 + 4.0 * noise_power * sum_est_sum_ai_aj
-
-  #   tau = tf.math.sqrt(noise_energy / 2)
-  #   noise_energy_mean = tau * tf.math.sqrt(np.pi / 2.0)
-  #   noise_energy_std = tf.math.sqrt((2.0 - np.pi / 2.0) * tau ** 2.0)
-
-  #   noise_threshold = noise_energy_mean + k * noise_energy_std
-  #   noise_threshold /= 1.7
-  #   energy = tf.math.maximum(energy - noise_threshold, 0.0)
-  #   sum_energy += energy
-  #   sum_amplitude += amplitude
-  # return sum_energy / sum_amplitude
-
-
-def _log_gabor_filters(shape,
-                       num_scales,
-                       num_orientations,
-                       min_wavelength,
-                       scaling_factor,
-                       sigma_freq_ratio,
-                       theta_sigma_ratio):
-  """Log-Gabor filters.
-  
-  Filters are constructed in terms of two components.
-    - The radial component, which controls the frequency band that the filter
-      responds to.
-    - The angular component, which controls the orientation that the filter
-      responds to.
-
-  The two components are multiplied together to construct the overall filter.
-
-  Args:
-    shape: A `Tensor`. The filter shape.
-    num_scales: An `int`. The number of wavelet scales.
-    num_orientations: An `int`. The number of filter orientations.
-    min_wavelength: A `float`. The wavelength of the smallest scale filter.
-    scaling_factor: A `float`. The scaling factor between successive filters.
-    sigma_freq_ratio: A `float`. Ratio of the standard deviation of the Gaussian
-      describing the log Gabor filter's transfer function in the frequency
-      domain to the filter center frequency.
-    theta_sigma_ratio: A `float`. Ratio of angular interval between filter
-      orientations and the standard deviation of the angular Gaussian
-      function used to construct filters in the frequency plane.
-
-  Returns:
-    A `Tensor` of shape `[num_scales, num_orientations] + shape`, containing
-    the log-Gabor filters for each scale and orientation.
-  """
-  shape = tf.convert_to_tensor(shape)
-  rank = shape.shape[0]
-  if rank != 2:
-    raise NotImplementedError(
-        f"{rank}-D log-Gabor filters are not implemented.")
-  # Standard deviation of the angular Gaussian function used to construct
-  # filters in the frequency plane.
-  theta_std = np.pi / num_orientations / theta_sigma_ratio
-
-  # Create radius and azimuth grids.
-  vecs = [tf.range(-s // 2, s // 2 - 1) / s if s % 2 == 0 else
-          tf.range(-(s-1) // 2, (s-1) // 2) / (s-1) for s in shape]
-  grid = array_ops.meshgrid(*vecs)
-  radius = tf.norm(grid, axis=-1)
-  theta = tf.math.atan2(-grid[..., 1], grid[..., 0])
-  # Quadrant shift radius and theta so that filters are constructed with 0
-  # frequency at the corners.
-  radius = tf.signal.ifftshift(radius)
-  theta = tf.signal.ifftshift(theta)
-  # Get rid of the 0 radius value at the 0 frequency point (now at the top-left
-  # corner) so that taking the log of the radius will not cause trouble.
-  indices = tf.zeros((1, rank,), dtype=tf.int32)
-  updates = tf.ones((1,), dtype=radius.dtype)
-  radius = tf.tensor_scatter_nd_update(radius, indices, updates)
-
-  lowpass_filter = _pc_lowpass_filter(shape, 0.45, 15)
-
-  central_frequencies = tf.math.reciprocal(
-      min_wavelength * scaling_factor ** tf.range(num_scales))
-  central_frequencies = tf.reshape(central_frequencies,
-                                   [num_scales] + [1] * rank)
-
-  filters_radial = tf.math.exp(tf.math.divide(
-      -tf.math.log(radius / central_frequencies) ** 2,
-      2 * tf.math.log(sigma_freq_ratio) ** 2))
-  filters_radial *= lowpass_filter
-
-  # Set the value at the zero frequency point of the filter back to zero (undo
-  # the radius fudge).
-  indices = tf.zeros((1, rank,), dtype=tf.int32)
-  updates = tf.zeros((1, num_scales,), dtype=filters_radial.dtype)
-  filters_radial = tf.tensor_scatter_nd_update(filters_radial, indices, updates)
-
-  # Compute the angular component
-  orientations = tf.range(num_orientations) * np.pi / num_orientations
-  orientations = tf.reshape(orientations,
-                            [num_orientations] + [1] * rank)
-
-  sin_theta = tf.math.sin(theta)
-  cos_theta = tf.math.cos(theta)
-  sin_orient = tf.math.sin(orientations)
-  cos_orient = tf.math.cos(orientations)
-  angular_distance = tf.math.abs(tf.math.atan2(
-      sin_theta * cos_orient - cos_theta * sin_orient,
-      cos_theta * cos_orient + sin_theta * sin_orient))
-  filters_angular = tf.math.exp((-angular_distance ** 2) / (2 * theta_std ** 2))
-
-  # Add an extra axis to radial component so that we get a filter bank of shape
-  # [num_scales, num_orientations] + image_shape.
-  filters_radial = tf.expand_dims(filters_radial, -(rank + 1))
-  return filters_radial * filters_angular
-
-
-def _pc_lowpass_filter(shape, cutoff, order):
-  """"""
-  checks = [
-      tf.debugging.assert_rank(cutoff, 0, message=(
-          "cutoff must be a scalar")),
-      tf.debugging.assert_greater_equal(cutoff, 0.0, message=(
-          "cutoff must be >= 0.0")),
-      tf.debugging.assert_less_equal(cutoff, 0.5, message=(
-          "cutoff must be <= 0.5")),
-      tf.debugging.assert_rank(order, 0, message=(
-          "order must be a scalar")),
-      tf.debugging.assert_greater_equal(order, 1, message=(
-          "order must be >= 1"))
-  ]
-  with tf.control_dependencies(checks):
-    cutoff, order = tf.identity_n([cutoff, order])
-  
-  shape = tf.convert_to_tensor(shape)
-  vecs = [tf.range(-s // 2, s // 2 - 1) / s if s % 2 == 0 else
-          tf.range(-(s-1) // 2, (s-1) // 2) / (s-1) for s in shape]
-  grid = array_ops.meshgrid(*vecs)
-  radius = tf.norm(grid, axis=-1)
-  filt = 1.0 / (1.0 + (radius / cutoff) ** (2.0 * order))
-  return tf.signal.ifftshift(filt)
 
 
 def _depthwise_conv3d(inputs, filters, strides, padding):
@@ -2075,6 +1834,9 @@ def extract_and_scale_complex_part(value, part, max_val):
 
   Returns:
     The specified part of the complex input tensor, scaled to image range.
+
+  Raises:
+    ValueError: If `part` does not have a valid value.
   """
   if part == 'real':
     value = tf.math.real(value) # [-max_val, max_val]

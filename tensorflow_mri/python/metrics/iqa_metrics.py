@@ -17,14 +17,13 @@
 This module contains metrics and operations for image quality assessment (IQA).
 """
 
-import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.util import check_util
 
 
-class _MeanMetricWrapperMRI(tf.keras.metrics.MeanMetricWrapper):
+class _MeanMetricWrapperIQA(tf.keras.metrics.MeanMetricWrapper):
   """Wraps `tf.keras.metrics.MeanMetricWrapper` to support IQA metrics.
 
   Adds two new arguments to `MeanMetricWrapper`:
@@ -58,6 +57,10 @@ class _MeanMetricWrapperMRI(tf.keras.metrics.MeanMetricWrapper):
 
     Returns:
       Update op.
+
+    Raises:
+      ValueError: If `y_true` or `y_pred` are complex and `complex_part` was not
+        specified.
     """
     # Add a singleton channel dimension if multichannel is disabled.
     if not self._multichannel:
@@ -85,7 +88,7 @@ class _MeanMetricWrapperMRI(tf.keras.metrics.MeanMetricWrapper):
 
 
 @tf.keras.utils.register_keras_serializable(package="MRI")
-class PeakSignalToNoiseRatio(_MeanMetricWrapperMRI):
+class PeakSignalToNoiseRatio(_MeanMetricWrapperIQA):
   """Peak signal-to-noise ratio (PSNR) metric.
 
   The PSNR is the ratio between the maximum possible power of an image and the
@@ -136,7 +139,7 @@ class PeakSignalToNoiseRatio(_MeanMetricWrapperMRI):
 
 
 @tf.keras.utils.register_keras_serializable(package="MRI")
-class StructuralSimilarity(_MeanMetricWrapperMRI):
+class StructuralSimilarity(_MeanMetricWrapperIQA):
   """Structural similarity index (SSIM) metric.
 
   The SSIM is a method for predicting the perceived quality of an image, based
@@ -207,7 +210,7 @@ class StructuralSimilarity(_MeanMetricWrapperMRI):
 
 
 @tf.keras.utils.register_keras_serializable(package="MRI")
-class MultiscaleStructuralSimilarity(_MeanMetricWrapperMRI):
+class MultiscaleStructuralSimilarity(_MeanMetricWrapperIQA):
   """Multiscale structural similarity index (MS-SSIM) metric.
 
   Args:

@@ -80,7 +80,7 @@ def make_val_and_grad_fn(value_fn):
   return val_and_grad
 
 
-def normalize_no_nan(tensor, ord='euclidean', axis=None, name=None):
+def normalize_no_nan(tensor, ord='euclidean', axis=None, name=None):  # pylint: disable=redefined-builtin
   """Normalizes `tensor` along dimension `axis` using specified norm.
 
   Args:

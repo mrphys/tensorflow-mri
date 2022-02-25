@@ -51,7 +51,7 @@ def admm_minimize(function_f,
                   rtol=1e-5,
                   max_iterations=50,
                   linearized=False):
-  """Applies the ADMM algorithm to minimize a separable convex function.
+  r"""Applies the ADMM algorithm to minimize a separable convex function.
 
   Minimizes :math:`f(x) + g(z)`, subject to :math:`Ax + Bz = c`.
 
@@ -94,6 +94,10 @@ def admm_minimize(function_f,
     .. [1] Boyd, S., Parikh, N., & Chu, E. (2011). Distributed optimization and
       statistical learning via the alternating direction method of multipliers.
       Now Publishers Inc.
+
+  Raises:
+    TypeError: If inputs have incompatible types.
+    ValueError: If inputs are incompatible.
   """
   if linearized:
     if operator_b is not None:
@@ -191,7 +195,7 @@ def admm_minimize(function_f,
     """Returns `True` if optimization should continue."""
     return (not _stopping_condition(state)) and (state.i < max_iterations)
 
-  def _body(state):
+  def _body(state):  # pylint: disable=missing-param-doc
     """A single ADMM step."""
     # x-minimization step.
     state_bz = tf.linalg.matvec(operator_b, state.z)
@@ -226,7 +230,7 @@ def admm_minimize(function_f,
     max_norm = tf.math.maximum(tf.math.maximum(ax_norm, bz_norm), c_norm)
     ptol = (atol * u_ndim_sqrt + rtol * max_norm)
 
-    # Choose the dual tolerance. 
+    # Choose the dual tolerance.
     aty_norm = tf.math.real(tf.norm(
         tf.linalg.matvec(operator_a, penalty_rho * state.u, adjoint_a=True),
         axis=-1))
@@ -256,7 +260,7 @@ def admm_minimize(function_f,
 
 
 def _get_admm_update_fn(function, operator):
-  """Returns a function for the ADMM update.
+  r"""Returns a function for the ADMM update.
 
   The returned function evaluates the expression
   :math:`{\mathop{\mathrm{argmin}}_x} \left ( f(x) + \frac{\rho}{2} \left\| Ax - v \right\|_2^2 \right )`
@@ -264,7 +268,18 @@ def _get_admm_update_fn(function, operator):
 
   This function will raise an error if the above expression cannot be easily
   evaluated for the specified convex function and linear operator.
-  """
+
+  Args:
+    function: A `ConvexFunction` instance.
+    operator: A `LinearOperator` instance.
+
+  Returns:
+    A function that evaluates the ADMM update.
+
+  Raises:
+    NotImplementedError: If no rules exist to evaluate the ADMM update for the
+      specified inputs.
+  """  # pylint: disable=line-too-long
   if isinstance(operator, tf.linalg.LinearOperatorIdentity):
     def _update_fn(x, rho):
       return function.prox(x, scale=1.0 / rho)
@@ -276,14 +291,14 @@ def _get_admm_update_fn(function, operator):
     # change the sign of `v` in order to obtain the expression of the proximal
     # operator of f.
     multiplier = operator.multiplier
-    def _update_fn(v, rho):
+    def _update_fn(v, rho):  # pylint: disable=function-redefined
       return function.prox(
           tf.math.sign(multiplier) * v, scale=tf.math.abs(multiplier) / rho)
     return _update_fn
 
   if isinstance(function, convex_ops.ConvexFunctionQuadratic):
     # See ref. [1], section 4.2.
-    def _update_fn(v, rho):
+    def _update_fn(v, rho):  # pylint: disable=function-redefined
       # Create operator Q + rho * A^T A, where Q is the quadratic coefficient
       # of the quadratic convex function.
       scaled_identity = tf.linalg.LinearOperatorScaledIdentity(

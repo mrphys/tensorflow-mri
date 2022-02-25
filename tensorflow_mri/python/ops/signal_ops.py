@@ -81,7 +81,8 @@ def filter_kspace(kspace, rank=None, traj=None,
 
   Args:
     kspace: A `Tensor` of any shape. The input *k*-space.
-    rank: An `int`. The rank of the *k*-space. Must be set for Cartesian inputs.
+    rank: An `int`. The rank of the *k*-space. Defaults to `kspace.shape.rank`.
+      Should be set if `kspace` has any batch dimensions.
     traj: A `Tensor` of shape `kspace.shape + [N]`, where `N` is the number of
       spatial dimensions. If `None`, `kspace` is assumed to be Cartesian.
     filter_type: A `str`. Must be one of `"hamming"` or `"atanfilt"`.
@@ -96,9 +97,9 @@ def filter_kspace(kspace, rank=None, traj=None,
   # Make a "trajectory" for Cartesian k-spaces.
   is_cartesian = traj is None
   if is_cartesian:
-    if rank is None:
-      raise ValueError("`rank` must be set for Cartesian inputs.")
-    vecs = [tf.linspace(-np.pi, np.pi - (2.0 * np.pi / s), s) for s in kspace.shape[-rank:]]
+    rank = rank or kspace.shape.rank
+    vecs = [tf.linspace(-np.pi, np.pi - (2.0 * np.pi / s), s)
+            for s in kspace.shape[-rank:]]  # pylint: disable=invalid-unary-operand-type
     traj = array_ops.meshgrid(*vecs)
 
   filter_type = check_util.validate_enum(
