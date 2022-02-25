@@ -328,7 +328,7 @@ class ReconstructTest(test_util.TestCase):
                                         sensitivities=sens)
 
   def test_cg_sense_batch(self):
-    """Test reconstruction method `cg_sense` with batched inputs."""
+    """Test CG-SENSE with batched inputs."""
     data = io_util.read_hdf5(
         'tests/data/cardiac_cine_2d_multicoil_radial_kspace.h5')
     kspace = data['kspace']
@@ -366,6 +366,41 @@ class ReconstructTest(test_util.TestCase):
                                         sensitivities=sens_batch,
                                         optimizer_kwargs={'max_iter': 10})
     self.assertAllClose(expected, image, rtol=1e-3, atol=1e-3)
+
+  def test_cg_sense_reg(self):
+    """Test CG-SENSE with regularization."""
+    data = io_util.read_hdf5(
+        'tests/data/cardiac_cine_2d_multicoil_radial_kspace.h5')
+    kspace = data['kspace']
+    sens = data['sens']
+    traj = data['traj']
+    dens = data['dens']
+    image_nonreg = data['image/cg_sense']
+    expected_null = data['image/cg_sense_reg_null']
+    expected_tavg = data['image/cg_sense_reg_tavg']
+    image_shape = sens.shape[-2:]
+
+    # Check batch of k-space data and batch of trajectories.
+    tavg = tf.math.reduce_mean(image_nonreg, -3)
+    regularizer = convex_ops.ConvexFunctionTikhonov(scale=0.5, prior=tavg)
+    image = recon_ops.reconstruct_lstsq(kspace=kspace,
+                                        image_shape=image_shape,
+                                        trajectory=traj,
+                                        density=dens,
+                                        sensitivities=sens,
+                                        regularizer=regularizer,
+                                        optimizer_kwargs={'max_iter': 10})
+    self.assertAllClose(expected_tavg, image)
+
+    regularizer = convex_ops.ConvexFunctionTikhonov(scale=0.5)
+    image = recon_ops.reconstruct_lstsq(kspace=kspace,
+                                        image_shape=image_shape,
+                                        trajectory=traj,
+                                        density=dens,
+                                        sensitivities=sens,
+                                        regularizer=regularizer,
+                                        optimizer_kwargs={'max_iter': 10})
+    self.assertAllClose(expected_null, image)
 
   @parameterized.parameters(
       ('admm',),

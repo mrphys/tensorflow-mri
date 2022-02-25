@@ -538,15 +538,24 @@ class LinearOperatorGramMatrix(LinalgImagingMixin,
 
   The Gram matrix of :math:`A` appears in the normal equation
   :math:`A^H A x = A^H b` associated with the least squares problem 
-  :math:`\min_x{\frac{1}{2} \left \| Ax-b \right \|_2^2}`.
+  :math:`{\mathop{\mathrm{argmin}}_x {\left \| Ax-b \right \|_2^2}`.
 
   This operator is self-adjoint and positive definite. Therefore, linear systems
   defined by this linear operator can be solved using the conjugate gradient
   method.
+
+  This operator supports the addition of a regularization parameter 
+  :math:`\lambda` and a transform matrix :math:`T`. If these are provided,
+  this operator becomes :math:`A^H A + \lambda T^H T`. This appears
+  in the regularized normal equation
+  :math:`\left ( A^H A + \lambda T^H T \right ) x = A^H b + \lambda T^H T x_0`,
+  associated with the regularized least squares problem
+  :math:`{\mathop{\mathrm{argmin}}_x} {\left \| Ax-b \right \|_2^2 + \lambda \left \| T(x-x_0) \right \|_2^2}`.
   """
   def __init__(self,
                operator,
                reg_parameter=None,
+               reg_operator=None,
                name=None):
     parameters = dict(
         operator=operator,
@@ -554,17 +563,21 @@ class LinearOperatorGramMatrix(LinalgImagingMixin,
         name=name)
     self._operator = operator
     self._reg_parameter = reg_parameter
-    self._reg_operator = None
+    self._reg_operator = reg_operator
     self._composed = LinearOperatorComposition(
         operators=[self._operator.H, self._operator])
 
     if self._reg_parameter is not None:
-      if self._reg_operator is None:
-        self._reg_operator = LinearOperatorScaledIdentity(
-            shape=self._operator.domain_shape,
-            multiplier=tf.cast(self._reg_parameter, self._operator.dtype))
+      reg_operator_gm = LinearOperatorScaledIdentity(
+          shape=self._operator.domain_shape,
+          multiplier=tf.cast(self._reg_parameter, self._operator.dtype))
+      if self._reg_operator is not None:
+        reg_operator_gm = LinearOperatorComposition(
+            operators=[reg_operator_gm,
+                       self._reg_operator.H,
+                       self._reg_operator])
       self._composed = LinearOperatorAddition(
-          operators=[self._composed, self._reg_operator])
+          operators=[self._composed, reg_operator_gm])
 
     super().__init__(operator.dtype,
                      is_self_adjoint=True,

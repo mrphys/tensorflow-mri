@@ -584,7 +584,7 @@ def reconstruct_lstsq(kspace,
   reconstruction problem as follows:
 
   .. math::
-    \hat{x} = {\mathop{\mathrm{argmin}}_x \left (\left\| Ax - y \right\|_2^2 + g(x) \right )
+    \hat{x} = {\mathop{\mathrm{argmin}}_x} \left (\left\| Ax - y \right\|_2^2 + g(x) \right )
 
   where :math:`A` is the MRI `LinearOperator`, :math:`x` is the solution, `y` is
   the measured *k*-space data, and :math:`g(x)` is an optional `ConvexFunction`
@@ -706,23 +706,31 @@ def reconstruct_lstsq(kspace,
         raise ValueError(
             f"Regularizer {regularizer.name} is incompatible with "
             f"CG optimizer.")
-      reg_kwargs = {
-          'reg_parameter': regularizer.function.scale,
-          'reg_transform': regularizer.transform,
-          'reg_prior': regularizer.prior
-      }
+      reg_parameter = regularizer.function.scale
+      reg_operator = regularizer.transform
+      reg_prior = regularizer.prior
     else:
-      reg_kwargs = {}
+      reg_parameter = None
+      reg_operator = None
+      reg_prior = None
 
-    operator_gm = linalg_imaging.LinearOperatorGramMatrix(operator, **reg_kwargs)
+    operator_gm = linalg_imaging.LinearOperatorGramMatrix(
+        operator, reg_parameter=reg_parameter, reg_operator=reg_operator)
     rhs = initial_image
-    if reg_kwargs:
-      rhs += reg_kwargs['reg_parameter'] * reg_kwargs['reg_prior']
-    state = linalg_ops.conjugate_gradient(operator_gm, rhs, **optimizer_kwargs)
-    image = state.x
+    # Update the rhs with the a priori estimate, if provided.
+    if reg_prior is not None:
+      if reg_operator is not None:
+        reg_prior = reg_operator.transform(
+            reg_operator.transform(reg_prior), adjoint=True)
+      rhs += reg_parameter * reg_prior
+    # Solve the (maybe regularized) linear system.
+    result = linalg_ops.conjugate_gradient(operator_gm, rhs, **optimizer_kwargs)
+    image = result.x
 
   elif optimizer == 'admm':
+    # Create the least-squares objective.
     function_f = convex_ops.ConvexFunctionLeastSquares(operator, kspace)
+    # Configure ADMM formulation depending on regularizer.
     if isinstance(regularizer,
                   convex_ops.ConvexFunctionLinearOperatorComposition):
       function_g = regularizer.function
@@ -730,6 +738,7 @@ def reconstruct_lstsq(kspace,
     else:
       function_g = regularizer
       operator_a = None
+    # Run ADMM minimization.
     result = optimizer_ops.admm_minimize(function_f, function_g,
                                          operator_a=operator_a,
                                          **optimizer_kwargs)

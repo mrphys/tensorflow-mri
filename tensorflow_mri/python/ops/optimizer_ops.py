@@ -246,7 +246,7 @@ def admm_minimize(function_f,
       x=tf.constant(0.0, dtype=dtype, shape=x_shape),
       z=tf.constant(0.0, dtype=dtype, shape=z_shape),
       u=tf.constant(0.0, dtype=dtype, shape=u_shape),
-      r=None,     # Will be set in the next line by calling `_body`.
+      r=None,     # Will be set in the first call to `_body`.
       s=None,     # Ditto.
       ptol=None,  # Ditto.
       dtol=None)  # Ditto.
@@ -259,7 +259,7 @@ def _get_admm_update_fn(function, operator):
   """Returns a function for the ADMM update.
 
   The returned function evaluates the expression
-  :math:`{\mathop{\mathrm{argmin}}_x \left ( f(x) + \frac{\rho}{2} \left\| Ax - v \right\|_2^2 \right )`
+  :math:`{\mathop{\mathrm{argmin}}_x} \left ( f(x) + \frac{\rho}{2} \left\| Ax - v \right\|_2^2 \right )`
   for a given input :math:`v` and penalty parameter :math:`\rho`.
 
   This function will raise an error if the above expression cannot be easily
