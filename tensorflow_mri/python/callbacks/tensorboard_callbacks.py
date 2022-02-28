@@ -56,6 +56,12 @@ class TensorBoardImages(tf.keras.callbacks.Callback):
       integer. If `None` (default), inputs are expected to be 2D images. In
       `'gif'` mode, each 3D volume is stored as an animated GIF. If an integer,
       only the corresponding slice is saved.
+    display_fn: A callable. A function which accepts three arguments
+      (features, labels and predictions for a single example) and returns the
+      image to be written to TensorBoard. Overrides the default function, which
+      concatenates selected features, labels and predictions according to
+      `concat_axis`, `feature_keys`, `label_keys`, `prediction_keys` and
+      `complex_part`.
     concat_axis: An `int`. The axis along which to concatenate
       features/labels/predictions. Defaults to -2.
     feature_keys: A list of `str` or `int` specifying which features to
@@ -69,11 +75,6 @@ class TensorBoardImages(tf.keras.callbacks.Callback):
       empty list to select no predictions.
     complex_part: A `str`. One of `'real'`, `'imag'`, `'abs'` or `'angle'`.
       Specifies which part of a complex input should be displayed.
-    display_fn: A callable. A function which accepts three arguments
-      (features, labels and predictions for a single example) and returns the
-      image to be written to TensorBoard. Overrides the default function, in
-      which case `concat_axis`, `feature_keys`, `label_keys`, `prediction_keys`
-      and `complex_part` will be ignored.
   """
   def __init__(self,
                x,
@@ -82,12 +83,12 @@ class TensorBoardImages(tf.keras.callbacks.Callback):
                max_images=3,
                summary_name='images',
                volume_mode=None,
+               display_fn=None,
                concat_axis=-2,
                feature_keys=None,
                label_keys=None,
                prediction_keys=None,
-               complex_part=None,
-               display_fn=None):
+               complex_part=None):
     """Initialize callback."""
     super().__init__()
     self.x = x
@@ -96,12 +97,12 @@ class TensorBoardImages(tf.keras.callbacks.Callback):
     self.max_images = max_images
     self.summary_name = summary_name
     self.volume_mode = volume_mode
+    self.display_fn = display_fn or self.display_image
     self.concat_axis = concat_axis
     self.feature_keys = feature_keys
     self.label_keys = label_keys
     self.prediction_keys = prediction_keys
     self.complex_part = complex_part
-    self.display_fn = display_fn or self.display_image
 
   def on_epoch_end(self, epoch, logs=None): # pylint: disable=unused-argument
     """Called at the end of an epoch."""
@@ -137,7 +138,7 @@ class TensorBoardImages(tf.keras.callbacks.Callback):
       y_pred = nest_util.unstack_nested_tensors(y_pred)
 
       # Create display images.
-      images.extend(list(map(self.display_image, x, y, y_pred)))
+      images.extend(list(map(self.display_fn, x, y, y_pred)))
 
       # Check how many outputs we have processed.
       if len(images) >= self.max_images:
@@ -198,12 +199,12 @@ class TensorBoardImages(tf.keras.callbacks.Callback):
     if cat_predictions is not None:
       tensors.append(cat_predictions)
     if tensors:
-      return tf.concat(tensors, axis=self.concat_axis)
+      return tf.concat(tensors, self.concat_axis)
 
     return None
 
 
-def _select_and_concatenate(arg, keys, axis, complex_part, arg_name=None):
+def _select_and_concatenate(arg, keys, axis, complex_part, arg_name=None):  # pylint: disable=missing-param-doc
   """Selects and concatenates the tensors for the given keys."""
   if not isinstance(arg, (tuple, dict, tf.Tensor)):
     raise TypeError(
@@ -226,7 +227,7 @@ def _select_and_concatenate(arg, keys, axis, complex_part, arg_name=None):
   return out
 
 
-def _prepare_for_concat(tensor, complex_part):
+def _prepare_for_concat(tensor, complex_part):  # pylint: disable=missing-param-doc
   """Prepares a tensor for concatenation."""
   if tensor is None:
     return None
@@ -234,11 +235,11 @@ def _prepare_for_concat(tensor, complex_part):
   if tensor.dtype.is_complex:
     if complex_part is None:
       raise ValueError(
-          f"`complex_part` must be specified for complex inputs.")
+          "`complex_part` must be specified for complex inputs.")
     tensor = image_ops.extract_and_scale_complex_part(
         tensor, complex_part, max_val=1.0)
   # Cast to common type (float32).
-  return tf.cast(tensor, dtype=_CONCAT_DTYPE)
+  return tf.cast(tensor, _CONCAT_DTYPE)
 
 
 _CONCAT_DTYPE = tf.float32

@@ -28,7 +28,7 @@ from tensorflow_mri.python.util import tensor_util
 
 
 class LinalgImagingMixin(tf.linalg.LinearOperator):
-  """Mixin for linear operators meant to operate on images.
+  r"""Mixin for linear operators meant to operate on images.
 
   This mixin adds some additional methods to any linear operator to simplify
   operations on images, while maintaining compatibility with the TensorFlow
@@ -109,7 +109,7 @@ class LinalgImagingMixin(tf.linalg.LinearOperator):
   def transform(self, x, adjoint=False, name="transform"):
     """Transform a batch of images.
 
-    Applies this operator to a batch of non-vectorized images `x`. 
+    Applies this operator to a batch of non-vectorized images `x`.
 
     Args:
       x: A `Tensor` with compatible shape and same dtype as `self`.
@@ -124,7 +124,7 @@ class LinalgImagingMixin(tf.linalg.LinearOperator):
       x = tf.convert_to_tensor(x, name="x")
       self._check_input_dtype(x)
       input_shape = self.range_shape if adjoint else self.domain_shape
-      input_shape.assert_is_compatible_with(x.shape[-input_shape.rank:])
+      input_shape.assert_is_compatible_with(x.shape[-input_shape.rank:])  # pylint: disable=invalid-unary-operand-type
       return self._transform(x, adjoint=adjoint)
 
   @property
@@ -176,7 +176,7 @@ class LinalgImagingMixin(tf.linalg.LinearOperator):
     """
     if self.is_self_adjoint:
       return self
-    with self._name_scope(name):
+    with self._name_scope(name):  # pylint: disable=not-callable
       return LinearOperatorAdjoint(self)
 
   H = property(adjoint, None)
@@ -237,7 +237,7 @@ class LinalgImagingMixin(tf.linalg.LinearOperator):
     # shape.
     raise NotImplementedError("_range_shape_tensor is not implemented.")
 
-  def _batch_shape_tensor(self):
+  def _batch_shape_tensor(self):  # pylint: disable=arguments-differ
     # Users should override this method if they need to provide a dynamic batch
     # shape.
     return tf.constant([], dtype=tf.dtypes.int32)
@@ -265,6 +265,7 @@ class LinalgImagingMixin(tf.linalg.LinearOperator):
     Returns:
       The flattened `Tensor`. Has shape `[..., self.domain_dimension]`.
     """
+    # pylint: disable=invalid-unary-operand-type
     self.domain_shape.assert_is_compatible_with(
         x.shape[-self.domain_shape.rank:])
 
@@ -273,9 +274,9 @@ class LinalgImagingMixin(tf.linalg.LinearOperator):
 
     output_shape = batch_shape + self.domain_dimension
     output_shape_tensor = tf.concat(
-        [batch_shape_tensor, [self.domain_dimension_tensor()]], axis=0)
+        [batch_shape_tensor, [self.domain_dimension_tensor()]], 0)
 
-    x = tf.reshape(x, output_shape_tensor)      
+    x = tf.reshape(x, output_shape_tensor)
     return tf.ensure_shape(x, output_shape)
 
   def flatten_range_shape(self, x):
@@ -287,6 +288,7 @@ class LinalgImagingMixin(tf.linalg.LinearOperator):
     Returns:
       The flattened `Tensor`. Has shape `[..., self.range_dimension]`.
     """
+    # pylint: disable=invalid-unary-operand-type
     self.range_shape.assert_is_compatible_with(
         x.shape[-self.range_shape.rank:])
 
@@ -295,7 +297,7 @@ class LinalgImagingMixin(tf.linalg.LinearOperator):
 
     output_shape = batch_shape + self.range_dimension
     output_shape_tensor = tf.concat(
-        [batch_shape_tensor, [self.range_dimension_tensor()]], axis=0)
+        [batch_shape_tensor, [self.range_dimension_tensor()]], 0)
 
     x = tf.reshape(x, output_shape_tensor)
     return tf.ensure_shape(x, output_shape)
@@ -316,7 +318,7 @@ class LinalgImagingMixin(tf.linalg.LinearOperator):
 
     output_shape = batch_shape + self.domain_shape
     output_shape_tensor = tf.concat([
-        batch_shape_tensor, self.domain_shape_tensor()], axis=0)
+        batch_shape_tensor, self.domain_shape_tensor()], 0)
 
     x = tf.reshape(x, output_shape_tensor)
     return tf.ensure_shape(x, output_shape)
@@ -337,13 +339,13 @@ class LinalgImagingMixin(tf.linalg.LinearOperator):
 
     output_shape = batch_shape + self.range_shape
     output_shape_tensor = tf.concat([
-        batch_shape_tensor, self.range_shape_tensor()], axis=0)
+        batch_shape_tensor, self.range_shape_tensor()], 0)
 
     x = tf.reshape(x, output_shape_tensor)
     return tf.ensure_shape(x, output_shape)
 
 
-class LinearOperatorAdjoint(LinalgImagingMixin,
+class LinearOperatorAdjoint(LinalgImagingMixin,  # pylint: disable=abstract-method
                             tf.linalg.LinearOperatorAdjoint):
   """`LinearOperator` representing the adjoint of another imaging operator.
 
@@ -353,6 +355,7 @@ class LinearOperatorAdjoint(LinalgImagingMixin,
   For the parameters, see `tf.linalg.LinearOperatorAdjoint`.
   """
   def _transform(self, x, adjoint=False):
+    # pylint: disable=protected-access
     return self.operator._transform(x, adjoint=(not adjoint))
 
   def _domain_shape(self):
@@ -360,10 +363,10 @@ class LinearOperatorAdjoint(LinalgImagingMixin,
 
   def _range_shape(self):
     return self.operator.domain_shape
-  
+
   def _batch_shape(self):
     return self.operator.batch_shape
-  
+
   def _domain_shape_tensor(self):
     return self.operator.range_shape_tensor()
 
@@ -374,7 +377,7 @@ class LinearOperatorAdjoint(LinalgImagingMixin,
     return self.operator.batch_shape_tensor()
 
 
-class LinearOperatorComposition(LinalgImagingMixin,
+class LinearOperatorComposition(LinalgImagingMixin,  # pylint: disable=abstract-method
                                 tf.linalg.LinearOperatorComposition):
   """Composes one or more imaging `LinearOperators`.
 
@@ -383,7 +386,8 @@ class LinearOperatorComposition(LinalgImagingMixin,
 
   For the parameters, see `tf.linalg.LinearOperatorComposition`.
   """
-  def _transform(self, x, adjoint=False, adjoint_arg=False):
+  def _transform(self, x, adjoint=False):
+    # pylint: disable=protected-access
     if adjoint:
       transform_order_list = self.operators
     else:
@@ -415,7 +419,7 @@ class LinearOperatorComposition(LinalgImagingMixin,
         [operator.batch_shape_tensor() for operator in self.operators])
 
 
-class LinearOperatorAddition(LinalgImagingMixin,
+class LinearOperatorAddition(LinalgImagingMixin,  # pylint: disable=abstract-method
                              linalg_ext.LinearOperatorAddition):
   """Adds one or more imaging `LinearOperators`.
 
@@ -425,6 +429,7 @@ class LinearOperatorAddition(LinalgImagingMixin,
   For the parameters, see `LinearOperatorAddition`.
   """
   def _transform(self, x, adjoint=False):
+    # pylint: disable=protected-access
     result = self.operators[0]._transform(x, adjoint=adjoint)
     for operator in self.operators[1:]:
       result += operator._transform(x, adjoint=adjoint)
@@ -451,7 +456,7 @@ class LinearOperatorAddition(LinalgImagingMixin,
         [operator.batch_shape_tensor() for operator in self.operators])
 
 
-class LinearOperatorScaledIdentity(LinalgImagingMixin,
+class LinearOperatorScaledIdentity(LinalgImagingMixin,  # pylint: disable=abstract-method
                                    tf.linalg.LinearOperatorScaledIdentity):
   """`LinearOperator` acting like a scaled identity matrix.
 
@@ -529,22 +534,22 @@ class LinearOperatorScaledIdentity(LinalgImagingMixin,
     return tf.shape(self.multiplier)
 
 
-class LinearOperatorGramMatrix(LinalgImagingMixin,
+class LinearOperatorGramMatrix(LinalgImagingMixin,  # pylint: disable=abstract-method
                                tf.linalg.LinearOperator):
-  """Gram matrix of a linear operator.
+  r"""Gram matrix of a linear operator.
 
   If :math:`A` is a `LinearOperator`, this operator is equivalent to
   :math:`A^H A`.
 
   The Gram matrix of :math:`A` appears in the normal equation
-  :math:`A^H A x = A^H b` associated with the least squares problem 
+  :math:`A^H A x = A^H b` associated with the least squares problem
   :math:`{\mathop{\mathrm{argmin}}_x {\left \| Ax-b \right \|_2^2}`.
 
   This operator is self-adjoint and positive definite. Therefore, linear systems
   defined by this linear operator can be solved using the conjugate gradient
   method.
 
-  This operator supports the addition of a regularization parameter 
+  This operator supports the addition of a regularization parameter
   :math:`\lambda` and a transform matrix :math:`T`. If these are provided,
   this operator becomes :math:`A^H A + \lambda T^H T`. This appears
   in the regularized normal equation
@@ -593,13 +598,13 @@ class LinearOperatorGramMatrix(LinalgImagingMixin,
 
   def _range_shape(self):
     return self.operator.domain_shape
-  
+
   def _batch_shape(self):
     return self.operator.batch_shape
 
   def _domain_shape_tensor(self):
     return self.operator.domain_shape_tensor()
-  
+
   def _range_shape_tensor(self):
     return self.operator.domain_shape_tensor()
 
@@ -611,7 +616,7 @@ class LinearOperatorGramMatrix(LinalgImagingMixin,
     return self._operator
 
 
-class LinearOperatorFiniteDifference(LinalgImagingMixin,
+class LinearOperatorFiniteDifference(LinalgImagingMixin,  # pylint: disable=abstract-method
                                      tf.linalg.LinearOperator):
   """Linear operator acting like a finite difference operator.
 
@@ -659,7 +664,7 @@ class LinearOperatorFiniteDifference(LinalgImagingMixin,
                      parameters=parameters)
 
   def _transform(self, x, adjoint=False):
-    
+
     if adjoint:
       paddings1 = [[0, 0]] * x.shape.rank
       paddings2 = [[0, 0]] * x.shape.rank

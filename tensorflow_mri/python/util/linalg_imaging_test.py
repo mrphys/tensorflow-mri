@@ -21,7 +21,7 @@ from tensorflow_mri.python.util import linalg_imaging
 from tensorflow_mri.python.util import test_util
 
 
-class LinearOperatorAppendColumn(linalg_imaging.LinalgImagingMixin,
+class LinearOperatorAppendColumn(linalg_imaging.LinalgImagingMixin,  # pylint: disable=abstract-method
                                  tf.linalg.LinearOperator):
   """Linear operator which appends a column of zeros to the input.
 
@@ -40,9 +40,8 @@ class LinearOperatorAppendColumn(linalg_imaging.LinalgImagingMixin,
     if adjoint:
       # Remove last column.
       return x[..., :-1]
-    else:
-      # Add a column of zeros.
-      return tf.pad(x, [[0, 0]] * (x.shape.rank - 1) + [[0, 1]])
+    # Add a column of zeros.
+    return tf.pad(x, [[0, 0]] * (x.shape.rank - 1) + [[0, 1]])  # pylint: disable=no-value-for-parameter
 
   def _domain_shape(self):
     return self._domain_shape_value
@@ -99,15 +98,15 @@ class LinalgImagingMixin(test_util.TestCase):
 
   def test_linalg_functions(self):
     """Test `tf.linalg` functions."""
-    self.assertAllClose(tf.linalg.matvec(self.linop, self.x_vec),
-                        self.y_vec)
-    self.assertAllClose(tf.linalg.matvec(self.linop, self.y_vec, adjoint_a=True),
-                        self.x_vec)
+    self.assertAllClose(
+        tf.linalg.matvec(self.linop, self.x_vec), self.y_vec)
+    self.assertAllClose(
+        tf.linalg.matvec(self.linop, self.y_vec, adjoint_a=True), self.x_vec)
 
-    self.assertAllClose(tf.linalg.matmul(self.linop, self.x_col),
-                        self.y_col)
-    self.assertAllClose(tf.linalg.matmul(self.linop, self.y_col, adjoint_a=True),
-                        self.x_col)
+    self.assertAllClose(
+        tf.linalg.matmul(self.linop, self.x_col), self.y_col)
+    self.assertAllClose(
+        tf.linalg.matmul(self.linop, self.y_col, adjoint_a=True), self.x_col)
 
   def test_matmul_operator(self):
     """Test `__matmul__` operator."""
@@ -145,7 +144,7 @@ class LinalgImagingMixin(test_util.TestCase):
     with self.assertRaisesRegex(ValueError, message):
       tf.linalg.matmul(self.linop, invalid_x)
     with self.assertRaisesRegex(ValueError, message):
-      self.linop @ invalid_x
+      self.linop @ invalid_x  # pylint: disable=pointless-statement
 
 
 class LinearOperatorFiniteDifferenceTest(test_util.TestCase):
