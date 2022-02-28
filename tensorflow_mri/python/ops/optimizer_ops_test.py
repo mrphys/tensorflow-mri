@@ -23,7 +23,7 @@ from tensorflow_mri.python.util import test_util
 
 
 class ADMMTest(test_util.TestCase):
-
+  """Tests for `admm_minimize` op."""
   def test_lasso(self):
     """Test ADMM can minimize lasso problem."""
     operator = tf.linalg.LinearOperatorFullMatrix(
@@ -81,6 +81,7 @@ class ADMMTest(test_util.TestCase):
     self.assertEqual(result.i, expected_i)
 
   def test_linearized(self):
+    """Test linearized variation of ADMM."""
     operator = tf.linalg.LinearOperatorIdentity(4)
     x = tf.convert_to_tensor([1.16495351,
                               0.62683908,

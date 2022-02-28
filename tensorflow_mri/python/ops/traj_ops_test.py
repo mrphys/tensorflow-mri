@@ -26,9 +26,30 @@ from tensorflow_mri.python.util import io_util
 from tensorflow_mri.python.util import test_util
 
 
+class DensityGridTest():
+  """Tests for `density_grid`."""
+  @parameterized.product(transition_type=['linear', 'quadratic', 'hann'])
+  def test_density(self, transition_type):  # pylint: disable=missing-function-docstring
+    expected = {
+        'linear': [
+            0.3, 0.3, 0.34, 0.44, 0.54, 0.64, 0.7, 0.7,
+            0.7, 0.7, 0.7, 0.64, 0.54, 0.44, 0.34, 0.3],
+        'quadratic': [
+            0.3, 0.3, 0.304, 0.349, 0.444, 0.589, 0.7, 0.7,
+            0.7, 0.7, 0.7, 0.589, 0.444, 0.349, 0.304, 0.3],
+        'hann': [
+            0.3, 0.3, 0.30978873, 0.40920186, 0.56180346, 0.6782013, 0.7, 0.7,
+            0.7, 0.7, 0.7, 0.6782013 , 0.56180346, 0.40920186, 0.30978873, 0.3]
+    }
+    density = traj_ops.density_grid([16],
+                                    inner_density=0.7, outer_density=0.3,
+                                    inner_cutoff=0.3, outer_cutoff=0.8,
+                                    transition_type=transition_type)
+    self.assertAllClose(expected[transition_type], density)
+
+
 class RadialTrajectoryTest(test_util.TestCase):
   """Radial trajectory tests."""
-
   @classmethod
   def setUpClass(cls):
     super().setUpClass()

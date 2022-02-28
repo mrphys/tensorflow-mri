@@ -19,7 +19,7 @@ import tensorflow as tf
 from tensorflow_mri.python.util import check_util
 
 
-class LinearOperatorAddition(tf.linalg.LinearOperator):
+class LinearOperatorAddition(tf.linalg.LinearOperator):  # pylint: disable=abstract-method
   """Adds one or more `LinearOperators`.
 
   This operator adds one or more linear operators `op1 + op2 + ... + opJ`,
@@ -144,7 +144,7 @@ class LinearOperatorAddition(tf.linalg.LinearOperator):
     if name is None:
       name = "_p_".join(operator.name for operator in operators)
     with tf.name_scope(name):
-      super(LinearOperatorAddition, self).__init__(
+      super().__init__(
           dtype=dtype,
           is_non_singular=is_non_singular,
           is_self_adjoint=is_self_adjoint,
@@ -210,7 +210,8 @@ class LinearOperatorAddition(tf.linalg.LinearOperator):
     return ("operators",)
 
 
-class _LinearOperatorStackBase(tf.linalg.LinearOperator):  
+class _LinearOperatorStackBase(tf.linalg.LinearOperator):  # pylint: disable=abstract-method
+  """Base class for `LinearOperator` stacks."""
   def __init__(self,
                operators,
                axis,
@@ -219,7 +220,6 @@ class _LinearOperatorStackBase(tf.linalg.LinearOperator):
                is_positive_definite=None,
                is_square=True,
                name=None):
-    """Initialize a `LinearOperatorStack`."""
     parameters = dict(
         operators=operators,
         axis=axis,
@@ -237,7 +237,7 @@ class _LinearOperatorStackBase(tf.linalg.LinearOperator):
       raise ValueError(
           "Expected a non-empty list of operators. Found: %s" % operators)
     self._operators = operators
-  
+
     # Validate axis.
     self._axis = check_util.validate_enum(
         axis, {'vertical', 'horizontal'}, 'axis')
@@ -342,22 +342,22 @@ class _LinearOperatorStackBase(tf.linalg.LinearOperator):
         size_splits = [op.domain_dimension for op in self.operators]
       else:  # Adjoint V-stack operator.
         size_splits = [op.range_dimension for op in self.operators]
-      tensors = tf.split(x, size_splits, axis=-2)
+      tensors = tf.split(x, size_splits, axis=-2)  # pylint: disable=redundant-keyword-arg,no-value-for-parameter
       results = [op.matmul(x, adjoint=adjoint, adjoint_arg=adjoint_arg)
                  for op, x in zip(self.operators, tensors)]
       return tf.math.reduce_sum(tf.stack(results, axis=-1), axis=-1)
 
-    else:  # Adjoint H-stack OR non-adjoint V-stack.
-      results = [op.matmul(x, adjoint=adjoint, adjoint_arg=adjoint_arg)
-                 for op in self.operators]
-      return tf.concat(results, axis=-2)
+    # Adjoint H-stack OR non-adjoint V-stack.
+    results = [op.matmul(x, adjoint=adjoint, adjoint_arg=adjoint_arg)
+                for op in self.operators]
+    return tf.concat(results, -2)
 
   @property
   def _composite_tensor_fields(self):
     return ("operators",)
 
 
-class LinearOperatorVerticalStack(_LinearOperatorStackBase):
+class LinearOperatorVerticalStack(_LinearOperatorStackBase):  # pylint: disable=abstract-method
   """Stacks one or more `LinearOperators` vertically.
 
   This operator combines one or more linear operators `[op1, ..., opJ]`,
@@ -373,8 +373,7 @@ class LinearOperatorVerticalStack(_LinearOperatorStackBase):
   shape `batch_shape_j + [M_j, N_j]`.
 
   If `opj` has shape `batch_shape_j + [M_j, N_j]`, then the combined operator
-  has shape `broadcast_batch_shape + [sum M_j, N_j]` (for vertical stacking) or
-  `broadcast_batch_shape + [M_j, sum N_j]` (for horizontal stacking), where
+  has shape `broadcast_batch_shape + [sum M_j, N_j]`, where
   `broadcast_batch_shape` is the mutual broadcast of `batch_shape_j`,
   `j = 1,...,J`, assuming the intermediate batch shapes broadcast.
 
@@ -384,25 +383,9 @@ class LinearOperatorVerticalStack(_LinearOperatorStackBase):
   `opj` for the given method. If a list of blocks is input, then a list of
   blocks is returned as well.
 
-  ```python
-  # Create a 4 x 4 linear operator combined of two 2 x 2 operators.
-  operator_1 = LinearOperatorFullMatrix([[1., 2.], [3., 4.]])
-  operator_2 = LinearOperatorFullMatrix([[1., 0.], [0., 1.]])
-  operator = LinearOperatorStack([operator_1, operator_2], 'vertical')
-
-  operator.to_dense()
-  ==> [[1., 2.],
-       [3., 4.],
-       [1., 0.],
-       [0., 1.]]
-
-  operator.shape
-  ==> [4, 2]
-  ```
-
   #### Performance
 
-  The performance of `LinearOperatorStack` on any operation is equal to
+  The performance of `LinearOperatorVerticalStack` on any operation is equal to
   the sum of the individual operators' operations.
 
 
@@ -457,7 +440,7 @@ class LinearOperatorVerticalStack(_LinearOperatorStackBase):
                      name=name)
 
 
-class LinearOperatorHorizontalStack(_LinearOperatorStackBase):
+class LinearOperatorHorizontalStack(_LinearOperatorStackBase):  # pylint: disable=abstract-method
   """Stacks one or more `LinearOperators` horizontally.
 
   This operator combines one or more linear operators `[op1, ..., opJ]`,
@@ -473,8 +456,7 @@ class LinearOperatorHorizontalStack(_LinearOperatorStackBase):
   shape `batch_shape_j + [M_j, N_j]`.
 
   If `opj` has shape `batch_shape_j + [M_j, N_j]`, then the combined operator
-  has shape `broadcast_batch_shape + [sum M_j, N_j]` (for vertical stacking) or
-  `broadcast_batch_shape + [M_j, sum N_j]` (for horizontal stacking), where
+  has shape `broadcast_batch_shape + [M_j, sum N_j]`, where
   `broadcast_batch_shape` is the mutual broadcast of `batch_shape_j`,
   `j = 1,...,J`, assuming the intermediate batch shapes broadcast.
 
@@ -484,26 +466,10 @@ class LinearOperatorHorizontalStack(_LinearOperatorStackBase):
   `opj` for the given method. If a list of blocks is input, then a list of
   blocks is returned as well.
 
-  ```python
-  # Create a 4 x 4 linear operator combined of two 2 x 2 operators.
-  operator_1 = LinearOperatorFullMatrix([[1., 2.], [3., 4.]])
-  operator_2 = LinearOperatorFullMatrix([[1., 0.], [0., 1.]])
-  operator = LinearOperatorStack([operator_1, operator_2], 'vertical')
-
-  operator.to_dense()
-  ==> [[1., 2.],
-       [3., 4.],
-       [1., 0.],
-       [0., 1.]]
-
-  operator.shape
-  ==> [4, 2]
-  ```
-
   #### Performance
 
-  The performance of `LinearOperatorStack` on any operation is equal to
-  the sum of the individual operators' operations.
+  The performance of `LinearOperatorHorizontalStack` on any operation is equal
+  to the sum of the individual operators' operations.
 
 
   #### Matrix property hints
@@ -557,7 +523,7 @@ class LinearOperatorHorizontalStack(_LinearOperatorStackBase):
                      name=name)
 
 
-class LinearOperatorFiniteDifference(tf.linalg.LinearOperator):
+class LinearOperatorFiniteDifference(tf.linalg.LinearOperator):  # pylint: disable=abstract-method
   """Linear operator acting like a difference operator.
 
   Args:

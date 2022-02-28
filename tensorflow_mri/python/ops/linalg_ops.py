@@ -14,32 +14,32 @@
 # ==============================================================================
 """Linear algebra operations.
 
-This module contains linear algebra operators and solvers.
+This module contains linear operators and solvers.
 """
 
 import collections
 
 import tensorflow as tf
 import tensorflow_nufft as tfft
+from tensorflow.python.ops.linalg import linear_operator
 
 from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.ops import math_ops
-from tensorflow_mri.python.ops import traj_ops
 from tensorflow_mri.python.util import check_util
-from tensorflow_mri.python.util import deprecation
 from tensorflow_mri.python.util import linalg_imaging
 from tensorflow_mri.python.util import tensor_util
 
-from tensorflow.python.ops.linalg import linear_operator
-
 
 @linear_operator.make_composite_tensor
-class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
+class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,  # pylint: disable=abstract-method
                         tf.linalg.LinearOperator):
   """The MR imaging operator.
 
-  The MR imaging operator is a linear operator that maps a [batch of] images to
-  a [batch of] potentially multicoil spatial frequency (*k*-space) data.
+  The MR imaging operator is a linear operator, :math:`A`, that maps a [batch
+  of] images, :math:`x` to a [batch of] measurement data (*k*-space), :math:`b`.
+
+  .. math::
+    A x = b
 
   This object may represent an undersampled MRI operator and supports
   Cartesian and non-Cartesian *k*-space sampling. The user may provide a
@@ -81,9 +81,8 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
       samples and `...` is the batch shape, which can have any number of
       dimensions. This input is only relevant for non-Cartesian MRI operators.
       If passed, the non-Cartesian operator will include sampling density
-      compensation. Can also be set to `'auto'` to automatically estimate
-      the sampling density from the `trajectory`. If `None`, the operator will
-      not perform sampling density compensation.
+      compensation. If `None`, the operator will not perform sampling density
+      compensation.
     sensitivities: An optional `Tensor` of type `complex64` or `complex128`.
       The coil sensitivity maps. Must have shape `[..., C, *S]`, where `S`
       is the `image_shape`, `C` is the number of coils and `...` is the batch
@@ -110,7 +109,8 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
                fft_norm='ortho',
                sens_norm=False,
                dtype=tf.complex64,
-               name='LinearOperatorMRI'):
+               name=None):
+    # pylint: disable=invalid-unary-operand-type
     parameters = dict(
         image_shape=image_shape,
         extra_shape=extra_shape,
@@ -128,7 +128,7 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
     dtype = tf.as_dtype(dtype)
     if dtype not in (tf.complex64, tf.complex128):
       raise ValueError(
-          f"`dtype` must be `complex64` or `complex128`, but got: {str(dtype)}") 
+          f"`dtype` must be `complex64` or `complex128`, but got: {str(dtype)}")
 
     # Set image shape, rank and extra shape.
     image_shape = tf.TensorShape(image_shape)
@@ -141,7 +141,7 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
           f"`image_shape` must be fully defined, but got {image_shape}")
     self._rank = rank
     self._image_shape = image_shape
-    self._image_axes = list(range(-self._rank, 0))
+    self._image_axes = list(range(-self._rank, 0))  # pylint: disable=invalid-unary-operand-type
     self._extra_shape = tf.TensorShape(extra_shape or [])
 
     # Set initial batch shape, then update according to inputs.
@@ -183,31 +183,23 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
           batch_shape_tensor, tf.shape(trajectory)[:-2])
     self._trajectory = trajectory
 
-    # Set sampling density after checking dtype and static shape. If `'auto'`,
-    # then estimate the density from the trajectory.
+    # Set sampling density after checking dtype and static shape.
     if density is not None:
-      if density is 'auto':  # Automatic density estimation.
-        if self._trajectory is None:  # Cartesian operator: no density comp.
-          density = None
-        else:  # Non-Cartesian operator: estimate density.
-          density = traj_ops.estimate_density(
-              self._trajectory, self._image_shape)
-      else:
-        if self._trajectory is None:
-          raise ValueError("`density` must be passed with `trajectory`.")
-        density = tf.convert_to_tensor(density)
-        if density.dtype != dtype.real_dtype:
-          raise TypeError(
-              f"Expected `density` to have dtype `{str(dtype.real_dtype)}`, "
-              f"but got: {str(density.dtype)}")
-        if density.shape[-1] != self._trajectory.shape[-2]:
-          raise ValueError(
-              f"Expected the last dimension of `density` to be "
-              f"{self._trajectory.shape[-2]}, but got {density.shape[-1]}")
-        batch_shape = tf.broadcast_static_shape(
-            batch_shape, density.shape[:-1])
-        batch_shape_tensor = tf.broadcast_dynamic_shape(
-          batch_shape_tensor, tf.shape(density)[:-1])
+      if self._trajectory is None:
+        raise ValueError("`density` must be passed with `trajectory`.")
+      density = tf.convert_to_tensor(density)
+      if density.dtype != dtype.real_dtype:
+        raise TypeError(
+            f"Expected `density` to have dtype `{str(dtype.real_dtype)}`, "
+            f"but got: {str(density.dtype)}")
+      if density.shape[-1] != self._trajectory.shape[-2]:
+        raise ValueError(
+            f"Expected the last dimension of `density` to be "
+            f"{self._trajectory.shape[-2]}, but got {density.shape[-1]}")
+      batch_shape = tf.broadcast_static_shape(
+          batch_shape, density.shape[:-1])
+      batch_shape_tensor = tf.broadcast_dynamic_shape(
+        batch_shape_tensor, tf.shape(density)[:-1])
     self._density = density
 
     # Set sensitivity maps after checking dtype and static shape.
@@ -288,7 +280,21 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
     super().__init__(dtype, name=name, parameters=parameters)
 
   def _transform(self, x, adjoint=False):
-    """Transform [batch] input `x`."""
+    """Transform [batch] input `x`.
+
+    Args:
+      x: A `Tensor` of type `self.dtype` and shape `[..., *self.domain_shape]`
+        containing images, if `adjoint` is `False`, or a `Tensor` of type
+        `self.dtype` and shape `[..., *self.range_shape]` containing *k*-space
+        data, if `adjoint` is `True`.
+      adjoint: A `bool` indicating whether to apply the adjoint of the operator.
+
+    Returns:
+      A `Tensor` of type `self.dtype` and shape `[..., *self.range_shape]`
+      containing *k*-space data, if `adjoint` is `False`, or a `Tensor` of type
+      `self.dtype` and shape `[..., *self.domain_shape]` containing images, if
+      `adjoint` is `True`.
+    """
     if adjoint:
       # Apply density compensation.
       if self._density is not None:
@@ -350,7 +356,7 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
         x *= self._dens_weights_sqrt
 
     return x
-  
+
   def _domain_shape(self):
     """Returns the shape of the domain space of this operator."""
     return self._extra_shape.concatenate(self._image_shape)
@@ -367,11 +373,11 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,
 
   def _batch_shape(self):
     """Returns the static batch shape of this operator."""
-    return self._batch_shape_value[:-self._extra_shape.rank]
+    return self._batch_shape_value[:-self._extra_shape.rank or None]  # pylint: disable=invalid-unary-operand-type
 
   def _batch_shape_tensor(self):
     """Returns the dynamic batch shape of this operator."""
-    return self._batch_shape_tensor_value[:-self._extra_shape.rank]
+    return self._batch_shape_tensor_value[:-self._extra_shape.rank or None]  # pylint: disable=invalid-unary-operand-type
 
   @property
   def image_shape(self):

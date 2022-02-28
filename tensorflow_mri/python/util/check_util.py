@@ -242,12 +242,15 @@ def validate_rank(value, name=None, accept_none=True):
 
   Returns:
     The value.
+
+  Raises:
+    TypeError: If `value` has an invalid type.
+    ValueError: If `value` is not a valid rank.
   """
   if value is None:
     if accept_none:
       return None
-    else:
-      raise ValueError(f'Argument `{name}` must be specified.')
+    raise ValueError(f'Argument `{name}` must be specified.')
   if not isinstance(value, int):
     raise TypeError(
         f'Argument `{name}` must be an integer, but got {value}.')

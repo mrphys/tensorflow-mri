@@ -21,6 +21,23 @@ from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.util import check_util
 
 
+def hann(arg, name=None):
+  """Calculate a Hann window at the specified coordinates.
+
+  Coordinates should be in the range `[-pi, pi]`. The center of the window
+  is at 0.
+
+  Args:
+    arg: Input tensor.
+    name: Name to use for the scope.
+
+  Returns:
+    The value of a Hann window at the specified coordinates.
+  """
+  with tf.name_scope(name or 'hann'):
+    return _raised_cosine(arg, 0.5, 0.5)
+
+
 def hamming(arg, name=None):
   """Calculate a Hamming window at the specified coordinates.
 

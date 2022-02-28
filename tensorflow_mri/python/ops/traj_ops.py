@@ -29,6 +29,7 @@ from tensorflow_graphics.geometry.transformation import rotation_matrix_3d # pyl
 
 from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import geom_ops
+from tensorflow_mri.python.ops import signal_ops
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import math_util
 from tensorflow_mri.python.util import sys_util
@@ -60,8 +61,8 @@ def density_grid(shape,
   is determined by `inner_cutoff` and `outer_cutoff`. The density variation
   in the transition region is controlled by the `transition_type`.
 
-  The output of this function may be passed to `sampling_mask` to generate a
-  boolean sampling mask. 
+  The output of this function may be passed to `random_sampling_mask` to
+  generate a boolean sampling mask.
 
   Args:
     shape: A `tf.TensorShape` or a list of `ints`. The shape of the output
@@ -75,7 +76,7 @@ def density_grid(shape,
     outer_cutoff: A `float` between 0.0 and 1.0. The cutoff defining the
       limit between the transition region and the outer region.
     transition_type: A string. The type of transition to use. Must be one of
-      'linear', 'quadratic', or 'hanning'.
+      'linear', 'quadratic', or 'hann'.
     name: A name for this op.
 
   Returns:
@@ -84,21 +85,21 @@ def density_grid(shape,
   with tf.name_scope(name or 'density_grid'):
     shape = tf.TensorShape(shape).as_list()
     transition_type = check_util.validate_enum(
-        transition_type, ['linear', 'quadratic', 'hanning'],
+        transition_type, ['linear', 'quadratic', 'hann'],
         name='transition_type')
 
     vecs = [tf.linspace(-1.0, 1.0 - 2.0 / n, n) for n in shape]
     grid = array_ops.meshgrid(*vecs)
-
     radius = tf.norm(grid, axis=-1)
 
+    scaled_radius = (outer_cutoff - radius) / (outer_cutoff - inner_cutoff)
     if transition_type == 'linear':
-      slope = (outer_density - inner_density) / (outer_cutoff - inner_cutoff)
-      density = inner_density + slope * (radius - inner_cutoff)
+      scaled_density = scaled_radius
     elif transition_type == 'quadratic':
-      raise NotImplementedError("Quadratic density is not implemented.")
-    elif transition_type == 'hanning':
-      raise NotImplementedError("Hanning density is not implemented.")
+      scaled_density = scaled_radius ** 2
+    elif transition_type == 'hann':
+      scaled_density = signal_ops.hann(np.pi * (1.0 - scaled_radius))
+    density = (inner_density - outer_density) * scaled_density + outer_density
 
     density = tf.where(radius < inner_cutoff, inner_density, density)
     density = tf.where(radius > outer_cutoff, outer_density, density)
@@ -106,13 +107,17 @@ def density_grid(shape,
     return density
 
 
-def sampling_mask(shape, density=1.0, seed=None, rng=None, name=None):
-  """Returns a Cartesian sampling mask with the given density.
+def random_sampling_mask(shape, density=1.0, seed=None, rng=None, name=None):
+  """Returns a random sampling mask with the given density.
 
   Args:
     shape: A 1D integer `Tensor` or array. The shape of the output mask.
-    density: A density grid. Must be broadcastable with the rightmost dimensions
-      of `shape`.
+    density: A `Tensor`. A density grid. After broadcasting with `shape`,
+      each point in the grid represents the probability that a given point will
+      be sampled. For example, if `density` is a scalar, then each point in the
+      mask will be sampled with probability `density`. A non-scalar `density`
+      may be used to create variable-density sampling masks.
+      `tfmri.density_grid` can be used to create density grids.
     seed: A `Tensor` of shape `[2]`. The seed for the stateless RNG. `seed` and
       `rng` may not be specified at the same time.
     rng: A `tf.random.Generator`. The stateful RNG to use. `seed` and `rng` may
@@ -122,6 +127,9 @@ def sampling_mask(shape, density=1.0, seed=None, rng=None, name=None):
 
   Returns:
     A boolean tensor containing the sampling mask.
+
+  Raises:
+    ValueError: If both `seed` and `rng` are specified.
   """
   with tf.name_scope(name or 'sampling_mask'):
     if seed is not None and rng is not None:
@@ -132,7 +140,7 @@ def sampling_mask(shape, density=1.0, seed=None, rng=None, name=None):
     else:  # Use stateful RNG.
       rng = rng or tf.random.get_global_generator()
       mask = rng.binomial(shape, counts, density)
-    return tf.cast(mask, dtype=tf.bool)
+    return tf.cast(mask, tf.bool)
 
 
 def radial_trajectory(base_resolution,

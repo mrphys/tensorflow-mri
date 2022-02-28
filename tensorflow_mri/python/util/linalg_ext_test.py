@@ -25,7 +25,7 @@ from tensorflow_mri.python.util import test_util
 class LinearOperatorAdditionTest(test_util.TestCase):
   """Tests for `LinearOperatorAddition`."""
   @parameterized.product(adjoint=[True, False], adjoint_arg=[True, False])
-  def test_operator(self, adjoint, adjoint_arg):
+  def test_operator(self, adjoint, adjoint_arg):  # pylint: disable=missing-function-docstring
     op1 = tf.linalg.LinearOperatorFullMatrix([[1., 2.], [3., 4.]])
     op2 = tf.linalg.LinearOperatorFullMatrix([[4., 1.], [3., 2.]])
 
@@ -56,7 +56,7 @@ class LinearOperatorAdditionTest(test_util.TestCase):
 
 class LinearOperatorStackTest(test_util.TestCase):
   """Tests for stack operators."""
-  def test_operator(self):
+  def test_operator(self):  # pylint: disable=missing-function-docstring
     op1 = tf.linalg.LinearOperatorFullMatrix([[1., 2.],
                                               [3., 4.],
                                               [5., 6.]])
