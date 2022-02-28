@@ -578,7 +578,7 @@ class SVDCoilCompressor(_CoilCompressor):
 
     # Get output coils from variance ratio.
     if self._variance_ratio is not None:
-      cum_variance = tf.math.cumsum(self.explained_variance_ratio)
+      cum_variance = tf.math.cumsum(self.explained_variance_ratio, axis=0)
       self._out_coils = tf.math.count_nonzero(
           cum_variance <= self._variance_ratio)
 

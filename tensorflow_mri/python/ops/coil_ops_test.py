@@ -241,7 +241,7 @@ class CoilCompressionTest(test_util.TestCase):
         if p['variance_ratio'] and not p['out_coils']:
           variance = s ** 2 / 399.0
           out_coils = tf.math.count_nonzero(
-              tf.math.cumsum(variance / tf.math.reduce_sum(variance)) <=
+              tf.math.cumsum(variance / tf.math.reduce_sum(variance), axis=0) <=
               p['variance_ratio'])
         if p['out_coils']:
           out_coils = p['out_coils']
