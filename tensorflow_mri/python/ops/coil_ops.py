@@ -409,7 +409,6 @@ def _estimate_coil_sensitivities_espirit(kspace,
 def compress_coils(kspace,
                    coil_axis=-1,
                    out_coils=None,
-                   tol=None,
                    method='svd',
                    **kwargs):
   """Coil compression gateway.
@@ -444,12 +443,7 @@ def compress_coils(kspace,
       Cartesian or non-Cartesian. If `method` is `"geometric"` or `"espirit"`,
       `kspace` must be Cartesian.
     coil_axis: An `int`. Defaults to -1.
-    out_coils: An `int`. The number of desired virtual output coils. If
-      `None`, the number of output coils is automatically determined based on
-      `tol`. If `tol` is also None, all virtual coils are returned.
-    tol: A `float` between 0.0 and 1.0. Virtual coils whose singular value is
-      less than `tol` times the first singular value are discarded. `tol` is
-      ignored if `out_coils` is also specified.
+    out_coils: An `int`. The desired number of virtual output coils.
     method: A `string`. The coil compression algorithm. Must be `"svd"`.
     **kwargs: Additional method-specific keyword arguments to be passed to the
       coil compressor.
@@ -457,7 +451,7 @@ def compress_coils(kspace,
   Returns:
     A `Tensor` containing the compressed *k*-space data. Has shape
     `[..., Cout]`, where `Cout` is determined based on `out_coils` or
-    `tol` and `...` are the unmodified encoding dimensions.
+    other inputs and `...` are the unmodified encoding dimensions.
 
   References:
     .. [1] Huang, F., Vijayakumar, S., Li, Y., Hertel, S. and Duensing, G.R.
@@ -483,7 +477,6 @@ def compress_coils(kspace,
   if method == 'svd':
     return SVDCoilCompressor(coil_axis=coil_axis,
                              out_coils=out_coils,
-                             tol=tol,
                              **kwargs).fit_transform(kspace)
 
   raise NotImplementedError(f"Method {method} not implemented.")
@@ -494,17 +487,11 @@ class _CoilCompressor():
 
   Args:
     coil_axis: An `int`. The axis of the coil dimension.
-    out_coils: An `int`. The number of virtual output coils. If `None`, the
-      number of output coils is automatically determined based on `tol`. If
-      `tol` is also None, all virtual coils are returned.
-    tol: A `float` between 0.0 and 1.0. Virtual coils whose singular value is
-      less than `tol` times the first singular value are discarded. `tol` is
-      ignored if `out_coils` is also specified.
+    out_coils: An `int`. The desired number of virtual output coils.
   """
-  def __init__(self, coil_axis=-1, out_coils=None, tol=None):
+  def __init__(self, coil_axis=-1, out_coils=None):
     self._coil_axis = coil_axis
     self._out_coils = out_coils
-    self._tol = tol
 
   @abc.abstractmethod
   def fit(self, kspace):
@@ -531,20 +518,31 @@ class SVDCoilCompressor(_CoilCompressor):
 
   Args:
     coil_axis: An `int`. Defaults to -1.
-    out_coils: An `int`. The number of desired virtual output coils. If
-      `None`, the number of output coils is automatically determined based on
-      `tol`. If `tol` is also None, all virtual coils are returned.
-    tol: A `float` between 0.0 and 1.0. Virtual coils whose singular value is
-      less than `tol` times the first singular value are discarded. `tol` is
-      ignored if `out_coils` is also specified.
+    out_coils: An `int`. The desired number of virtual output coils. Cannot be
+      used together with `variance_ratio`.
+    variance_ratio: A `float` between 0.0 and 1.0. The percentage of total
+      variance to be retained. The number of virtual coils is automatically
+      selected to retain at least this percentage of variance. Cannot be used
+      together with `out_coils`.
+
+  Attributes:
+    singular_values: A `Tensor` containing the singular values associated with
+      each virtual coil.
+    explained_variance: A `Tensor` containing the variance explained by each
+      virtual coil.
+    explained_variance_ratio: A `Tensor` containing the percentage of variance
+      explained by each virtual coil.
 
   References:
     .. [1] Huang, F., Vijayakumar, S., Li, Y., Hertel, S. and Duensing, G.R.
       (2008). A software channel compression technique for faster reconstruction
       with many channels. Magn Reson Imaging, 26(1): 133-141.
   """
-  def __init__(self, coil_axis=-1, out_coils=None, tol=None):
-    super().__init__(coil_axis=coil_axis, out_coils=out_coils, tol=tol)
+  def __init__(self, coil_axis=-1, out_coils=None, variance_ratio=None):
+    if out_coils is not None and variance_ratio is not None:
+      raise ValueError("Cannot specify both `out_coils` and `variance_ratio`.")
+    super().__init__(coil_axis=coil_axis, out_coils=out_coils)
+    self._variance_ratio = variance_ratio
 
   def fit(self, kspace):
     """Fits the coil compression matrix.
@@ -572,10 +570,17 @@ class SVDCoilCompressor(_CoilCompressor):
     # Compresion matrix.
     self._matrix = tf.cond(num_samples > num_coils, lambda: v, lambda: u)
 
-    # Get output coils based on tol.
-    if self._tol is not None and self._out_coils is None:
+    # Get variance.
+    self.singular_values = s
+    self.explained_variance = s ** 2 / tf.cast(num_samples - 1, s.dtype)
+    total_variance = tf.math.reduce_sum(self.explained_variance)
+    self.explained_variance_ratio = self.explained_variance / total_variance
+
+    # Get output coils from variance ratio.
+    if self._variance_ratio is not None:
+      cum_variance = tf.math.cumsum(self.explained_variance_ratio)
       self._out_coils = tf.math.count_nonzero(
-          tf.math.greater(tf.abs(s) / tf.abs(s[0]), self._tol))
+          cum_variance <= self._variance_ratio)
 
     # Remove unnecessary virtual coils.
     if self._out_coils is not None:
