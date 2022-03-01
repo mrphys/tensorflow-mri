@@ -991,9 +991,6 @@ def _filter_image(image, kernels):
 def gmsd(img1, img2, max_val=1.0, rank=None, name=None):
   """Computes the gradient magnitude similarity deviation (GMSD).
 
-  This is intended to be used on signals (or images). Produces a GMSD value for
-  each image in batch.
-
   Args:
     img1: A `Tensor`. First batch of images. For 2D images, must have rank >= 3
       with shape `batch_shape + [height, width, channels]`. For 3D images, must
@@ -1019,6 +1016,12 @@ def gmsd(img1, img2, max_val=1.0, rank=None, name=None):
   Returns:
     A scalar GMSD value for each pair of images in `img1` and `img2`. The
     returned tensor has type `tf.float32` and shape `batch_shape`.
+
+  References:
+    .. [1] W. Xue, L. Zhang, X. Mou and A. C. Bovik, "Gradient Magnitude
+      Similarity Deviation: A Highly Efficient Perceptual Image Quality Index,"
+      in IEEE Transactions on Image Processing, vol. 23, no. 2, pp. 684-695,
+      Feb. 2014, doi: 10.1109/TIP.2013.2293423.
   """
   with tf.name_scope(name or 'gmsd'):
     # Check and prepare inputs.
@@ -1063,6 +1066,64 @@ def gmsd(img1, img2, max_val=1.0, rank=None, name=None):
     gmsd_values = tf.reshape(gmsd_values, batch_shape)
     gmsd_values = tf.ensure_shape(gmsd_values, static_batch_shape)
     return gmsd_values
+
+
+def gmsd2d(img1, img2, max_val=1.0, name=None):
+  """Computes the gradient magnitude similarity deviation (GMSD).
+
+  Args:
+    img1: A `Tensor`. First batch of images. Must have rank >= 3 with shape
+      `batch_shape + [height, width, channels]`. Can have integer or
+      floating point type, with values in the range `[0, max_val]`.
+    img2: A `Tensor`. Second batch of images. Must have rank >= 3 with shape
+      `batch_shape + [height, width, channels]`. Can have integer or
+      floating point type, with values in the range `[0, max_val]`
+    max_val: The dynamic range of the images (i.e., the difference between
+      the maximum and the minimum allowed values). Defaults to 1 for floating
+      point input images and `MAX` for integer input images, where `MAX` is the
+      largest positive representable number for the data type.
+    name: Namespace to embed the computation in.
+
+  Returns:
+    A scalar GMSD value for each pair of images in `img1` and `img2`. The
+    returned tensor has type `tf.float32` and shape `batch_shape`.
+
+  References:
+    .. [1] W. Xue, L. Zhang, X. Mou and A. C. Bovik, "Gradient Magnitude
+      Similarity Deviation: A Highly Efficient Perceptual Image Quality Index,"
+      in IEEE Transactions on Image Processing, vol. 23, no. 2, pp. 684-695,
+      Feb. 2014, doi: 10.1109/TIP.2013.2293423.
+  """
+  return gmsd(img1, img2, max_val=max_val, rank=2, name=(name or 'gmsd2d'))
+
+
+def gmsd3d(img1, img2, max_val=1.0, name=None):
+  """Computes the gradient magnitude similarity deviation (GMSD).
+
+  Args:
+    img1: A `Tensor`. First batch of images. Must have rank >= 4 with shape
+      `batch_shape + [depth, height, width, channels]`. Can have integer or
+      floating point type, with values in the range `[0, max_val]`.
+    img2: A `Tensor`. Second batch of images. Must have rank >= 4 with shape
+      `batch_shape + [depth, height, width, channels]`. Can have integer or
+      floating point type, with values in the range `[0, max_val]`
+    max_val: The dynamic range of the images (i.e., the difference between
+      the maximum and the minimum allowed values). Defaults to 1 for floating
+      point input images and `MAX` for integer input images, where `MAX` is the
+      largest positive representable number for the data type.
+    name: Namespace to embed the computation in.
+
+  Returns:
+    A scalar GMSD value for each pair of images in `img1` and `img2`. The
+    returned tensor has type `tf.float32` and shape `batch_shape`.
+
+  References:
+    .. [1] W. Xue, L. Zhang, X. Mou and A. C. Bovik, "Gradient Magnitude
+      Similarity Deviation: A Highly Efficient Perceptual Image Quality Index,"
+      in IEEE Transactions on Image Processing, vol. 23, no. 2, pp. 684-695,
+      Feb. 2014, doi: 10.1109/TIP.2013.2293423.
+  """
+  return gmsd(img1, img2, max_val=max_val, rank=3, name=(name or 'gmsd3d'))
 
 
 def _validate_iqa_inputs(img1, img2, max_val, rank):

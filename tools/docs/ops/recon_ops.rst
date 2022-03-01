@@ -9,5 +9,8 @@ Image Reconstruction
     :toctree: recon_ops
     :nosignatures:
 
-    reconstruct
-    reconstruct_partial_kspace
+    reconstruct_adj
+    reconstruct_grappa
+    reconstruct_lstsq
+    reconstruct_pf
+    reconstruct_sense

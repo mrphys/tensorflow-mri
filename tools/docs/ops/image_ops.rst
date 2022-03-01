@@ -11,6 +11,11 @@ Image Processing
     
     central_crop
     extract_glimpses
+    gmsd
+    gmsd2d
+    gmsd3d
+    gradient_magnitude
+    image_gradients
     phantom
     psnr
     psnr2d

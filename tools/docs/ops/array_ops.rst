@@ -9,6 +9,8 @@ Array Manipulation
     :toctree: array_ops
     :nosignatures:
     
+    broadcast_static_shapes
+    broadcast_dynamic_shapes
     cartesian_product
     meshgrid
     ravel_multi_index

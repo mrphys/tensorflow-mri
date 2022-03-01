@@ -9,5 +9,6 @@ Linear Algebra
     :toctree: linalg_ops
     :nosignatures:
 
-    LinalgImagingMixin
+    LinearOperatorMRI
+    LinearOperatorFiniteDifference
     conjugate_gradient

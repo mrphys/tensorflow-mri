@@ -10,10 +10,12 @@ Convex Operators
     :nosignatures:
 
     ConvexFunction
+    ConvexFunctionAffineMappingComposition
+    ConvexFunctionLinearOperatorComposition
     ConvexFunctionL1Norm
     ConvexFunctionL2Norm
+    ConvexFunctionL2NormSquared
     ConvexFunctionLeastSquares
     ConvexFunctionQuadratic
-    Regularizer
-    TikhonovRegularizer
-    TotalVariationRegularizer
+    ConvexFunctionTikhonov
+    ConvexFunctionTotalVariation

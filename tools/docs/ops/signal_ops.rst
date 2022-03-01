@@ -9,6 +9,8 @@ Signal Processing
     :toctree: signal_ops
     :nosignatures:
 
+    atanfilt
     crop_kspace
     filter_kspace
+    hann
     hamming

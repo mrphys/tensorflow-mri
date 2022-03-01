@@ -22,20 +22,6 @@ from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.util import test_util
 
 
-class AddChannelDimensionTest(test_util.TestCase):
-  """Tests for layer `AddChannelDimension`."""
-  @test_util.run_in_graph_and_eager_modes
-  def test_result(self):
-    """Test result."""
-    x = tf.random.uniform([10, 10], dtype=tf.float32)
-    ref = tf.expand_dims(x, -1)
-
-    layer = preproc_layers.AddChannelDimension()
-    result = layer(x)
-
-    self.assertAllClose(result, ref)
-
-
 class KSpaceResamplingTest(test_util.TestCase):
   """Tests for layer `KSpaceResampling`."""
   @parameterized.product(dens_algo=['geometric', 'radial', 'jackson', 'pipe'])
@@ -93,85 +79,6 @@ class KSpaceResamplingTest(test_util.TestCase):
     self.assertDTypeEqual(output, 'float32')
     self.assertAllClose(output[96, 96, 0], result_max[dens_algo],
                         rtol=1e-4, atol=1e-4)
-
-
-class ResizeWithCropOrPadTest(test_util.TestCase):
-  """Tests for layer `ResizeWithCropOrPad`."""
-  @test_util.run_in_graph_and_eager_modes
-  def test_output_shapes(self):
-    """Test output shapes."""
-    input1 = tf.keras.Input(shape=(64, 16, 4), batch_size=1)
-    input2 = tf.keras.Input(shape=(2, 64, 16, 4), batch_size=1)
-    input3 = tf.keras.Input(shape=(None, None, None, 1), batch_size=1)
-
-    layer1 = preproc_layers.ResizeWithCropOrPad(shape=[32, 32])
-    layer2 = preproc_layers.ResizeWithCropOrPad(shape=[64, 64, 64])
-
-    output1 = layer1(input1)
-    self.assertAllEqual(output1.shape, [1, 32, 32, 4])
-
-    output2 = layer1(input2)
-    self.assertAllEqual(output2.shape, [1, 2, 32, 32, 4])
-
-    output3 = layer2(input3)
-    self.assertAllEqual(output3.shape, [1, 64, 64, 64, 1])
-
-  def test_serialize_deserialize(self):
-    """Test de/serialization."""
-    config = dict(
-        shape=[32, 32],
-        name='resize_with_crop_or_pad',
-        dtype='float32',
-        trainable=True)
-
-    layer1 = preproc_layers.ResizeWithCropOrPad(**config)
-    self.assertEqual(layer1.get_config(), config)
-
-    layer2 = preproc_layers.ResizeWithCropOrPad.from_config(layer1.get_config())
-    self.assertAllEqual(layer1.get_config(), layer2.get_config())
-
-  def _assert_static_shape(self, fn, input_shape, expected_output_shape):
-    """Asserts that function returns the expected static shapes."""
-    @tf.function
-    def graph_fn(x):
-      return fn(x)
-
-    input_spec = tf.TensorSpec(shape=input_shape)
-    concrete_fn = graph_fn.get_concrete_function(input_spec)
-
-    self.assertAllEqual(concrete_fn.structured_outputs.shape,
-                        expected_output_shape)
-
-
-class TransposeTest(test_util.TestCase):
-  """Tests for layer `Transpose`."""
-  @parameterized.product(perm=[[0, 2, 1], [1, 0, 2]],
-                         conjugate=[True, False])
-  @test_util.run_in_graph_and_eager_modes
-  def test_result(self, perm, conjugate): # pylint: disable=missing-param-doc
-    """Test result shapes."""
-    input1 = tf.random.stateless_normal([4, 4, 4], [234, 231])
-
-    layer1 = preproc_layers.Transpose(perm=perm, conjugate=conjugate)
-
-    output1 = layer1(input1)
-    self.assertAllEqual(output1, tf.transpose(input1, perm=perm,
-                                              conjugate=conjugate))
-
-  def test_serialize_deserialize(self):
-    """Test de/serialization."""
-    config = dict(
-        perm=[1, 0],
-        conjugate=True,
-        name='transpose',
-        dtype='float32',
-        trainable=True)
-
-    layer1 = preproc_layers.Transpose(**config)
-    self.assertEqual(layer1.get_config(), config)
-
-    layer2 = preproc_layers.Transpose.from_config(layer1.get_config())
-    self.assertAllEqual(layer1.get_config(), layer2.get_config())
 
 
 if __name__ == '__main__':

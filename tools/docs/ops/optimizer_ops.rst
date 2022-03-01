@@ -8,3 +8,6 @@ Optimization
 .. autosummary::
     :toctree: optimizer_ops
     :nosignatures:
+    
+    admm_minimize
+    lbfgs_minimize

@@ -875,12 +875,12 @@ def _flatten_last_dimensions(x):
   return tf.reshape(x, tf.concat([tf.shape(x)[:-2], [-1]], 0))
 
 
-def reconstruct_partial_kspace(kspace,
-                               factors,
-                               return_complex=False,
-                               return_kspace=False,
-                               method='zerofill',
-                               **kwargs):
+def reconstruct_pf(kspace,
+                   factors,
+                   return_complex=False,
+                   return_kspace=False,
+                   method='zerofill',
+                   **kwargs):
   """Partial Fourier image reconstruction.
 
   Args:
@@ -957,7 +957,7 @@ def reconstruct_partial_kspace(kspace,
 def _pf_zerofill(kspace, factors, return_complex=False, return_kspace=False):
   """Partial Fourier reconstruction using zero-filling.
 
-  For the parameters, see `reconstruct_partial_kspace`.
+  For the parameters, see `reconstruct_pf`.
   """
   output_shape = _scale_shape(tf.shape(kspace), 1.0 / factors)
   paddings = tf.expand_dims(output_shape - tf.shape(kspace), -1)
@@ -979,7 +979,7 @@ def _pf_homodyne(kspace,
                  weighting_fn='ramp'):
   """Partial Fourier reconstruction using homodyne detection.
 
-  For the parameters, see `reconstruct_partial_kspace`.
+  For the parameters, see `reconstruct_pf`.
   """
   # Rank of this operation.
   dtype = kspace.dtype
@@ -1038,7 +1038,7 @@ def _pf_pocs(kspace,
              tol=1e-5):
   """Partial Fourier reconstruction using projection onto convex sets (POCS).
 
-  For the parameters, see `reconstruct_partial_kspace`.
+  For the parameters, see `reconstruct_pf`.
   """
   # Zero-filled k-space.
   full_kspace = _pf_zerofill(kspace, factors, return_kspace=True)

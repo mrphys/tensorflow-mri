@@ -434,7 +434,7 @@ class ReconstructTest(test_util.TestCase):
 
 
 class ReconstructPartialKSpaceTest(test_util.TestCase):
-  """Tests for `reconstruct_partial_kspace` operation."""
+  """Tests for `reconstruct_pf` operation."""
 
   @classmethod
   def setUpClass(cls):
@@ -456,7 +456,7 @@ class ReconstructPartialKSpaceTest(test_util.TestCase):
     factors = [1.0, 9 / 16]
     kspace = full_kspace[:, :, :(192 * 9 // 16)]
 
-    result = recon_ops.reconstruct_partial_kspace(kspace,
+    result = recon_ops.reconstruct_pf(kspace,
                                                   factors,
                                                   return_complex=return_complex,
                                                   return_kspace=return_kspace,

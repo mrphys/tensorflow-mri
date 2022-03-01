@@ -14,8 +14,14 @@
 # ==============================================================================
 """Tests for module `tensorboard_callbacks`."""
 
+import tensorflow as tf
+
 from tensorflow_mri.python.util import test_util
 
 
 class TensorBoardImagesTest(test_util.TestCase):
   """Tests for `TensorBoardImages` callback."""
+
+
+if __name__ == '__main__':
+  tf.test.main()
