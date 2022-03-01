@@ -525,14 +525,6 @@ class SVDCoilCompressor(_CoilCompressor):
       selected to retain at least this percentage of variance. Cannot be used
       together with `out_coils`.
 
-  Attributes:
-    singular_values: A `Tensor` containing the singular values associated with
-      each virtual coil.
-    explained_variance: A `Tensor` containing the variance explained by each
-      virtual coil.
-    explained_variance_ratio: A `Tensor` containing the percentage of variance
-      explained by each virtual coil.
-
   References:
     .. [1] Huang, F., Vijayakumar, S., Li, Y., Hertel, S. and Duensing, G.R.
       (2008). A software channel compression technique for faster reconstruction
@@ -543,9 +535,9 @@ class SVDCoilCompressor(_CoilCompressor):
       raise ValueError("Cannot specify both `out_coils` and `variance_ratio`.")
     super().__init__(coil_axis=coil_axis, out_coils=out_coils)
     self._variance_ratio = variance_ratio
-    self.singular_values = None
-    self.explained_variance = None
-    self.explained_variance_ratio = None
+    self._singular_values = None
+    self._explained_variance = None
+    self._explained_variance_ratio = None
 
   def fit(self, kspace):
     """Fits the coil compression matrix.
@@ -574,14 +566,14 @@ class SVDCoilCompressor(_CoilCompressor):
     self._matrix = tf.cond(num_samples > num_coils, lambda: v, lambda: u)
 
     # Get variance.
-    self.singular_values = s
-    self.explained_variance = s ** 2 / tf.cast(num_samples - 1, s.dtype)
-    total_variance = tf.math.reduce_sum(self.explained_variance)
-    self.explained_variance_ratio = self.explained_variance / total_variance
+    self._singular_values = s
+    self._explained_variance = s ** 2 / tf.cast(num_samples - 1, s.dtype)
+    total_variance = tf.math.reduce_sum(self._explained_variance)
+    self._explained_variance_ratio = self._explained_variance / total_variance
 
     # Get output coils from variance ratio.
     if self._variance_ratio is not None:
-      cum_variance = tf.math.cumsum(self.explained_variance_ratio, axis=0)
+      cum_variance = tf.math.cumsum(self._explained_variance_ratio, axis=0)
       self._out_coils = tf.math.count_nonzero(
           cum_variance <= self._variance_ratio)
 
@@ -646,9 +638,21 @@ class SVDCoilCompressor(_CoilCompressor):
           [ax for ax in range(rank) if not ax == canonical_coil_axis] +
           [canonical_coil_axis])
       kspace = tf.transpose(kspace, perm)
-      inv_perm = tf.math.invert_permutation(perm)
-      return kspace, inv_perm
-    return kspace, None
+
+  @property
+  def singular_values(self):
+    """The singular values associated with each virtual coil."""
+    return self._singular_values
+
+  @property
+  def explained_variance(self):
+    """The variance explained by each virtual coil."""
+    return self._explained_variance
+  
+  @property
+  def explained_variance_ratio(self):
+    """The percentage of variance explained by each virtual coil."""
+    return self._explained_variance_ratio
 
 
 def _apply_uniform_filter(tensor, size=5):

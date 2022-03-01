@@ -16,34 +16,6 @@
 
 Image reconstruction operators accept *k*-space data and additional
 application-dependent inputs and return an image.
-
-This module contains several operators for image reconstruction.
-
-  * `tfmri.reconstruct_adj`: Reconstructs an image by applying the adjoint MRI
-    operator to the *k*-space data. This typically involves an inverse FFT or
-    a (density-compensated) NUFFT, and coil combination for multicoil inputs.
-    This type of reconstruction is often called zero-filled reconstruction,
-    because missing *k*-space samples are assumed to be zero. Therefore, the
-    resulting image is likely to display aliasing artefacts if *k*-space is not
-    sufficiently sampled according to the Nyquist criterion. Supports Cartesian
-    and non-Cartesian *k*-space data.
-
-  * `tfmri.reconstruct_lstsq`: Reconstructs an image by formulating a (possibly
-    regularized) least squares problem, which is solved iteratively. Since the
-    problem may be ill-posed, different types of regularizers may be used to
-    incorporate prior knowledge. Depending on the regularizer, the optimization
-    problem may be linear or nonlinear. For sparsity-based regularizers, this
-    is also called a compressed sensing reconstruction. This is a powerful
-    operator which can often produce high-quality images even from highly
-    undersampled *k*-space data. However, it may be time-consuming, depending
-    on the characteristics of the problem. Supports Cartesian and non-Cartesian
-    *k*-space data.
-
-  * `tfmri.reconstruct_sense`: Reconstructs an image using sensitivity encoding
-    (SENSE).
-
-  * `tfmri.reconstruct_grappa`: Reconstructs an image using generalized
-    autocalibrating partially parallel acquisition (GRAPPA).
 """
 
 import collections
@@ -75,6 +47,8 @@ def reconstruct_adj(kspace,
 
   Given *k*-space data :math:`b`, this function estimates the corresponding
   image as :math:`x = A^H b`, where :math:`A` is the MRI linear operator.
+
+  This operator supports Cartesian and non-Cartesian *k*-space data.
 
   Additional density compensation and intensity correction steps are applied
   depending on the input arguments.
@@ -120,6 +94,15 @@ def reconstruct_adj(kspace,
     A `Tensor`. The reconstructed image. Has the same type as `kspace` and
     shape `[..., *image_shape]`, where `...` is the broadcasted batch shape of
     all inputs.
+
+  Notes:
+    Reconstructs an image by applying the adjoint MRI operator to the *k*-space
+    data. This typically involves an inverse FFT or a (density-compensated)
+    NUFFT, and coil combination for multicoil inputs. This type of
+    reconstruction is often called zero-filled reconstruction, because missing
+    *k*-space samples are assumed to be zero. Therefore, the resulting image is
+    likely to display aliasing artefacts if *k*-space is not sufficiently
+    sampled according to the Nyquist criterion.
   """
   kspace = tf.convert_to_tensor(kspace)
 
@@ -179,7 +162,9 @@ def reconstruct_lstsq(kspace,
   the measured *k*-space data, and :math:`g(x)` is an optional `ConvexFunction`
   used for regularization.
 
-  This function supports linear and non-linear reconstruction, depending on the
+  This operator supports Cartesian and non-Cartesian *k*-space data.
+
+  This operator supports linear and non-linear reconstruction, depending on the
   selected regularizer. The MRI operator is constructed internally and does not
   need to be provided.
 
@@ -247,6 +232,16 @@ def reconstruct_lstsq(kspace,
 
   Raises:
     ValueError: If passed incompatible inputs.
+  
+  Notes:
+    Reconstructs an image by formulating a (possibly regularized) least squares
+    problem, which is solved iteratively. Since the problem may be ill-posed,
+    different types of regularizers may be used to incorporate prior knowledge.
+    Depending on the regularizer, the optimization problem may be linear or
+    nonlinear. For sparsity-based regularizers, this is also called a compressed
+    sensing reconstruction. This is a powerful operator which can often produce
+    high-quality images even from highly undersampled *k*-space data. However,
+    it may be time-consuming, depending on the characteristics of the problem.
 
   References:
     .. [1] Pruessmann, K.P., Weiger, M., Börnert, P. and Boesiger, P. (2001),
