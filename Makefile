@@ -32,6 +32,7 @@ wheel: $(TARGET)
 
 docs: $(TARGET)
 	ln -sf tensorflow_mri tfmri
+	ln -s python/layers tensorflow_mri/
 	rm -rf tools/docs/_build
 	rm -rf tools/docs/callbacks/*_callbacks
 	rm -rf tools/docs/io/*_io

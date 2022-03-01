@@ -1,4 +1,4 @@
-tfmri.layers.{{ objname | escape | underline }}============
+tfmri.layers.{{ objname | escape | underline }}=============
 
 .. currentmodule:: {{ module }}
 

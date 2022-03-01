@@ -1,4 +1,4 @@
-tfmri.callbacks.{{ objname | escape | underline }}===============
+tfmri.callbacks.{{ objname | escape | underline }}================
 
 .. currentmodule:: {{ module }}
 

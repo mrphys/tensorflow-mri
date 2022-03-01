@@ -1,4 +1,4 @@
-tfmri.losses.{{ objname | escape | underline }}============
+tfmri.losses.{{ objname | escape | underline }}=============
 
 .. currentmodule:: {{ module }}
 
