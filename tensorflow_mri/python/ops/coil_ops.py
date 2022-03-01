@@ -414,12 +414,8 @@ def compress_coils(kspace,
   """Coil compression gateway.
 
   This function estimates a coil compression matrix and uses it to compress
-  `kspace`. Alternatively, this method can use a precomputed coil compression
-  matrix to perform the compression. In this case, use
-  `tfmri.coil_compression_matrix` to calculate the compression matrix, then pass
-  it to this function using the `matrix` argument. Use this two-step process
-  if you intend to reuse a coil compression matrix or need to calibrate the
-  compression using different data.
+  `kspace`. If you would like to reuse a coil compression matrix or need to
+  calibrate the compression using different data, use `tfmri.SVDCoilCompressor`.
 
   This function supports the following coil compression methods:
 
