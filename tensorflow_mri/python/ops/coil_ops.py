@@ -543,6 +543,9 @@ class SVDCoilCompressor(_CoilCompressor):
       raise ValueError("Cannot specify both `out_coils` and `variance_ratio`.")
     super().__init__(coil_axis=coil_axis, out_coils=out_coils)
     self._variance_ratio = variance_ratio
+    self.singular_values = None
+    self.explained_variance = None
+    self.explained_variance_ratio = None
 
   def fit(self, kspace):
     """Fits the coil compression matrix.
@@ -646,10 +649,6 @@ class SVDCoilCompressor(_CoilCompressor):
       inv_perm = tf.math.invert_permutation(perm)
       return kspace, inv_perm
     return kspace, None
-  
-  singular_values = None
-  explained_variance = None
-  explained_variance_ratio = None
 
 
 def _apply_uniform_filter(tensor, size=5):
