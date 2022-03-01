@@ -232,7 +232,7 @@ def reconstruct_lstsq(kspace,
 
   Raises:
     ValueError: If passed incompatible inputs.
-  
+
   Notes:
     Reconstructs an image by formulating a (possibly regularized) least squares
     problem, which is solved iteratively. Since the problem may be ill-posed,

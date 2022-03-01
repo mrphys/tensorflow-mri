@@ -638,6 +638,9 @@ class SVDCoilCompressor(_CoilCompressor):
           [ax for ax in range(rank) if not ax == canonical_coil_axis] +
           [canonical_coil_axis])
       kspace = tf.transpose(kspace, perm)
+      inv_perm = tf.math.invert_permutation(perm)
+      return kspace, inv_perm
+    return kspace, None
 
   @property
   def singular_values(self):
@@ -648,7 +651,7 @@ class SVDCoilCompressor(_CoilCompressor):
   def explained_variance(self):
     """The variance explained by each virtual coil."""
     return self._explained_variance
-  
+
   @property
   def explained_variance_ratio(self):
     """The percentage of variance explained by each virtual coil."""

@@ -17,8 +17,6 @@
 import tensorflow as tf
 import tensorflow_nufft as tfft
 
-from tensorflow_mri.python.ops import image_ops
-from tensorflow_mri.python.ops import math_ops
 from tensorflow_mri.python.ops import traj_ops
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import tensor_util
