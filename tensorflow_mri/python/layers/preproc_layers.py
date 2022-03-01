@@ -17,9 +17,60 @@
 import tensorflow as tf
 import tensorflow_nufft as tfft
 
+from tensorflow_mri.python.ops import image_ops
+from tensorflow_mri.python.ops import math_ops
 from tensorflow_mri.python.ops import traj_ops
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import tensor_util
+
+
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class AddChannelDimension(tf.keras.layers.Layer):
+  """Adds a channel dimension to input tensor.
+
+  Args:
+    **kwargs: Additional keyword arguments to be passed to base class.
+  """
+  def call(self, inputs):
+    """Runs forward pass on the input tensor."""
+    return tf.expand_dims(inputs, -1)
+
+
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class Cast(tf.keras.layers.Layer):
+  """Casts input tensor to target dtype.
+
+  Args:
+    **kwargs: Additional keyword arguments to be passed to base class.
+  """
+  def call(self, inputs):
+    """Runs forward pass on the input tensor."""
+    return tf.cast(inputs, self.dtype)
+
+
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class ExpandDims(tf.keras.layers.Layer):
+  """Insert a new axis at specified index.
+
+  Args:
+    axis: An `int` specifying the dimension index at which to expand the shape
+      of input.
+    **kwargs: Additional keyword arguments to be passed to base class.
+  """
+  def __init__(self, axis, **kwargs):
+    """Initializes layer."""
+    super().__init__(**kwargs)
+    self._axis = axis
+
+  def call(self, inputs):
+    """Runs forward pass on the input tensor."""
+    return tf.expand_dims(inputs, self._axis)
+
+  def get_config(self):
+    """Gets layer configuration."""
+    config = {'axis': self._axis}
+    base_config = super().get_config()
+    return {**base_config, **config}
 
 
 @tf.keras.utils.register_keras_serializable(package='MRI')
@@ -307,6 +358,124 @@ class KSpaceResampling(tf.keras.layers.Layer):
         'vd_type': self._vd_type,
         'dens_algo': self._dens_algo
     }
+    base_config = super().get_config()
+    return {**base_config, **config}
+
+
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class RepeatTensor(tf.keras.layers.Layer):
+  """Repeats the input.
+
+  Returns a list with the repeated inputs.
+
+  Args:
+    repeats: An `int`. The number of times the input should be repeated.
+    **kwargs: Additional keyword arguments to be passed to base class.
+  """
+  def __init__(self, repeats, **kwargs):
+    """Initializes layer."""
+    super().__init__(**kwargs)
+    self._repeats = repeats
+
+  def call(self, inputs):
+    """Runs forward pass on the input tensor."""
+    return [inputs] * self._repeats
+
+  def get_config(self):
+    """Gets layer configuration."""
+    config = {'repeats': self._repeats}
+    base_config = super().get_config()
+    return {**base_config, **config}
+
+
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class ResizeWithCropOrPad(tf.keras.layers.Layer):
+  """Crops and/or pads to target shape.
+
+  Pads symmetrically or crops centrally to the target shape.
+
+  This operation is applied along the spatial dimensions. The inputs are assumed
+  to have shape `[..., *spatial_dims, channels]`.
+
+  Args:
+    shape: A list of `int` or a `tf.TensorShape`. The target shape. Each
+      dimension can be `None`, in which case it is left unmodified.
+    padding_mode: A `str`. Must be one of `'constant'`, `'reflect'` or
+      `'symmetric'`.
+    **kwargs: Additional keyword arguments to be passed to base class.
+  """
+  def __init__(self, shape, padding_mode='constant', **kwargs):
+    """Initializes layer."""
+    super().__init__(**kwargs)
+    self._shape = shape
+    self._shape_internal = [s or -1 for s in tf.TensorShape(shape).as_list()]
+    self._shape_internal += [-1]
+    self._padding_mode = padding_mode
+
+  def call(self, inputs):
+    """Runs forward pass on the input tensor."""
+    return image_ops.resize_with_crop_or_pad(inputs, self._shape_internal,
+                                             padding_mode=self._padding_mode)
+
+  def get_config(self):
+    """Gets layer configuration."""
+    config = {'shape': self._shape}
+    base_config = super().get_config()
+    return {**base_config, **config}
+
+
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class ScaleByMinMax(tf.keras.layers.Layer):
+  """Scale input into a specified range.
+
+  Args:
+    output_min: An optional `float`. The minimum value in the output tensor.
+      Defaults to 0.0.
+    output_max: An optional `float`. The maximum value in the output tensor.
+      Defaults to 1.0.
+    **kwargs: Additional keyword arguments to be passed to base class.
+  """
+  def __init__(self, output_min=0.0, output_max=1.0, **kwargs):
+    """Initializes layer."""
+    super().__init__(**kwargs)
+    self._output_min = output_min
+    self._output_max = output_max
+
+  def call(self, inputs):
+    """Runs forward pass on the input tensor."""
+    return math_ops.scale_by_min_max(inputs, self._output_min, self._output_max)
+
+  def get_config(self):
+    """Gets layer configuration."""
+    config = {'output_min': self._output_min,
+              'output_max': self._output_max}
+    base_config = super().get_config()
+    return {**base_config, **config}
+
+
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class Transpose(tf.keras.layers.Layer):
+  """Transpose the input tensor.
+
+  Args:
+    perm: A list of `int`. A permutation of the dimensions of the input tensor.
+    conjugate: An optional `bool`. Defaults to `False`.
+    **kwargs: Additional keyword arguments to be passed to base class.
+  """
+  def __init__(self, perm=None, conjugate=False, **kwargs):
+    """Initializes layer."""
+    super().__init__(**kwargs)
+    self._perm = perm
+    self._conjugate = conjugate
+
+  def call(self, inputs):
+    """Runs forward pass on the input tensor."""
+    return tf.transpose(inputs, self._perm, conjugate=self._conjugate)
+
+  def get_config(self):
+    """Gets layer configuration."""
+    config = {'perm': self._perm,
+              'conjugate': self._conjugate}
     base_config = super().get_config()
     return {**base_config, **config}
 

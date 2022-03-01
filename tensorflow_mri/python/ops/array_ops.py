@@ -17,13 +17,13 @@
 import tensorflow as tf
 
 
-def broadcast_static_shapes(shapes):
+def broadcast_static_shapes(*shapes):
   """Computes the shape of a broadcast given known shapes.
 
   Like `tf.broadcast_static_shape`, but accepts any number of shapes.
 
   Args:
-    shapes: A list of `TensorShapes`.
+    *shapes: Two or more `TensorShapes`.
 
   Returns:
     A `TensorShape` representing the broadcasted shape.
@@ -34,16 +34,16 @@ def broadcast_static_shapes(shapes):
   return bcast_shape
 
 
-def broadcast_dynamic_shapes(shapes):
+def broadcast_dynamic_shapes(*shapes):
   """Computes the shape of a broadcast given symbolic shapes.
 
   Like `tf.broadcast_dynamic_shape`, but accepts any number of shapes.
 
   Args:
-    shapes: A list of rank 1 integer `Tensors` representing the input shapes.
+    shapes: Two or more rank-1 integer `Tensors` representing the input shapes.
 
   Returns:
-    A rank 1 integer `Tensor` representing the broadcasted shape.
+    A rank-1 integer `Tensor` representing the broadcasted shape.
   """
   bcast_shape = shapes[0]
   for shape in shapes[1:]:

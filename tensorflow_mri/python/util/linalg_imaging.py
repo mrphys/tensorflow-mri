@@ -406,7 +406,7 @@ class LinearOperatorComposition(LinalgImagingMixin,  # pylint: disable=abstract-
 
   def _batch_shape(self):
     return array_ops.broadcast_static_shapes(
-        [operator.batch_shape for operator in self.operators])
+        *[operator.batch_shape for operator in self.operators])
 
   def _domain_shape_tensor(self):
     return self.operators[-1].domain_shape_tensor()
@@ -416,7 +416,7 @@ class LinearOperatorComposition(LinalgImagingMixin,  # pylint: disable=abstract-
 
   def _batch_shape_tensor(self):
     return array_ops.broadcast_dynamic_shapes(
-        [operator.batch_shape_tensor() for operator in self.operators])
+        *[operator.batch_shape_tensor() for operator in self.operators])
 
 
 class LinearOperatorAddition(LinalgImagingMixin,  # pylint: disable=abstract-method
@@ -443,7 +443,7 @@ class LinearOperatorAddition(LinalgImagingMixin,  # pylint: disable=abstract-met
 
   def _batch_shape(self):
     return array_ops.broadcast_static_shapes(
-        [operator.batch_shape for operator in self.operators])
+        *[operator.batch_shape for operator in self.operators])
 
   def _domain_shape_tensor(self):
     return self.operators[0].domain_shape_tensor()
@@ -453,7 +453,7 @@ class LinearOperatorAddition(LinalgImagingMixin,  # pylint: disable=abstract-met
 
   def _batch_shape_tensor(self):
     return array_ops.broadcast_dynamic_shapes(
-        [operator.batch_shape_tensor() for operator in self.operators])
+        *[operator.batch_shape_tensor() for operator in self.operators])
 
 
 class LinearOperatorScaledIdentity(LinalgImagingMixin,  # pylint: disable=abstract-method
