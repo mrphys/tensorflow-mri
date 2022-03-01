@@ -543,6 +543,10 @@ class SVDCoilCompressor(_CoilCompressor):
       raise ValueError("Cannot specify both `out_coils` and `variance_ratio`.")
     super().__init__(coil_axis=coil_axis, out_coils=out_coils)
     self._variance_ratio = variance_ratio
+    # Initialize attributes. These will be set in `fit`.
+    self.singular_values = None
+    self.explained_variance = None
+    self.explained_variance_ratio = None
 
   def fit(self, kspace):
     """Fits the coil compression matrix.
