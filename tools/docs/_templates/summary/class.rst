@@ -2,6 +2,6 @@ tfmri.summary.{{ objname | escape | underline }}==============
 
 .. currentmodule:: {{ module }}
 
-.. auto{{ objtype }}:: tfmri.summary.{{ objname }}
+.. auto{{ objtype }}:: {{ objname }}
     :members:
     :show-inheritance:

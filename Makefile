@@ -31,8 +31,6 @@ wheel: $(TARGET)
 	./tools/build/build_pip_pkg.sh make --python $(PYTHON) artifacts
 
 docs: $(TARGET)
-	ln -sf tensorflow_mri tfmri
-	ln -s python/layers tensorflow_mri/
 	rm -rf tools/docs/_build
 	rm -rf tools/docs/callbacks/*_callbacks
 	rm -rf tools/docs/io/*_io
@@ -44,7 +42,6 @@ docs: $(TARGET)
 	rm -rf tools/docs/ops/*_ops
 	rm -rf tools/docs/summary/*_summary
 	$(MAKE) -C tools/docs html PY_VERSION=$(PY_VERSION)
-	rm tfmri
 
 test: $(wildcard tensorflow_mri/python/ops/*.py)
 	$(PYTHON) -m unittest discover -v -p *_test.py

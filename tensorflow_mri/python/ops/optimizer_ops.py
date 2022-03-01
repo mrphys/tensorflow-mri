@@ -320,4 +320,9 @@ def _get_admm_update_fn(function, operator):
       f"{function.name} and operator {operator.name}.")
 
 
-lbfgs_minimize = tfp.optimizer.lbfgs_minimize
+def lbfgs_minimize(*args, **kwargs):
+  """Applies the L-BFGS algorithm to minimize a differentiable function.
+
+  For the parameters, see `tfp.optimizer.lbfgs_minimize`.
+  """
+  return tfp.optimizer.lbfgs_minimize(*args, **kwargs)

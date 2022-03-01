@@ -11,6 +11,7 @@ import packaging.version
 import sys
 import types
 
+import conf_helper
 
 
 # -- Path setup --------------------------------------------------------------
@@ -59,6 +60,9 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
+# Do not add full qualification to objects' signatures.
+add_module_names = False
+
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -92,7 +96,10 @@ html_theme_options = {
 }
 
 
-import tfmri
+autosummary_filename_map = conf_helper.AutosummaryFilenameMap()
+
+
+import tensorflow_mri as tfmri
 
 
 def linkcode_resolve(domain, info):
@@ -104,26 +111,14 @@ def linkcode_resolve(domain, info):
     
     Returns:
         The GitHub URL to the object, or `None` if not relevant.
-    """
-    # Split `tfmri` part of module from submodules.
-    module = info['module'].split('.', maxsplit=1)
-    if len(module) == 2:
-        # If length two, we have `tfmri` followed by submodule name.
-        module, submodule = module
-    else:
-        # Otherwise, we have just `tfmri` without submodule.
-        module = module[0]
-        submodule = None
-    # Hopefully we're not documenting anything outside the TFMRI package!
-    if module != 'tfmri':
-        raise ValueError(f"Unexpected module: {module}")
-    # If there is a submodule, add to the object name.
-    objname = info['fullname']
-    if submodule is not None:
-        objname = submodule + '.' + objname
+    """    
+    # Obtain fully-qualified name of object.
+    qualname = info['module'] + '.' + info['fullname']
+    # Remove the `tensorflow_mri` bit.
+    qualname = qualname.split('.', maxsplit=1)[-1]
 
     # Get the object.
-    obj = operator.attrgetter(objname)(tfmri)
+    obj = operator.attrgetter(qualname)(tfmri)
     # We only add links to classes (type `type`) and functions
     # (type `types.FunctionType`).
     if not isinstance(obj, (type, types.FunctionType)):
@@ -160,6 +155,7 @@ def process_docstring(app, what, name, obj, options, lines):
     # Replace markdown literal markers (`) by ReST literal markers (``).
     myst = '\n'.join(lines)
     text = myst.replace('`', '``')
+    text = text.replace(':math:``', ':math:`')
     lines[:] = text.splitlines()
 
 

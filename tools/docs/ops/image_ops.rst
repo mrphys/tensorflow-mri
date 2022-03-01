@@ -3,10 +3,9 @@ Image Processing
 
 .. automodule:: tensorflow_mri.python.ops.image_ops
 
-.. currentmodule:: tfmri
-
 .. autosummary::
     :toctree: image_ops
+    :template: ops/function.rst
     :nosignatures:
     
     central_crop

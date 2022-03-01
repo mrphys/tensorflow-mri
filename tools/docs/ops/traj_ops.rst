@@ -3,10 +3,9 @@
 
 .. automodule:: tensorflow_mri.python.ops.traj_ops
 
-.. currentmodule:: tfmri
-
 .. autosummary::
     :toctree: traj_ops
+    :template: ops/function.rst
     :nosignatures:
 
     density_grid

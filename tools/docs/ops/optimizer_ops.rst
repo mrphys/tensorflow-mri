@@ -3,10 +3,9 @@ Optimization
 
 .. automodule:: tensorflow_mri.python.ops.optimizer_ops
 
-.. currentmodule:: tfmri
-
 .. autosummary::
     :toctree: optimizer_ops
+    :template: ops/function.rst
     :nosignatures:
     
     admm_minimize

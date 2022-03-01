@@ -3,10 +3,9 @@ Image Reconstruction
 
 .. automodule:: tensorflow_mri.python.ops.recon_ops
 
-.. currentmodule:: tfmri
-
 .. autosummary::
     :toctree: recon_ops
+    :template: ops/function.rst
     :nosignatures:
 
     reconstruct_adj

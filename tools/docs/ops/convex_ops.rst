@@ -3,10 +3,9 @@ Convex Operators
 
 .. automodule:: tensorflow_mri.python.ops.convex_ops
 
-.. currentmodule:: tfmri
-
 .. autosummary::
     :toctree: convex_ops
+    :template: ops/function.rst
     :nosignatures:
 
     ConvexFunction

@@ -1,9 +1,9 @@
-Operations
-==========
+Operators
+=========
 
 .. toctree::
     :maxdepth: 2
-    :caption: Operations
+    :caption: Operators
     :hidden:
     
     ops/array_ops

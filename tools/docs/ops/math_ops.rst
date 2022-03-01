@@ -3,10 +3,9 @@ Math
 
 .. automodule:: tensorflow_mri.python.ops.math_ops
 
-.. currentmodule:: tfmri
-
 .. autosummary::
     :toctree: math_ops
+    :template: ops/function.rst
     :nosignatures:
 
     block_soft_threshold

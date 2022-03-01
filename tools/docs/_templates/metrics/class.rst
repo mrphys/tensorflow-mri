@@ -2,6 +2,6 @@ tfmri.metrics.{{ objname | escape | underline }}==============
 
 .. currentmodule:: {{ module }}
 
-.. auto{{ objtype }}:: tfmri.metrics.{{ objname }}
+.. auto{{ objtype }}:: {{ objname }}
     :members:
     :show-inheritance:

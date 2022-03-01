@@ -3,10 +3,9 @@ Signal Processing
 
 .. automodule:: tensorflow_mri.python.ops.signal_ops
 
-.. currentmodule:: tfmri
-
 .. autosummary::
     :toctree: signal_ops
+    :template: ops/function.rst
     :nosignatures:
 
     atanfilt
