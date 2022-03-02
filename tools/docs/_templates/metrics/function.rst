@@ -1,5 +1,5 @@
-tfmr.metrics.{{ objname | escape | underline }}=============
+tfmri.metrics.{{ objname | escape | underline }}==============
 
 .. currentmodule:: {{ module }}
 
-.. auto{{ objtype }}:: tfmr.metrics.{{ objname }}
+.. auto{{ objtype }}:: {{ objname }}

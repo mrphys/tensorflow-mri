@@ -3,18 +3,11 @@ Linear Algebra
 
 .. automodule:: tensorflow_mri.python.ops.linalg_ops
 
-.. currentmodule:: tfmr
-
 .. autosummary::
     :toctree: linalg_ops
+    :template: ops/function.rst
     :nosignatures:
 
-    LinearOperatorImaging
-    LinearOperatorFFT
-    LinearOperatorNUFFT
-    LinearOperatorInterp
-    LinearOperatorSensitivityModulation
-    LinearOperatorParallelMRI
-    LinearOperatorRealWeighting
-    LinearOperatorDifference
+    LinearOperatorMRI
+    LinearOperatorFiniteDifference
     conjugate_gradient

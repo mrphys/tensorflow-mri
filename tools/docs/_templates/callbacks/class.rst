@@ -1,7 +1,7 @@
-tfmr.callbacks.{{ objname | escape | underline }}===============
+tfmri.callbacks.{{ objname | escape | underline }}================
 
 .. currentmodule:: {{ module }}
 
-.. auto{{ objtype }}:: tfmr.callbacks.{{ objname }}
+.. auto{{ objtype }}:: {{ objname }}
     :members:
     :show-inheritance:

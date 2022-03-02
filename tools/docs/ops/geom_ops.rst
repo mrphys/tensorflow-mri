@@ -3,10 +3,9 @@ Geometry
 
 .. automodule:: tensorflow_mri.python.ops.geom_ops
 
-.. currentmodule:: tfmr
-
 .. autosummary::
     :toctree: geom_ops
+    :template: ops/function.rst
     :nosignatures:
 
     euler_to_rotation_matrix_3d

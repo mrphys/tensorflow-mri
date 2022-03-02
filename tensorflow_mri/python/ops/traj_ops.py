@@ -27,7 +27,9 @@ import tensorflow_nufft as tfft
 from tensorflow_graphics.geometry.transformation import rotation_matrix_2d # pylint: disable=wrong-import-order
 from tensorflow_graphics.geometry.transformation import rotation_matrix_3d # pylint: disable=wrong-import-order
 
+from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import geom_ops
+from tensorflow_mri.python.ops import signal_ops
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import math_util
 from tensorflow_mri.python.util import sys_util
@@ -37,6 +39,108 @@ from tensorflow_mri.python.util import tensor_util
 if sys_util.is_op_library_enabled():
   _mri_ops = tf.load_op_library(
       tf.compat.v1.resource_loader.get_path_to_datafile('_mri_ops.so'))
+
+
+def density_grid(shape,
+                 inner_density=1.0,
+                 outer_density=1.0,
+                 inner_cutoff=0.0,
+                 outer_cutoff=1.0,
+                 transition_type='linear',
+                 name=None):
+  """Returns a density grid.
+
+  Creates a tensor containing a density grid. The density grid is a tensor of
+  shape `shape` containing a density value for each point in the grid. The
+  density of a given point can be interpreted as the probability of it being
+  sampled.
+
+  The density grid has an inner region and an outer region with constant
+  densities defined by `inner_density` and `outer_density`, respectively. Both
+  regions are separated by a variable-density transition region whose extent
+  is determined by `inner_cutoff` and `outer_cutoff`. The density variation
+  in the transition region is controlled by the `transition_type`.
+
+  The output of this function may be passed to `random_sampling_mask` to
+  generate a boolean sampling mask.
+
+  Args:
+    shape: A `tf.TensorShape` or a list of `ints`. The shape of the output
+      density grid.
+    inner_density: A `float` between 0.0 and 1.0. The density of the inner
+      region.
+    outer_density: A `float` between 0.0 and 1.0. The density of the outer
+      region.
+    inner_cutoff: A `float` between 0.0 and 1.0. The cutoff defining the
+      limit between the inner region and the transition region.
+    outer_cutoff: A `float` between 0.0 and 1.0. The cutoff defining the
+      limit between the transition region and the outer region.
+    transition_type: A string. The type of transition to use. Must be one of
+      'linear', 'quadratic', or 'hann'.
+    name: A name for this op.
+
+  Returns:
+    A tensor containing the density grid.
+  """
+  with tf.name_scope(name or 'density_grid'):
+    shape = tf.TensorShape(shape).as_list()
+    transition_type = check_util.validate_enum(
+        transition_type, ['linear', 'quadratic', 'hann'],
+        name='transition_type')
+
+    vecs = [tf.linspace(-1.0, 1.0 - 2.0 / n, n) for n in shape]
+    grid = array_ops.meshgrid(*vecs)
+    radius = tf.norm(grid, axis=-1)
+
+    scaled_radius = (outer_cutoff - radius) / (outer_cutoff - inner_cutoff)
+    if transition_type == 'linear':
+      scaled_density = scaled_radius
+    elif transition_type == 'quadratic':
+      scaled_density = scaled_radius ** 2
+    elif transition_type == 'hann':
+      scaled_density = signal_ops.hann(np.pi * (1.0 - scaled_radius))
+    density = (inner_density - outer_density) * scaled_density + outer_density
+
+    density = tf.where(radius < inner_cutoff, inner_density, density)
+    density = tf.where(radius > outer_cutoff, outer_density, density)
+
+    return density
+
+
+def random_sampling_mask(shape, density=1.0, seed=None, rng=None, name=None):
+  """Returns a random sampling mask with the given density.
+
+  Args:
+    shape: A 1D integer `Tensor` or array. The shape of the output mask.
+    density: A `Tensor`. A density grid. After broadcasting with `shape`,
+      each point in the grid represents the probability that a given point will
+      be sampled. For example, if `density` is a scalar, then each point in the
+      mask will be sampled with probability `density`. A non-scalar `density`
+      may be used to create variable-density sampling masks.
+      `tfmri.density_grid` can be used to create density grids.
+    seed: A `Tensor` of shape `[2]`. The seed for the stateless RNG. `seed` and
+      `rng` may not be specified at the same time.
+    rng: A `tf.random.Generator`. The stateful RNG to use. `seed` and `rng` may
+      not be specified at the same time. If neither `seed` nor `rng` are
+      provided, the global RNG will be used.
+    name: A name for this op.
+
+  Returns:
+    A boolean tensor containing the sampling mask.
+
+  Raises:
+    ValueError: If both `seed` and `rng` are specified.
+  """
+  with tf.name_scope(name or 'sampling_mask'):
+    if seed is not None and rng is not None:
+      raise ValueError("Cannot provide both `seed` and `rng`.")
+    counts = tf.ones(shape, dtype=density.dtype)
+    if seed is not None:  # Use stateless RNG.
+      mask = tf.random.stateless_binomial(shape, seed, counts, density)
+    else:  # Use stateful RNG.
+      rng = rng or tf.random.get_global_generator()
+      mask = rng.binomial(shape, counts, density)
+    return tf.cast(mask, tf.bool)
 
 
 def radial_trajectory(base_resolution,
@@ -318,6 +422,7 @@ def radial_density(base_resolution,
                    phases=None,
                    ordering='linear',
                    angle_range='full',
+                   tiny_number=7,
                    readout_os=2.0):
   """Calculate sampling density for radial trajectories.
 
@@ -340,8 +445,8 @@ def radial_density(base_resolution,
     raise ValueError(f"Ordering `{ordering}` is not implemented.")
 
   # Get angles.
-  angles = _trajectory_angles(
-      views, phases or 1, ordering=ordering, angle_range=angle_range)
+  angles = _trajectory_angles(views, phases or 1, ordering=ordering,
+                              angle_range=angle_range, tiny_number=tiny_number)
 
   # Compute weights.
   weights = tf.map_fn(
@@ -444,7 +549,7 @@ def estimate_radial_density(points, readout_os=2.0):
   does not take into account the relationships between different spokes or
   views. This function should work well as long as the spacing between radial
   spokes is reasonably uniform. If this is not the case, consider also
-  `tfmr.radial_density` or `tfmr.estimate_density`.
+  `tfmri.radial_density` or `tfmri.estimate_density`.
 
   This function supports 2D and 3D ("koosh-ball") radial trajectories.
 
@@ -742,7 +847,7 @@ def estimate_density(points, grid_shape, method='jackson', max_iter=50):
       method, {'jackson', 'pipe'}, name='method')
 
   # We do not check inputs here, the NUFFT op will do it for us.
-  batch_shape = points.shape[:-2]
+  batch_shape = tf.shape(points)[:-2]
 
   # Calculate an appropriate grid shape.
   grid_shape = tf.TensorShape(grid_shape) # Canonicalize.
@@ -751,7 +856,7 @@ def estimate_density(points, grid_shape, method='jackson', max_iter=50):
 
   if method in ('jackson', 'pipe'):
     # Create a k-space of ones.
-    ones = tf.ones(batch_shape + points.shape[-2:-1],
+    ones = tf.ones(tf.concat([batch_shape, tf.shape(points)[-2:-1]], 0),
                    dtype=tensor_util.get_complex_dtype(points.dtype))
 
     # Spread ones to grid and interpolate back.

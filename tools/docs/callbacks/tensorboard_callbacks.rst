@@ -5,7 +5,7 @@ TensorBoard
 
 .. autosummary::
     :toctree: tensorboard_callbacks
-    :nosignatures:
     :template: callbacks/class.rst
+    :nosignatures:
     
     TensorBoardImages

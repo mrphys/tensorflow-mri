@@ -16,6 +16,7 @@
 
 import itertools
 
+from absl.testing import parameterized
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import math_ops
@@ -102,6 +103,75 @@ class ScaleMinmaxTest(test_util.TestCase):
           tf.math.angle(y) * mag, tf.math.angle(x) * mag)
         self.assertAllClose(
           tf.math.angle(y) * mag, tf.math.angle(x) * mag)
+
+
+
+@test_util.run_all_in_graph_and_eager_modes
+class BlockSoftThresholdTest(test_util.TestCase):
+  """Tests for `block_soft_threshold` operator."""
+  # pylint: disable=missing-function-docstring
+  @parameterized.parameters(
+      # x, threshold, expected_y
+      (5., 5., 0.),
+      (2., 5., 0.),
+      (-2., 5., 0.),
+      (3., 2.5, 0.5),
+      (-3., 2.5, -0.5),
+      (-1., 1., 0.),
+      (-6., 5., -1.),
+      (0., 0., 0.),
+      ([4., 3.], 2., [2.4, 1.8])
+  )
+  def test_block_soft_threshold(self, x, threshold, expected_y):
+    x = tf.convert_to_tensor(x, dtype=tf.float32)
+    y = math_ops.block_soft_threshold(x, threshold)
+    self.assertAllClose(y, expected_y)
+
+  @parameterized.parameters(
+      # x, threshold, expected_y
+      (2. + 0.j, 2., 0. + 0.j),
+      (3. + 0.j, 2., 1. + 0.j),
+      (0. - 4.j, 3., 0. - 1.j),
+      (4. + 3.j, 1., 3.2 + 2.4j)
+  )
+  def test_block_soft_threshold_complex(self, x, threshold, expected_y):
+    x = tf.convert_to_tensor(x, dtype=tf.complex64)
+    y = math_ops.block_soft_threshold(x, threshold)
+    self.assertAllClose(y, expected_y)
+
+
+@test_util.run_all_in_graph_and_eager_modes
+class SoftThresholdTest(test_util.TestCase):
+  """Tests for `soft_threshold` operator."""
+  # pylint: disable=missing-function-docstring
+  @parameterized.parameters(
+      # x, threshold, expected_y
+      (5., 5., 0.),
+      (2., 5., 0.),
+      (-2., 5., 0.),
+      (3., 2.5, 0.5),
+      (-3., 2.5, -0.5),
+      (-1., 1., 0.),
+      (-6., 5., -1.),
+      (0., 0., 0.),
+      ([4., 3.], 2., [2., 1.])
+  )
+  def test_soft_threshold(self, x, threshold, expected_y):
+    x = tf.convert_to_tensor(x, dtype=tf.float32)
+    y = math_ops.soft_threshold(x, threshold)
+    self.assertAllClose(y, expected_y)
+
+  @parameterized.parameters(
+      # x, threshold, expected_y
+      (2. + 0.j, 2., 0. + 0.j),
+      (3. + 0.j, 2., 1. + 0.j),
+      (0. - 4.j, 3., 0. - 1.j),
+      (4. + 3.j, 1., 3.2 + 2.4j)
+  )
+  def test_soft_threshold_complex(self, x, threshold, expected_y):
+    x = tf.convert_to_tensor(x, dtype=tf.complex64)
+    y = math_ops.soft_threshold(x, threshold)
+    self.assertAllClose(y, expected_y)
 
 
 if __name__ == '__main__':

@@ -726,6 +726,211 @@ class ExtractGlimpsesTest(test_util.TestCase):
     self.assertAllEqual(patches, expected)
 
 
+class ImageGradientsTest(test_util.TestCase):
+  """Tests for the `image_gradients` op."""
+  def test_prewitt(self):
+    expected_plane = np.reshape([[[0, 0], [0, 7], [0, 11], [0, 0]],
+                                 [[5, 0], [-2, 5], [-1, 4], [-8, 0]],
+                                 [[0, 0], [0, 1], [0, 11], [0, 0]]],
+                                [1, 3, 4, 1, 2])
+    self._test_generic('prewitt', expected_plane)
+
+  def test_sobel(self):
+    expected_plane = np.reshape([[[0, 0], [0, 12], [0, 10], [0, 0]],
+                                 [[6, 0], [0, 6], [-6, 10], [-6, 0]],
+                                 [[0, 0], [0, 0], [0, 10], [0, 0]]],
+                                [1, 3, 4, 1, 2])
+    self._test_generic('sobel', expected_plane)
+
+  def test_scharr(self):
+    expected_plane = np.reshape([[[0, 0], [0, 56], [0, 26], [0, 0]],
+                                 [[22, 0], [8, 22], [-38, 54], [-10, 0]],
+                                 [[0, 0], [0, -4], [0, 26], [0, 0]]],
+                                [1, 3, 4, 1, 2])
+    self._test_generic('scharr', expected_plane)
+
+  def _test_generic(self, method, expected_plane):  # pylint: disable=missing-function-docstring
+    batch_size = 5
+    plane = np.reshape([[1, 3, 6, 2],
+                        [4, 1, 5, 7],
+                        [2, 5, 1, 4]], [1, 3, 4, 1])
+    two_channel = np.concatenate([plane, plane], axis=3)
+    batch = np.concatenate([two_channel] * batch_size, axis=0)
+    img = tf.constant(batch, dtype=tf.float32,
+                      shape=[batch_size, 3, 4, 2])
+
+    expected_two_channel = np.concatenate(
+        [expected_plane, expected_plane], axis=3)
+    expected_batch = np.concatenate([expected_two_channel] * batch_size, axis=0)
+
+    edges = image_ops.image_gradients(img, method=method)
+    self.assertAllClose(expected_batch, edges)
+
+
+class BaseTestCases():
+  """Namespace of abstract base test cases."""
+  class IQATest(test_util.TestCase):
+    """Tests for an IQA op (abstract base class)."""
+    @classmethod
+    def setUpClass(cls):
+      """Prepare tests."""
+      super().setUpClass()
+      cls.data = io_util.read_hdf5('tests/data/image_ops_data.h5')
+
+    @test_util.run_in_graph_and_eager_modes
+    def test_2d_scalar_batch(self):
+      """Test 2D function with scalar batch."""
+      test_name = self.id().split('.')[-1][5:]
+
+      img1 = self.data['psnr/2d/img1']
+      img2 = self.data['psnr/2d/img2']
+
+      img1 = tf.expand_dims(img1, -1)
+      img2 = tf.expand_dims(img2, -1)
+
+      result = self.test_fn(img1, img2, max_val=255, rank=2)
+      self.assertAllClose(result, self.expected[test_name],
+                          rtol=1e-5, atol=1e-5)
+
+    @test_util.run_in_graph_and_eager_modes
+    def test_2d_trivial_batch(self):
+      """Test 2D function with trivial batch of size 1."""
+      test_name = self.id().split('.')[-1][5:]
+
+      img1 = self.data['psnr/2d/img1']
+      img2 = self.data['psnr/2d/img2']
+
+      img1 = tf.expand_dims(img1, -1)
+      img2 = tf.expand_dims(img2, -1)
+      img1 = tf.expand_dims(img1, 0)
+      img2 = tf.expand_dims(img2, 0)
+
+      result = self.test_fn(img1, img2, max_val=255, rank=2)
+      self.assertAllClose(result, self.expected[test_name],
+                          rtol=1e-5, atol=1e-5)
+
+    @test_util.run_in_graph_and_eager_modes
+    def test_2d_multichannel_batch(self):
+      """Test 2D function with multichannel batch of images."""
+      test_name = self.id().split('.')[-1][5:]
+
+      img1 = self.data['psnr/2d/batch/img1']
+      img2 = self.data['psnr/2d/batch/img2']
+
+      result = self.test_fn(img1, img2, max_val=255)
+      self.assertAllClose(result, self.expected[test_name],
+                          rtol=1e-4, atol=1e-4)
+
+      # Test without specifying dynamic range, which should default to 255 for
+      # `tf.uint8`.
+      result = self.test_fn(img1, img2)
+      self.assertAllClose(result, self.expected[test_name],
+                          rtol=1e-4, atol=1e-4)
+
+    @test_util.run_in_graph_and_eager_modes
+    def test_2d_nd_batch(self):
+      """Test 2D function with N-D batch of images."""
+      test_name = self.id().split('.')[-1][5:]
+
+      img1 = self.data['psnr/2d/batch/img1']
+      img2 = self.data['psnr/2d/batch/img2']
+      img1 = tf.reshape(img1, (3, 2) + img1.shape[1:])
+      img2 = tf.reshape(img2, (3, 2) + img2.shape[1:])
+
+      result = self.test_fn(img1, img2, max_val=255, rank=2)
+      self.assertAllClose(result, self.expected[test_name],
+                          rtol=1e-4, atol=1e-4)
+
+    @test_util.run_in_graph_and_eager_modes
+    def test_2d_batch_float(self):
+      """Test 2D function with batch of floating point images."""
+      test_name = self.id().split('.')[-1][5:]
+      img1 = self.data['psnr/2d/batch/img1']
+      img2 = self.data['psnr/2d/batch/img2']
+
+      img1 = tf.cast(img1, tf.float32) / 255.0
+      img2 = tf.cast(img2, tf.float32) / 255.0
+
+      result = self.test_fn(img1, img2, max_val=1)
+      self.assertAllClose(result, self.expected[test_name],
+                          rtol=1e-4, atol=1e-4)
+
+      # Test without specifying dynamic range, which should default to 1 for
+      # `tf.float32`.
+      result = self.test_fn(img1, img2)
+      self.assertAllClose(result, self.expected[test_name],
+                          rtol=1e-4, atol=1e-4)
+
+    @test_util.run_in_graph_and_eager_modes
+    def test_3d_scalar_batch(self):
+      """Test 3D with scalar batch."""
+      test_name = self.id().split('.')[-1][5:]
+
+      img1 = self.data['psnr/3d/img1']
+      img2 = self.data['psnr/3d/img2']
+
+      img1 = img1[0, ...]
+      img2 = img2[0, ...]
+
+      img1 = tf.expand_dims(img1, -1)
+      img2 = tf.expand_dims(img2, -1)
+
+      result = self.test_fn(img1, img2, rank=3)
+      self.assertAllClose(result, self.expected[test_name])
+
+    @test_util.run_in_graph_and_eager_modes
+    def test_3d_batch(self):
+      """Test 3D with batch dimension."""
+      test_name = self.id().split('.')[-1][5:]
+
+      img1 = self.data['psnr/3d/img1']
+      img2 = self.data['psnr/3d/img2']
+
+      img1 = img1[:2, ...]
+      img2 = img2[:2, ...]
+
+      img1 = tf.expand_dims(img1, -1)
+      img2 = tf.expand_dims(img2, -1)
+
+      result = self.test_fn(img1, img2, max_val=255)
+      self.assertAllClose(result, self.expected[test_name],
+                          rtol=1e-5, atol=1e-5)
+
+    def test_invalid_rank(self):
+      """Test invalid rank."""
+      img1 = self.data['psnr/2d/img1']
+      img2 = self.data['psnr/2d/img2']
+
+      with self.assertRaisesRegex(ValueError, "rank must be 2 or 3"):
+        self.test_fn(img1, img2, 255)
+
+      img1 = tf.expand_dims(img1, -1)
+      img2 = tf.expand_dims(img2, -1)
+
+      with self.assertRaisesRegex(ValueError, "rank must be 2 or 3"):
+        self.test_fn(img1, img2, 255)
+
+
+class GMSDTest(BaseTestCases.IQATest):
+
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.test_fn = image_ops.gmsd
+    self.expected = {
+        '2d_scalar_batch': 0.176789,
+        '2d_trivial_batch': [0.176789],
+        '2d_multichannel_batch': [0.346627, 0.299369, 0.25226 ,
+                                  0.232232, 0.230909, 0.280206],
+        '2d_nd_batch': [[0.346627, 0.299369],
+                        [0.25226 , 0.232232],
+                        [0.230909, 0.280206]],
+        '2d_batch_float': [0.346627, 0.299369, 0.25226 ,
+                           0.232232, 0.230909, 0.280206],
+        '3d_scalar_batch': 0.02090018,
+        '3d_batch': [0.02090018, 0.02403979]
+    }
+
+
 class PhantomTest(test_util.TestCase):
   """Tests for `phantom` op."""
 

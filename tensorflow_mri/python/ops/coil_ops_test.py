@@ -179,10 +179,9 @@ class CoilCompressionTest(test_util.TestCase):
     kspace = self.data['cc/kspace']
     result = self.data['cc/result/svd']
 
-    matrix = coil_ops.coil_compression_matrix(kspace, num_output_coils=16)
-    self.assertAllEqual(tf.shape(matrix), [32, 16])
-
-    cc_kspace = coil_ops.compress_coils(kspace, matrix=matrix)
+    compressor = coil_ops.SVDCoilCompressor(out_coils=16)
+    compressor = compressor.fit(kspace)
+    cc_kspace = compressor.transform(kspace)
     self.assertAllClose(cc_kspace, result[..., :16], rtol=1e-2, atol=1e-2)
 
   @test_util.run_in_graph_and_eager_modes
@@ -202,18 +201,24 @@ class CoilCompressionTest(test_util.TestCase):
     """Test coil compression using SVD method with basic arrays."""
     shape = (20, 20, 8)
     data = tf.dtypes.complex(
-      tf.random.normal(shape),
-      tf.random.normal(shape))
+        tf.random.stateless_normal(shape, [32, 43]),
+        tf.random.stateless_normal(shape, [321, 321]))
 
     params = {
-      'num_output_coils': [None, 4],
-      'tol': [None, 0.05]}
+      'out_coils': [None, 4],
+      'variance_ratio': [None, 0.75]}
 
     values = itertools.product(*params.values())
     params = [dict(zip(params.keys(), v)) for v in values]
 
     for p in params:
       with self.subTest(**p):
+        if p['out_coils'] is not None and p['variance_ratio'] is not None:
+          with self.assertRaisesRegex(
+              ValueError,
+              "Cannot specify both `out_coils` and `variance_ratio`"):
+            coil_ops.compress_coils(data, **p)
+          continue
 
         # Test op.
         compressed_data = coil_ops.compress_coils(data, **p)
@@ -232,17 +237,19 @@ class CoilCompressionTest(test_util.TestCase):
         s, u, v = tf.linalg.svd(data, full_matrices=False)
         matrix = tf.cond(samples > input_coils, lambda v=v: v, lambda u=u: u)
 
-        num_output_coils = input_coils
-        if p['tol'] and not p['num_output_coils']:
-          num_output_coils = tf.math.count_nonzero(
-              tf.abs(s) / tf.abs(s[0]) > p['tol'])
-        if p['num_output_coils']:
-          num_output_coils = p['num_output_coils']
-        matrix = matrix[:, :num_output_coils]
+        out_coils = input_coils
+        if p['variance_ratio'] and not p['out_coils']:
+          variance = s ** 2 / 399.0
+          out_coils = tf.math.count_nonzero(
+              tf.math.cumsum(variance / tf.math.reduce_sum(variance), axis=0) <=
+              p['variance_ratio'])
+        if p['out_coils']:
+          out_coils = p['out_coils']
+        matrix = matrix[:, :out_coils]
 
         ref_data = tf.matmul(data, matrix)
         ref_data = tf.reshape(
-            ref_data, tf.concat([encoding_dims, [num_output_coils]], 0))
+            ref_data, tf.concat([encoding_dims, [out_coils]], 0))
 
         self.assertAllClose(compressed_data, ref_data)
 

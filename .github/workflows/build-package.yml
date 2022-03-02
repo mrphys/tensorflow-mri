@@ -18,11 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     
     container:
-      image: ghcr.io/mrphys/tensorflow-manylinux:1.8.0
+      image: ghcr.io/mrphys/tensorflow-manylinux:1.9.1
 
     strategy:
       matrix:
-        py_version: [3.7, 3.8, 3.9]
+        py_version: ["3.7", "3.8", "3.9", "3.10"]
 
     env:
       PYTHON: python${{ matrix.py_version }}

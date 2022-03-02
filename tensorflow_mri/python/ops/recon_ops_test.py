@@ -28,8 +28,7 @@ from tensorflow_mri.python.util import test_util
 
 
 class ReconstructTest(test_util.TestCase):
-  """Tests for function `reconstruct`."""
-
+  """Tests for reconstruction functions."""
   @classmethod
   def setUpClass(cls):
     """Prepare tests."""
@@ -38,50 +37,35 @@ class ReconstructTest(test_util.TestCase):
     cls.data.update(io_util.read_hdf5('tests/data/recon_ops_data_2.h5'))
     cls.data.update(io_util.read_hdf5('tests/data/recon_ops_data_3.h5'))
 
-
-  def test_fft(self):
-    """Test reconstruction method `fft`."""
-
+  def test_adj_fft(self):
+    """Test simple FFT recon."""
     kspace = self.data['fft/kspace']
     sens = self.data['fft/sens']
+    image_shape = kspace.shape[-2:]
 
     # Test single-coil.
-    image = recon_ops.reconstruct(kspace[0, ...])
-    result = fft_ops.ifftn(kspace[0, ...], shift=True)
+    image = recon_ops.reconstruct_adj(kspace[0, ...], image_shape)
+    expected = fft_ops.ifftn(kspace[0, ...], norm='ortho', shift=True)
 
-    self.assertAllClose(image, result)
+    self.assertAllClose(expected, image)
 
-    # Test multi-coil, no sensitivities (sum of squares combination).
-    image = recon_ops.reconstruct(kspace, multicoil=True)
-    result = fft_ops.ifftn(kspace, axes=[-2, -1], shift=True)
-    result = tf.math.sqrt(tf.math.reduce_sum(result * tf.math.conj(result), 0))
-
-    self.assertAllClose(image, result)
-
-    # Test multi-coil, no combination.
-    image = recon_ops.reconstruct(kspace, multicoil=True, combine_coils=False)
-    result = fft_ops.ifftn(kspace, axes=[-2, -1], shift=True)
-
-    self.assertAllClose(image, result)
-
-    # Test multi-coil, with sensitivities.
-    image = recon_ops.reconstruct(kspace, sensitivities=sens, method='fft')
-    result = fft_ops.ifftn(kspace, axes=[-2, -1], shift=True)
+    # Test multi-coil.
+    image = recon_ops.reconstruct_adj(kspace, image_shape, sensitivities=sens)
+    expected = fft_ops.ifftn(kspace, axes=[-2, -1], norm='ortho', shift=True)
     scale = tf.math.reduce_sum(sens * tf.math.conj(sens), axis=0)
-    result = tf.math.divide_no_nan(
-      tf.math.reduce_sum(result * tf.math.conj(sens), axis=0), scale)
+    expected = tf.math.divide_no_nan(
+        tf.math.reduce_sum(expected * tf.math.conj(sens), axis=0), scale)
 
-    self.assertAllClose(image, result)
+    self.assertAllClose(expected, image)
 
-
-  def test_nufft(self):
-    """Test reconstruction method `nufft`."""
-
+  def test_adj_nufft(self):
+    """Test simple NUFFT recon."""
     kspace = self.data['nufft/kspace']
     sens = self.data['nufft/sens']
     traj = self.data['nufft/traj']
-    dens = tf.cast(self.data['nufft/dens'], tf.complex64)
-    edens = tf.cast(traj_ops.estimate_density(traj, [144, 144]), tf.complex64)
+    dens = self.data['nufft/dens']
+    image_shape = [144, 144]
+    fft_norm_factor = tf.cast(tf.math.sqrt(144. * 144.), tf.complex64)
 
     # Save us some typing.
     inufft = lambda src, pts: tfft.nufft(src, pts,
@@ -89,53 +73,35 @@ class ReconstructTest(test_util.TestCase):
                                          transform_type='type_1',
                                          fft_direction='backward')
 
-    # Test no image shape argument.
-    with self.assertRaisesRegex(ValueError, "`image_shape` must be provided"):
-      image = recon_ops.reconstruct(kspace, trajectory=traj)
-
     # Test single-coil.
-    image = recon_ops.reconstruct(kspace[0, ...], trajectory=traj,
-                                  image_shape=[144, 144])
-    result = inufft(kspace[0, ...] / edens, traj)
+    image = recon_ops.reconstruct_adj(kspace[0, ...], image_shape,
+                                      trajectory=traj,
+                                      density=dens)
 
-    # Test single-coil with density.
-    image = recon_ops.reconstruct(kspace[0, ...], trajectory=traj, density=dens,
-                                  image_shape=[144, 144])
-    result = inufft(kspace[0, ...] / dens, traj)
+    expected = inufft(kspace[0, ...] / tf.cast(dens, tf.complex64), traj)
+    expected /= fft_norm_factor
 
-    # Test multi-coil, no sensitivities (sum of squares combination).
-    image = recon_ops.reconstruct(kspace, trajectory=traj,
-                                  image_shape=[144, 144], multicoil=True)
-    result = inufft(kspace / edens, traj)
-    result = tf.math.sqrt(tf.math.reduce_sum(result * tf.math.conj(result), 0))
+    self.assertAllClose(expected, image)
 
-    self.assertAllClose(image, result)
-
-    # Test multi-coil, no combination.
-    image = recon_ops.reconstruct(kspace, trajectory=traj,
-                                  image_shape=[144, 144], multicoil=True,
-                                  combine_coils=False)
-    result = inufft(kspace / edens, traj)
-
-    self.assertAllClose(image, result)
-
-    # Test multi-coil, with sensitivities.
-    image = recon_ops.reconstruct(kspace, trajectory=traj, sensitivities=sens,
-                                  image_shape=[144, 144],
-                                  method='nufft')
-    result = inufft(kspace / edens, traj)
+    # Test multi-coil.
+    image = recon_ops.reconstruct_adj(kspace, image_shape,
+                                      trajectory=traj,
+                                      density=dens,
+                                      sensitivities=sens)
+    expected = inufft(kspace / dens, traj)
+    expected /= fft_norm_factor
     scale = tf.math.reduce_sum(sens * tf.math.conj(sens), axis=0)
-    result = tf.math.divide_no_nan(
-      tf.math.reduce_sum(result * tf.math.conj(sens), axis=0), scale)
+    expected = tf.math.divide_no_nan(
+        tf.math.reduce_sum(expected * tf.math.conj(sens), axis=0), scale)
 
-    self.assertAllClose(image, result)
-
+    self.assertAllClose(expected, image)
 
   @test_util.run_in_graph_and_eager_modes
   def test_inufft_2d(self):
     """Test inverse NUFFT method with 2D phantom."""
     base_res = 128
     image_shape = [base_res] * 2
+    expected = self.data['reconstruct/inufft/shepp_logan_2d/result'] * base_res
 
     # Create trajectory.
     traj = traj_ops.radial_trajectory(base_res, views=64)
@@ -148,19 +114,15 @@ class ReconstructTest(test_util.TestCase):
                         fft_direction='forward')
 
     # Reconstruct.
-    image_cg = recon_ops.reconstruct(kspace, trajectory=traj,
-                                     method='inufft', image_shape=image_shape)
-
-    self.assertAllClose(image_cg,
-                        self.data['reconstruct/inufft/shepp_logan_2d/result'],
-                        rtol=1e-4, atol=1e-4)
-
+    image = recon_ops.reconstruct_lstsq(kspace, image_shape,
+                                        trajectory=traj,
+                                        optimizer_kwargs={'max_iter': 10})
+    self.assertAllClose(expected, image, rtol=3e-3, atol=3e-3)
 
   @parameterized.product(reduction_axis=[[0], [1], [0, 1]],
                          reduction_factor=[2, 4])
   def test_sense(self, reduction_axis, reduction_factor): # pylint: disable=missing-param-doc
     """Test reconstruction method `sense`."""
-
     kspace = self.data['sense/kspace']
     sens = self.data['sense/sens']
 
@@ -171,10 +133,11 @@ class ReconstructTest(test_util.TestCase):
 
     reduction_factors = [reduction_factor] * len(reduction_axis)
 
-    image = recon_ops.reconstruct(reduced_kspace, sensitivities=sens,
-                                  reduction_axis=reduction_axis,
-                                  reduction_factor=reduction_factors,
-                                  l2_regularizer=0.01)
+    image = recon_ops.reconstruct_sense(reduced_kspace,
+                                        sensitivities=sens,
+                                        reduction_axis=reduction_axis,
+                                        reduction_factor=reduction_factors,
+                                        l2_regularizer=0.01)
 
     result_keys = {
       (2, (0,)): 'sense/result_r2_ax0',
@@ -189,10 +152,8 @@ class ReconstructTest(test_util.TestCase):
 
     self.assertAllClose(image, result)
 
-
   def test_sense_batch(self):
     """Test reconstruction method `sense` with batched inputs."""
-
     kspace = self.data['sense/cine/reduced_kspace']
     sens = self.data['sense/cine/sens']
     result = self.data['sense/cine/result']
@@ -201,114 +162,31 @@ class ReconstructTest(test_util.TestCase):
     reduction_factor = 2
 
     # Check batch of k-space data.
-    image = recon_ops.reconstruct(kspace, sensitivities=sens,
-                                  reduction_axis=reduction_axis,
-                                  reduction_factor=reduction_factor,
-                                  rank=2,
-                                  l2_regularizer=0.01)
+    image = recon_ops.reconstruct_sense(kspace, sens,
+                                        reduction_axis=reduction_axis,
+                                        reduction_factor=reduction_factor,
+                                        rank=2,
+                                        l2_regularizer=0.01)
 
     self.assertAllClose(image, result)
 
     # Check batch of k-space data and batch of sensitivities.
     batch_sens = tf.tile(tf.expand_dims(sens, 0), [19, 1, 1, 1])
-    image = recon_ops.reconstruct(kspace, sensitivities=batch_sens,
-                                  reduction_axis=reduction_axis,
-                                  reduction_factor=reduction_factor,
-                                  rank=2,
-                                  l2_regularizer=0.01)
+    image = recon_ops.reconstruct_sense(kspace, batch_sens,
+                                        reduction_axis=reduction_axis,
+                                        reduction_factor=reduction_factor,
+                                        rank=2,
+                                        l2_regularizer=0.01)
 
     self.assertAllClose(image, result)
 
     # Check batch of sensitivities without k-space data.
     with self.assertRaisesRegex(ValueError, "incompatible batch shapes"):
-      image = recon_ops.reconstruct(kspace[0, ...], sensitivities=batch_sens,
-                                    reduction_axis=reduction_axis,
-                                    reduction_factor=reduction_factor,
-                                    rank=2,
-                                    l2_regularizer=0.01)
-
-
-  def test_cg_sense(self):
-    """Test reconstruction method `cg_sense`."""
-
-    kspace = self.data['cg_sense/kspace']
-    sens = self.data['cg_sense/sens']
-    traj = self.data['cg_sense/traj']
-    ref = self.data['cg_sense/result']
-
-    kspace = tf.reshape(kspace, [12, -1])
-    traj = tf.reshape(traj, [-1, 2])
-
-    result = recon_ops.reconstruct(kspace, trajectory=traj, sensitivities=sens)
-
-    self.assertAllEqual(result.shape, ref.shape)
-    self.assertAllClose(result, ref)
-
-
-  def test_cg_sense_3d(self):
-    """Test CG-SENSE in 3D."""
-    # TODO: Actually check result. Currently just checking it runs.
-    traj = traj_ops.radial_trajectory(64,
-                                      views=2000,
-                                      ordering='sphere_archimedean')
-    traj = tf.reshape(traj, [-1, 3])
-
-    image, sens = image_ops.phantom(shape=[64, 64, 64],
-                                    num_coils=8,
-                                    dtype=tf.complex64,
-                                    return_sensitivities=True)
-    kspace = tfft.nufft(image, traj,
-                        grid_shape=image.shape,
-                        transform_type='type_2',
-                        fft_direction='forward')
-
-    result_nufft = recon_ops.reconstruct(kspace, # pylint: disable=unused-variable
-                                         trajectory=traj,
-                                         image_shape=[64, 64, 64],
-                                         multicoil=True)
-
-    result = recon_ops.reconstruct(kspace, trajectory=traj, sensitivities=sens) # pylint: disable=unused-variable
-
-
-  def test_cg_sense_batch(self):
-    """Test reconstruction method `cg_sense` with batched inputs."""
-
-    kspace = self.data['cg_sense/cine/kspace']
-    sens = self.data['cg_sense/cine/sens']
-    traj = self.data['cg_sense/cine/traj']
-    result = self.data['cg_sense/cine/result']
-
-    # Check batch of k-space data and batch of trajectories.
-    image = recon_ops.reconstruct(kspace, trajectory=traj, sensitivities=sens)
-
-    self.assertAllClose(image, result, rtol=1e-5, atol=1e-5)
-
-    # Check batch of k-space data and batch of sensitivities.
-    batch_sens = tf.tile(tf.expand_dims(sens, 0), [19, 1, 1, 1])
-    image = recon_ops.reconstruct(kspace, trajectory=traj,
-                                  sensitivities=batch_sens)
-
-    self.assertAllClose(image, result, rtol=1e-5, atol=1e-5)
-
-    # Check batch of k-space data without batch of trajectories (trajectory is
-    # equal for all frames in this case).
-    image = recon_ops.reconstruct(kspace,
-                                  trajectory=traj[0, ...],
-                                  sensitivities=sens)
-
-    self.assertAllClose(image, result, rtol=1e-3, atol=1e-3)
-
-    # Check batch of sensitivities/trajectory without batch of k-space. This is
-    # disallowed.
-    with self.assertRaisesRegex(ValueError, "incompatible batch shapes"):
-      image = recon_ops.reconstruct(kspace[0, ...],
-                                    trajectory=traj[0, ...],
-                                    sensitivities=batch_sens)
-    with self.assertRaisesRegex(ValueError, "incompatible batch shapes"):
-      image = recon_ops.reconstruct(kspace[0, ...],
-                                    trajectory=traj,
-                                    sensitivities=sens)
-
+      image = recon_ops.reconstruct_sense(kspace[0, ...], batch_sens,
+                                          reduction_axis=reduction_axis,
+                                          reduction_factor=reduction_factor,
+                                          rank=2,
+                                          l2_regularizer=0.01)
 
   @parameterized.product(combine_coils=[True, False],
                          return_kspace=[True, False])
@@ -342,12 +220,10 @@ class ReconstructTest(test_util.TestCase):
     calib = full_kspace[:, :, calib_slice]
 
     # Test op.
-    result = recon_ops.reconstruct(kspace,
-                                   mask=mask,
-                                   calib=calib,
-                                   weights_l2_regularizer=0.01,
-                                   combine_coils=combine_coils,
-                                   return_kspace=return_kspace)
+    result = recon_ops.reconstruct_grappa(kspace, mask, calib,
+                                          weights_l2_regularizer=0.01,
+                                          combine_coils=combine_coils,
+                                          return_kspace=return_kspace)
 
     # Reference result.
     ref = self.data['grappa/2d/result']
@@ -357,7 +233,6 @@ class ReconstructTest(test_util.TestCase):
         ref = tf.math.sqrt(tf.math.reduce_sum(ref * tf.math.conj(ref), 0))
 
     self.assertAllClose(result, ref, rtol=1e-3, atol=1e-3)
-
 
   def test_grappa_2d_batch(self):
     """Test GRAPPA reconstruction (2D, 1D batch)."""
@@ -389,15 +264,150 @@ class ReconstructTest(test_util.TestCase):
     calib = tf.math.reduce_mean(calib, axis=0)
 
     # Test op.
-    result = recon_ops.reconstruct(kspace, mask=mask, calib=calib,
-                                   weights_l2_regularizer=0.0,
-                                   return_kspace=True)
+    result = recon_ops.reconstruct_grappa(kspace, mask, calib,
+                                          weights_l2_regularizer=0.0,
+                                          return_kspace=True)
     self.assertAllClose(result, self.data['grappa/2d_cine/result'],
                         rtol=1e-4, atol=1e-4)
 
+  def test_cg_sense(self):
+    """Test CG-SENSE recon."""
+    data = io_util.read_hdf5('tests/data/brain_2d_multicoil_radial_kspace.h5')
+    kspace = data['kspace']
+    sens = data['sens']
+    traj = data['traj']
+    expected = data['image/cg_sense']
 
-  def test_pics_grasp(self):
-    """Test GRASP reconstruction."""
+    image_shape = sens.shape[-2:]
+    image = recon_ops.reconstruct_lstsq(
+        kspace, image_shape, trajectory=traj, sensitivities=sens,
+        optimizer='cg', sens_norm=True)
+
+    self.assertAllEqual(expected.shape, image.shape)
+    self.assertAllClose(expected, image, atol=1e-5, rtol=1e-5)
+
+  def test_cg_sense_dens(self):
+    """Test CG-SENSE with density compensation."""
+    data = io_util.read_hdf5('tests/data/brain_2d_multicoil_radial_kspace.h5')
+    kspace = data['kspace']
+    sens = data['sens']
+    traj = data['traj']
+    dens = data['dens']
+    expected = data['image/cg_sens_dens']
+
+    image_shape = sens.shape[-2:]
+    image = recon_ops.reconstruct_lstsq(
+        kspace, image_shape, trajectory=traj, density=dens, sensitivities=sens,
+        optimizer='cg', sens_norm=True)
+
+    self.assertAllEqual(expected.shape, image.shape)
+    self.assertAllClose(expected, image, atol=1e-5, rtol=1e-5)
+
+  def test_cg_sense_3d(self):
+    """Test CG-SENSE in 3D."""
+    # TODO: check outputs. Currently just checking it runs.
+    base_resolution = 64
+    image_shape = [base_resolution] * 3
+    traj = traj_ops.radial_trajectory(base_resolution,
+                                      views=2000,
+                                      ordering='sphere_archimedean')
+    traj = tf.reshape(traj, [-1, 3])
+
+    image, sens = image_ops.phantom(shape=image_shape,
+                                    num_coils=8,
+                                    dtype=tf.complex64,
+                                    return_sensitivities=True)
+    kspace = tfft.nufft(image, traj,
+                        grid_shape=image.shape,
+                        transform_type='type_2',
+                        fft_direction='forward')
+
+    image = recon_ops.reconstruct_lstsq(kspace,
+                                        image_shape,
+                                        trajectory=traj,
+                                        sensitivities=sens)
+
+  def test_cg_sense_batch(self):
+    """Test CG-SENSE with batched inputs."""
+    data = io_util.read_hdf5(
+        'tests/data/cardiac_cine_2d_multicoil_radial_kspace.h5')
+    kspace = data['kspace']
+    sens = data['sens']
+    traj = data['traj']
+    dens = data['dens']
+    expected = data['image/cg_sense']
+    image_shape = sens.shape[-2:]
+
+    # Check batch of k-space data and batch of trajectories.
+    image = recon_ops.reconstruct_lstsq(kspace=kspace,
+                                        image_shape=image_shape,
+                                        trajectory=traj,
+                                        density=dens,
+                                        sensitivities=sens,
+                                        optimizer_kwargs={'max_iter': 10})
+    self.assertAllClose(expected, image, rtol=1e-5, atol=1e-5)
+
+    # Check batch of k-space data and batch of sensitivities.
+    sens_batch = tf.tile(tf.expand_dims(sens, 0), [19, 1, 1, 1])
+    image = recon_ops.reconstruct_lstsq(kspace=kspace,
+                                        image_shape=image_shape,
+                                        trajectory=traj,
+                                        density=dens,
+                                        sensitivities=sens_batch,
+                                        optimizer_kwargs={'max_iter': 10})
+    self.assertAllClose(expected, image, rtol=1e-5, atol=1e-5)
+
+    # Check batch of k-space data without batch of trajectories (trajectory is
+    # equal for all frames in this case).
+    image = recon_ops.reconstruct_lstsq(kspace=kspace,
+                                        image_shape=image_shape,
+                                        trajectory=traj[0, ...],
+                                        density=dens,
+                                        sensitivities=sens_batch,
+                                        optimizer_kwargs={'max_iter': 10})
+    self.assertAllClose(expected, image, rtol=1e-3, atol=1e-3)
+
+  def test_cg_sense_reg(self):
+    """Test CG-SENSE with regularization."""
+    data = io_util.read_hdf5(
+        'tests/data/cardiac_cine_2d_multicoil_radial_kspace.h5')
+    kspace = data['kspace']
+    sens = data['sens']
+    traj = data['traj']
+    dens = data['dens']
+    image_nonreg = data['image/cg_sense']
+    expected_null = data['image/cg_sense_reg_null']
+    expected_tavg = data['image/cg_sense_reg_tavg']
+    image_shape = sens.shape[-2:]
+
+    # Check batch of k-space data and batch of trajectories.
+    tavg = tf.math.reduce_mean(image_nonreg, -3)
+    regularizer = convex_ops.ConvexFunctionTikhonov(scale=0.5, prior=tavg)
+    image = recon_ops.reconstruct_lstsq(kspace=kspace,
+                                        image_shape=image_shape,
+                                        trajectory=traj,
+                                        density=dens,
+                                        sensitivities=sens,
+                                        regularizer=regularizer,
+                                        optimizer_kwargs={'max_iter': 10})
+    self.assertAllClose(expected_tavg, image)
+
+    regularizer = convex_ops.ConvexFunctionTikhonov(scale=0.5)
+    image = recon_ops.reconstruct_lstsq(kspace=kspace,
+                                        image_shape=image_shape,
+                                        trajectory=traj,
+                                        density=dens,
+                                        sensitivities=sens,
+                                        regularizer=regularizer,
+                                        optimizer_kwargs={'max_iter': 10})
+    self.assertAllClose(expected_null, image)
+
+  @parameterized.parameters(
+      ('admm',),
+      ('lbfgs',)
+  )
+  def test_lstsq_grasp(self, optimizer):  # pylint: disable=missing-param-doc,missing-param-doc
+    """Test GRASP reconstruction."""  # pylint: disable=missing-param-doc
     # Load data.
     data = io_util.read_hdf5(
         'tests/data/liver_dce_2d_multicoil_radial_kspace.h5')
@@ -405,21 +415,26 @@ class ReconstructTest(test_util.TestCase):
     traj = data['traj']
     dens = data['dens']
     sens = data['sens']
-    ref = data['recon/cs/i2']
+    expected = data[f'image/tv/{optimizer}/i4']
 
-    regularizers = [convex_ops.TotalVariationRegularizer(0.001, axis=-3)]
-    recon = recon_ops.reconstruct(
-        kspace, trajectory=traj, density=dens, sensitivities=sens,
-        method='pics',
-        recon_shape=[28, 384, 384],
-        regularizers=regularizers,
-        max_iterations=2)
+    regularizer = convex_ops.ConvexFunctionTotalVariation(
+        scale=0.001, ndim=[28, 384, 384], axis=-3, dtype=tf.complex64)
+    image = recon_ops.reconstruct_lstsq(
+        kspace,
+        image_shape=[384, 384],
+        extra_shape=[28],
+        trajectory=traj,
+        density=dens,
+        sensitivities=sens,
+        regularizer=regularizer,
+        optimizer=optimizer,
+        optimizer_kwargs=dict(max_iterations=4))
 
-    self.assertAllClose(recon, ref)
+    self.assertAllClose(expected, image, rtol=1e-5, atol=1e-5)
 
 
 class ReconstructPartialKSpaceTest(test_util.TestCase):
-  """Tests for `reconstruct_partial_kspace` operation."""
+  """Tests for `reconstruct_pf` operation."""
 
   @classmethod
   def setUpClass(cls):
@@ -441,7 +456,7 @@ class ReconstructPartialKSpaceTest(test_util.TestCase):
     factors = [1.0, 9 / 16]
     kspace = full_kspace[:, :, :(192 * 9 // 16)]
 
-    result = recon_ops.reconstruct_partial_kspace(kspace,
+    result = recon_ops.reconstruct_pf(kspace,
                                                   factors,
                                                   return_complex=return_complex,
                                                   return_kspace=return_kspace,

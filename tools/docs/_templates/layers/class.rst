@@ -1,7 +1,7 @@
-tfmr.layers.{{ objname | escape | underline }}============
+tfmri.layers.{{ objname | escape | underline }}=============
 
 .. currentmodule:: {{ module }}
 
-.. auto{{ objtype }}:: tfmr.layers.{{ objname }}
+.. auto{{ objtype }}:: {{ objname }}
     :members:
     :show-inheritance:

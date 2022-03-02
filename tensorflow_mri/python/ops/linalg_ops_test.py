@@ -14,134 +14,115 @@
 # ==============================================================================
 """Tests for module `linalg_ops`."""
 
-import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.util import test_util
 
 
-class LinearOperatorFFTTest(test_util.TestCase):
-  """Tests for FFT linear operator."""
-
+class LinearOperatorMRITest(test_util.TestCase):
+  """Tests for MRI linear operator."""
   @classmethod
   def setUpClass(cls):
-
     super().setUpClass()
-    cls.linop1 = linalg_ops.LinearOperatorFFT([2, 2])
-    cls.linop2 = linalg_ops.LinearOperatorFFT([2, 2], mask=[[False, False],
-                                                            [True, True]])
-    cls.linop3 = linalg_ops.LinearOperatorFFT(
+    cls.linop1 = linalg_ops.LinearOperatorMRI([2, 2], fft_norm=None)
+    cls.linop2 = linalg_ops.LinearOperatorMRI(
+        [2, 2], mask=[[False, False], [True, True]], fft_norm=None)
+    cls.linop3 = linalg_ops.LinearOperatorMRI(
         [2, 2], mask=[[[True, True], [False, False]],
                       [[False, False], [True, True]],
-                      [[False, True], [True, False]]])
+                      [[False, True], [True, False]]], fft_norm=None)
 
-  def test_transform(self):
-    """Test transform method."""
+  def test_fft(self):
+    """Test FFT operator."""
+    # Test init.
+    linop = linalg_ops.LinearOperatorMRI([2, 2], fft_norm=None)
+
+    # Test matvec.
     signal = tf.constant([1, 2, 4, 4], dtype=tf.complex64)
+    expected = [-1, 5, 1, 11]
+    result = tf.linalg.matvec(linop, signal)
+    self.assertAllClose(expected, result)
 
-    result = tf.linalg.matvec(self.linop1, signal)
-    self.assertAllClose(result, [-1, 5, 1, 11])
-
-    result = tf.linalg.matvec(self.linop2, signal)
-    self.assertAllClose(result, [0, 0, 1, 11])
-
-    result = tf.linalg.matvec(self.linop3, signal)
-    self.assertAllClose(result, [[-1, 5, 0, 0], [0, 0, 1, 11], [0, 5, 1, 0]])
-
-  def test_domain_shape(self):
-    """Test domain shape."""
-    self.assertIsInstance(self.linop1.domain_shape, tf.TensorShape)
-    self.assertAllEqual(self.linop1.domain_shape, [2, 2])
-    self.assertAllEqual(self.linop1.domain_shape_tensor(), [2, 2])
-
-    self.assertIsInstance(self.linop2.domain_shape, tf.TensorShape)
-    self.assertAllEqual(self.linop2.domain_shape, [2, 2])
-    self.assertAllEqual(self.linop2.domain_shape_tensor(), [2, 2])
-
-    self.assertIsInstance(self.linop3.domain_shape, tf.TensorShape)
-    self.assertAllEqual(self.linop3.domain_shape, [2, 2])
-    self.assertAllEqual(self.linop3.domain_shape_tensor(), [2, 2])
-
-  def test_range_shape(self):
-    """Test range shape."""
-    self.assertIsInstance(self.linop1.range_shape, tf.TensorShape)
-    self.assertAllEqual(self.linop1.range_shape, [2, 2])
-    self.assertAllEqual(self.linop1.range_shape_tensor(), [2, 2])
-
-    self.assertIsInstance(self.linop2.range_shape, tf.TensorShape)
-    self.assertAllEqual(self.linop2.range_shape, [2, 2])
-    self.assertAllEqual(self.linop2.range_shape_tensor(), [2, 2])
-
-    self.assertIsInstance(self.linop3.range_shape, tf.TensorShape)
-    self.assertAllEqual(self.linop3.range_shape, [2, 2])
-    self.assertAllEqual(self.linop3.range_shape_tensor(), [2, 2])
-
-  def test_batch_shape(self):
-    """Test batch shape."""
-    self.assertIsInstance(self.linop1.batch_shape, tf.TensorShape)
-    self.assertAllEqual(self.linop1.batch_shape, [])
-    self.assertAllEqual(self.linop1.batch_shape_tensor(), [])
-
-    self.assertIsInstance(self.linop2.batch_shape, tf.TensorShape)
-    self.assertAllEqual(self.linop2.batch_shape, [])
-    self.assertAllEqual(self.linop2.batch_shape_tensor(), [])
-
-    self.assertIsInstance(self.linop3.batch_shape, tf.TensorShape)
-    self.assertAllEqual(self.linop3.batch_shape, [3])
-    self.assertAllEqual(self.linop3.batch_shape_tensor(), [3])
-
-
-class LinearOperatorDifferenceTest(test_util.TestCase):
-  """Tests for difference linear operator."""
-  @classmethod
-  def setUpClass(cls):
-
-    super().setUpClass()
-    cls.linop1 = linalg_ops.LinearOperatorDifference([4])
-    cls.linop2 = linalg_ops.LinearOperatorDifference([4, 4], axis=-2)
-    cls.matrix1 = tf.convert_to_tensor([[-1, 1, 0, 0],
-                                        [0, -1, 1, 0],
-                                        [0, 0, -1, 1]], dtype=tf.float32)
-
-  def test_transform(self):
-    """Test transform method."""
-    signal = tf.constant([1, 2, 4, 8], dtype=tf.float32)
-
-    result = tf.linalg.matvec(self.linop1, signal)
-    self.assertAllClose(result, [1, 2, 4])
-    self.assertAllClose(result, np.diff(signal))
-    self.assertAllClose(result, tf.linalg.matvec(self.matrix1, signal))
-
-    signal2 = tf.range(16, dtype=tf.float32)
-    result = tf.linalg.matvec(self.linop2, signal2)
-    self.assertAllClose(result, [4] * 12)
-
-  def test_transform_adjoint(self):
-    """Test adjoint."""
-    signal = tf.constant([1, 2, 4], dtype=tf.float32)
-    result = tf.linalg.matvec(self.linop1, signal, adjoint_a=True)
-    self.assertAllClose(result,
-                        tf.linalg.matvec(tf.transpose(self.matrix1), signal))
-
-  def test_shapes(self):
-    """Test shapes."""
-    self._test_all_shapes(self.linop1, [4], [3])
-    self._test_all_shapes(self.linop2, [4, 4], [3, 4])
-
-  def _test_all_shapes(self, linop, domain_shape, range_shape):
-    """Test shapes."""
+    # Test domain shape.
     self.assertIsInstance(linop.domain_shape, tf.TensorShape)
-    self.assertAllEqual(linop.domain_shape, domain_shape)
-    self.assertAllEqual(linop.domain_shape_tensor(), domain_shape)
+    self.assertAllEqual([2, 2], linop.domain_shape)
+    self.assertAllEqual([2, 2], linop.domain_shape_tensor())
 
+    # Test range shape.
     self.assertIsInstance(linop.range_shape, tf.TensorShape)
-    self.assertAllEqual(linop.range_shape, range_shape)
-    self.assertAllEqual(linop.range_shape_tensor(), range_shape)
+    self.assertAllEqual([2, 2], linop.range_shape)
+    self.assertAllEqual([2, 2], linop.range_shape_tensor())
 
+    # Test batch shape.
+    self.assertIsInstance(linop.batch_shape, tf.TensorShape)
+    self.assertAllEqual([], linop.batch_shape)
+    self.assertAllEqual([], linop.batch_shape_tensor())
 
-# TODO: Add more tests. Much of `linalg_ops` is tested indirectly by recon ops,
-# but specific tests should be added here.
+  def test_fft_with_mask(self):
+    """Test FFT operator with mask."""
+    # Test init.
+    linop = linalg_ops.LinearOperatorMRI(
+        [2, 2], mask=[[False, False], [True, True]], fft_norm=None)
+
+    # Test matvec.
+    signal = tf.constant([1, 2, 4, 4], dtype=tf.complex64)
+    expected = [0, 0, 1, 11]
+    result = tf.linalg.matvec(linop, signal)
+    self.assertAllClose(expected, result)
+
+    # Test domain shape.
+    self.assertIsInstance(linop.domain_shape, tf.TensorShape)
+    self.assertAllEqual([2, 2], linop.domain_shape)
+    self.assertAllEqual([2, 2], linop.domain_shape_tensor())
+
+    # Test range shape.
+    self.assertIsInstance(linop.range_shape, tf.TensorShape)
+    self.assertAllEqual([2, 2], linop.range_shape)
+    self.assertAllEqual([2, 2], linop.range_shape_tensor())
+
+    # Test batch shape.
+    self.assertIsInstance(linop.batch_shape, tf.TensorShape)
+    self.assertAllEqual([], linop.batch_shape)
+    self.assertAllEqual([], linop.batch_shape_tensor())
+
+  def test_fft_with_batch_mask(self):
+    """Test FFT operator with batch mask."""
+    # Test init.
+    linop = linalg_ops.LinearOperatorMRI(
+        [2, 2], mask=[[[True, True], [False, False]],
+                      [[False, False], [True, True]],
+                      [[False, True], [True, False]]], fft_norm=None)
+
+    # Test matvec.
+    signal = tf.constant([1, 2, 4, 4], dtype=tf.complex64)
+    expected = [[-1, 5, 0, 0], [0, 0, 1, 11], [0, 5, 1, 0]]
+    result = tf.linalg.matvec(linop, signal)
+    self.assertAllClose(expected, result)
+
+    # Test domain shape.
+    self.assertIsInstance(linop.domain_shape, tf.TensorShape)
+    self.assertAllEqual([2, 2], linop.domain_shape)
+    self.assertAllEqual([2, 2], linop.domain_shape_tensor())
+
+    # Test range shape.
+    self.assertIsInstance(linop.range_shape, tf.TensorShape)
+    self.assertAllEqual([2, 2], linop.range_shape)
+    self.assertAllEqual([2, 2], linop.range_shape_tensor())
+
+    # Test batch shape.
+    self.assertIsInstance(linop.batch_shape, tf.TensorShape)
+    self.assertAllEqual([3], linop.batch_shape)
+    self.assertAllEqual([3], linop.batch_shape_tensor())
+
+  def test_fft_norm(self):
+    """Test FFT normalization."""
+    linop = linalg_ops.LinearOperatorMRI([2, 2], fft_norm='ortho')
+    x = tf.constant([1 + 2j, 2 - 2j, -1 - 6j, 3 + 4j], dtype=tf.complex64)
+    # With norm='ortho', subsequent application of the operator and its adjoint
+    # should not scale the input.
+    y = tf.linalg.matvec(linop.H, tf.linalg.matvec(linop, x))
+    self.assertAllClose(x, y)
 
 
 if __name__ == '__main__':

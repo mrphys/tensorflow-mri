@@ -1,7 +1,7 @@
-tfmr.losses.{{ objname | escape | underline }}============
+tfmri.losses.{{ objname | escape | underline }}=============
 
 .. currentmodule:: {{ module }}
 
-.. auto{{ objtype }}:: tfmr.losses.{{ objname }}
+.. auto{{ objtype }}:: {{ objname }}
     :members:
     :show-inheritance:

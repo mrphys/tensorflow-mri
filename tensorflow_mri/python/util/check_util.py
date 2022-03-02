@@ -152,8 +152,8 @@ def validate_axis(value,
   Raises:
     ValueError: If `value` is not valid.
   """
-  if isinstance(value, int):
-    scalar = True
+  scalar = isinstance(value, int)
+  if scalar:
     value = [value]
 
   # Convert other iterables to list.
@@ -230,3 +230,31 @@ def validate_tensor_dtype(tensor, dtypes, name):
       f"Argument `{name}` must have data type {(dt.name for dt in dtypes)}, "
       f"but received data type: {tensor.dtype.name}")
   return tensor
+
+
+def validate_rank(value, name=None, accept_none=True):
+  """Validates that `value` is a valid rank.
+
+  Args:
+    value: The value to check.
+    name: The name of the parameter. Only used to format error messages.
+    accept_none: If `True`, `None` is accepted as a valid value.
+
+  Returns:
+    The value.
+
+  Raises:
+    TypeError: If `value` has an invalid type.
+    ValueError: If `value` is not a valid rank.
+  """
+  if value is None:
+    if accept_none:
+      return None
+    raise ValueError(f'Argument `{name}` must be specified.')
+  if not isinstance(value, int):
+    raise TypeError(
+        f'Argument `{name}` must be an integer, but got {value}.')
+  if value < 0:
+    raise ValueError(
+        f'Argument `{name}` must be non-negative, but got {value}.')
+  return value

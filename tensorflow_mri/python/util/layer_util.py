@@ -28,7 +28,7 @@ def get_nd_layer(name, rank):
     A `tf.keras.layers.Layer` object.
 
   Raises:
-    ValueError: If the requested layer is unknown to TFMR.
+    ValueError: If the requested layer is unknown to TFMRI.
   """
   try:
     return _ND_LAYERS[(name, rank)]

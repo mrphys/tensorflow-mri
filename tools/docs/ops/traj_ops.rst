@@ -3,18 +3,19 @@
 
 .. automodule:: tensorflow_mri.python.ops.traj_ops
 
-.. currentmodule:: tfmr
-
 .. autosummary::
     :toctree: traj_ops
+    :template: ops/function.rst
     :nosignatures:
 
-    radial_trajectory
-    spiral_trajectory
-    radial_waveform
-    spiral_waveform
-    radial_density
+    density_grid
     estimate_density
     estimate_radial_density
-    flatten_trajectory
     flatten_density
+    flatten_trajectory
+    radial_density
+    radial_trajectory
+    radial_waveform
+    random_sampling_mask
+    spiral_trajectory
+    spiral_waveform

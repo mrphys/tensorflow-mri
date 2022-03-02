@@ -5,16 +5,16 @@ Image Quality Assessment
 
 .. autosummary::
     :toctree: iqa_losses
-    :nosignatures:
     :template: losses/function.rst
+    :nosignatures:
 
     ssim_loss
     ssim_multiscale_loss
 
 .. autosummary::
     :toctree: iqa_losses
-    :nosignatures:
     :template: losses/class.rst
+    :nosignatures:
     
     MultiscaleStructuralSimilarityLoss
     StructuralSimilarityLoss
