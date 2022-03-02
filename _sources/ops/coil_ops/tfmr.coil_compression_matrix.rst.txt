@@ -1,6 +1,0 @@
-﻿tfmr.coil\_compression\_matrix
-==============================
-
-.. currentmodule:: tfmr
-
-.. autofunction:: coil_compression_matrix

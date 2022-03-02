@@ -1,0 +1,6 @@
+﻿tfmri.admm\_minimize
+====================
+
+.. currentmodule:: tensorflow_mri.python.ops.optimizer_ops
+
+.. autofunction:: admm_minimize

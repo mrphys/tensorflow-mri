@@ -1,6 +1,0 @@
-﻿tfmr.view\_as\_complex
-======================
-
-.. currentmodule:: tfmr
-
-.. autofunction:: view_as_complex

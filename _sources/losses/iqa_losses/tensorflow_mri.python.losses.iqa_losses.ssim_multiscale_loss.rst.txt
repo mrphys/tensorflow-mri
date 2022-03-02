@@ -1,6 +1,0 @@
-﻿tfmr.losses.ssim\_multiscale\_loss
-==================================
-
-.. currentmodule:: tensorflow_mri.python.losses.iqa_losses
-
-.. autofunction:: tfmr.losses.ssim_multiscale_loss

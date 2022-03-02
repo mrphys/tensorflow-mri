@@ -1,6 +1,0 @@
-﻿tfmr.reconstruct\_partial\_kspace
-=================================
-
-.. currentmodule:: tfmr
-
-.. autofunction:: reconstruct_partial_kspace

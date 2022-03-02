@@ -1,0 +1,6 @@
+﻿tfmri.flatten\_density
+======================
+
+.. currentmodule:: tensorflow_mri.python.ops.traj_ops
+
+.. autofunction:: flatten_density

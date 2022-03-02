@@ -7,12 +7,5 @@ Preprocessing
     :toctree: preproc_layers
     :nosignatures:
     :template: layers/class.rst
-    
-    AddChannelDimension
-    Cast
-    ExpandDims
+
     KSpaceResampling
-    RepeatTensor
-    ResizeWithCropOrPad
-    ScaleByMinMax
-    Transpose

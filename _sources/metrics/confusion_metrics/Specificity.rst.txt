@@ -1,0 +1,8 @@
+﻿tfmri.metrics.Specificity
+=========================
+
+.. currentmodule:: tensorflow_mri.python.metrics.confusion_metrics
+
+.. autoclass:: Specificity
+    :members:
+    :show-inheritance:

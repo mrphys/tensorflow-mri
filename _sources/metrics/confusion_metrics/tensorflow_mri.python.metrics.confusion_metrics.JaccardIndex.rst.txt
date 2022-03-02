@@ -1,8 +1,0 @@
-﻿tfmr.metrics.JaccardIndex
-=========================
-
-.. currentmodule:: tensorflow_mri.python.metrics.confusion_metrics
-
-.. autoclass:: tfmr.metrics.JaccardIndex
-    :members:
-    :show-inheritance:

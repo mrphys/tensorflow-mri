@@ -1,6 +1,0 @@
-﻿tfmr.euler\_to\_rotation\_matrix\_3d
-====================================
-
-.. currentmodule:: tfmr
-
-.. autofunction:: euler_to_rotation_matrix_3d

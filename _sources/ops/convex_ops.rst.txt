@@ -3,13 +3,18 @@ Convex Operators
 
 .. automodule:: tensorflow_mri.python.ops.convex_ops
 
-.. currentmodule:: tfmr
-
 .. autosummary::
     :toctree: convex_ops
+    :template: ops/function.rst
     :nosignatures:
 
-    ConvexOperator
-    ConvexOperatorL1Norm
-    Regularizer
-    TotalVariationRegularizer
+    ConvexFunction
+    ConvexFunctionAffineMappingComposition
+    ConvexFunctionLinearOperatorComposition
+    ConvexFunctionL1Norm
+    ConvexFunctionL2Norm
+    ConvexFunctionL2NormSquared
+    ConvexFunctionLeastSquares
+    ConvexFunctionQuadratic
+    ConvexFunctionTikhonov
+    ConvexFunctionTotalVariation

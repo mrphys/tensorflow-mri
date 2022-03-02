@@ -1,6 +1,0 @@
-﻿tfmr.extract\_from\_complex
-===========================
-
-.. currentmodule:: tfmr
-
-.. autofunction:: extract_from_complex

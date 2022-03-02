@@ -1,0 +1,6 @@
+﻿tfmri.scale\_by\_min\_max
+=========================
+
+.. currentmodule:: tensorflow_mri.python.ops.math_ops
+
+.. autofunction:: scale_by_min_max

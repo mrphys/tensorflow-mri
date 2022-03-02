@@ -1,0 +1,6 @@
+﻿tfmri.rotate\_3d
+================
+
+.. currentmodule:: tensorflow_mri.python.ops.geom_ops
+
+.. autofunction:: rotate_3d

@@ -1,6 +1,0 @@
-﻿tfmr.spiral\_trajectory
-=======================
-
-.. currentmodule:: tfmr
-
-.. autofunction:: spiral_trajectory

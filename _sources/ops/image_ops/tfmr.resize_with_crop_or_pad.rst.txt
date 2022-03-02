@@ -1,6 +1,0 @@
-﻿tfmr.resize\_with\_crop\_or\_pad
-================================
-
-.. currentmodule:: tfmr
-
-.. autofunction:: resize_with_crop_or_pad

@@ -1,6 +1,0 @@
-﻿tfmr.filter\_kspace
-===================
-
-.. currentmodule:: tfmr
-
-.. autofunction:: filter_kspace

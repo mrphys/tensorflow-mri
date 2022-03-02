@@ -1,8 +1,0 @@
-﻿tfmr.LinearOperatorInterp
-=========================
-  
-.. currentmodule:: tfmr
-
-.. autoclass:: tfmr.LinearOperatorInterp
-   :members:
-   :show-inheritance:

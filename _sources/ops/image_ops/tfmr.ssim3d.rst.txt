@@ -1,6 +1,0 @@
-﻿tfmr.ssim3d
-===========
-
-.. currentmodule:: tfmr
-
-.. autofunction:: ssim3d

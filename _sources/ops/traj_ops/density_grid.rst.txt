@@ -1,0 +1,6 @@
+﻿tfmri.density\_grid
+===================
+
+.. currentmodule:: tensorflow_mri.python.ops.traj_ops
+
+.. autofunction:: density_grid

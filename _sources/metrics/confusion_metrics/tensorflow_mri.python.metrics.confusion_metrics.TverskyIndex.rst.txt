@@ -1,8 +1,0 @@
-﻿tfmr.metrics.TverskyIndex
-=========================
-
-.. currentmodule:: tensorflow_mri.python.metrics.confusion_metrics
-
-.. autoclass:: tfmr.metrics.TverskyIndex
-    :members:
-    :show-inheritance:

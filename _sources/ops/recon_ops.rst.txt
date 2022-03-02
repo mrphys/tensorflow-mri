@@ -3,11 +3,13 @@ Image Reconstruction
 
 .. automodule:: tensorflow_mri.python.ops.recon_ops
 
-.. currentmodule:: tfmr
-
 .. autosummary::
     :toctree: recon_ops
+    :template: ops/function.rst
     :nosignatures:
 
-    reconstruct
-    reconstruct_partial_kspace
+    reconstruct_adj
+    reconstruct_grappa
+    reconstruct_lstsq
+    reconstruct_pf
+    reconstruct_sense

@@ -1,6 +1,0 @@
-﻿tfmr.flatten\_density
-=====================
-
-.. currentmodule:: tfmr
-
-.. autofunction:: flatten_density

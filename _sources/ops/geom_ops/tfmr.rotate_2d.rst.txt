@@ -1,6 +1,0 @@
-﻿tfmr.rotate\_2d
-===============
-
-.. currentmodule:: tfmr
-
-.. autofunction:: rotate_2d

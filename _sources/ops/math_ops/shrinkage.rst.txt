@@ -1,0 +1,6 @@
+﻿tfmri.shrinkage
+===============
+
+.. currentmodule:: tensorflow_mri.python.ops.math_ops
+
+.. autofunction:: shrinkage

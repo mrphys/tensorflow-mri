@@ -1,0 +1,6 @@
+﻿tfmri.broadcast\_static\_shapes
+===============================
+
+.. currentmodule:: tensorflow_mri.python.ops.array_ops
+
+.. autofunction:: broadcast_static_shapes

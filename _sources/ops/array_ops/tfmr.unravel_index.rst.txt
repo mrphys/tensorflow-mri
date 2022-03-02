@@ -1,6 +1,0 @@
-﻿tfmr.unravel\_index
-===================
-
-.. currentmodule:: tfmr
-
-.. autofunction:: unravel_index

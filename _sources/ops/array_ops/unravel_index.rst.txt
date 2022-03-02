@@ -1,0 +1,6 @@
+﻿tfmri.unravel\_index
+====================
+
+.. currentmodule:: tensorflow_mri.python.ops.array_ops
+
+.. autofunction:: unravel_index

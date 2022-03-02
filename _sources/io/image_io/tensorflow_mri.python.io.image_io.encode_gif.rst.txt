@@ -1,6 +1,0 @@
-﻿tfmr.io.encode\_gif
-===================
-
-.. currentmodule:: tensorflow_mri.python.io.image_io
-
-.. autofunction:: tfmr.io.encode_gif

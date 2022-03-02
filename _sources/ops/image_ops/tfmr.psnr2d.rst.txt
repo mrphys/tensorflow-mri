@@ -1,6 +1,0 @@
-﻿tfmr.psnr2d
-===========
-
-.. currentmodule:: tfmr
-
-.. autofunction:: psnr2d

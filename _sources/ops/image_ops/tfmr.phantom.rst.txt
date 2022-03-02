@@ -1,6 +1,0 @@
-﻿tfmr.phantom
-============
-
-.. currentmodule:: tfmr
-
-.. autofunction:: phantom

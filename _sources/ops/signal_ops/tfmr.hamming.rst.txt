@@ -1,6 +1,0 @@
-﻿tfmr.hamming
-============
-
-.. currentmodule:: tfmr
-
-.. autofunction:: hamming

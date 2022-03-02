@@ -1,6 +1,0 @@
-﻿tfmr.central\_crop
-==================
-
-.. currentmodule:: tfmr
-
-.. autofunction:: central_crop

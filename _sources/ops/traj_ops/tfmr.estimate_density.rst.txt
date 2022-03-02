@@ -1,6 +1,0 @@
-﻿tfmr.estimate\_density
-======================
-
-.. currentmodule:: tfmr
-
-.. autofunction:: estimate_density

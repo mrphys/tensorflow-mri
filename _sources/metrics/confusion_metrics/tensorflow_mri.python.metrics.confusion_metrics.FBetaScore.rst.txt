@@ -1,8 +1,0 @@
-﻿tfmr.metrics.FBetaScore
-=======================
-
-.. currentmodule:: tensorflow_mri.python.metrics.confusion_metrics
-
-.. autoclass:: tfmr.metrics.FBetaScore
-    :members:
-    :show-inheritance:

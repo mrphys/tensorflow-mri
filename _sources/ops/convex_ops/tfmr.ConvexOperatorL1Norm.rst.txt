@@ -1,8 +1,0 @@
-﻿tfmr.ConvexOperatorL1Norm
-=========================
-  
-.. currentmodule:: tfmr
-
-.. autoclass:: tfmr.ConvexOperatorL1Norm
-   :members:
-   :show-inheritance:

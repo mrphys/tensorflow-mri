@@ -1,8 +1,0 @@
-﻿tfmr.LinearOperatorRealWeighting
-================================
-  
-.. currentmodule:: tfmr
-
-.. autoclass:: tfmr.LinearOperatorRealWeighting
-   :members:
-   :show-inheritance:

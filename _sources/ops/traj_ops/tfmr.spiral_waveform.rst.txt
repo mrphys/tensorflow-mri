@@ -1,6 +1,0 @@
-﻿tfmr.spiral\_waveform
-=====================
-
-.. currentmodule:: tfmr
-
-.. autofunction:: spiral_waveform

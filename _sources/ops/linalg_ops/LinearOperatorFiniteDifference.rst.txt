@@ -1,0 +1,6 @@
+﻿tfmri.LinearOperatorFiniteDifference
+====================================
+
+.. currentmodule:: tensorflow_mri.python.ops.linalg_ops
+
+.. autoclass:: LinearOperatorFiniteDifference

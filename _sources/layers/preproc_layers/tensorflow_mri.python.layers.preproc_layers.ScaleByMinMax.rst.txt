@@ -1,8 +1,0 @@
-﻿tfmr.layers.ScaleByMinMax
-=========================
-
-.. currentmodule:: tensorflow_mri.python.layers.preproc_layers
-
-.. autoclass:: tfmr.layers.ScaleByMinMax
-    :members:
-    :show-inheritance:

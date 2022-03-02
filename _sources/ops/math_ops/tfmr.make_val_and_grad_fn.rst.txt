@@ -1,6 +1,0 @@
-﻿tfmr.make\_val\_and\_grad\_fn
-=============================
-
-.. currentmodule:: tfmr
-
-.. autofunction:: make_val_and_grad_fn

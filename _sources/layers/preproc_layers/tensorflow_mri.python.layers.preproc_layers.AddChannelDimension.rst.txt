@@ -1,8 +1,0 @@
-﻿tfmr.layers.AddChannelDimension
-===============================
-
-.. currentmodule:: tensorflow_mri.python.layers.preproc_layers
-
-.. autoclass:: tfmr.layers.AddChannelDimension
-    :members:
-    :show-inheritance:

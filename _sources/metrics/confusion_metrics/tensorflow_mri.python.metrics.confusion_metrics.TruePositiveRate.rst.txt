@@ -1,8 +1,0 @@
-﻿tfmr.metrics.TruePositiveRate
-=============================
-
-.. currentmodule:: tensorflow_mri.python.metrics.confusion_metrics
-
-.. autoclass:: tfmr.metrics.TruePositiveRate
-    :members:
-    :show-inheritance:

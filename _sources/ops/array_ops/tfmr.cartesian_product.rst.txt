@@ -1,6 +1,0 @@
-﻿tfmr.cartesian\_product
-=======================
-
-.. currentmodule:: tfmr
-
-.. autofunction:: cartesian_product

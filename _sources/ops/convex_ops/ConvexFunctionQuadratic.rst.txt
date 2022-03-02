@@ -1,0 +1,6 @@
+﻿tfmri.ConvexFunctionQuadratic
+=============================
+
+.. currentmodule:: tensorflow_mri.python.ops.convex_ops
+
+.. autoclass:: ConvexFunctionQuadratic

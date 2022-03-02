@@ -1,8 +1,0 @@
-﻿tfmr.LinearOperatorNUFFT
-========================
-  
-.. currentmodule:: tfmr
-
-.. autoclass:: tfmr.LinearOperatorNUFFT
-   :members:
-   :show-inheritance:

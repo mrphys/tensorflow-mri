@@ -1,0 +1,6 @@
+﻿tfmri.cartesian\_product
+========================
+
+.. currentmodule:: tensorflow_mri.python.ops.array_ops
+
+.. autofunction:: cartesian_product

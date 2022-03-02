@@ -1,6 +1,0 @@
-﻿tfmr.extract\_glimpses
-======================
-
-.. currentmodule:: tfmr
-
-.. autofunction:: extract_glimpses
