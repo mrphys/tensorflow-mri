@@ -14,7 +14,7 @@
 # ==============================================================================
 """Tests for module `util.linalg_ext`."""
 
-from absl import parameterized
+from absl.testing import parameterized
 import numpy as np
 import tensorflow as tf
 

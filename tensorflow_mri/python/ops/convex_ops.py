@@ -20,6 +20,7 @@ import contextlib
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import linalg_ops
+from tensorflow_mri.python.ops import math_ops
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import linalg_ext
 from tensorflow_mri.python.util import linalg_imaging
@@ -253,7 +254,7 @@ class ConvexFunctionL1Norm(ConvexFunction):
     return self._scale * tf.math.real(tf.norm(x, ord=1, axis=-1))
 
   def _prox(self, x, scale=None):
-    return soft_threshold(x, self._scale * (scale or 1.0))
+    return math_ops.soft_threshold(x, self._scale * (scale or 1.0))
 
 
 class ConvexFunctionL2Norm(ConvexFunction):
@@ -282,7 +283,7 @@ class ConvexFunctionL2Norm(ConvexFunction):
     return self._scale * tf.math.real(tf.norm(x, ord=2, axis=-1))
 
   def _prox(self, x, scale=None):
-    return block_soft_threshold(x, self._scale * (scale or 1.0))
+    return math_ops.block_soft_threshold(x, self._scale * (scale or 1.0))
 
 
 class ConvexFunctionL2NormSquared(ConvexFunction):
@@ -313,7 +314,7 @@ class ConvexFunctionL2NormSquared(ConvexFunction):
 
   def _prox(self, x, scale=None):
     scale = self._scale * (scale or 1.0)
-    return x / (1.0 + 2.0 * scale)
+    return math_ops.shrinkage(x, 2.0 * scale)
 
 
 class ConvexFunctionTikhonov(ConvexFunctionAffineMappingComposition):  # pylint: disable=abstract-method

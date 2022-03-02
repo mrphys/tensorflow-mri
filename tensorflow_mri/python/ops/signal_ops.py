@@ -90,19 +90,22 @@ def atanfilt(arg, cutoff=np.pi, beta=100.0, name=None):
     return 0.5 + (1.0 / np.pi) * tf.math.atan(beta * (cutoff - arg) / cutoff)
 
 
-def filter_kspace(kspace, rank=None, traj=None,
-                  filter_type='hamming', filter_kwargs=None):
+def filter_kspace(kspace,
+                  traj=None,
+                  filter_type='hamming',
+                  filter_rank=None,
+                  filter_kwargs=None):
   """Filter *k*-space.
 
   Multiplies *k*-space by a filtering function.
 
   Args:
     kspace: A `Tensor` of any shape. The input *k*-space.
-    rank: An `int`. The rank of the *k*-space. Defaults to `kspace.shape.rank`.
-      Should be set if `kspace` has any batch dimensions.
     traj: A `Tensor` of shape `kspace.shape + [N]`, where `N` is the number of
       spatial dimensions. If `None`, `kspace` is assumed to be Cartesian.
-    filter_type: A `str`. Must be one of `"hamming"` or `"atanfilt"`.
+    filter_type: A `str`. Must be one of `"hamming"`, `"hann"` or `"atanfilt"`.
+    filter_rank: An `int`. The rank of the filter. Only relevant if *k*-space is
+      Cartesian. Defaults to `kspace.shape.rank`.
     filter_kwargs: A `dict`. Additional keyword arguments to pass to the
       filtering function.
 
@@ -114,15 +117,17 @@ def filter_kspace(kspace, rank=None, traj=None,
   # Make a "trajectory" for Cartesian k-spaces.
   is_cartesian = traj is None
   if is_cartesian:
-    rank = rank or kspace.shape.rank
+    filter_rank = filter_rank or kspace.shape.rank
     vecs = [tf.linspace(-np.pi, np.pi - (2.0 * np.pi / s), s)
-            for s in kspace.shape[-rank:]]  # pylint: disable=invalid-unary-operand-type
+            for s in kspace.shape[-filter_rank:]]  # pylint: disable=invalid-unary-operand-type
     traj = array_ops.meshgrid(*vecs)
 
   filter_type = check_util.validate_enum(
-      filter_type, valid_values={'hamming', 'atanfilt'}, name='filter_type')
+      filter_type, valid_values={'hamming', 'hann', 'atanfilt'},
+      name='filter_type')
   filter_func = {
       'hamming': hamming,
+      'hann': hann,
       'atanfilt': atanfilt
   }[filter_type]
   filter_kwargs = filter_kwargs or {}
@@ -131,7 +136,7 @@ def filter_kspace(kspace, rank=None, traj=None,
   return kspace * tf.cast(filter_func(traj_norm, **filter_kwargs), kspace.dtype)
 
 
-def crop_kspace(kspace, traj, cutoff, mode='low_pass'):
+def crop_kspace(kspace, traj=None, cutoff=None, mode='low_pass'):  # pylint: disable=missing-raises-doc
   """Crop *k*-space.
 
   Crops all frequencies above or below the specified frequency.
@@ -147,7 +152,11 @@ def crop_kspace(kspace, traj, cutoff, mode='low_pass'):
     A `Tensor`. The cropped *k*-space.
   """
   # TODO: add support for Cartesian *k*-space.
+  if traj is None:
+    raise ValueError('`traj` must be specified.')
   mode = check_util.validate_enum(mode, {'low_pass', 'high_pass'}, 'mode')
+  if cutoff is None:
+    cutoff = 0.0 if mode == 'high_pass' else np.pi
   traj_norm = tf.norm(traj, axis=-1)
   if mode == 'low_pass':
     mask = traj_norm < cutoff

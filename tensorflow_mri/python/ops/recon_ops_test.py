@@ -430,7 +430,7 @@ class ReconstructTest(test_util.TestCase):
         optimizer=optimizer,
         optimizer_kwargs=dict(max_iterations=4))
 
-    self.assertAllClose(expected, image)
+    self.assertAllClose(expected, image, rtol=1e-5, atol=1e-5)
 
 
 class ReconstructPartialKSpaceTest(test_util.TestCase):

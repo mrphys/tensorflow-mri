@@ -124,7 +124,7 @@ class BlockSoftThresholdTest(test_util.TestCase):
   )
   def test_block_soft_threshold(self, x, threshold, expected_y):
     x = tf.convert_to_tensor(x, dtype=tf.float32)
-    y = convex_ops.block_soft_threshold(x, threshold)
+    y = math_ops.block_soft_threshold(x, threshold)
     self.assertAllClose(y, expected_y)
 
   @parameterized.parameters(
@@ -136,7 +136,7 @@ class BlockSoftThresholdTest(test_util.TestCase):
   )
   def test_block_soft_threshold_complex(self, x, threshold, expected_y):
     x = tf.convert_to_tensor(x, dtype=tf.complex64)
-    y = convex_ops.block_soft_threshold(x, threshold)
+    y = math_ops.block_soft_threshold(x, threshold)
     self.assertAllClose(y, expected_y)
 
 

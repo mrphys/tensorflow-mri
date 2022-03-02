@@ -14,9 +14,11 @@
 # ==============================================================================
 """Tests for module `signal_ops`."""
 
+from absl.testing import parameterized
 import numpy as np
 import tensorflow as tf
 
+from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import signal_ops
 from tensorflow_mri.python.util import test_util
 
@@ -38,26 +40,68 @@ class KSpaceFilterTest(test_util.TestCase):
     kspace = [1. + 2.j, 2. + 2.j, 3. - 4.j]
     traj = [[0.4, 1.0], [3.0, 2.0], [0, 0.5]]
 
-    res_kspace, res_traj = signal_ops.crop_kspace(kspace, traj, np.pi / 2,
+    res_kspace, res_traj = signal_ops.crop_kspace(kspace, traj=traj,
+                                                  cutoff=np.pi / 2,
                                                   mode='low_pass')
     self.assertAllClose(res_kspace, [1. + 2.j, 3. - 4.j])
     self.assertAllClose(res_traj, [[0.4, 1.0], [0, 0.5]])
 
-    res_kspace, res_traj = signal_ops.crop_kspace(kspace, traj, np.pi / 2,
+    res_kspace, res_traj = signal_ops.crop_kspace(kspace, traj=traj,
+                                                  cutoff=np.pi / 2,
                                                   mode='high_pass')
     self.assertAllClose(res_kspace, [2. + 2.j])
     self.assertAllClose(res_traj, [[3.0, 2.0]])
 
-  def test_filter(self):
-    """Test k-space filtering."""
+  @parameterized.product(filter_type=['hamming', 'hann', 'atanfilt'])
+  @test_util.run_in_graph_and_eager_modes
+  def test_filter_noncart(self, filter_type):  # pylint: disable=missing-param-doc
+    """Test non-Cartesian k-space filtering."""
+    filt_fn = {
+        'hamming': signal_ops.hamming,
+        'hann': signal_ops.hann,
+        'atanfilt': signal_ops.atanfilt
+    }
+
     kspace = [1. + 2.j, 2. + 2.j, 3. - 4.j]
     traj = [[0.4, 1.0], [3.0, 2.0], [0, 0.5]]
     radius = tf.norm(traj, axis=-1)
 
-    result = signal_ops.filter_kspace(kspace, traj)
-    self.assertAllClose(
-        result, kspace * tf.cast(signal_ops.hamming(radius),
-                                 tf.complex64))
+    expected = kspace * tf.cast(filt_fn[filter_type](radius), tf.complex64)
+    result = signal_ops.filter_kspace(
+        kspace, traj=traj, filter_type=filter_type)
+    self.assertAllClose(expected, result)
+
+  def test_filter_cart(self):
+    """Test k-space filtering."""
+    shape = [16, 16]
+    kspace = tf.complex(
+        tf.random.stateless_normal(shape, seed=[42, 231]),
+        tf.random.stateless_normal(shape, seed=[42, 77]))
+
+    vecs = [tf.linspace(-np.pi, np.pi - (2.0 * np.pi / s), s)
+            for s in shape]  # pylint: disable=invalid-unary-operand-type
+    grid = array_ops.meshgrid(*vecs)
+    radius = tf.norm(grid, axis=-1)
+    expected = kspace * tf.cast(signal_ops.hamming(radius), tf.complex64)
+
+    result = signal_ops.filter_kspace(kspace)
+    self.assertAllClose(expected, result)
+
+  def test_filter_cart_batch(self):
+    """Test k-space filtering."""
+    shape = [16, 16]
+    kspace = tf.complex(
+        tf.random.stateless_normal([4] + shape, seed=[42, 231]),
+        tf.random.stateless_normal([4] + shape, seed=[42, 77]))
+
+    vecs = [tf.linspace(-np.pi, np.pi - (2.0 * np.pi / s), s)
+            for s in shape]  # pylint: disable=invalid-unary-operand-type
+    grid = array_ops.meshgrid(*vecs)
+    radius = tf.norm(grid, axis=-1)
+    expected = kspace * tf.cast(signal_ops.hamming(radius), tf.complex64)
+
+    result = signal_ops.filter_kspace(kspace, filter_rank=2)
+    self.assertAllClose(expected, result)
 
 
 if __name__ == '__main__':
