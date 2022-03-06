@@ -88,7 +88,7 @@ def reconstruct_adj(kspace,
       where there is no interest in the phase data. However, artefacts may
       appear if an inaccurate phase estimate is passed.
     sens_norm: A `bool`. Whether to normalize coil sensitivities. Defaults to
-      `False`.
+      `True`.
 
   Returns:
     A `Tensor`. The reconstructed image. Has the same type as `kspace` and
@@ -209,7 +209,7 @@ def reconstruct_lstsq(kspace,
       where there is no interest in the phase data. However, artefacts may
       appear if an inaccurate phase estimate is passed.
     sens_norm: A `bool`. Whether to normalize coil sensitivities. Defaults to
-      `False`.
+      `True`.
     regularizer: A `ConvexFunction`. The regularization term added to
       least-squares objective.
     optimizer: A `str`. One of `'cg'` (conjugate gradient), `'admm'`

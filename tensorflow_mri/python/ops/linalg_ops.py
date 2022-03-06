@@ -93,7 +93,7 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,  # pylint: disable=ab
     fft_norm: FFT normalization mode. Must be `None` (no normalization)
       or `'ortho'`. Defaults to `'ortho'`.
     sens_norm: A `bool`. Whether to normalize coil sensitivities. Defaults to
-      `False`.
+      `True`.
     dtype: The dtype of this operator. Must be `complex64` or `complex128`.
       Defaults to `complex64`.
     name: An optional `string`. The name of this operator.
@@ -107,7 +107,7 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,  # pylint: disable=ab
                sensitivities=None,
                phase=None,
                fft_norm='ortho',
-               sens_norm=False,
+               sens_norm=True,
                dtype=tf.complex64,
                name=None):
     # pylint: disable=invalid-unary-operand-type
@@ -445,7 +445,7 @@ def conjugate_gradient(operator,
                        preconditioner=None,
                        x=None,
                        tol=1e-5,
-                       max_iter=20,
+                       max_iterations=20,
                        name=None):
   r"""Conjugate gradient solver.
 
@@ -453,7 +453,7 @@ def conjugate_gradient(operator,
   definite matrix `A` and right-hand side vector `rhs`, using an iterative,
   matrix-free algorithm where the action of the matrix A is represented by
   `operator`. The iteration terminates when either the number of iterations
-  exceeds `max_iter` or when the residual norm has been reduced to `tol`
+  exceeds `max_iterations` or when the residual norm has been reduced to `tol`
   times its initial value, i.e. \\(||rhs - A x_k|| <= tol ||rhs||\\).
 
   .. note::
@@ -474,7 +474,7 @@ def conjugate_gradient(operator,
     x: A possibly batched vector of shape `[..., N]` containing the initial
       guess for the solution.
     tol: A float scalar convergence tolerance.
-    max_iter: An integer giving the maximum number of iterations.
+    max_iterations: An integer giving the maximum number of iterations.
     name: A name scope for the operation.
 
   Returns:
@@ -500,7 +500,7 @@ def conjugate_gradient(operator,
 
   def stopping_criterion(i, state):
     return tf.math.logical_and(
-        i < max_iter,
+        i < max_iterations,
         tf.math.reduce_any(
             tf.math.real(tf.norm(state.r, axis=-1)) > tf.math.real(tol)))
 
