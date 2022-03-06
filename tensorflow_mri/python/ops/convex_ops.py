@@ -30,7 +30,8 @@ class ConvexFunction():
   r"""Base class defining a [batch of] convex function[s].
 
   Represents a closed proper convex function
-  :math:`$f : \mathbb{R}^{n}\rightarrow \mathbb{R}$`.
+  :math:`f : \mathbb{R}^{n}\rightarrow \mathbb{R}` or
+  :math:`f : \mathbb{C}^{n}\rightarrow \mathbb{R}`.
 
   Subclasses should implement the `_call` and `_prox` methods to define the
   forward pass and the proximal mapping, respectively. Gradients are
@@ -208,8 +209,8 @@ class ConvexFunctionLinearOperatorComposition(  # pylint: disable=abstract-metho
     ConvexFunctionAffineMappingComposition):
   r"""Composes a convex function and a linear operator.
 
-  Represents :math:`f(Ax + b)`, where :math:`f` is a `ConvexFunction`,
-  :math:`A` is a `LinearOperator` and :math:`b` is a constant `Tensor`.
+  Represents :math:`f(Ax)`, where :math:`f` is a `ConvexFunction` and
+  :math:`A` is a `LinearOperator`.
 
   Args:
     function: A `ConvexFunction`.
