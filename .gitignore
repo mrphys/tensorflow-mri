@@ -2,7 +2,6 @@
 *.pyc
 *.so
 
-.vscode/
 __pycache__/
 artifacts/
 third_party/spiral_waveform
