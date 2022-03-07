@@ -10,13 +10,8 @@ tools/docs/callbacks/*
 !tools/docs/callbacks/*.rst
 tools/docs/io/*
 !tools/docs/io/*.rst
-tools/docs/layers/*
-!tools/docs/layers/*.rst
-tools/docs/losses/*
-!tools/docs/losses/*.rst
-tools/docs/metrics/*
-!tools/docs/metrics/*.rst
 tools/docs/ops/*
 !tools/docs/ops/*.rst
 tools/docs/summary/*
 !tools/docs/summary/*.rst
+tools/docs/tfmri

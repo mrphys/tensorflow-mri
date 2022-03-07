@@ -35,6 +35,7 @@ FAQ
    io
    layers
    losses
+   metrics
    ops
    summary
 
