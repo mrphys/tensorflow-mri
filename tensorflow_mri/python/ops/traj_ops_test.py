@@ -466,6 +466,38 @@ class DensityEstimationTest(test_util.TestCase):
     traj_ops.estimate_density(flat_traj, [128, 128, 128])
 
 
+@test_util.run_all_in_graph_and_eager_modes
+class TrajectoryFormatTest(test_util.TestCase):
+  """Test expand/flatten operations."""
+  def test_flatten_trajectory(self):
+    traj = tf.reshape(tf.range(48), [3, 2, 4, 2])  # [batch, views, samples, rank]
+    expected = tf.reshape(tf.range(48), [3, 8, 2])  # [batch, views * samples, rank]
+
+    result = traj_ops.flatten_trajectory(traj)
+    self.assertAllClose(expected, result)
+
+  def test_expand_trajectory(self):
+    traj = tf.reshape(tf.range(48), [3, 8, 2])  # [batch, views * samples, rank]
+    expected = tf.reshape(tf.range(48), [3, 2, 4, 2])  # [batch, views, samples, rank]
+
+    result = traj_ops.expand_trajectory(traj, 4)
+    self.assertAllClose(expected, result)
+
+  def test_flatten_density(self):
+    traj = tf.reshape(tf.range(48), [6, 2, 4])  # [batch, views, samples]
+    expected = tf.reshape(tf.range(48), [6, 8])  # [batch, views * samples]
+
+    result = traj_ops.flatten_density(traj)
+    self.assertAllClose(expected, result)
+
+  def test_expand_density(self):
+    traj = tf.reshape(tf.range(48), [6, 8])  # [batch, views * samples]
+    expected = tf.reshape(tf.range(48), [6, 2, 4])  # [batch, views, samples]
+
+    result = traj_ops.expand_density(traj, 4)
+    self.assertAllClose(expected, result)
+
+
 def _calculate_rotation_angles_from_radial_trajectory(trajectory):
   """Calculates the angles between views for a given radial trajectory.
 

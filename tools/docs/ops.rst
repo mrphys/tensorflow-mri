@@ -50,6 +50,8 @@ Functions
     estimate_density
     estimate_radial_density
     euler_to_rotation_matrix_3d
+    expand_density
+    expand_trajectory
     extract_from_complex
     extract_glimpses
     fftn

@@ -20,3 +20,5 @@ Major Features and Improvements
 
 * ``tfmri``:
 
+  * Added new ops ``expand_trajectory`` and ``expand_density``, which
+    complement the existing ``flatten_trajectory`` and ``flatten_density``.
