@@ -387,7 +387,7 @@ def reconstruct_lstsq(kspace,
   if filter_corners:
     fft_axes = list(range(-rank, 0))  # pylint: disable=invalid-unary-operand-type
     kspace = fft_ops.fftn(image, axes=fft_axes, norm='ortho', shift=True)
-    kspace = signal_ops.filter_kspace(kspace, filter_type='atanfilt',
+    kspace = signal_ops.filter_kspace(kspace, filter_fn='atanfilt',
                                       filter_rank=rank)
     image = fft_ops.ifftn(kspace, axes=fft_axes, norm='ortho', shift=True)
 

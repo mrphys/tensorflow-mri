@@ -13,7 +13,8 @@ Breaking Changes
     ``max_iterations``.
   * ``SVDCoilCompressor`` renamed to ``CoilCompressorSVD`` for consistency
     with the rest of the API.
-
+  * ``filter_kspace``: Argument ``filter_type`` has been renamed to
+    ``filter_fn`` and can accept a callable in addition to a string.
 
 Major Features and Improvements
 -------------------------------
@@ -22,3 +23,13 @@ Major Features and Improvements
 
   * Added new ops ``expand_trajectory`` and ``expand_density``, which
     complement the existing ``flatten_trajectory`` and ``flatten_density``.
+
+Bug Fixes and Other Changes
+---------------------------
+
+* ``tfmri``:
+
+  * ``hann`` and ``hamming`` now return 0 outside their domain, as expected.
+  * ``atanfilt`` now returns the correct values for the negative part of the
+    domain.
+  * Improved error reporting for ``filter_kspace``.
