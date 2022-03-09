@@ -415,7 +415,7 @@ def compress_coils(kspace,
 
   This function estimates a coil compression matrix and uses it to compress
   `kspace`. If you would like to reuse a coil compression matrix or need to
-  calibrate the compression using different data, use `tfmri.SVDCoilCompressor`.
+  calibrate the compression using different data, use `tfmri.CoilCompressorSVD`.
 
   This function supports the following coil compression methods:
 
@@ -471,7 +471,7 @@ def compress_coils(kspace,
 
   # Calculate the compression matrix, unless one was already provided.
   if method == 'svd':
-    return SVDCoilCompressor(coil_axis=coil_axis,
+    return CoilCompressorSVD(coil_axis=coil_axis,
                              out_coils=out_coils,
                              **kwargs).fit_transform(kspace)
 
@@ -501,7 +501,7 @@ class _CoilCompressor():
     return self.fit(kspace).transform(kspace)
 
 
-class SVDCoilCompressor(_CoilCompressor):
+class CoilCompressorSVD(_CoilCompressor):
   """SVD-based coil compression.
 
   This class implements the SVD-based coil compression method [1]_.
@@ -543,7 +543,7 @@ class SVDCoilCompressor(_CoilCompressor):
         `complex64` or `complex128`.
 
     Returns:
-      The fitted `SVDCoilCompressor` object.
+      The fitted `CoilCompressorSVD` object.
     """
     kspace = tf.convert_to_tensor(kspace)
 

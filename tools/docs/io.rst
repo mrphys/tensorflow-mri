@@ -1,9 +1,14 @@
-I/O
-===
+tfmri.io
+========
 
-.. toctree::
-    :maxdepth: 2
-    :caption: I/O
-    :hidden:
+.. automodule:: tensorflow_mri.python.io
 
-    io/image_io
+Functions
+---------
+
+.. autosummary::
+    :toctree: tfmri/io
+    :template: io/function.rst
+    :nosignatures:
+
+    encode_gif

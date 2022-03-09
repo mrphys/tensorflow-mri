@@ -921,11 +921,10 @@ def flatten_trajectory(trajectory):
   """Flatten a trajectory tensor.
 
   Args:
-    trajectory: A tensor. Must have shape `[..., views, samples, ndim]`.
+    trajectory: A `Tensor`. Must have shape `[..., views, samples, ndim]`.
 
   Returns:
-    A reshaped tensor with flattened views and samples dimensions, i.e. with
-    shape `[..., views*samples, ndim]`.
+    A reshaped `Tensor` with shape `[..., views * samples, ndim]`.
   """
   batch_shape = trajectory.shape[:-3]
   views, samples, rank = trajectory.shape[-3:]
@@ -937,13 +936,43 @@ def flatten_density(density):
   """Flatten a density tensor.
 
   Args:
-    density: A tensor. Must have shape `[..., views, samples]`.
+    density: A `Tensor`. Must have shape `[..., views, samples]`.
 
   Returns:
-    A reshaped tensor with flattened views and samples dimensions, i.e. with
-    shape `[..., views*samples]`.
+    A reshaped `Tensor` with shape `[..., views * samples]`.
   """
   batch_shape = density.shape[:-2]
   views, samples = density.shape[-2:]
   new_shape = batch_shape + [views*samples]
   return tf.reshape(density, new_shape)
+
+
+def expand_trajectory(trajectory, samples):
+  """Expands a trajectory tensor.
+
+  Args:
+    trajectory: A `Tensor`. Must have shape `[..., views * samples, ndim]`.
+    samples: An `int`. The number of samples in each view.
+
+  Returns:
+    A reshaped `Tensor` with shape `[..., views, samples, ndim]`.
+  """
+  batch_shape = tf.shape(trajectory)[:-2]
+  rank = tf.shape(trajectory)[-1]
+  shape = tf.concat([batch_shape, [-1, samples, rank]], 0)
+  return tf.reshape(trajectory, shape)
+
+
+def expand_density(density, samples):
+  """Expands a density tensor.
+
+  Args:
+    density: A `Tensor`. Must have shape `[..., views * samples]`.
+    samples: An `int`. The number of samples in each view.
+
+  Returns:
+    A reshaped `Tensor` with shape `[..., views, samples]`.
+  """
+  batch_shape = tf.shape(density)[:-1]
+  shape = tf.concat([batch_shape, [-1, samples]], 0)
+  return tf.reshape(density, shape)

@@ -24,8 +24,8 @@ from tensorflow_mri.python.util import check_util
 def hann(arg, name=None):
   """Calculate a Hann window at the specified coordinates.
 
-  Coordinates should be in the range `[-pi, pi]`. The center of the window
-  is at 0.
+  The domain of the window is `[-pi, pi]`. Outside this range, its value is 0.
+  The center of the window is at 0.
 
   Args:
     arg: Input tensor.
@@ -41,8 +41,8 @@ def hann(arg, name=None):
 def hamming(arg, name=None):
   """Calculate a Hamming window at the specified coordinates.
 
-  Coordinates should be in the range `[-pi, pi]`. The center of the window
-  is at 0.
+  The domain of the window is `[-pi, pi]`. Outside this range, its value is 0.
+  The center of the window is at 0.
 
   Args:
     arg: Input tensor.
@@ -66,11 +66,15 @@ def _raised_cosine(arg, a, b):
   Returns:
     A `Tensor` of shape `arg.shape`.
   """
-  return a - b * tf.math.cos(arg + np.pi)
+  arg = tf.convert_to_tensor(arg)
+  return tf.where(tf.math.abs(arg) <= np.pi,
+                  a - b * tf.math.cos(arg + np.pi), 0.0)
 
 
 def atanfilt(arg, cutoff=np.pi, beta=100.0, name=None):
   """Calculate an inverse tangent filter window at the specified coordinates.
+
+  This window has infinite domain.
 
   Args:
     arg: Input tensor.
@@ -87,12 +91,13 @@ def atanfilt(arg, cutoff=np.pi, beta=100.0, name=None):
       Magn. Reson. Med., 46: 638-651. https://doi.org/10.1002/mrm.1241
   """
   with tf.name_scope(name or 'atanfilt'):
+    arg = tf.math.abs(tf.convert_to_tensor(arg))
     return 0.5 + (1.0 / np.pi) * tf.math.atan(beta * (cutoff - arg) / cutoff)
 
 
 def filter_kspace(kspace,
                   traj=None,
-                  filter_type='hamming',
+                  filter_fn='hamming',
                   filter_rank=None,
                   filter_kwargs=None):
   """Filter *k*-space.
@@ -103,7 +108,9 @@ def filter_kspace(kspace,
     kspace: A `Tensor` of any shape. The input *k*-space.
     traj: A `Tensor` of shape `kspace.shape + [N]`, where `N` is the number of
       spatial dimensions. If `None`, `kspace` is assumed to be Cartesian.
-    filter_type: A `str`. Must be one of `"hamming"`, `"hann"` or `"atanfilt"`.
+    filter_fn: A `str` (one of `'hamming'`, `'hann'` or `'atanfilt'`) or a
+      callable that accepts a coordinate array and returns corresponding filter
+      values.
     filter_rank: An `int`. The rank of the filter. Only relevant if *k*-space is
       Cartesian. Defaults to `kspace.shape.rank`.
     filter_kwargs: A `dict`. Additional keyword arguments to pass to the
@@ -113,6 +120,8 @@ def filter_kspace(kspace,
     A `Tensor` of shape `kspace.shape`. The filtered *k*-space.
   """
   kspace = tf.convert_to_tensor(kspace)
+  if traj is not None:
+    kspace, traj = check_util.verify_compatible_trajectory(kspace, traj)
 
   # Make a "trajectory" for Cartesian k-spaces.
   is_cartesian = traj is None
@@ -122,18 +131,21 @@ def filter_kspace(kspace,
             for s in kspace.shape[-filter_rank:]]  # pylint: disable=invalid-unary-operand-type
     traj = array_ops.meshgrid(*vecs)
 
-  filter_type = check_util.validate_enum(
-      filter_type, valid_values={'hamming', 'hann', 'atanfilt'},
-      name='filter_type')
-  filter_func = {
-      'hamming': hamming,
-      'hann': hann,
-      'atanfilt': atanfilt
-  }[filter_type]
+  if not callable(filter_fn):
+    # filter_fn not a callable, so should be an enum value. Get the
+    # corresponding function.
+    filter_fn = check_util.validate_enum(
+        filter_fn, valid_values={'hamming', 'hann', 'atanfilt'},
+        name='filter_fn')
+    filter_fn = {
+        'hamming': hamming,
+        'hann': hann,
+        'atanfilt': atanfilt
+    }[filter_fn]
   filter_kwargs = filter_kwargs or {}
 
   traj_norm = tf.norm(traj, axis=-1)
-  return kspace * tf.cast(filter_func(traj_norm, **filter_kwargs), kspace.dtype)
+  return kspace * tf.cast(filter_fn(traj_norm, **filter_kwargs), kspace.dtype)
 
 
 def crop_kspace(kspace, traj=None, cutoff=None, mode='low_pass'):  # pylint: disable=missing-raises-doc

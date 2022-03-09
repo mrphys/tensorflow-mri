@@ -116,7 +116,7 @@ class ReconstructTest(test_util.TestCase):
     # Reconstruct.
     image = recon_ops.reconstruct_lstsq(kspace, image_shape,
                                         trajectory=traj,
-                                        optimizer_kwargs={'max_iter': 10})
+                                        optimizer_kwargs={'max_iterations': 10})
     self.assertAllClose(expected, image, rtol=3e-3, atol=3e-3)
 
   @parameterized.product(reduction_axis=[[0], [1], [0, 1]],
@@ -344,7 +344,7 @@ class ReconstructTest(test_util.TestCase):
                                         trajectory=traj,
                                         density=dens,
                                         sensitivities=sens,
-                                        optimizer_kwargs={'max_iter': 10})
+                                        optimizer_kwargs={'max_iterations': 10})
     self.assertAllClose(expected, image, rtol=1e-5, atol=1e-5)
 
     # Check batch of k-space data and batch of sensitivities.
@@ -354,7 +354,7 @@ class ReconstructTest(test_util.TestCase):
                                         trajectory=traj,
                                         density=dens,
                                         sensitivities=sens_batch,
-                                        optimizer_kwargs={'max_iter': 10})
+                                        optimizer_kwargs={'max_iterations': 10})
     self.assertAllClose(expected, image, rtol=1e-5, atol=1e-5)
 
     # Check batch of k-space data without batch of trajectories (trajectory is
@@ -364,7 +364,7 @@ class ReconstructTest(test_util.TestCase):
                                         trajectory=traj[0, ...],
                                         density=dens,
                                         sensitivities=sens_batch,
-                                        optimizer_kwargs={'max_iter': 10})
+                                        optimizer_kwargs={'max_iterations': 10})
     self.assertAllClose(expected, image, rtol=1e-3, atol=1e-3)
 
   def test_cg_sense_reg(self):
@@ -389,7 +389,7 @@ class ReconstructTest(test_util.TestCase):
                                         density=dens,
                                         sensitivities=sens,
                                         regularizer=regularizer,
-                                        optimizer_kwargs={'max_iter': 10})
+                                        optimizer_kwargs={'max_iterations': 10})
     self.assertAllClose(expected_tavg, image)
 
     regularizer = convex_ops.ConvexFunctionTikhonov(scale=0.5)
@@ -399,7 +399,7 @@ class ReconstructTest(test_util.TestCase):
                                         density=dens,
                                         sensitivities=sens,
                                         regularizer=regularizer,
-                                        optimizer_kwargs={'max_iter': 10})
+                                        optimizer_kwargs={'max_iterations': 10})
     self.assertAllClose(expected_null, image)
 
   @parameterized.parameters(

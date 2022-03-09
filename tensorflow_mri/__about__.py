@@ -29,7 +29,7 @@ __title__ = "tensorflow-mri"
 __summary__ = "A collection of TensorFlow add-ons for computational MRI."
 __uri__ = "https://github.com/mrphys/tensorflow-mri"
 
-__version__ = "0.10.0"
+__version__ = "0.11.0"
 
 __author__ = "Javier Montalt Tordera"
 __email__ = "javier.montalt@outlook.com"

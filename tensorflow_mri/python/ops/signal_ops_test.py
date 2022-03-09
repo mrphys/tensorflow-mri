@@ -28,8 +28,37 @@ class FilterTest(test_util.TestCase):
   def test_hamming(self):
     """Test Hamming filter."""
     x = tf.linspace(-np.pi, np.pi, 100)
+    expected = np.hamming(100)
     result = signal_ops.hamming(x)
-    self.assertAllClose(result, np.hamming(100))
+    self.assertAllClose(expected, result)
+
+  def test_hamming_oor(self):
+    """Test Hamming filter with out-of-range coordinates."""
+    x = [-4.0, -10.0, 3.5, 7.0]
+    expected = [0., 0., 0., 0.]
+    result = signal_ops.hamming(x)
+    self.assertAllClose(expected, result)
+
+  def test_hann(self):
+    """Test Hann filter."""
+    x = tf.linspace(-np.pi, np.pi, 100)
+    result = signal_ops.hann(x)
+    self.assertAllClose(result, np.hanning(100))
+
+  def test_hann_oor(self):
+    """Test Hann filter with out-of-range coordinates."""
+    x = [-4.0, -10.0, 3.5, 7.0]
+    expected = [0., 0., 0., 0.]
+    result = signal_ops.hann(x)
+    self.assertAllClose(expected, result)
+
+  def test_atanfilt(self):
+    """Test atan filter."""
+    x = [-3.1, -1.3, -0.2, 0.0, 0.4, 3.1]
+    expected = [0.7940861, 0.99457043, 0.9966006,
+                0.996817, 0.9963527, 0.7940861]
+    result = signal_ops.atanfilt(x)
+    self.assertAllClose(expected, result)
 
 
 class KSpaceFilterTest(test_util.TestCase):
@@ -52,9 +81,9 @@ class KSpaceFilterTest(test_util.TestCase):
     self.assertAllClose(res_kspace, [2. + 2.j])
     self.assertAllClose(res_traj, [[3.0, 2.0]])
 
-  @parameterized.product(filter_type=['hamming', 'hann', 'atanfilt'])
+  @parameterized.product(filter_fn=['hamming', 'hann', 'atanfilt'])
   @test_util.run_in_graph_and_eager_modes
-  def test_filter_noncart(self, filter_type):  # pylint: disable=missing-param-doc
+  def test_filter_noncart(self, filter_fn):  # pylint: disable=missing-param-doc
     """Test non-Cartesian k-space filtering."""
     filt_fn = {
         'hamming': signal_ops.hamming,
@@ -62,13 +91,13 @@ class KSpaceFilterTest(test_util.TestCase):
         'atanfilt': signal_ops.atanfilt
     }
 
-    kspace = [1. + 2.j, 2. + 2.j, 3. - 4.j]
-    traj = [[0.4, 1.0], [3.0, 2.0], [0, 0.5]]
+    kspace = tf.constant([1. + 2.j, 2. + 2.j, 3. - 4.j], tf.complex64)
+    traj = tf.constant([[0.4, 1.0], [3.0, 2.0], [0, 0.5]], tf.float32)
     radius = tf.norm(traj, axis=-1)
 
-    expected = kspace * tf.cast(filt_fn[filter_type](radius), tf.complex64)
+    expected = kspace * tf.cast(filt_fn[filter_fn](radius), tf.complex64)
     result = signal_ops.filter_kspace(
-        kspace, traj=traj, filter_type=filter_type)
+        kspace, traj=traj, filter_fn=filter_fn)
     self.assertAllClose(expected, result)
 
   def test_filter_cart(self):
@@ -103,6 +132,16 @@ class KSpaceFilterTest(test_util.TestCase):
     result = signal_ops.filter_kspace(kspace, filter_rank=2)
     self.assertAllClose(expected, result)
 
+  def test_filter_custom_fn(self):
+    filter_fn = lambda x: tf.where(x >= 1.0, 2.0, 0.0)
+
+    kspace = tf.constant([1. + 2.j, 2. + 2.j, 3. - 4.j], tf.complex64)
+    traj = tf.constant([[0.4, 1.0], [3.0, 2.0], [0, 0.5]], tf.float32)
+    expected = [2. + 4.j, 4. + 4.j, 0. + 0.j]
+
+    result = signal_ops.filter_kspace(
+        kspace, traj=traj, filter_fn=filter_fn)
+    self.assertAllClose(expected, result)
 
 if __name__ == '__main__':
   tf.test.main()

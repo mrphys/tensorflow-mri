@@ -1,4 +1,4 @@
-{{ objname | escape | underline }}
+tfmri.{{ objname | escape | underline }}======
 
 .. currentmodule:: {{ module }}
 

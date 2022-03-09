@@ -258,3 +258,54 @@ def validate_rank(value, name=None, accept_none=True):
     raise ValueError(
         f'Argument `{name}` must be non-negative, but got {value}.')
   return value
+
+
+def verify_compatible_trajectory(kspace, traj):
+  """Verifies that a trajectory is compatible with the given k-space.
+
+  Args:
+    kspace: A `Tensor`.
+    traj: A `Tensor`.
+
+  Returns:
+    A tuple containing valid `kspace` and `traj` tensors.
+
+  Raises:
+    TypeError: If `kspace` and `traj` have incompatible dtypes.
+    ValueError: If `kspace` and `traj` do not have the same number of samples
+      or have incompatible batch shapes.
+  """
+  kspace = tf.convert_to_tensor(kspace, name='kspace')
+  traj = tf.convert_to_tensor(traj, name='traj')
+
+  # Check dtype.
+  if traj.dtype != kspace.dtype.real_dtype:
+    raise TypeError(
+        f"kspace and trajectory have incompatible dtypes: "
+        f"{kspace.dtype} and {traj.dtype}")
+
+  # Check number of samples (static).
+  if not kspace.shape[-1:].is_compatible_with(traj.shape[-2:-1]):
+    raise ValueError(
+        f"kspace and trajectory must have the same number of samples, but got "
+        f"{kspace.shape[-1]} and {traj.shape[-2]}, respectively")
+  # Check number of samples (dynamic).
+  kspace_shape, traj_shape = tf.shape(kspace), tf.shape(traj)
+  checks = [
+      tf.debugging.assert_equal(
+          kspace_shape[-1], traj_shape[-2],
+          message="kspace and trajectory must have the same number of samples")
+  ]
+  with tf.control_dependencies(checks):
+    kspace, traj = tf.identity_n([kspace, traj])
+
+  # Check batch shapes (static).
+  try:
+    tf.broadcast_static_shape(kspace.shape[:-1], traj.shape[:-2])
+  except ValueError as err:
+    raise ValueError(
+        f"kspace and trajectory have incompatible batch shapes, "
+        f"got {kspace.shape[:-1]} and {traj.shape[:-2]}, respectively") from err
+  # TODO(jmontalt): Check batch shapes (dynamic).
+
+  return kspace, traj

@@ -31,11 +31,12 @@ FAQ
    :caption: API Documentation
    :hidden:
 
+   ops
    callbacks
    io
    layers
    losses
-   ops
+   metrics
    summary
 
 .. meta::

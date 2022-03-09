@@ -88,7 +88,7 @@ def reconstruct_adj(kspace,
       where there is no interest in the phase data. However, artefacts may
       appear if an inaccurate phase estimate is passed.
     sens_norm: A `bool`. Whether to normalize coil sensitivities. Defaults to
-      `False`.
+      `True`.
 
   Returns:
     A `Tensor`. The reconstructed image. Has the same type as `kspace` and
@@ -209,7 +209,7 @@ def reconstruct_lstsq(kspace,
       where there is no interest in the phase data. However, artefacts may
       appear if an inaccurate phase estimate is passed.
     sens_norm: A `bool`. Whether to normalize coil sensitivities. Defaults to
-      `False`.
+      `True`.
     regularizer: A `ConvexFunction`. The regularization term added to
       least-squares objective.
     optimizer: A `str`. One of `'cg'` (conjugate gradient), `'admm'`
@@ -387,7 +387,7 @@ def reconstruct_lstsq(kspace,
   if filter_corners:
     fft_axes = list(range(-rank, 0))  # pylint: disable=invalid-unary-operand-type
     kspace = fft_ops.fftn(image, axes=fft_axes, norm='ortho', shift=True)
-    kspace = signal_ops.filter_kspace(kspace, filter_type='atanfilt',
+    kspace = signal_ops.filter_kspace(kspace, filter_fn='atanfilt',
                                       filter_rank=rank)
     image = fft_ops.ifftn(kspace, axes=fft_axes, norm='ortho', shift=True)
 

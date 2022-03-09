@@ -12,10 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Losses.
-
-This module contains loss functions for use in Keras models.
-"""
+"""Keras losses."""
 
 from tensorflow_mri.python.losses.confusion_losses import *
 from tensorflow_mri.python.losses.iqa_losses import *

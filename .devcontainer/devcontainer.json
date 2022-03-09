@@ -1,0 +1,13 @@
+{
+	"dockerFile": "./Dockerfile",
+	"settings": {},
+	"extensions": [
+		"ms-python.python",
+		"ms-vscode.cpptools"
+	],
+	"runArgs": [
+		"--gpus=all",
+	],
+	"postCreateCommand": "python3.8 -m pip install -r requirements.txt",
+	"remoteUser": "vscode"
+}

@@ -1,10 +1,27 @@
-Losses
-======
+tfmri.losses
+============
 
-.. toctree::
-    :maxdepth: 2
-    :caption: Losses
-    :hidden:
+.. automodule:: tensorflow_mri.python.losses
 
-    losses/confusion_losses
-    losses/iqa_losses
+Classes
+-------
+
+.. autosummary::
+    :toctree: tfmri/losses
+    :template: losses/class.rst
+    :nosignatures:
+    
+    MultiscaleStructuralSimilarityLoss
+    StructuralSimilarityLoss
+
+
+Functions
+---------
+
+.. autosummary::
+    :toctree: tfmri/losses
+    :template: losses/function.rst
+    :nosignatures:
+
+    ssim_loss
+    ssim_multiscale_loss
