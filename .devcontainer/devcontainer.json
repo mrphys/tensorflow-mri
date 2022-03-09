@@ -1,8 +1,6 @@
 {
 	"dockerFile": "./Dockerfile",
-	"settings": {
-		"terminal.integrated.defaultProfile.linux": "bash"
-	},
+	"settings": {},
 	"extensions": [
 		"ms-python.python",
 		"ms-vscode.cpptools"
