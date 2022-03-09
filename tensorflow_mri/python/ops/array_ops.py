@@ -68,7 +68,8 @@ def meshgrid(*args):
   """Return coordinate matrices from coordinate vectors.
 
   Make N-D coordinate arrays for vectorized evaluations of N-D scalar/vector
-  fields over N-D grids, given one-dimensional coordinate arrays `x1, x2,…, xn`.
+  fields over N-D grids, given one-dimensional coordinate arrays
+  `x1, x2, ..., xn`.
 
   .. note::
     Similar to `tf.meshgrid`, but uses matrix indexing and returns a stacked

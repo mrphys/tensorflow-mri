@@ -32,15 +32,6 @@ wheel: $(TARGET)
 
 docs: $(TARGET)
 	rm -rf tools/docs/_build
-	rm -rf tools/docs/callbacks/*_callbacks
-	rm -rf tools/docs/io/*_io
-	rm -rf tools/docs/layers/*_layers
-	rm -rf tools/docs/layers/conv_blocks
-	rm -rf tools/docs/layers/conv_endec
-	rm -rf tools/docs/losses/*_losses
-	rm -rf tools/docs/metrics/*_metrics
-	rm -rf tools/docs/ops/*_ops
-	rm -rf tools/docs/summary/*_summary
 	$(MAKE) -C tools/docs html PY_VERSION=$(PY_VERSION)
 
 test: $(wildcard tensorflow_mri/python/ops/*.py)

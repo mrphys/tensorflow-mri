@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Neural network layers."""
+"""Keras layers."""
 
 from tensorflow_mri.python.layers.conv_blocks import *
 from tensorflow_mri.python.layers.conv_endec import *

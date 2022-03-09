@@ -12,10 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Metrics.
-
-This module contains metrics for use in Keras models.
-"""
+"""Keras metrics."""
 
 from tensorflow_mri.python.metrics.confusion_metrics import *
 from tensorflow_mri.python.metrics.iqa_metrics import *

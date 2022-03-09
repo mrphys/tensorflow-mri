@@ -179,7 +179,7 @@ class CoilCompressionTest(test_util.TestCase):
     kspace = self.data['cc/kspace']
     result = self.data['cc/result/svd']
 
-    compressor = coil_ops.SVDCoilCompressor(out_coils=16)
+    compressor = coil_ops.CoilCompressorSVD(out_coils=16)
     compressor = compressor.fit(kspace)
     cc_kspace = compressor.transform(kspace)
     self.assertAllClose(cc_kspace, result[..., :16], rtol=1e-2, atol=1e-2)
