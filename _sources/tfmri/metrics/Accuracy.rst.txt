@@ -1,0 +1,8 @@
+﻿tfmri.metrics.Accuracy
+======================
+
+.. currentmodule:: tensorflow_mri.python.metrics
+
+.. autoclass:: Accuracy
+    :members:
+    :show-inheritance:

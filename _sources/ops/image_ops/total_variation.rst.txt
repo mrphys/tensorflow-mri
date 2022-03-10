@@ -1,6 +1,0 @@
-﻿tfmri.total\_variation
-======================
-
-.. currentmodule:: tensorflow_mri.python.ops.image_ops
-
-.. autofunction:: total_variation

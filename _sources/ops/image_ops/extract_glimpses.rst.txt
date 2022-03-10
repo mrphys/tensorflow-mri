@@ -1,6 +1,0 @@
-﻿tfmri.extract\_glimpses
-=======================
-
-.. currentmodule:: tensorflow_mri.python.ops.image_ops
-
-.. autofunction:: extract_glimpses

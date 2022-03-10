@@ -1,0 +1,6 @@
+﻿tfmri.spiral\_waveform
+======================
+
+.. currentmodule:: tensorflow_mri
+
+.. autofunction:: spiral_waveform

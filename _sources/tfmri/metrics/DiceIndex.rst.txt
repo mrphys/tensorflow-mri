@@ -1,0 +1,8 @@
+﻿tfmri.metrics.DiceIndex
+=======================
+
+.. currentmodule:: tensorflow_mri.python.metrics
+
+.. autoclass:: DiceIndex
+    :members:
+    :show-inheritance:

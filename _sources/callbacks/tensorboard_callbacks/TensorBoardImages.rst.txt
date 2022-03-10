@@ -1,8 +1,0 @@
-﻿tfmri.callbacks.TensorBoardImages
-=================================
-
-.. currentmodule:: tensorflow_mri.python.callbacks.tensorboard_callbacks
-
-.. autoclass:: TensorBoardImages
-    :members:
-    :show-inheritance:

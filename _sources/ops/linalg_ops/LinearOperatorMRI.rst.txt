@@ -1,6 +1,0 @@
-﻿tfmri.LinearOperatorMRI
-=======================
-
-.. currentmodule:: tensorflow_mri.python.ops.linalg_ops
-
-.. autoclass:: LinearOperatorMRI

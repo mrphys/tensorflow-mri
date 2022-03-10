@@ -1,6 +1,0 @@
-﻿tfmri.ConvexFunctionAffineMappingComposition
-============================================
-
-.. currentmodule:: tensorflow_mri.python.ops.convex_ops
-
-.. autoclass:: ConvexFunctionAffineMappingComposition

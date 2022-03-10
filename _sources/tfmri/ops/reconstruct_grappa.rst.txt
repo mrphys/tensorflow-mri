@@ -1,0 +1,6 @@
+﻿tfmri.reconstruct\_grappa
+=========================
+
+.. currentmodule:: tensorflow_mri
+
+.. autofunction:: reconstruct_grappa

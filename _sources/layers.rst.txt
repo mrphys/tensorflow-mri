@@ -1,11 +1,16 @@
-Layers
-======
+tfmri.layers
+============
 
-.. toctree::
-    :maxdepth: 2
-    :caption: Layers
-    :hidden:
+.. automodule:: tensorflow_mri.python.layers
 
-    layers/conv_blocks
-    layers/conv_endec
-    layers/preproc_layers
+Classes
+-------
+
+.. autosummary::
+    :toctree: tfmri/layers
+    :template: layers/class.rst
+    :nosignatures:
+    
+    ConvBlock
+    KSpaceResampling
+    UNet

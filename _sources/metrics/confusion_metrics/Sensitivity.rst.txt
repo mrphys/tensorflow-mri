@@ -1,8 +1,0 @@
-﻿tfmri.metrics.Sensitivity
-=========================
-
-.. currentmodule:: tensorflow_mri.python.metrics.confusion_metrics
-
-.. autoclass:: Sensitivity
-    :members:
-    :show-inheritance:

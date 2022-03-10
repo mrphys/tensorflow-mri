@@ -1,6 +1,0 @@
-﻿tfmri.gmsd2d
-============
-
-.. currentmodule:: tensorflow_mri.python.ops.image_ops
-
-.. autofunction:: gmsd2d

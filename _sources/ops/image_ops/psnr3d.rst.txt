@@ -1,6 +1,0 @@
-﻿tfmri.psnr3d
-============
-
-.. currentmodule:: tensorflow_mri.python.ops.image_ops
-
-.. autofunction:: psnr3d

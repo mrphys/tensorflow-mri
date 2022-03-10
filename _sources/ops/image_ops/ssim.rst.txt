@@ -1,6 +1,0 @@
-﻿tfmri.ssim
-==========
-
-.. currentmodule:: tensorflow_mri.python.ops.image_ops
-
-.. autofunction:: ssim

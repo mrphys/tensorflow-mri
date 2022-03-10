@@ -1,6 +1,0 @@
-﻿tfmri.soft\_threshold
-=====================
-
-.. currentmodule:: tensorflow_mri.python.ops.math_ops
-
-.. autofunction:: soft_threshold

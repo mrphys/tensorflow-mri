@@ -1,0 +1,6 @@
+﻿tfmri.spiral\_trajectory
+========================
+
+.. currentmodule:: tensorflow_mri
+
+.. autofunction:: spiral_trajectory

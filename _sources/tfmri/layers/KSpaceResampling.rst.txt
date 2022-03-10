@@ -1,0 +1,8 @@
+﻿tfmri.layers.KSpaceResampling
+=============================
+
+.. currentmodule:: tensorflow_mri.python.layers
+
+.. autoclass:: KSpaceResampling
+    :members:
+    :show-inheritance:

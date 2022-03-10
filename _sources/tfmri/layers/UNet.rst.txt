@@ -1,0 +1,8 @@
+﻿tfmri.layers.UNet
+=================
+
+.. currentmodule:: tensorflow_mri.python.layers
+
+.. autoclass:: UNet
+    :members:
+    :show-inheritance:

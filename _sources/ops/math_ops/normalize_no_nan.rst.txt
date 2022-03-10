@@ -1,6 +1,0 @@
-﻿tfmri.normalize\_no\_nan
-========================
-
-.. currentmodule:: tensorflow_mri.python.ops.math_ops
-
-.. autofunction:: normalize_no_nan

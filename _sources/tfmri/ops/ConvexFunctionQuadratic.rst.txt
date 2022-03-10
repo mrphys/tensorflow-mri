@@ -1,0 +1,8 @@
+﻿tfmri.ConvexFunctionQuadratic
+=============================
+
+.. currentmodule:: tensorflow_mri
+
+.. autoclass:: ConvexFunctionQuadratic
+    :members:
+    :show-inheritance:

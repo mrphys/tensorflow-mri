@@ -1,6 +1,0 @@
-﻿tfmri.ConvexFunctionL1Norm
-==========================
-
-.. currentmodule:: tensorflow_mri.python.ops.convex_ops
-
-.. autoclass:: ConvexFunctionL1Norm

@@ -1,0 +1,6 @@
+﻿tfmri.ssim2d\_multiscale
+========================
+
+.. currentmodule:: tensorflow_mri
+
+.. autofunction:: ssim2d_multiscale

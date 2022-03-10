@@ -1,0 +1,8 @@
+﻿tfmri.ConvexFunctionL2Norm
+==========================
+
+.. currentmodule:: tensorflow_mri
+
+.. autoclass:: ConvexFunctionL2Norm
+    :members:
+    :show-inheritance:

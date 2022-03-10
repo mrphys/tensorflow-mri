@@ -1,0 +1,6 @@
+﻿tfmri.block\_soft\_threshold
+============================
+
+.. currentmodule:: tensorflow_mri
+
+.. autofunction:: block_soft_threshold

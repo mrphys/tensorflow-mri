@@ -1,6 +1,0 @@
-﻿tfmri.gradient\_magnitude
-=========================
-
-.. currentmodule:: tensorflow_mri.python.ops.image_ops
-
-.. autofunction:: gradient_magnitude

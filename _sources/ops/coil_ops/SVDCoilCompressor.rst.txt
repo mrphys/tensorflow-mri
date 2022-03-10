@@ -1,8 +1,0 @@
-﻿SVDCoilCompressor
-=================
-
-.. currentmodule:: tensorflow_mri.python.ops.coil_ops
-
-.. autoclass:: SVDCoilCompressor
-    :members:
-    :show-inheritance:

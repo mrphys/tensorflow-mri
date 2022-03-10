@@ -1,0 +1,6 @@
+﻿tfmri.reconstruct\_adj
+======================
+
+.. currentmodule:: tensorflow_mri
+
+.. autofunction:: reconstruct_adj

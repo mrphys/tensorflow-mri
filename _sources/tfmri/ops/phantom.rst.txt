@@ -1,0 +1,6 @@
+﻿tfmri.phantom
+=============
+
+.. currentmodule:: tensorflow_mri
+
+.. autofunction:: phantom

@@ -1,0 +1,6 @@
+﻿tfmri.reconstruct\_lstsq
+========================
+
+.. currentmodule:: tensorflow_mri
+
+.. autofunction:: reconstruct_lstsq

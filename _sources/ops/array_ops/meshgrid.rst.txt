@@ -1,6 +1,0 @@
-﻿tfmri.meshgrid
-==============
-
-.. currentmodule:: tensorflow_mri.python.ops.array_ops
-
-.. autofunction:: meshgrid

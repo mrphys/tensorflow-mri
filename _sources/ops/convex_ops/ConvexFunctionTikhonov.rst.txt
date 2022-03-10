@@ -1,6 +1,0 @@
-﻿tfmri.ConvexFunctionTikhonov
-============================
-
-.. currentmodule:: tensorflow_mri.python.ops.convex_ops
-
-.. autoclass:: ConvexFunctionTikhonov

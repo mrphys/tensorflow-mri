@@ -1,8 +1,0 @@
-﻿tfmri.layers.UNet
-=================
-
-.. currentmodule:: tensorflow_mri.python.layers.conv_endec
-
-.. autoclass:: UNet
-    :members:
-    :show-inheritance:

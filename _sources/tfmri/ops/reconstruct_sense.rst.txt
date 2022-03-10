@@ -1,0 +1,6 @@
+﻿tfmri.reconstruct\_sense
+========================
+
+.. currentmodule:: tensorflow_mri
+
+.. autofunction:: reconstruct_sense

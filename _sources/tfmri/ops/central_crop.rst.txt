@@ -1,0 +1,6 @@
+﻿tfmri.central\_crop
+===================
+
+.. currentmodule:: tensorflow_mri
+
+.. autofunction:: central_crop

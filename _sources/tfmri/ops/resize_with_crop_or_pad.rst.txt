@@ -1,0 +1,6 @@
+﻿tfmri.resize\_with\_crop\_or\_pad
+=================================
+
+.. currentmodule:: tensorflow_mri
+
+.. autofunction:: resize_with_crop_or_pad

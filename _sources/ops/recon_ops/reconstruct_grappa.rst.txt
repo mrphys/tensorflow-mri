@@ -1,6 +1,0 @@
-﻿tfmri.reconstruct\_grappa
-=========================
-
-.. currentmodule:: tensorflow_mri.python.ops.recon_ops
-
-.. autofunction:: reconstruct_grappa

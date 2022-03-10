@@ -1,0 +1,8 @@
+﻿tfmri.LinearOperatorFiniteDifference
+====================================
+
+.. currentmodule:: tensorflow_mri
+
+.. autoclass:: LinearOperatorFiniteDifference
+    :members:
+    :show-inheritance:

@@ -1,6 +1,0 @@
-﻿tfmri.euler\_to\_rotation\_matrix\_3d
-=====================================
-
-.. currentmodule:: tensorflow_mri.python.ops.geom_ops
-
-.. autofunction:: euler_to_rotation_matrix_3d

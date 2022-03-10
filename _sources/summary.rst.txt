@@ -1,9 +1,14 @@
-Summaries
-=========
+tfmri.summary
+=============
 
-.. toctree::
-    :maxdepth: 2
-    :caption: Summaries
-    :hidden:
+.. automodule:: tensorflow_mri.python.summary
 
-    summary/image_summary
+Functions
+---------
+
+.. autosummary::
+    :toctree: tfmri/summary
+    :template: summary/function.rst
+    :nosignatures:
+
+    gif

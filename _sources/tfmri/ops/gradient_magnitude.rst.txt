@@ -1,0 +1,6 @@
+﻿tfmri.gradient\_magnitude
+=========================
+
+.. currentmodule:: tensorflow_mri
+
+.. autofunction:: gradient_magnitude

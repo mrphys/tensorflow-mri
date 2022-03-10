@@ -1,6 +1,0 @@
-﻿tfmri.broadcast\_dynamic\_shapes
-================================
-
-.. currentmodule:: tensorflow_mri.python.ops.array_ops
-
-.. autofunction:: broadcast_dynamic_shapes

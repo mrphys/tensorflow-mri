@@ -1,0 +1,6 @@
+﻿tfmri.ravel\_multi\_index
+=========================
+
+.. currentmodule:: tensorflow_mri
+
+.. autofunction:: ravel_multi_index

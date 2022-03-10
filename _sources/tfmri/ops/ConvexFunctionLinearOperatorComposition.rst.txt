@@ -1,0 +1,8 @@
+﻿tfmri.ConvexFunctionLinearOperatorComposition
+=============================================
+
+.. currentmodule:: tensorflow_mri
+
+.. autoclass:: ConvexFunctionLinearOperatorComposition
+    :members:
+    :show-inheritance:

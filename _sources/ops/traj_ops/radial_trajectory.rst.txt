@@ -1,6 +1,0 @@
-﻿tfmri.radial\_trajectory
-========================
-
-.. currentmodule:: tensorflow_mri.python.ops.traj_ops
-
-.. autofunction:: radial_trajectory

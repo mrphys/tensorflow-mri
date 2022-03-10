@@ -1,0 +1,6 @@
+﻿tfmri.conjugate\_gradient
+=========================
+
+.. currentmodule:: tensorflow_mri
+
+.. autofunction:: conjugate_gradient

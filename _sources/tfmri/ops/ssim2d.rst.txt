@@ -1,0 +1,6 @@
+﻿tfmri.ssim2d
+============
+
+.. currentmodule:: tensorflow_mri
+
+.. autofunction:: ssim2d

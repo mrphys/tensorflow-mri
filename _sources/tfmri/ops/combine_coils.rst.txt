@@ -1,0 +1,6 @@
+﻿tfmri.combine\_coils
+====================
+
+.. currentmodule:: tensorflow_mri
+
+.. autofunction:: combine_coils

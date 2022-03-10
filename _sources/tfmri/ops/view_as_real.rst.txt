@@ -1,0 +1,6 @@
+﻿tfmri.view\_as\_real
+====================
+
+.. currentmodule:: tensorflow_mri
+
+.. autofunction:: view_as_real
