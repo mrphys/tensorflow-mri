@@ -534,6 +534,66 @@ class LinearOperatorScaledIdentity(LinalgImagingMixin,  # pylint: disable=abstra
     return tf.shape(self.multiplier)
 
 
+class LinearOperatorDiag(LinalgImagingMixin,  # pylint: disable=abstract-method
+                         tf.linalg.LinearOperatorDiag):
+  """`LinearOperator` acting like a [batch] square diagonal matrix.
+
+  Like `tf.linalg.LinearOperatorDiag`_, but with additional imaging
+  extensions.
+
+  For the parameters, see `tf.linalg.LinearOperatorDiag`_.
+
+  .. _tf.linalg.LinearOperatorDiag: https://www.tensorflow.org/api_docs/python/tf/linalg/LinearOperatorDiag
+  """
+  def __init__(self,
+               diag,
+               rank=None,
+               is_non_singular=None,
+               is_self_adjoint=None,
+               is_positive_definite=None,
+               is_square=True,
+               name='LinearOperatorDiag'):
+    # pylint: disable=invalid-unary-operand-type
+    diag = tf.convert_to_tensor(diag, name='diag')
+    self._rank = check_util.validate_rank(rank, name='rank', accept_none=True)
+    if self._rank is None:
+      self._rank = diag.shape.rank
+
+    self._shape_tensor_value = tf.shape(diag)
+    self._shape_value = diag.shape
+
+    super().__init__(
+        diag=tf.reshape(diag, [-1]),
+        is_non_singular=is_non_singular,
+        is_self_adjoint=is_self_adjoint,
+        is_positive_definite=is_positive_definite,
+        is_square=is_square,
+        name=name)
+
+  def _transform(self, x, adjoint=False):
+    print("diag", adjoint)
+    diag = tf.math.conj(self.diag) if adjoint else self.diag
+    return tf.reshape(diag, self.domain_shape_tensor()) * x
+
+  def _domain_shape(self):
+    return self._shape_value[-self._rank:]
+
+  def _range_shape(self):
+    return self._shape_value[-self._rank:]
+
+  def _batch_shape(self):
+    return self._shape_value[:-self._rank]
+
+  def _domain_shape_tensor(self):
+    return self._shape_tensor_value[-self._rank:]
+
+  def _range_shape_tensor(self):
+    return self._shape_tensor_value[-self._rank:]
+
+  def _batch_shape_tensor(self):
+    return self._shape_tensor_value[:-self._rank]
+
+
 class LinearOperatorGramMatrix(LinalgImagingMixin,  # pylint: disable=abstract-method
                                tf.linalg.LinearOperator):
   r"""Gram matrix of a linear operator.

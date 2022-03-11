@@ -59,43 +59,50 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,  # pylint: disable=ab
   vectorize operations when possible.
 
   Args:
-    image_shape: A `TensorShape` or a list of `ints`. The shape of the images
+    image_shape: A `tf.TensorShape` or a list of `ints`. The shape of the images
       that this operator acts on. Must have length 2 or 3.
-    extra_shape: An optional `TensorShape` or list of `ints`. Additional
+    extra_shape: An optional `tf.TensorShape` or list of `ints`. Additional
       dimensions that should be included within the operator domain. Note that
       `extra_shape` is not needed to reconstruct independent batches of images.
       However, it is useful when this operator is used as part of a
       reconstruction that performs computation along non-spatial dimensions,
       e.g. for temporal regularization. Defaults to `None`.
-    mask: An optional `Tensor` of type `bool`. The sampling mask. Must have
-      shape `[..., *S]`, where `S` is the `image_shape` and `...` is
+    mask: An optional `tf.Tensor` of type `tf.bool`. The sampling mask. Must
+      have shape `[..., *S]`, where `S` is the `image_shape` and `...` is
       the batch shape, which can have any number of dimensions. If `mask` is
       passed, this operator represents an undersampled MRI operator.
-    trajectory: An optional `Tensor` of type `float32` or `float64`. Must have
-      shape `[..., M, N]`, where `N` is the rank (number of spatial dimensions),
-      `M` is the number of samples in the encoded space and `...` is the batch
-      shape, which can have any number of dimensions. If `trajectory` is passed,
-      this operator represents a non-Cartesian MRI operator.
-    density: An optional `Tensor` of type `float32` or `float64`. The sampling
-      densities. Must have shape `[..., M]`, where `M` is the number of
+    trajectory: An optional `tf.Tensor` of type `float32` or `float64`. Must
+      have shape `[..., M, N]`, where `N` is the rank (number of spatial
+      dimensions), `M` is the number of samples in the encoded space and `...`
+      is the batch shape, which can have any number of dimensions. If
+      `trajectory` is passed, this operator represents a non-Cartesian MRI
+      operator.
+    density: An optional `tf.Tensor` of type `float32` or `float64`. The
+      sampling densities. Must have shape `[..., M]`, where `M` is the number of
       samples and `...` is the batch shape, which can have any number of
       dimensions. This input is only relevant for non-Cartesian MRI operators.
       If passed, the non-Cartesian operator will include sampling density
       compensation. If `None`, the operator will not perform sampling density
       compensation.
-    sensitivities: An optional `Tensor` of type `complex64` or `complex128`.
+    sensitivities: An optional `tf.Tensor` of type `complex64` or `complex128`.
       The coil sensitivity maps. Must have shape `[..., C, *S]`, where `S`
       is the `image_shape`, `C` is the number of coils and `...` is the batch
       shape, which can have any number of dimensions.
-    phase: An optional `Tensor` of type `float32` or `float64`. A phase
+    phase: An optional `tf.Tensor` of type `float32` or `float64`. A phase
       estimate for the image. If provided, this operator will be
       phase-constrained.
     fft_norm: FFT normalization mode. Must be `None` (no normalization)
       or `'ortho'`. Defaults to `'ortho'`.
     sens_norm: A `bool`. Whether to normalize coil sensitivities. Defaults to
       `True`.
-    dtype: The dtype of this operator. Must be `complex64` or `complex128`.
-      Defaults to `complex64`.
+    dynamic_domain: A `str`. The domain of the dynamic dimension, if present.
+      Must be one of `'time'` or `'frequency'`. May only be provided together
+      with a non-scalar `extra_shape`. The dynamic dimension is the last
+      dimension of `extra_shape`. The `'time'` mode (default) should be
+      used for regular dynamic reconstruction. The `'frequency'` mode should be
+      used for reconstruction in x-f space.
+    dtype: A `tf.DType`. The dtype of this operator. Must be `complex64` or
+      `complex128`. Defaults to `complex64`.
     name: An optional `string`. The name of this operator.
   """
   def __init__(self,
@@ -108,6 +115,7 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,  # pylint: disable=ab
                phase=None,
                fft_norm='ortho',
                sens_norm=True,
+               dynamic_domain=None,
                dtype=tf.complex64,
                name=None):
     # pylint: disable=invalid-unary-operand-type
@@ -121,6 +129,7 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,  # pylint: disable=ab
         phase=phase,
         fft_norm=fft_norm,
         sens_norm=sens_norm,
+        dynamic_domain=dynamic_domain,
         dtype=dtype,
         name=name)
 
@@ -277,23 +286,34 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,  # pylint: disable=ab
       self._sensitivities = math_ops.normalize_no_nan(
           self._sensitivities, axis=-(self._rank + 1))
 
+    # Set dynamic domain.
+    if dynamic_domain is not None and self._extra_shape.rank == 0:
+      raise ValueError(
+          "Argument `dynamic_domain` requires a non-scalar `extra_shape`.")
+    if dynamic_domain is not None:
+      self._dynamic_domain = check_util.validate_enum(
+          dynamic_domain, {'time', 'frequency'}, name='dynamic_domain')
+    else:
+      self._dynamic_domain = None
+
     super().__init__(dtype, name=name, parameters=parameters)
 
   def _transform(self, x, adjoint=False):
     """Transform [batch] input `x`.
 
     Args:
-      x: A `Tensor` of type `self.dtype` and shape `[..., *self.domain_shape]`
-        containing images, if `adjoint` is `False`, or a `Tensor` of type
-        `self.dtype` and shape `[..., *self.range_shape]` containing *k*-space
-        data, if `adjoint` is `True`.
+      x: A `tf.Tensor` of type `self.dtype` and shape
+        `[..., *self.domain_shape]` containing images, if `adjoint` is `False`,
+        or a `tf.Tensor` of type `self.dtype` and shape
+        `[..., *self.range_shape]` containing *k*-space data, if `adjoint` is
+        `True`.
       adjoint: A `bool` indicating whether to apply the adjoint of the operator.
 
     Returns:
-      A `Tensor` of type `self.dtype` and shape `[..., *self.range_shape]`
-      containing *k*-space data, if `adjoint` is `False`, or a `Tensor` of type
-      `self.dtype` and shape `[..., *self.domain_shape]` containing images, if
-      `adjoint` is `True`.
+      A `tf.Tensor` of type `self.dtype` and shape `[..., *self.range_shape]`
+      containing *k*-space data, if `adjoint` is `False`, or a `tf.Tensor` of
+      type `self.dtype` and shape `[..., *self.domain_shape]` containing
+      images, if `adjoint` is `True`.
     """
     if adjoint:
       # Apply density compensation.
@@ -325,7 +345,17 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,  # pylint: disable=ab
         x *= tf.math.conj(self._phase_rotator)
         x = tf.cast(tf.math.real(x), self.dtype)
 
+      # Apply FFT along dynamic axis, if necessary.
+      if self.is_dynamic and self.dynamic_domain == 'frequency':
+        x = fft_ops.fftn(x, axes=[self.dynamic_axis],
+                         norm='ortho', shift=True)
+
     else:  # Forward operator.
+
+      # Apply FFT along dynamic axis, if necessary.
+      if self.is_dynamic and self.dynamic_domain == 'frequency':
+        x = fft_ops.ifftn(x, axes=[self.dynamic_axis],
+                          norm='ortho', shift=True)
 
       # Add phase to real-valued image if reconstruction is phase-constrained.
       if self.is_phase_constrained:
@@ -410,6 +440,21 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,  # pylint: disable=ab
     return self._phase is not None
 
   @property
+  def is_dynamic(self):
+    """Whether this is a dynamic MRI operator."""
+    return self._dynamic_domain is not None
+
+  @property
+  def dynamic_domain(self):
+    """The dynamic domain of this operator."""
+    return self._dynamic_domain
+
+  @property
+  def dynamic_axis(self):
+    """The dynamic axis of this operator."""
+    return -(self._rank + 1) if self.is_dynamic else None
+
+  @property
   def num_coils(self):
     """The number of coils."""
     if self._sensitivities is None:
@@ -479,13 +524,14 @@ def conjugate_gradient(operator,
 
   Returns:
     A namedtuple representing the final state with fields:
-      - i: A scalar `int32` `Tensor`. Number of iterations executed.
-      - x: A rank-1 `Tensor` of shape `[..., N]` containing the computed
-          solution.
-      - r: A rank-1 `Tensor` of shape `[.., M]` containing the residual vector.
-      - p: A rank-1 `Tensor` of shape `[..., N]`. `A`-conjugate basis vector.
-      - gamma: \\(r \dot M \dot r\\), equivalent to  \\(||r||_2^2\\) when
-        `preconditioner=None`.
+
+    - i: A scalar `int32` `tf.Tensor`. Number of iterations executed.
+    - x: A rank-1 `tf.Tensor` of shape `[..., N]` containing the computed
+        solution.
+    - r: A rank-1 `tf.Tensor` of shape `[.., M]` containing the residual vector.
+    - p: A rank-1 `tf.Tensor` of shape `[..., N]`. `A`-conjugate basis vector.
+    - gamma: \\(r \dot M \dot r\\), equivalent to  \\(||r||_2^2\\) when
+      `preconditioner=None`.
 
   Raises:
     ValueError: If `operator` is not self-adjoint and positive definite.

@@ -146,6 +146,7 @@ def reconstruct_lstsq(kspace,
                       sensitivities=None,
                       phase=None,
                       sens_norm=True,
+                      dynamic_domain=None,
                       regularizer=None,
                       optimizer=None,
                       optimizer_kwargs=None,
@@ -210,6 +211,12 @@ def reconstruct_lstsq(kspace,
       appear if an inaccurate phase estimate is passed.
     sens_norm: A `bool`. Whether to normalize coil sensitivities. Defaults to
       `True`.
+    dynamic_domain: A `str`. The domain of the dynamic dimension, if present.
+      Must be one of `'time'` or `'frequency'`. May only be provided together
+      with a non-scalar `extra_shape`. The dynamic dimension is the last
+      dimension of `extra_shape`. The `'time'` mode (default) should be
+      used for regular dynamic reconstruction. The `'frequency'` mode should be
+      used for reconstruction in x-f space.
     regularizer: A `ConvexFunction`. The regularization term added to
       least-squares objective.
     optimizer: A `str`. One of `'cg'` (conjugate gradient), `'admm'`
@@ -258,6 +265,12 @@ def reconstruct_lstsq(kspace,
       parallel MRI: Combination of compressed sensing, parallel imaging, and
       golden-angle radial sampling for fast and flexible dynamic volumetric MRI.
       Magn. Reson. Med., 72: 707-717. https://doi.org/10.1002/mrm.24980
+
+    .. [4] Tsao, J., Boesiger, P., & Pruessmann, K. P. (2003). k-t BLAST and
+      k-t SENSE: dynamic MRI with high frame rate exploiting spatiotemporal
+      correlations. Magnetic Resonance in Medicine: An Official Journal of the
+      International Society for Magnetic Resonance in Medicine, 50(5),
+      1031-1042.
   """  # pylint: disable=line-too-long
   # Choose a default optimizer.
   if optimizer is None:
@@ -284,7 +297,8 @@ def reconstruct_lstsq(kspace,
                                           sensitivities=sensitivities,
                                           phase=phase,
                                           fft_norm='ortho',
-                                          sens_norm=sens_norm)
+                                          sens_norm=sens_norm,
+                                          dynamic_domain=dynamic_domain)
   rank = operator.rank
 
   # Apply density compensation, if provided.
@@ -368,6 +382,11 @@ def reconstruct_lstsq(kspace,
 
   else:
     raise ValueError(f"Unknown optimizer: {optimizer}")
+
+  # Apply temporal Fourier operator, if necessary.
+  if operator.is_dynamic and operator.dynamic_domain == 'frequency':
+    image = fft_ops.ifftn(image, axes=[operator.dynamic_axis],
+                          norm='ortho', shift=True)
 
   # Apply intensity correction, if requested.
   if operator.is_multicoil and sens_norm:

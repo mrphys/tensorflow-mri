@@ -12,12 +12,75 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Utilities for plotting."""
+"""Plotting utilities."""
 
+import matplotlib.animation as ani
+import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
 import plotly.subplots as ps
 import tensorflow as tf
+
+
+def plot_image_sequence(images,
+                        part=None,
+                        cmap='gray',
+                        fps=20.0):
+  """Plots a sequence of images.
+
+  Args:
+    images: A 3D `np.ndarray` of shape `[batch, height, width]`.
+    part: An optional `str`. The part to display for complex numbers. One of
+      `'abs'`, `'angle'`, `'real'` or `'imag'`. Must be specified if `images`
+      has complex dtype.
+    cmap: A `str` or `matplotlib.colors.Colormap`_. The colormap used to map
+      pixel values to colors. Defaults to `'gray'`.
+    fps: A `float`. The number of frames per second. Defaults to 20.
+
+  .. _matplotlib.colors.Colormap: https://matplotlib.org/stable/api/_as_gen/matplotlib.colors.Colormap.html
+  """
+  images = _preprocess_image(images, part=part, expected_ndim=3)
+  fig = plt.figure()
+  artists = []
+  for image in images:
+    artist = plt.imshow(image,
+                        cmap=cmap,
+                        animated=True)
+    artist.axes.axis('off')
+    artists.append([artist])
+
+  animation = ani.ArtistAnimation(fig, artists,
+                                  interval=int(1000 / fps),
+                                  repeat_delay=0,
+                                  repeat=True,
+                                  blit=True)
+
+  plt.show()
+
+
+def _preprocess_image(image, part=None, expected_ndim=None):
+  image = np.asarray(image)
+  if expected_ndim is not None:
+    if image.ndim != expected_ndim:
+      raise ValueError(
+          f"Expected input to be {expected_ndim}-D, "
+          f"but got shape {image.shape}")
+
+  if np.iscomplexobj(image):
+    if part == 'abs':
+      image = np.abs(image)
+    elif part == 'angle':
+      image = np.angle(image)
+    elif part == 'real':
+      image = np.real(image)
+    elif part == 'imag':
+      image = np.imag(image)
+    elif part is None:
+      raise ValueError("Argument `part` must be specified for complex inputs.")
+    else:
+      raise ValueError(f"Invalid part: {part}")
+
+  return image
 
 
 def plot_volume_slices(volumes, rows=1, cols=1, subplot_titles=None):
