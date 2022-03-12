@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2022 University College London. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,3 +15,4 @@
 """Utilities for plotting."""
 
 from tensorflow_mri.python.util.plot_util import plot_image_sequence as image_sequence
+from tensorflow_mri.python.util.plot_util import plot_tiled_image_sequence as tiled_image_sequence

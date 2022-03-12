@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2022 University College London. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -166,24 +166,37 @@ def linkcode_resolve(domain, info):
   return url
 
 
-INT_PATTERN = re.compile(r"``int``")
-INT_REPL = r"`int <https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex>`_"
-FLOAT_PATTERN = re.compile(r"``float``")
-FLOAT_REPL = r"`float <https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex>`_"
-COMPLEX_PATTERN = re.compile(r"``complex``")
-COMPLEX_REPL = r"`complex <https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex>`_"
-STR_PATTERN = re.compile(r"``str``")
-STR_REPL = r"`str <https://docs.python.org/3/library/stdtypes.html#str>`_"
-BOOL_PATTERN = re.compile(r"``bool``")
-BOOL_REPL = r"`boolean <https://docs.python.org/3/library/stdtypes.html#boolean-values>`_"
-NDARRAY_PATTERN = re.compile(r"``np.ndarray``")
-NDARRAY_REPL = r"`np.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_"
-TENSOR_PATTERN = re.compile(r"``tf.Tensor``")
-TENSOR_REPL = r"`tf.Tensor <https://www.tensorflow.org/api_docs/python/tf/Tensor>`_"
-TENSORSHAPE_PATTERN = re.compile(r"``tf.TensorShape``")
-TENSORSHAPE_REPL = r"`tf.TensorShape <https://www.tensorflow.org/api_docs/python/tf/TensorShape>`_"
-DTYPE_PATTERN = re.compile(r"``tf.DType``")
-DTYPE_REPL = r"`tf.dtypes.DType <https://www.tensorflow.org/api_docs/python/tf/dtypes/DType>`_"
+# -- Hyperlinks --------------------------------------------------------------
+# Common types and constants in the API docs are enriched with hyperlinks to
+# their corresponding docs.
+
+# The following dictionary specifies type names and the corresponding links.
+# The link is only added if the name has inline code format, e.g. ``foo``.
+COMMON_TYPES_LINKS = {
+    # Python standard types.
+    'int': 'https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex',
+    'float': 'https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex',
+    'complex': 'https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex',
+    'str': 'https://docs.python.org/3/library/stdtypes.html#text-sequence-type-str',
+    'boolean': 'https://docs.python.org/3/library/stdtypes.html#boolean-values',
+    # Python constants.
+    'False': 'https://docs.python.org/3/library/constants.html#False',
+    'True': 'https://docs.python.org/3/library/constants.html#True',
+    'None': 'https://docs.python.org/3/library/constants.html#None',
+    # NumPy types.
+    'np.ndarray': 'https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html',
+    # TensorFlow types.
+    'tf.Tensor': 'https://www.tensorflow.org/api_docs/python/tf/Tensor',
+    'tf.TensorShape': 'https://www.tensorflow.org/api_docs/python/tf/TensorShape',
+    'tf.dtypes.DType': 'https://www.tensorflow.org/api_docs/python/tf/dtypes/DType'
+}
+
+COMMON_TYPES_PATTERNS = {
+    k: re.compile(rf"``{k}``")for k in COMMON_TYPES_LINKS}
+
+COMMON_TYPES_REPLACEMENTS = {
+    k: rf"`{k} <{v}>`_" for k, v in COMMON_TYPES_LINKS.items()}
+
 LINK_PATTERN = re.compile(r"``(?P<link_text>[\w\.]+)``_")
 LINK_REPL = r"`\g<link_text>`_"
 
@@ -195,15 +208,8 @@ def process_docstring(app, what, name, obj, options, lines):  # pylint: disable=
   text = myst.replace('`', '``')
   text = text.replace(':math:``', ':math:`')
   # Add links to some common types.
-  text = INT_PATTERN.sub(INT_REPL, text)
-  text = FLOAT_PATTERN.sub(FLOAT_REPL, text)
-  text = COMPLEX_PATTERN.sub(COMPLEX_REPL, text)
-  text = BOOL_PATTERN.sub(BOOL_REPL, text)
-  text = STR_PATTERN.sub(STR_REPL, text)
-  text = NDARRAY_PATTERN.sub(NDARRAY_REPL, text)
-  text = TENSOR_PATTERN.sub(TENSOR_REPL, text)
-  text = TENSORSHAPE_PATTERN.sub(TENSORSHAPE_REPL, text)
-  text = DTYPE_PATTERN.sub(DTYPE_REPL, text)
+  for k in COMMON_TYPES_LINKS:
+    text = COMMON_TYPES_PATTERNS[k].sub(COMMON_TYPES_REPLACEMENTS[k], text)
   # Correct double quotes.
   text = LINK_PATTERN.sub(LINK_REPL, text)
   lines[:] = text.splitlines()

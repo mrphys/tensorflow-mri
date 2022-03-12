@@ -18,12 +18,15 @@ from absl.testing import parameterized
 import tensorflow as tf
 import tensorflow_nufft as tfft
 
+from tensorflow_mri.python.ops import coil_ops
 from tensorflow_mri.python.ops import convex_ops
 from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.ops import recon_ops
+from tensorflow_mri.python.ops import signal_ops
 from tensorflow_mri.python.ops import traj_ops
 from tensorflow_mri.python.util import io_util
+from tensorflow_mri.python.util import linalg_imaging
 from tensorflow_mri.python.util import test_util
 
 
@@ -401,6 +404,96 @@ class ReconstructTest(test_util.TestCase):
                                         regularizer=regularizer,
                                         optimizer_kwargs={'max_iterations': 10})
     self.assertAllClose(expected_null, image)
+
+  def test_ktsense(self):
+    data = io_util.read_hdf5(
+        'tests/data/cardiac_cine_2d_multicoil_kspace.h5')
+    # print(data.keys())
+    kspace = data['kspace']
+    image_shape = [208, 208]
+    traj = traj_ops.flatten_trajectory(
+        traj_ops.radial_trajectory(208, views=38, phases=18, ordering='tiny'))
+    dens = traj_ops.flatten_density(
+        traj_ops.radial_density(208, views=38, phases=18, ordering='tiny'))
+
+    image = fft_ops.ifftn(kspace, axes=[-2, -1], norm='ortho', shift=True)
+    image = image_ops.resize_with_crop_or_pad(image, image_shape)
+
+    tavg = tf.math.reduce_mean(image, axis=0)
+    sens = coil_ops.estimate_coil_sensitivities(tavg, coil_axis=0)
+
+    kspace = tfft.nufft(image, tf.expand_dims(traj, -3))
+
+    from tensorflow_mri.python.util import plot_util
+
+
+    # Gridded.
+    image = recon_ops.reconstruct_adj(kspace, image_shape,
+                                      trajectory=traj,
+                                      density=dens,
+                                      sensitivities=sens)
+
+    adj = image
+
+    # # CG-SENSE.
+    image = recon_ops.reconstruct_lstsq(kspace, image_shape,
+                                        trajectory=traj,
+                                        density=dens,
+                                        sensitivities=sens)
+    cgsense = image
+
+    # Perform kt-SENSE reconstruction.
+    filt_fn = lambda x: signal_ops.hann(6 * x)
+    filt_kspace = signal_ops.filter_kspace(
+        kspace, traj=traj, filter_fn=filt_fn)
+    image = recon_ops.reconstruct_adj(filt_kspace, image_shape,
+                                      trajectory=traj,
+                                      density=dens,
+                                      sensitivities=sens)
+
+    # k-t SENSE.
+    transform = tf.math.reciprocal(
+        fft_ops.fftn(image, axes=[-3], norm='ortho', shift=True))
+    transform = linalg_imaging.LinearOperatorDiag(transform)
+    regularizer = convex_ops.ConvexFunctionTikhonov(scale=1.0,
+                                                    transform=transform)
+    image = recon_ops.reconstruct_lstsq(kspace, image_shape,
+                                        extra_shape=[18],
+                                        trajectory=traj,
+                                        density=dens,
+                                        sensitivities=sens,
+                                        dynamic_domain='frequency',
+                                        regularizer=regularizer)
+
+
+    ktsense = image
+
+
+    ani = plot_util.plot_tiled_image_sequence([adj, cgsense, ktsense], part='abs')
+    plot_util.show()
+    # np.savez('/workspaces/tensorflow-mri/ktsense_test.npz', ktsense=ktsense, cgsense=cgsense)
+
+    # # Compare.
+    # self.assertAllClose(ktsense, cgsense)
+
+    # plot_util.plot_image_tile(image, )
+    # sens = data['sens']
+    # traj = data['traj']
+    # dens = data['dens']
+    # expected = data['image/cg_sense']
+    # image_shape = sens.shape[-2:]
+
+    # # Check batch of k-space data and batch of trajectories.
+    # image = recon_ops.reconstruct_adj(kspace=kspace,
+    #                                   image_shape=image_shape,
+    #                                   trajectory=traj,
+    #                                   density=dens,
+    #                                   sensitivities=sens)
+
+    # plot_util.plot_image_sequence(tf.abs(image))
+
+    # print("test")
+    # self.assertAllClose(expected, image, rtol=1e-5, atol=1e-5)
 
   @parameterized.parameters(
       ('admm',),

@@ -8,3 +8,4 @@ third_party/spiral_waveform
 tools/docs/_build
 tools/docs/_templates
 tools/docs/tfmri
+tools/docs/plot.rst

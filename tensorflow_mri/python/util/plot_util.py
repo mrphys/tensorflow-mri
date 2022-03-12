@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2022 University College London. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,10 @@ import plotly.graph_objects as go
 import plotly.subplots as ps
 import tensorflow as tf
 
+from tensorflow_mri.python.util import api_util
 
+
+@api_util.export('plot.image_sequence')
 def plot_image_sequence(images,
                         part=None,
                         cmap='gray',
@@ -29,7 +32,7 @@ def plot_image_sequence(images,
   """Plots a sequence of images.
 
   Args:
-    images: A 3D `np.ndarray` of shape `[batch, height, width]`.
+    images: A 3D `np.ndarray` of shape `[time, height, width]`.
     part: An optional `str`. The part to display for complex numbers. One of
       `'abs'`, `'angle'`, `'real'` or `'imag'`. Must be specified if `images`
       has complex dtype.
@@ -37,9 +40,14 @@ def plot_image_sequence(images,
       pixel values to colors. Defaults to `'gray'`.
     fps: A `float`. The number of frames per second. Defaults to 20.
 
+  Returns:
+    A `matplotlib.animation.ArtistAnimation`_ object.
+
+  .. _matplotlib.animation.ArtistAnimation: https://matplotlib.org/stable/api/_as_gen/matplotlib.animation.ArtistAnimation.html
   .. _matplotlib.colors.Colormap: https://matplotlib.org/stable/api/_as_gen/matplotlib.colors.Colormap.html
   """
   images = _preprocess_image(images, part=part, expected_ndim=3)
+
   fig = plt.figure()
   artists = []
   for image in images:
@@ -55,7 +63,103 @@ def plot_image_sequence(images,
                                   repeat=True,
                                   blit=True)
 
-  plt.show()
+  return animation
+
+
+@api_util.export('plot.tiled_image_sequence')
+def plot_tiled_image_sequence(images,
+                               part=None,
+                               cmap='gray',
+                               fps=20.0,
+                               aspect=1.77,  # 16:9
+                               grid_shape=None,
+                               fig_size=None,
+                               bg_color='dimgray'):
+  r"""Plots one or more image sequences in a grid.
+
+  Args:
+    images: A 4D `np.ndarray` of shape `[batch, time, height, width]`.
+    part: An optional `str`. The part to display for complex numbers. One of
+      `'abs'`, `'angle'`, `'real'` or `'imag'`. Must be specified if `images`
+      has complex dtype.
+    cmap: A `str` or `matplotlib.colors.Colormap`_. The colormap used to map
+      pixel values to colors. Defaults to `'gray'`.
+    fps: A `float`. The number of frames per second. Defaults to 20.
+    aspect: A `float`. The desired aspect ratio of the overall figure. Ignored
+      if `grid_shape` is specified.
+    grid_shape: A `tuple` of `float`s. The number of rows and columns in the
+      grid. If `None`, the grid shape is computed from `aspect`.
+    fig_size: A `tuple` of `float`s. Width and height of the figure in inches.
+    bg_color: A `color`_. The background color.
+
+  Returns:
+    A `matplotlib.animation.ArtistAnimation`_ object.
+
+  .. _color: https://matplotlib.org/stable/tutorials/colors/colors.html
+  .. _matplotlib.animation.ArtistAnimation: https://matplotlib.org/stable/api/_as_gen/matplotlib.animation.ArtistAnimation.html
+  .. _matplotlib.colors.Colormap: https://matplotlib.org/stable/api/_as_gen/matplotlib.colors.Colormap.html
+  """
+  images = _preprocess_image(images, part=part, expected_ndim=4)
+  num_tiles, num_frames, image_rows, image_cols = images.shape
+
+  # Compute the number of rows and cols for tile.
+  if grid_shape is not None:
+    grid_rows, grid_cols = grid_shape
+  else:
+    grid_rows, grid_cols = _compute_grid_shape(
+        num_tiles, (image_rows, image_cols), aspect)
+
+  fig, axs = plt.subplots(grid_rows, grid_cols,
+                          figsize=fig_size, facecolor=bg_color)
+
+  artists = []
+  for frame_idx in range(num_frames):  # For each frame.
+    frame_artists = []
+    for row, col in np.ndindex(grid_rows, grid_cols):  # For each tile.
+      tile_idx = row * grid_cols + col
+      # Get axis.
+      if grid_rows > 1 and grid_cols > 1:
+        ax = axs[row, col]
+      elif grid_rows > 1 and grid_cols == 1:
+        ax = axs[row]
+      elif grid_rows == 1 and grid_cols > 1:
+        ax = axs[col]
+      else:
+        ax = axs
+      # Set axis properties. This is always done, regardless of whether there's
+      # actually anything to display on this tile.
+      ax.axis('off')
+      if tile_idx >= num_tiles:
+        # This tile is empty.
+        continue
+      # Get image for this tile and frame.
+      image = images[tile_idx, frame_idx, :, :]
+      # Render image.
+      artist = ax.imshow(image,
+                         cmap=cmap,
+                         animated=True)
+      frame_artists.append(artist)
+    artists.append(frame_artists)
+
+  animation = ani.ArtistAnimation(fig, artists,
+                                  interval=int(1000 / fps),
+                                  repeat_delay=0,
+                                  repeat=True,
+                                  blit=True)
+
+  return animation
+
+
+def show(*args, **kwargs):
+  """Displays all open figures.
+
+  This function is an alias for `matplotlib.pyplot.show`_.
+
+  For the parameters, see `matplotlib.pyplot.show`_.
+
+  .. _matplotlib.pyplot.show: https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.show.html
+  """
+  plt.show(*args, **kwargs)
 
 
 def _preprocess_image(image, part=None, expected_ndim=None):
@@ -81,6 +185,30 @@ def _preprocess_image(image, part=None, expected_ndim=None):
       raise ValueError(f"Invalid part: {part}")
 
   return image
+
+
+def _compute_grid_shape(num_tiles, tile_shape, aspect):
+  """Computes the grid shape for an image tile.
+
+  Args:
+    num_tiles: An `int`. The number of tiles in the grid.
+    tile_shape: A `tuple` of `int`s. The shape of each tile.
+    aspect: A `float`. The desired aspect ratio of the overall figure.
+
+  Returns:
+    A `tuple` of `int`s. The number of rows and columns in the grid.
+  """
+  # The aspect ratio of a single tile.
+  tile_aspect = tile_shape[1] / tile_shape[0]
+
+  # The approximate aspect ratio of the grid.
+  grid_aspect = aspect / tile_aspect
+
+  # Now find rows and columns for this aspect ratio.
+  grid_rows = int(np.sqrt(num_tiles / grid_aspect) + 0.5)  # Round.
+  grid_cols = (num_tiles + grid_rows - 1) // grid_rows     # Ceil.
+
+  return grid_rows, grid_cols
 
 
 def plot_volume_slices(volumes, rows=1, cols=1, subplot_titles=None):
@@ -182,3 +310,58 @@ def plot_volume_slices(volumes, rows=1, cols=1, subplot_titles=None):
   )
 
   return fig
+
+
+def plot_image_tile(images,
+                    cmap='gray',
+                    norm=True,
+                    log_scale=False,
+                    part='abs',
+                    show_axes=False,
+                    bg_color='dimgray',
+                    titles=None,
+                    fig_size=None,
+                    tile_shape=None,
+                    aspect_ratio=1.77):
+  """Plots a tile of images.
+  
+  Args:
+    images: An array of shape `[batch, height, width]`.
+  """
+  images = np.asarray(images)
+  num_images, image_rows, image_cols = images.shape
+
+  preprocessing_fn = functools.partial(_preprocess_image_for_plot, part=part)
+  images = list(map(preprocessing_fn, images))
+
+  # Compute the number of rows and cols for tile.
+  if tile_shape is not None:
+    tile_rows, tile_cols = tile_shape
+  else:
+    image_ratio = image_cols / image_rows
+    tile_ratio = aspect_ratio / image_ratio
+    tile_rows = int(math.sqrt(num_images / tile_ratio))
+    tile_cols = (num_images + tile_rows - 1) // tile_rows
+
+  fig, ax = plt.subplots(tile_rows, tile_cols, figsize=fig_size)
+  for row, col in np.ndindex(tile_rows, tile_cols):
+    index = row * tile_cols + col
+    if index < len(images):
+      if log_scale:
+        if norm:
+          norm_obj = mcolors.LogNorm()
+        else:
+          norm_obj = mcolors.LogNorm(vmin=0.0, vmax=1.0)
+      else:
+        if norm:
+          norm_obj = mcolors.Normalize()
+        else:
+          norm_obj = mcolors.Normalize(vmin=0.0, vmax=1.0)
+      ax[row, col].imshow(images[index], cmap=cmap, norm=norm_obj)
+      if titles is not None:
+        ax[row, col].set_title(titles[index])
+    if not show_axes:
+      ax[row, col].axis('off')
+  fig.patch.set_facecolor(bg_color)
+
+  plt.show()

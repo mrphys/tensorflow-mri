@@ -34,6 +34,7 @@ docs: $(TARGET)
 	rm -rf tools/docs/_build
 	rm -rf tools/docs/_templates
 	$(PYTHON) tools/docs/generate_templates.py
+	$(PYTHON) tools/docs/generate_documents.py
 	$(MAKE) -C tools/docs html PY_VERSION=$(PY_VERSION)
 
 test: $(wildcard tensorflow_mri/python/ops/*.py)
