@@ -35,5 +35,13 @@ from tensorflow_mri.python import io
 from tensorflow_mri.python import layers
 from tensorflow_mri.python import losses
 from tensorflow_mri.python import metrics
-from tensorflow_mri.python import plot
 from tensorflow_mri.python import summary
+from tensorflow_mri.python import util
+
+# Import public API.
+from tensorflow_mri.python.util import api_util
+
+for namespace in ['plot', 'recon']:
+  globals()[namespace] = api_util.import_namespace(namespace)
+
+del api_util

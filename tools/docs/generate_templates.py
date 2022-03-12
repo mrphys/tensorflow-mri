@@ -45,6 +45,7 @@ MODULES = {
     'metrics',
     'plot',
     'ops',
+    'recon',
     'summary'
 }
 

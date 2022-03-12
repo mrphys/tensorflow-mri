@@ -33,7 +33,7 @@ MODULE_DOC_TEMPLATE = string.Template(
 """tfmri.${module}
 ======${underline}
 
-.. automodule:: tensorflow_mri.python.${module}
+.. automodule:: tensorflow_mri.${module}
 
 Classes
 -------
@@ -78,8 +78,8 @@ for name, symbol in api_util._API_SYMBOLS.items():  # pylint: disable=protected-
     modules[module].functions.append(name)
 
 for name, module in modules.items():
-  classes = '\n    '.join(module.classes)
-  functions = '\n    '.join(module.functions)
+  classes = '\n    '.join(sorted(module.classes))
+  functions = '\n    '.join(sorted(module.functions))
 
   filename = os.path.join(DOCS_PATH, f'{name}.rst')
   with open(filename, 'w') as f:

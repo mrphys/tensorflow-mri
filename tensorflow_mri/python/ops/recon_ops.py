@@ -31,10 +31,12 @@ from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.ops import math_ops
 from tensorflow_mri.python.ops import optimizer_ops
 from tensorflow_mri.python.ops import signal_ops
+from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import linalg_imaging
 
 
+@api_util.export('recon.adj')
 def reconstruct_adj(kspace,
                     image_shape,
                     mask=None,
@@ -137,6 +139,7 @@ def reconstruct_adj(kspace,
   return image
 
 
+@api_util.export('recon.lstsq')
 def reconstruct_lstsq(kspace,
                       image_shape,
                       extra_shape=None,
@@ -413,6 +416,7 @@ def reconstruct_lstsq(kspace,
   return image
 
 
+@api_util.export('recon.sense')
 def reconstruct_sense(kspace,
                       sensitivities,
                       reduction_axis,
@@ -587,6 +591,7 @@ def reconstruct_sense(kspace,
   return image
 
 
+@api_util.export('recon.grappa')
 def reconstruct_grappa(kspace,
                        mask,
                        calib,
@@ -890,6 +895,7 @@ def _flatten_last_dimensions(x):
   return tf.reshape(x, tf.concat([tf.shape(x)[:-2], [-1]], 0))
 
 
+@api_util.export('recon.pf')
 def reconstruct_pf(kspace,
                    factors,
                    return_complex=False,

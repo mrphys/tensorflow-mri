@@ -39,6 +39,7 @@ FAQ
    losses
    metrics
    plot
+   recon
    summary
 
 .. meta::

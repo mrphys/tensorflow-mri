@@ -14,6 +14,9 @@
 # ==============================================================================
 """Utilities to export symbols to the API."""
 
+import importlib
+import sys
+
 
 _API_SYMBOLS = dict()
 
@@ -73,6 +76,40 @@ def export(*names):
     """
     setattr(symbol, _API_ATTR, names)
     for name in names:
+      if name in _API_SYMBOLS:
+        raise ValueError(
+            f"Name {name} already used for exported symbol {symbol}")
       _API_SYMBOLS[name] = symbol
     return symbol
   return decorator
+
+
+class APILoader(importlib.abc.Loader):  # pylint: disable=abstract-method
+  """Loader for the public API."""
+  def exec_module(self, module):
+    """Executes the module.
+
+    Args:
+      module: module.
+    """
+    # Import public API.
+    for name, symbol in _API_SYMBOLS.items():
+      name = name.split('.')[-1]
+      setattr(module, name, symbol)
+
+
+def import_namespace(namespace):
+  """Imports a namespace.
+
+  Args:
+    namespace: Namespace to import.
+
+  Returns:
+    The imported module.
+  """
+  spec = importlib.machinery.ModuleSpec(
+      f'tensorflow_mri.{namespace}', APILoader())
+  module = importlib.util.module_from_spec(spec)
+  sys.modules[spec.name] = module
+  spec.loader.exec_module(module)
+  return module
