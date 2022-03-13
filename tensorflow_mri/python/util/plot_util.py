@@ -14,14 +14,16 @@
 # ==============================================================================
 """Plotting utilities."""
 
-import matplotlib.animation as ani
-import matplotlib.pyplot as plt
 import numpy as np
-import plotly.graph_objects as go
-import plotly.subplots as ps
 import tensorflow as tf
 
 from tensorflow_mri.python.util import api_util
+from tensorflow_mri.python.util import import_util
+
+ani = import_util.lazy_import("matplotlib.animation")
+plt = import_util.lazy_import("matplotlib.pyplot")
+go = import_util.lazy_import("plotly.graph_objects")
+ps = import_util.lazy_import("plotly.subplots")
 
 
 @api_util.export("plot.image_sequence")
@@ -155,6 +157,7 @@ def plot_tiled_image_sequence(images,
   return animation
 
 
+@api_util.export("plot.show")
 def show(*args, **kwargs):
   """Displays all open figures.
 
@@ -164,7 +167,7 @@ def show(*args, **kwargs):
 
   .. _matplotlib.pyplot.show: https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.show.html
   """
-  plt.show(*args, **kwargs)
+  return plt.show(*args, **kwargs)
 
 
 def _preprocess_image(image, part=None, expected_ndim=None):
