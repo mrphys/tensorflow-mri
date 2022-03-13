@@ -721,23 +721,46 @@ class LinearOperatorGramMatrix(LinalgImagingMixin,  # pylint: disable=abstract-m
       The regularization parameter :math:`\lambda`. Defaults to 0.
     reg_operator: A `LinearOperator`. The regularization transform :math:`T`.
       Defaults to the identity.
+    is_non_singular: Expect that this operator is non-singular.
+    is_self_adjoint: Expect that this operator is equal to its Hermitian
+      transpose.
+    is_positive_definite: Expect that this operator is positive definite,
+      meaning the quadratic form :math:`x^H A x` has positive real part for all
+      nonzero :math:`x`.  Note that we do not require the operator to be
+      self-adjoint to be positive-definite.
+    is_square: Expect that this operator acts like square [batch] matrices.
     name: A name for this `LinearOperator`.
   """
   def __init__(self,
                operator,
                reg_parameter=None,
                reg_operator=None,
+               is_non_singular=None,
+               is_self_adjoint=True,
+               is_positive_definite=True,
+               is_square=True,
                name=None):
     parameters = dict(
         operator=operator,
         reg_parameter=reg_parameter,
         reg_operator=reg_operator,
+        is_non_singular=is_non_singular,
+        is_self_adjoint=is_self_adjoint,
+        is_positive_definite=is_positive_definite,
+        is_square=is_square,
         name=name)
     self._operator = operator
     self._reg_parameter = reg_parameter
     self._reg_operator = reg_operator
     self._composed = LinearOperatorComposition(
         operators=[self._operator.H, self._operator])
+
+    if not is_self_adjoint:
+      raise ValueError("A Gram matrix is always self-adjoint.")
+    if not is_positive_definite:
+      raise ValueError("A Gram matrix is always positive-definite.")
+    if not is_square:
+      raise ValueError("A Gram matrix is always square.")
 
     if self._reg_parameter is not None:
       reg_operator_gm = LinearOperatorScaledIdentity(
@@ -752,9 +775,10 @@ class LinearOperatorGramMatrix(LinalgImagingMixin,  # pylint: disable=abstract-m
           operators=[self._composed, reg_operator_gm])
 
     super().__init__(operator.dtype,
-                     is_self_adjoint=True,
-                     is_positive_definite=True,
-                     is_square=True,
+                     is_non_singular=is_non_singular,
+                     is_self_adjoint=is_self_adjoint,
+                     is_positive_definite=is_positive_definite,
+                     is_square=is_square,
                      parameters=parameters)
 
   def _transform(self, x, adjoint=False):
