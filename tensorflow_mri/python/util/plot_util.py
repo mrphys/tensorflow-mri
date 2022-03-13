@@ -171,6 +171,7 @@ def show(*args, **kwargs):
 
 
 def _preprocess_image(image, part=None, expected_ndim=None):
+  """Preprocesses an image."""
   image = np.asarray(image)
   if expected_ndim is not None:
     if image.ndim != expected_ndim:
@@ -318,58 +319,3 @@ def plot_volume_slices(volumes, rows=1, cols=1, subplot_titles=None):
   )
 
   return fig
-
-
-def plot_image_tile(images,
-                    cmap='gray',
-                    norm=True,
-                    log_scale=False,
-                    part='abs',
-                    show_axes=False,
-                    bg_color='dimgray',
-                    titles=None,
-                    fig_size=None,
-                    tile_shape=None,
-                    aspect_ratio=1.77):
-  """Plots a tile of images.
-  
-  Args:
-    images: An array of shape `[batch, height, width]`.
-  """
-  images = np.asarray(images)
-  num_images, image_rows, image_cols = images.shape
-
-  preprocessing_fn = functools.partial(_preprocess_image_for_plot, part=part)
-  images = list(map(preprocessing_fn, images))
-
-  # Compute the number of rows and cols for tile.
-  if tile_shape is not None:
-    tile_rows, tile_cols = tile_shape
-  else:
-    image_ratio = image_cols / image_rows
-    tile_ratio = aspect_ratio / image_ratio
-    tile_rows = int(math.sqrt(num_images / tile_ratio))
-    tile_cols = (num_images + tile_rows - 1) // tile_rows
-
-  fig, ax = plt.subplots(tile_rows, tile_cols, figsize=fig_size)
-  for row, col in np.ndindex(tile_rows, tile_cols):
-    index = row * tile_cols + col
-    if index < len(images):
-      if log_scale:
-        if norm:
-          norm_obj = mcolors.LogNorm()
-        else:
-          norm_obj = mcolors.LogNorm(vmin=0.0, vmax=1.0)
-      else:
-        if norm:
-          norm_obj = mcolors.Normalize()
-        else:
-          norm_obj = mcolors.Normalize(vmin=0.0, vmax=1.0)
-      ax[row, col].imshow(images[index], cmap=cmap, norm=norm_obj)
-      if titles is not None:
-        ax[row, col].set_title(titles[index])
-    if not show_axes:
-      ax[row, col].axis('off')
-  fig.patch.set_facecolor(bg_color)
-
-  plt.show()

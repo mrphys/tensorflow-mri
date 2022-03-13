@@ -93,7 +93,7 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,  # pylint: disable=ab
       phase-constrained.
     fft_norm: FFT normalization mode. Must be `None` (no normalization)
       or `'ortho'`. Defaults to `'ortho'`.
-    sens_norm: A `bool`. Whether to normalize coil sensitivities. Defaults to
+    sens_norm: A `boolean`. Whether to normalize coil sensitivities. Defaults to
       `True`.
     dynamic_domain: A `str`. The domain of the dynamic dimension, if present.
       Must be one of `'time'` or `'frequency'`. May only be provided together
@@ -307,7 +307,8 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,  # pylint: disable=ab
         or a `tf.Tensor` of type `self.dtype` and shape
         `[..., *self.range_shape]` containing *k*-space data, if `adjoint` is
         `True`.
-      adjoint: A `bool` indicating whether to apply the adjoint of the operator.
+      adjoint: A `boolean` indicating whether to apply the adjoint of the
+        operator.
 
     Returns:
       A `tf.Tensor` of type `self.dtype` and shape `[..., *self.range_shape]`

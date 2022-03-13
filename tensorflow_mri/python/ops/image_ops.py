@@ -850,7 +850,7 @@ def image_gradients(image, method='sobel', norm=False, name=None):
     image: A `Tensor` of shape `[batch_size] + spatial_dims + [channels]`.
     method: A `str`. The operator to use for gradient computation. Must be one
       of `'prewitt'`, `'sobel'` or `'scharr'`. Defaults to `'sobel'`.
-    norm: A `bool`. If `True`, returns normalized gradients.
+    norm: A `boolean`. If `True`, returns normalized gradients.
     name: A name for the operation (optional).
 
   Returns:
@@ -876,7 +876,7 @@ def gradient_magnitude(image, method='sobel', norm=False, name=None):
     image: A `Tensor` of shape `[batch_size] + spatial_dims + [channels]`.
     method: The gradient operator to use. Can be `'prewitt'`, `'sobel'` or
       `'scharr'`. Defaults to `'sobel'`.
-    norm: A `bool`. If `True`, returns the normalized gradient magnitude.
+    norm: A `boolean`. If `True`, returns the normalized gradient magnitude.
     name: A name for the operation (optional).
 
   Returns:
@@ -894,7 +894,7 @@ def _gradient_operators(method, norm=False, rank=2, dtype=tf.float32):
   Args:
     method: A `str`. The gradient operator. Must be one of `'prewitt'`,
       `'sobel'` or `'scharr'`.
-    norm: A `bool`. If `True`, returns normalized kernels.
+    norm: A `boolean`. If `True`, returns normalized kernels.
     rank: An `int`. The dimensionality of the requested kernels. Defaults to 2.
     dtype: The `dtype` of the returned kernels. Defaults to `tf.float32`.
 
@@ -1479,7 +1479,7 @@ def total_variation(tensor,
       taken. Defaults to `list(range(1, tensor.shape.rank - 1))`, i.e.
       differences are taken along all axes except the first and the last, which
       are assumed to be the batch and channel axes, respectively.
-    keepdims: A `bool`. If `True`, keeps the singleton reduced dimensions.
+    keepdims: A `boolean`. If `True`, keeps the singleton reduced dimensions.
       Defaults to `False`.
     name: A name for the operation (optional).
 
@@ -1616,7 +1616,7 @@ def phantom(phantom_type='modified_shepp_logan', # pylint: disable=dangerous-def
     num_coils: An `int`. The number of coils for parallel imaging phantoms. If
       `None`, no coil array will be simulated. Defaults to `None`.
     dtype: A `string` or `tf.DType`. The data type of the generated phantom.
-    return_sensitivities: A `bool`. If `True`, returns a tuple containing the
+    return_sensitivities: A `boolean`. If `True`, returns a tuple containing the
       phantom and the coil sensitivities. If `False`, returns the phantom.
       Defaults to `False`.
 

@@ -64,12 +64,6 @@ FAQ
    :hidden:
 
    ops
-   callbacks
-   io
-   layers
-   linalg
-   losses
-   metrics
    ${namespaces}
 
 .. meta::
@@ -133,7 +127,10 @@ for name, module in modules.items():
         classes=classes,
         functions=functions))
 
+additional_namespaces = ['callbacks', 'io', 'layers', 'losses', 'metrics']
+
 # Write index.rst.
 with open(os.path.join(DOCS_PATH, 'index.rst'), 'w') as f:
   f.write(INDEX_TEMPLATE.substitute(
-      namespaces='\n   '.join(sorted(api_util.get_namespaces()))))
+      namespaces='\n   '.join(
+          sorted(api_util.get_namespaces() + additional_namespaces))))

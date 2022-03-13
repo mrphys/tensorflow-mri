@@ -89,7 +89,7 @@ def reconstruct_adj(kspace,
       improves the conditioning of the reconstruction problem in applications
       where there is no interest in the phase data. However, artefacts may
       appear if an inaccurate phase estimate is passed.
-    sens_norm: A `bool`. Whether to normalize coil sensitivities. Defaults to
+    sens_norm: A `boolean`. Whether to normalize coil sensitivities. Defaults to
       `True`.
 
   Returns:
@@ -212,7 +212,7 @@ def reconstruct_lstsq(kspace,
       improves the conditioning of the reconstruction problem in applications
       where there is no interest in the phase data. However, artefacts may
       appear if an inaccurate phase estimate is passed.
-    sens_norm: A `bool`. Whether to normalize coil sensitivities. Defaults to
+    sens_norm: A `boolean`. Whether to normalize coil sensitivities. Defaults to
       `True`.
     dynamic_domain: A `str`. The domain of the dynamic dimension, if present.
       Must be one of `'time'` or `'frequency'`. May only be provided together
@@ -231,7 +231,7 @@ def reconstruct_lstsq(kspace,
       optimizers are compatible with all configurations.
     optimizer_kwargs: An optional `dict`. Additional arguments to pass to the
       optimizer.
-    filter_corners: A `bool`. Whether to filter out the *k*-space corners in
+    filter_corners: A `boolean`. Whether to filter out the *k*-space corners in
       reconstructed image. This may be done for trajectories with a circular
       *k*-space coverage. Defaults to `False`.
 
@@ -913,11 +913,12 @@ def reconstruct_pf(kspace,
       factor for each spatial frequency dimension. Each factor must be between
       0.5 and 1.0 and indicates the proportion of observed *k*-space values
       along the specified dimensions.
-    return_complex: A `bool`. If `True`, returns complex instead of real-valued
-      images. Note that partial Fourier reconstruction assumes that images are
-      real, and the returned complex values may not be valid in all contexts.
-    return_kspace: A `bool`. If `True`, returns the filled *k*-space instead of
-      the reconstructed images. This is always complex-valued.
+    return_complex: A `boolean`. If `True`, returns complex instead of
+      real-valued images. Note that partial Fourier reconstruction assumes that
+      images are real, and the returned complex values may not be valid in all
+      contexts.
+    return_kspace: A `boolean`. If `True`, returns the filled *k*-space instead
+      of the reconstructed images. This is always complex-valued.
     method: A `string`. The partial Fourier reconstruction algorithm. Must be
       one of `"zerofill"`, `"homodyne"` (homodyne detection method) or `"pocs"`
       (projection onto convex sets method).

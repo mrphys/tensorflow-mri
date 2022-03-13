@@ -23,12 +23,14 @@ _API_SYMBOLS = dict()
 _API_ATTR = '_api_names'
 
 _NAMESPACES = [
+    'linalg',
     'plot',
     'recon',
     'summary'
 ]
 
 _NAMESPACE_DOCSTRINGS = {
+    'linalg': 'Linear algebra.',
     'plot': "Plotting utilities.",
     'recon': "Image reconstruction.",
     'summary': "Tensorboard summaries."

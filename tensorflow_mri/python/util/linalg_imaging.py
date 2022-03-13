@@ -22,6 +22,7 @@ import abc
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import array_ops
+from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import linalg_ext
 from tensorflow_mri.python.util import tensor_util
@@ -113,7 +114,7 @@ class LinalgImagingMixin(tf.linalg.LinearOperator):
 
     Args:
       x: A `Tensor` with compatible shape and same dtype as `self`.
-      adjoint: A `bool`. If `True`, transforms the input using the adjoint
+      adjoint: A `boolean`. If `True`, transforms the input using the adjoint
         of the operator, instead of the operator itself.
       name: A name for this operation.
 
@@ -534,17 +535,35 @@ class LinearOperatorScaledIdentity(LinalgImagingMixin,  # pylint: disable=abstra
     return tf.shape(self.multiplier)
 
 
-class LinearOperatorDiag(LinalgImagingMixin,  # pylint: disable=abstract-method
-                         tf.linalg.LinearOperatorDiag):
-  """`LinearOperator` acting like a [batch] square diagonal matrix.
+@api_util.export("linalg.LinearOperatorDiag")
+class LinearOperatorDiag(LinalgImagingMixin, tf.linalg.LinearOperatorDiag): # pylint: disable=abstract-method
+  """Linear operator acting like a [batch] square diagonal matrix.
 
   Like `tf.linalg.LinearOperatorDiag`_, but with additional imaging
   extensions.
 
-  For the parameters, see `tf.linalg.LinearOperatorDiag`_.
+  This operator acts like a [batch] diagonal matrix `A` with shape
+  `[B1, ..., Bb, N, N]` for some `b >= 0`.  The first `b` indices index a
+  batch member. For every batch index `(i1, ..., ib)`, `A[i1, ..., ib, : :]` is
+  an `N x N` matrix. This matrix `A` is not materialized, but for
+  purposes of broadcasting this shape will be relevant.
+
+  Args:
+    diag: A `tf.Tensor` of shape `[B1, ..., Bb, *S]`.
+    rank: An `int`. The rank of `S`.
+    is_non_singular: Expect that this operator is non-singular.
+    is_self_adjoint: Expect that this operator is equal to its Hermitian
+      transpose. If `diag` is real, this is auto-set to `True`.
+    is_positive_definite: Expect that this operator is positive definite,
+      meaning the quadratic form :math:`x^H A x` has positive real part for all
+      nonzero :math:`x`.  Note that we do not require the operator to be
+      self-adjoint to be positive-definite.
+    is_square: Expect that this operator acts like square [batch] matrices.
+    name: A name for this `LinearOperator`.
 
   .. _tf.linalg.LinearOperatorDiag: https://www.tensorflow.org/api_docs/python/tf/linalg/LinearOperatorDiag
   """
+  # pylint: disable=invalid-unary-operand-type
   def __init__(self,
                diag,
                rank=None,
@@ -563,7 +582,7 @@ class LinearOperatorDiag(LinalgImagingMixin,  # pylint: disable=abstract-method
     self._shape_value = diag.shape
 
     super().__init__(
-        diag=tf.reshape(diag, [-1]),
+        diag=tf.reshape(diag, tf.concat([self.batch_shape_tensor(), [-1]], 0)),
         is_non_singular=is_non_singular,
         is_self_adjoint=is_self_adjoint,
         is_positive_definite=is_positive_definite,
@@ -571,7 +590,6 @@ class LinearOperatorDiag(LinalgImagingMixin,  # pylint: disable=abstract-method
         name=name)
 
   def _transform(self, x, adjoint=False):
-    print("diag", adjoint)
     diag = tf.math.conj(self.diag) if adjoint else self.diag
     return tf.reshape(diag, self.domain_shape_tensor()) * x
 

@@ -72,7 +72,7 @@ def admm_minimize(function_f,
     rtol: A scalar `Tensor`. The relative tolerance. Defaults to 1e-5.
     max_iterations: A scalar `Tensor`. The maximum number of iterations for ADMM
       updates.
-    linearized: A `bool`. If `True`, use linearized variant of the ADMM
+    linearized: A `boolean`. If `True`, use linearized variant of the ADMM
       algorithm. Linearized ADMM solves problems of the form
       :math:`f(x) + g(Ax)` and only requires evaluation of the proximal operator
       of `g(x)`. This is useful when the proximal operator of `g(Ax)` cannot be
