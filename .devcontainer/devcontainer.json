@@ -1,13 +1,24 @@
 {
 	"dockerFile": "./Dockerfile",
+	"context": "..",
 	"settings": {},
+	// Useful extensions.
 	"extensions": [
 		"ms-python.python",
-		"ms-vscode.cpptools"
+		"ms-vscode.cpptools",
+		"github.copilot"
 	],
+	// Enable GPUs.
 	"runArgs": [
 		"--gpus=all",
 	],
-	"postCreateCommand": "python3.8 -m pip install -r requirements.txt",
+	// Enable plotting.
+	"mounts": [
+		"type=bind,source=/tmp/.X11-unix,target=/tmp/.X11-unix"
+	],
+	// Enable plotting.
+	"containerEnv": {
+		"DISPLAY": "${localEnv:DISPLAY}"
+	},
 	"remoteUser": "vscode"
 }

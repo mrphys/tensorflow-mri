@@ -65,9 +65,9 @@ class UNet(tf.keras.layers.Layer):
     out_channels: An `int`. The number of output channels.
     out_activation: A callable or a Keras activation identifier. The output
       activation. Defaults to `None`.
-    use_global_residual: A `bool`. If `True`, adds a global residual connection
-      to create a residual learning network. Defaults to `False`.
-    use_dropout: A `bool`. If `True`, a dropout layer is inserted after
+    use_global_residual: A `boolean`. If `True`, adds a global residual
+      connection to create a residual learning network. Defaults to `False`.
+    use_dropout: A `boolean`. If `True`, a dropout layer is inserted after
       each activation. Defaults to `False`.
     dropout_rate: A `float`. The dropout rate. Only relevant if `use_dropout` is
       `True`. Defaults to 0.3.

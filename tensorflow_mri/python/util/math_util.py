@@ -85,7 +85,7 @@ def is_fibonacci_number(n):
     n: An `int`.
 
   Returns:
-    A `bool`.
+    A `boolean`.
   """
   return is_generalized_fibonacci_number(n, 1)
 
@@ -99,6 +99,6 @@ def is_generalized_fibonacci_number(n, p):
       1, the sequence is the standard Fibonacci sequence.
 
   Returns:
-    A `bool`.
+    A `boolean`.
   """
   return n in generalized_fibonacci_sequence_up_to(n, p)

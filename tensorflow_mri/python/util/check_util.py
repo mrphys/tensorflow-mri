@@ -76,11 +76,11 @@ def validate_list(value,
       the element type is not enforced.
     length: An `int`. The expected length of the list. If `None`, the length is
       not enforced.
-    broadcast_scalars: A `bool`. If `True`, scalar inputs are converted to lists
-      of length `length`, if `length` is not `None`, or length 1 otherwise. If
-      `False`, an error is raised on scalar inputs.
-    allow_tuples: A `bool`. If `True`, inputs of type `tuple` are accepted and
-      converted to `list`s. If `False`, an error is raised on tuple inputs.
+    broadcast_scalars: A `boolean`. If `True`, scalar inputs are converted to
+      lists of length `length`, if `length` is not `None`, or length 1
+      otherwise. If `False`, an error is raised on scalar inputs.
+    allow_tuples: A `boolean`. If `True`, inputs of type `tuple` are accepted
+      and converted to `list`s. If `False`, an error is raised on tuple inputs.
     name: A `string`. The name of the argument being validated. This is only
       used to format error messages.
 

@@ -22,8 +22,6 @@ Classes
     ConvexFunctionQuadratic
     ConvexFunctionTikhonov
     ConvexFunctionTotalVariation
-    LinearOperatorFiniteDifference
-    LinearOperatorMRI
 
 
 Functions
@@ -43,7 +41,6 @@ Functions
     central_crop
     combine_coils
     compress_coils
-    conjugate_gradient
     crop_kspace
     density_grid
     estimate_coil_sensitivities
@@ -79,11 +76,6 @@ Functions
     radial_waveform
     random_sampling_mask
     ravel_multi_index
-    reconstruct_adj
-    reconstruct_grappa
-    reconstruct_lstsq
-    reconstruct_pf
-    reconstruct_sense
     resize_with_crop_or_pad
     rotate_2d
     rotate_3d

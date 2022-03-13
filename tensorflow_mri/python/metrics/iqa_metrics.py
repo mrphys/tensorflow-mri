@@ -110,7 +110,7 @@ class PeakSignalToNoiseRatio(_MeanMetricWrapperIQA):
       `y_true` and `y_pred` should have shape `[batch, height, width, channels]`
       if processing 2D images or `[batch, depth, height, width, channels]` if
       processing 3D images.
-    multichannel: A `bool`. Whether multichannel computation is enabled. If
+    multichannel: A `boolean`. Whether multichannel computation is enabled. If
       `False`, the inputs `y_true` and `y_pred` are not expected to have a
       channel dimension, i.e. they should have shape
       `batch_shape + [height, width]` (2D) or
@@ -167,7 +167,7 @@ class StructuralSimilarity(_MeanMetricWrapperIQA):
       `y_true` and `y_pred` should have shape `[batch, height, width, channels]`
       if processing 2D images or `[batch, depth, height, width, channels]` if
       processing 3D images.
-    multichannel: A `bool`. Whether multichannel computation is enabled. If
+    multichannel: A `boolean`. Whether multichannel computation is enabled. If
       `False`, the inputs `y_true` and `y_pred` are not expected to have a
       channel dimension, i.e. they should have shape
       `batch_shape + [height, width]` (2D) or
@@ -230,7 +230,7 @@ class MultiscaleStructuralSimilarity(_MeanMetricWrapperIQA):
       term, as `C1 = (k1 * max_val) ** 2`. Defaults to 0.01.
     k2: Factor used to calculate the regularization constant for the contrast
       term, as `C2 = (k2 * max_val) ** 2`. Defaults to 0.03.
-    multichannel: A `bool`. Whether multichannel computation is enabled. If
+    multichannel: A `boolean`. Whether multichannel computation is enabled. If
       `False`, the inputs `y_true` and `y_pred` are not expected to have a
       channel dimension, i.e. they should have shape
       `batch_shape + [height, width]` (2D) or

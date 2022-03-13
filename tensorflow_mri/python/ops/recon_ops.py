@@ -31,10 +31,12 @@ from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.ops import math_ops
 from tensorflow_mri.python.ops import optimizer_ops
 from tensorflow_mri.python.ops import signal_ops
+from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import linalg_imaging
 
 
+@api_util.export("recon.adj")
 def reconstruct_adj(kspace,
                     image_shape,
                     mask=None,
@@ -43,7 +45,7 @@ def reconstruct_adj(kspace,
                     sensitivities=None,
                     phase=None,
                     sens_norm=True):
-  r"""Reconstructs an image using the adjoint MRI operator.
+  r"""Reconstructs an MR image using the adjoint MRI operator.
 
   Given *k*-space data :math:`b`, this function estimates the corresponding
   image as :math:`x = A^H b`, where :math:`A` is the MRI linear operator.
@@ -87,7 +89,7 @@ def reconstruct_adj(kspace,
       improves the conditioning of the reconstruction problem in applications
       where there is no interest in the phase data. However, artefacts may
       appear if an inaccurate phase estimate is passed.
-    sens_norm: A `bool`. Whether to normalize coil sensitivities. Defaults to
+    sens_norm: A `boolean`. Whether to normalize coil sensitivities. Defaults to
       `True`.
 
   Returns:
@@ -137,6 +139,7 @@ def reconstruct_adj(kspace,
   return image
 
 
+@api_util.export("recon.lstsq")
 def reconstruct_lstsq(kspace,
                       image_shape,
                       extra_shape=None,
@@ -146,11 +149,12 @@ def reconstruct_lstsq(kspace,
                       sensitivities=None,
                       phase=None,
                       sens_norm=True,
+                      dynamic_domain=None,
                       regularizer=None,
                       optimizer=None,
                       optimizer_kwargs=None,
                       filter_corners=False):
-  r"""Reconstructs an image using a least-squares formulation.
+  r"""Reconstructs an MR image using a least-squares formulation.
 
   This is an iterative reconstruction method which formulates the image
   reconstruction problem as follows:
@@ -208,8 +212,14 @@ def reconstruct_lstsq(kspace,
       improves the conditioning of the reconstruction problem in applications
       where there is no interest in the phase data. However, artefacts may
       appear if an inaccurate phase estimate is passed.
-    sens_norm: A `bool`. Whether to normalize coil sensitivities. Defaults to
+    sens_norm: A `boolean`. Whether to normalize coil sensitivities. Defaults to
       `True`.
+    dynamic_domain: A `str`. The domain of the dynamic dimension, if present.
+      Must be one of `'time'` or `'frequency'`. May only be provided together
+      with a non-scalar `extra_shape`. The dynamic dimension is the last
+      dimension of `extra_shape`. The `'time'` mode (default) should be
+      used for regular dynamic reconstruction. The `'frequency'` mode should be
+      used for reconstruction in x-f space.
     regularizer: A `ConvexFunction`. The regularization term added to
       least-squares objective.
     optimizer: A `str`. One of `'cg'` (conjugate gradient), `'admm'`
@@ -221,7 +231,7 @@ def reconstruct_lstsq(kspace,
       optimizers are compatible with all configurations.
     optimizer_kwargs: An optional `dict`. Additional arguments to pass to the
       optimizer.
-    filter_corners: A `bool`. Whether to filter out the *k*-space corners in
+    filter_corners: A `boolean`. Whether to filter out the *k*-space corners in
       reconstructed image. This may be done for trajectories with a circular
       *k*-space coverage. Defaults to `False`.
 
@@ -258,6 +268,12 @@ def reconstruct_lstsq(kspace,
       parallel MRI: Combination of compressed sensing, parallel imaging, and
       golden-angle radial sampling for fast and flexible dynamic volumetric MRI.
       Magn. Reson. Med., 72: 707-717. https://doi.org/10.1002/mrm.24980
+
+    .. [4] Tsao, J., Boesiger, P., & Pruessmann, K. P. (2003). k-t BLAST and
+      k-t SENSE: dynamic MRI with high frame rate exploiting spatiotemporal
+      correlations. Magnetic Resonance in Medicine: An Official Journal of the
+      International Society for Magnetic Resonance in Medicine, 50(5),
+      1031-1042.
   """  # pylint: disable=line-too-long
   # Choose a default optimizer.
   if optimizer is None:
@@ -284,7 +300,8 @@ def reconstruct_lstsq(kspace,
                                           sensitivities=sensitivities,
                                           phase=phase,
                                           fft_norm='ortho',
-                                          sens_norm=sens_norm)
+                                          sens_norm=sens_norm,
+                                          dynamic_domain=dynamic_domain)
   rank = operator.rank
 
   # Apply density compensation, if provided.
@@ -369,6 +386,11 @@ def reconstruct_lstsq(kspace,
   else:
     raise ValueError(f"Unknown optimizer: {optimizer}")
 
+  # Apply temporal Fourier operator, if necessary.
+  if operator.is_dynamic and operator.dynamic_domain == 'frequency':
+    image = fft_ops.ifftn(image, axes=[operator.dynamic_axis],
+                          norm='ortho', shift=True)
+
   # Apply intensity correction, if requested.
   if operator.is_multicoil and sens_norm:
     sens_weights_sqrt = tf.math.reciprocal_no_nan(
@@ -394,6 +416,7 @@ def reconstruct_lstsq(kspace,
   return image
 
 
+@api_util.export("recon.sense")
 def reconstruct_sense(kspace,
                       sensitivities,
                       reduction_axis,
@@ -401,7 +424,7 @@ def reconstruct_sense(kspace,
                       rank=None,
                       l2_regularizer=0.0,
                       fast=True):
-  r"""MR image reconstruction using sensitivity encoding (SENSE).
+  r"""Reconstructs an MR image using SENSE.
 
   Args:
     kspace: A `Tensor`. The *k*-space samples. Must have type `complex64` or
@@ -568,6 +591,7 @@ def reconstruct_sense(kspace,
   return image
 
 
+@api_util.export("recon.grappa")
 def reconstruct_grappa(kspace,
                        mask,
                        calib,
@@ -576,7 +600,7 @@ def reconstruct_grappa(kspace,
                        combine_coils=True,
                        sensitivities=None,
                        return_kspace=False):
-  """MR image reconstruction using GRAPPA.
+  """Reconstructs an MR image using GRAPPA.
 
   Args:
     kspace: A `Tensor`. The *k*-space samples. Must have type `complex64` or
@@ -871,13 +895,14 @@ def _flatten_last_dimensions(x):
   return tf.reshape(x, tf.concat([tf.shape(x)[:-2], [-1]], 0))
 
 
+@api_util.export("recon.pf")
 def reconstruct_pf(kspace,
                    factors,
                    return_complex=False,
                    return_kspace=False,
                    method='zerofill',
                    **kwargs):
-  """Partial Fourier image reconstruction.
+  """Reconstructs an MR image using partial Fourier methods.
 
   Args:
     kspace: A `Tensor`. The *k*-space data. Must have type `complex64` or
@@ -888,11 +913,12 @@ def reconstruct_pf(kspace,
       factor for each spatial frequency dimension. Each factor must be between
       0.5 and 1.0 and indicates the proportion of observed *k*-space values
       along the specified dimensions.
-    return_complex: A `bool`. If `True`, returns complex instead of real-valued
-      images. Note that partial Fourier reconstruction assumes that images are
-      real, and the returned complex values may not be valid in all contexts.
-    return_kspace: A `bool`. If `True`, returns the filled *k*-space instead of
-      the reconstructed images. This is always complex-valued.
+    return_complex: A `boolean`. If `True`, returns complex instead of
+      real-valued images. Note that partial Fourier reconstruction assumes that
+      images are real, and the returned complex values may not be valid in all
+      contexts.
+    return_kspace: A `boolean`. If `True`, returns the filled *k*-space instead
+      of the reconstructed images. This is always complex-valued.
     method: A `string`. The partial Fourier reconstruction algorithm. Must be
       one of `"zerofill"`, `"homodyne"` (homodyne detection method) or `"pocs"`
       (projection onto convex sets method).

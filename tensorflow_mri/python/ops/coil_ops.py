@@ -152,7 +152,7 @@ def combine_coils(images, maps=None, coil_axis=-1, keepdims=False):
       the specified maps. If `maps` is `None`, a simple estimate of `maps`
       is used (ie, images are combined using the sum of squares method).
     coil_axis: An `int`. The coil axis. Defaults to -1.
-    keepdims: A `bool`. If `True`, retains the coil dimension with size 1.
+    keepdims: A `boolean`. If `True`, retains the coil dimension with size 1.
 
   Returns:
     A `Tensor`. The combined images.

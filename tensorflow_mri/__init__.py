@@ -16,6 +16,8 @@
 
 from tensorflow_mri.__about__ import *
 
+# TODO(jmontalt): Remove these imports once the corresponding API symbols have
+# been registered.
 from tensorflow_mri.python.ops.array_ops import *
 from tensorflow_mri.python.ops.coil_ops import *
 from tensorflow_mri.python.ops.convex_ops import *
@@ -35,4 +37,11 @@ from tensorflow_mri.python import io
 from tensorflow_mri.python import layers
 from tensorflow_mri.python import losses
 from tensorflow_mri.python import metrics
-from tensorflow_mri.python import summary
+
+# Import public API.
+from tensorflow_mri.python.util import api_util
+
+for namespace in api_util.get_namespaces():
+  globals()[namespace] = api_util.import_namespace(namespace)
+
+del api_util

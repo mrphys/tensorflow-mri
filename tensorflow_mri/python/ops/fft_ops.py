@@ -46,9 +46,9 @@ def fftn(x, shape=None, axes=None, norm='backward', shift=False):
       `"backward"` or `"ortho"`. Defaults to `"backward"`. Indicates which
       direction of the forward/backward pair of transforms is scaled and with
       what normalization factor.
-    shift: A `bool`. If `True`, perform a "centered" transform by appropriately
-      shifting the inputs/outputs (eg, shifting zero-frequency components to the
-      center of the spectrum).
+    shift: A `boolean`. If `True`, perform a "centered" transform by
+      appropriately shifting the inputs/outputs (eg, shifting zero-frequency
+      components to the center of the spectrum).
 
   Returns:
     The truncated or zero-padded input tensor, transformed along the axes
@@ -95,9 +95,9 @@ def ifftn(x, shape=None, axes=None, norm='backward', shift=False):
       `"backward"` or `"ortho"`. Defaults to `"backward"`. Indicates which
       direction of the forward/backward pair of transforms is scaled and with
       what normalization factor.
-    shift: A `bool`. If `True`, perform a "centered" transform by appropriately
-      shifting the inputs/outputs (eg, shifting zero-frequency components to the
-      center of the spectrum).
+    shift: A `boolean`. If `True`, perform a "centered" transform by
+      appropriately shifting the inputs/outputs (eg, shifting zero-frequency
+      components to the center of the spectrum).
 
   Returns:
     The truncated or zero-padded input tensor, transformed along the axes

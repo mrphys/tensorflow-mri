@@ -1,13 +1,29 @@
-# Configuration file for the Sphinx documentation builder.
+# Copyright 2022 University College London. All Rights Reserved.
 #
-# This file only contains a selection of the most common options. For a full
-# list see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+"""Configuration file for the Sphinx documentation builder.
+
+This file only contains a selection of the most common options. For a full
+list see the documentation:
+https://www.sphinx-doc.org/en/master/usage/configuration.html
+"""
 
 from os import path
 import inspect
 import operator
 import packaging.version
+import re
 import sys
 import types
 
@@ -29,7 +45,7 @@ ROOT = path.abspath(path.join(path.dirname(__file__), '../..'))
 
 ABOUT = {}
 with open(path.join(ROOT, "tensorflow_mri/__about__.py")) as f:
-    exec(f.read(), ABOUT)
+  exec(f.read(), ABOUT)
 _version = packaging.version.Version(ABOUT['__version__'])
 
 project = ABOUT['__title__']
@@ -45,11 +61,11 @@ version = '.'.join(map(str, (_version.major, _version.minor)))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.linkcode',
-    'nbsphinx'
+  'sphinx.ext.autodoc',
+  'sphinx.ext.napoleon',
+  'sphinx.ext.autosummary',
+  'sphinx.ext.linkcode',
+  'nbsphinx'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -82,17 +98,17 @@ html_static_path = ['../assets']
 
 
 html_theme_options = {
-    'sidebar_hide_name': True,
-    'light_logo': 'tfmr_logo.svg',
-    'dark_logo': 'tmfr_logo_dark.svg',
-    'light_css_variables': {
-        'color-brand-primary': '#128091',
-        'color-brand-content': '#128091'
-    },
-    'dark_css_variables': {
-        'color-brand-primary': '#18A8BE',
-        'color-brand-content': '#18A8BE'
-    }
+  'sidebar_hide_name': True,
+  'light_logo': 'tfmr_logo.svg',
+  'dark_logo': 'tmfr_logo_dark.svg',
+  'light_css_variables': {
+    'color-brand-primary': '#128091',
+    'color-brand-content': '#128091'
+  },
+  'dark_css_variables': {
+    'color-brand-primary': '#18A8BE',
+    'color-brand-content': '#18A8BE'
+  }
 }
 
 
@@ -103,61 +119,106 @@ import tensorflow_mri as tfmri
 
 
 def linkcode_resolve(domain, info):
-    """Find the GitHub URL where an object is defined.
-    
-    Args:
-        domain: The language domain. This is always `py`.
-        info: A `dict` with keys `module` and `fullname`.
-    
-    Returns:
-        The GitHub URL to the object, or `None` if not relevant.
-    """    
-    # Obtain fully-qualified name of object.
-    qualname = info['module'] + '.' + info['fullname']
-    # Remove the `tensorflow_mri` bit.
-    qualname = qualname.split('.', maxsplit=1)[-1]
+  """Find the GitHub URL where an object is defined.
+  
+  Args:
+    domain: The language domain. This is always `py`.
+    info: A `dict` with keys `module` and `fullname`.
+  
+  Returns:
+    The GitHub URL to the object, or `None` if not relevant.
+  """  
+  # Obtain fully-qualified name of object.
+  qualname = info['module'] + '.' + info['fullname']
+  # Remove the `tensorflow_mri` bit.
+  qualname = qualname.split('.', maxsplit=1)[-1]
 
-    # Get the object.
-    obj = operator.attrgetter(qualname)(tfmri)
-    # We only add links to classes (type `type`) and functions
-    # (type `types.FunctionType`).
-    if not isinstance(obj, (type, types.FunctionType)):
-        return None
+  # Get the object.
+  obj = operator.attrgetter(qualname)(tfmri)
+  # We only add links to classes (type `type`) and functions
+  # (type `types.FunctionType`).
+  if not isinstance(obj, (type, types.FunctionType)):
+    return None
 
-    # Get the file name of the current object.
-    file = inspect.getsourcefile(obj)
-    # If no file, we're done. This happens for C++ ops.
-    if file is None:
-        return None
-    # Crop anything before `tensorflow_mri\python`. This path is system
-    # dependent and we don't care about it.
-    index = file.index('tensorflow_mri/python')
-    file = file[index:]
+  # Get the file name of the current object.
+  file = inspect.getsourcefile(obj)
+  # If no file, we're done. This happens for C++ ops.
+  if file is None:
+    return None
+  # Crop anything before `tensorflow_mri\python`. This path is system
+  # dependent and we don't care about it.
+  index = file.index('tensorflow_mri/python')
+  file = file[index:]
 
-    # Get first and last line numbers.
-    lines, start = inspect.getsourcelines(obj)
-    stop = start + len(lines) - 1
+  # Get first and last line numbers.
+  lines, start = inspect.getsourcelines(obj)
+  stop = start + len(lines) - 1
 
-    # Base URL.
-    url = 'https://github.com/mrphys/tensorflow-mri'
-    # Add version blob.
-    url += '/blob/v' + release
-    # Add file.
-    url += '/' + file
-    # Add line numbers.
-    url += '#L' + str(start) + '-L' + str(stop)
+  # Base URL.
+  url = 'https://github.com/mrphys/tensorflow-mri'
+  # Add version blob.
+  url += '/blob/v' + release
+  # Add file.
+  url += '/' + file
+  # Add line numbers.
+  url += '#L' + str(start) + '-L' + str(stop)
 
-    return url
+  return url
 
 
-def process_docstring(app, what, name, obj, options, lines):
-    """Process autodoc docstrings."""
-    # Replace markdown literal markers (`) by ReST literal markers (``).
-    myst = '\n'.join(lines)
-    text = myst.replace('`', '``')
-    text = text.replace(':math:``', ':math:`')
-    lines[:] = text.splitlines()
+# -- Hyperlinks --------------------------------------------------------------
+# Common types and constants in the API docs are enriched with hyperlinks to
+# their corresponding docs.
+
+# The following dictionary specifies type names and the corresponding links.
+# The link is only added if the name has inline code format, e.g. ``foo``.
+COMMON_TYPES_LINKS = {
+    # Python standard types.
+    'int': 'https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex',
+    'float': 'https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex',
+    'complex': 'https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex',
+    'str': 'https://docs.python.org/3/library/stdtypes.html#text-sequence-type-str',
+    'boolean': 'https://docs.python.org/3/library/stdtypes.html#boolean-values',
+    # Python constants.
+    'False': 'https://docs.python.org/3/library/constants.html#False',
+    'True': 'https://docs.python.org/3/library/constants.html#True',
+    'None': 'https://docs.python.org/3/library/constants.html#None',
+    # NumPy types.
+    'np.ndarray': 'https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html',
+    # TensorFlow types.
+    'tf.Tensor': 'https://www.tensorflow.org/api_docs/python/tf/Tensor',
+    'tf.TensorShape': 'https://www.tensorflow.org/api_docs/python/tf/TensorShape',
+    'tf.dtypes.DType': 'https://www.tensorflow.org/api_docs/python/tf/dtypes/DType'
+}
+
+COMMON_TYPES_PATTERNS = {
+    k: re.compile(rf"``{k}``")for k in COMMON_TYPES_LINKS}
+
+COMMON_TYPES_REPLACEMENTS = {
+    k: rf"`{k} <{v}>`_" for k, v in COMMON_TYPES_LINKS.items()}
+
+CODE_LETTER_PATTERN = re.compile(r"``(?P<code>\w+)``(?P<letter>[a-zA-Z])")
+CODE_LETTER_REPL = r"``\g<code>``\ \g<letter>"
+
+LINK_PATTERN = re.compile(r"``(?P<link_text>[\w\.]+)``_")
+LINK_REPL = r"`\g<link_text>`_"
+
+
+def process_docstring(app, what, name, obj, options, lines):  # pylint: disable=missing-param-doc,unused-argument
+  """Process autodoc docstrings."""
+  # Replace markdown literal markers (`) by ReST literal markers (``).
+  myst = '\n'.join(lines)
+  text = myst.replace('`', '``')
+  text = text.replace(':math:``', ':math:`')
+  # Correct inline code followed by word characters.
+  text = CODE_LETTER_PATTERN.sub(CODE_LETTER_REPL, text)
+  # Add links to some common types.
+  for k in COMMON_TYPES_LINKS:
+    text = COMMON_TYPES_PATTERNS[k].sub(COMMON_TYPES_REPLACEMENTS[k], text)
+  # Correct double quotes.
+  text = LINK_PATTERN.sub(LINK_REPL, text)
+  lines[:] = text.splitlines()
 
 
 def setup(app):
-    app.connect('autodoc-process-docstring', process_docstring)
+  app.connect('autodoc-process-docstring', process_docstring)

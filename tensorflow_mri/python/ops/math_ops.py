@@ -183,8 +183,8 @@ def view_as_complex(x, stacked=True):
 
   Args:
     x: A real-valued `Tensor`.
-    stacked: A `bool`. If `True`, real and imaginary components are expected to
-      be stacked in their own axis. If `False`, they are expected to be
+    stacked: A `boolean`. If `True`, real and imaginary components are expected
+      to be stacked in their own axis. If `False`, they are expected to be
       interleaved in the channel dimension.
 
   Returns:
@@ -218,7 +218,7 @@ def view_as_real(x, stacked=True):
 
   Args:
     x: A complex-valued `Tensor`.
-    stacked: A `bool`. If `True`, real and imaginary components are stacked
+    stacked: A `boolean`. If `True`, real and imaginary components are stacked
       along a new axis. If `False`, they are inserted into the channel axis.
 
   Returns:

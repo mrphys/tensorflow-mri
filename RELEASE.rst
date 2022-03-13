@@ -1,35 +1,35 @@
-Release 0.11.0
+Release 0.12.0
 ==============
 
-This release includes a redesign of the API docs.
-
-Breaking Changes
-----------------
-
-* ``tfmri``:
-
-  * ``LinearOperatorMRI``: Argument ``sens_norm`` now defaults to ``True``.
-  * ``conjugate_gradient``: Argument ``max_iter`` is now called
-    ``max_iterations``.
-  * ``SVDCoilCompressor`` renamed to ``CoilCompressorSVD`` for consistency
-    with the rest of the API.
-  * ``filter_kspace``: Argument ``filter_type`` has been renamed to
-    ``filter_fn`` and can accept a callable in addition to a string.
 
 Major Features and Improvements
 -------------------------------
 
-* ``tfmri``:
+* ``tfmri.linalg``:
 
-  * Added new ops ``expand_trajectory`` and ``expand_density``, which
-    complement the existing ``flatten_trajectory`` and ``flatten_density``.
+  * New module containing linear algebra operators.
+  * New classes ``LinearOperator``, ``LinearOperatorAddition``,
+    ``LinearOperatorAdjoint``, ``LinearOperatorComposition``,
+    ``LinearOperatorDiag``, ``LinearOperatorFiniteDifference``,
+    ``LinearOperatorGramMatrix``, ``LinearOperatorMRI`` and
+    ``LinearOperatorScaledIdentity`` and new function ``conjugate_gradient``.
+
+* ``tfmri.plot``:
+
+  * New module containing plotting utilities.
+  * New functions ``image_sequence``, ``tiled_image_sequence`` and ``show``.
+
+* ``tfmri.recon``:
+
+  * New module containing functionality for image reconstruction.
+  * New functions ``adj``, ``grappa``, ``lstsq``, ``pf`` and ``sense``. These
+    are now the canonical API for image reconstruction.
 
 Bug Fixes and Other Changes
 ---------------------------
 
-* ``tfmri``:
-
-  * ``hann`` and ``hamming`` now return 0 outside their domain, as expected.
-  * ``atanfilt`` now returns the correct values for the negative part of the
-    domain.
-  * Improved error reporting for ``filter_kspace``.
+* New API export system, currently enabled for namespaces ``tfmri.linalg``,
+  ``tfmri.plot``, ``tfmri.recon`` and ``tfmri.summary``. The remaining
+  namespaces will be moved to this API system in future releases.
+* Improvements to documentation: reduced verbosity of TOC tree and added links
+  for common types.

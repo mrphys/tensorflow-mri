@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2022 University College London. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,27 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""About TensorFlow MRI."""
+"""Import utilities."""
 
-__all__ = [
-    "__title__",
-    "__summary__",
-    "__uri__",
-    "__version__",
-    "__author__",
-    "__email__",
-    "__license__",
-    "__copyright__",
-]
+import importlib
+import sys
 
-__title__ = "tensorflow-mri"
-__summary__ = "A collection of TensorFlow add-ons for computational MRI."
-__uri__ = "https://github.com/mrphys/tensorflow-mri"
 
-__version__ = "0.12.0"
+def lazy_import(name):
+  """Imports a module lazily.
 
-__author__ = "Javier Montalt Tordera"
-__email__ = "javier.montalt@outlook.com"
+  Args:
+    name: Name of the module to import.
 
-__license__ = "Apache 2.0"
-__copyright__ = "2021 University College London"
+  Returns:
+    The module object.
+  """
+  # https://docs.python.org/3/library/importlib.html#implementing-lazy-imports
+  spec = importlib.util.find_spec(name)
+  loader = importlib.util.LazyLoader(spec.loader)
+  spec.loader = loader
+  module = importlib.util.module_from_spec(spec)
+  sys.modules[name] = module
+  loader.exec_module(module)
+  return module

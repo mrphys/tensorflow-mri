@@ -60,8 +60,8 @@ class ConvBlock(tf.keras.layers.Layer):
     out_activation: A callable or a Keras activation identifier. The activation
       to use in the last layer. Defaults to `'same'`, in which case we use the
       same activation as in previous layers as defined by `activation`.
-    use_bias: A `bool`, whether the block's layers use bias vectors. Defaults to
-      `True`.
+    use_bias: A `boolean`, whether the block's layers use bias vectors. Defaults
+      to `True`.
     kernel_initializer: A `tf.keras.initializers.Initializer` or a Keras
       initializer identifier. Initializer for convolutional kernels. Defaults to
       `'VarianceScaling'`.
@@ -79,9 +79,9 @@ class ConvBlock(tf.keras.layers.Layer):
       normalization.
     bn_epsilon: A `float`. Small float added to variance to avoid dividing by
       zero during batch normalization.
-    use_residual: A `bool`. If `True`, the input is added to the outputs to
+    use_residual: A `boolean`. If `True`, the input is added to the outputs to
       create a residual learning block. Defaults to `False`.
-    use_dropout: A `bool`. If `True`, a dropout layer is inserted after
+    use_dropout: A `boolean`. If `True`, a dropout layer is inserted after
       each activation. Defaults to `False`.
     dropout_rate: A `float`. The dropout rate. Only relevant if `use_dropout` is
       `True`. Defaults to 0.3.
