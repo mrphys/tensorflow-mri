@@ -652,7 +652,7 @@ class LinearOperatorDiag(LinalgImagingMixin, tf.linalg.LinearOperatorDiag): # py
     # pylint: disable=invalid-unary-operand-type
     diag = tf.convert_to_tensor(diag, name='diag')
     self._rank = check_util.validate_rank(rank, name='rank', accept_none=False)
-    if self._rank >= diag.shape.rank:
+    if self._rank > diag.shape.rank:
       raise ValueError(
           f"Argument `rank` must be <= `diag.shape.rank`, but got: {rank}")
 
