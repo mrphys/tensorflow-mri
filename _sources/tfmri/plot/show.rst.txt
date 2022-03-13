@@ -1,0 +1,6 @@
+﻿tfmri.plot.show
+===============
+
+.. currentmodule:: tensorflow_mri.plot
+
+.. autofunction:: show

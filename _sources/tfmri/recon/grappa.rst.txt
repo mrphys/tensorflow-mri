@@ -1,0 +1,6 @@
+﻿tfmri.recon.grappa
+==================
+
+.. currentmodule:: tensorflow_mri.recon
+
+.. autofunction:: grappa

@@ -1,0 +1,8 @@
+﻿tfmri.linalg.LinearOperatorAdjoint
+==================================
+
+.. currentmodule:: tensorflow_mri.linalg
+
+.. autoclass:: LinearOperatorAdjoint
+    :members:
+    :show-inheritance:

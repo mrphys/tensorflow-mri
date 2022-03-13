@@ -1,0 +1,8 @@
+﻿tfmri.linalg.LinearOperatorMRI
+==============================
+
+.. currentmodule:: tensorflow_mri.linalg
+
+.. autoclass:: LinearOperatorMRI
+    :members:
+    :show-inheritance:

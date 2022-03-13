@@ -1,0 +1,6 @@
+﻿tfmri.recon.adj
+===============
+
+.. currentmodule:: tensorflow_mri.recon
+
+.. autofunction:: adj

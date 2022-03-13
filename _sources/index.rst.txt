@@ -35,8 +35,11 @@ FAQ
    callbacks
    io
    layers
+   linalg
    losses
    metrics
+   plot
+   recon
    summary
 
 .. meta::

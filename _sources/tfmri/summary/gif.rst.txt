@@ -1,6 +1,6 @@
 ﻿tfmri.summary.gif
 =================
 
-.. currentmodule:: tensorflow_mri.python.summary
+.. currentmodule:: tensorflow_mri.summary
 
 .. autofunction:: gif

@@ -1,7 +1,17 @@
 tfmri.summary
 =============
 
-.. automodule:: tensorflow_mri.python.summary
+.. automodule:: tensorflow_mri.summary
+
+Classes
+-------
+
+.. autosummary::
+    :toctree: tfmri/summary
+    :template: summary/class.rst
+    :nosignatures:
+
+    
 
 Functions
 ---------

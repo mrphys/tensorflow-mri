@@ -1,6 +1,0 @@
-﻿tfmri.reconstruct\_pf
-=====================
-
-.. currentmodule:: tensorflow_mri
-
-.. autofunction:: reconstruct_pf

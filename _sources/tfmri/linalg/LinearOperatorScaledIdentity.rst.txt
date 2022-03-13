@@ -1,0 +1,8 @@
+﻿tfmri.linalg.LinearOperatorScaledIdentity
+=========================================
+
+.. currentmodule:: tensorflow_mri.linalg
+
+.. autoclass:: LinearOperatorScaledIdentity
+    :members:
+    :show-inheritance:

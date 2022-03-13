@@ -1,0 +1,32 @@
+tfmri.linalg
+============
+
+.. automodule:: tensorflow_mri.linalg
+
+Classes
+-------
+
+.. autosummary::
+    :toctree: tfmri/linalg
+    :template: linalg/class.rst
+    :nosignatures:
+
+    LinearOperator
+    LinearOperatorAddition
+    LinearOperatorAdjoint
+    LinearOperatorComposition
+    LinearOperatorDiag
+    LinearOperatorFiniteDifference
+    LinearOperatorGramMatrix
+    LinearOperatorMRI
+    LinearOperatorScaledIdentity
+
+Functions
+---------
+
+.. autosummary::
+    :toctree: tfmri/linalg
+    :template: linalg/function.rst
+    :nosignatures:
+
+    conjugate_gradient

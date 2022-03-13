@@ -5,11 +5,11 @@
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="tfmri.layers.KSpaceResampling" href="KSpaceResampling.html" /><link rel="prev" title="tfmri.layers" href="../../layers.html" />
 
-    <link rel="shortcut icon" href="../../_static/tfmr_icon.svg"/><meta name="generator" content="sphinx-4.4.0, furo 2022.01.02"/>
+    <link rel="shortcut icon" href="../../_static/tfmr_icon.svg"/><meta name="generator" content="sphinx-4.4.0, furo 2022.03.04"/>
         <title>tfmri.layers.ConvBlock - TensorFlow MRI Documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=df49af52631e7917044a9c21a57f7b83170a6dd0" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?digest=fade93df149f7c5fedb3ff897f799dc7d283b420" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=935aa2abcc5c1da4283d1dc201fb1f0add16d23a" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?digest=25ceb02ed1c46dc30f2321ff83e92799f69dfdb9" />
     
     
 
@@ -22,20 +22,22 @@
   --color-brand-content: #128091;
   
   }
-  body[data-theme="dark"] {
-    --color-code-background: #202020;
-  --color-code-foreground: #d0d0d0;
-  --color-brand-primary: #18A8BE;
-  --color-brand-content: #18A8BE;
-  
-  }
-  @media (prefers-color-scheme: dark) {
-    body:not([data-theme="light"]) {
+  @media not print {
+    body[data-theme="dark"] {
       --color-code-background: #202020;
   --color-code-foreground: #d0d0d0;
   --color-brand-primary: #18A8BE;
   --color-brand-content: #18A8BE;
   
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #18A8BE;
+  --color-brand-content: #18A8BE;
+  
+      }
     }
   }
 </style></head>
@@ -47,17 +49,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
   <symbol id="svg-toc" viewBox="0 0 24 24">
     <title>Contents</title>
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <path stroke="none" d="M0 0h24v24H0z" />
-      <line x1="4" y1="6" x2="20" y2="6" />
-      <line x1="10" y1="12" x2="20" y2="12" />
-      <line x1="6" y1="18" x2="20" y2="18" />
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
     </svg>
   </symbol>
   <symbol id="svg-menu" viewBox="0 0 24 24">
     <title>Menu</title>
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
       <line x1="3" y1="12" x2="21" y2="12"></line>
       <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -66,14 +64,14 @@
   </symbol>
   <symbol id="svg-arrow-right" viewBox="0 0 24 24">
     <title>Expand</title>
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
       <polyline points="9 18 15 12 9 6"></polyline>
     </svg>
   </symbol>
   <symbol id="svg-sun" viewBox="0 0 24 24">
     <title>Light mode</title>
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
       <circle cx="12" cy="12" r="5"></circle>
       <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -88,7 +86,7 @@
   </symbol>
   <symbol id="svg-moon" viewBox="0 0 24 24">
     <title>Dark mode</title>
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
       <path stroke="none" d="M0 0h24v24H0z" fill="none" />
       <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
@@ -96,7 +94,7 @@
   </symbol>
   <symbol id="svg-sun-half" viewBox="0 0 24 24">
     <title>Auto light/dark mode</title>
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
       <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
       <circle cx="12" cy="12" r="9" />
@@ -166,141 +164,161 @@
   <p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
 <ul class="current">
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../ops.html">tfmri</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../ops/CoilCompressorSVD.html">tfmri.CoilCompressorSVD</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/ConvexFunction.html">tfmri.ConvexFunction</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/ConvexFunctionAffineMappingComposition.html">tfmri.ConvexFunctionAffineMappingComposition</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/ConvexFunctionLinearOperatorComposition.html">tfmri.ConvexFunctionLinearOperatorComposition</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/ConvexFunctionL1Norm.html">tfmri.ConvexFunctionL1Norm</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/ConvexFunctionL2Norm.html">tfmri.ConvexFunctionL2Norm</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/ConvexFunctionL2NormSquared.html">tfmri.ConvexFunctionL2NormSquared</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/ConvexFunctionLeastSquares.html">tfmri.ConvexFunctionLeastSquares</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/ConvexFunctionQuadratic.html">tfmri.ConvexFunctionQuadratic</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/ConvexFunctionTikhonov.html">tfmri.ConvexFunctionTikhonov</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/ConvexFunctionTotalVariation.html">tfmri.ConvexFunctionTotalVariation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/LinearOperatorFiniteDifference.html">tfmri.LinearOperatorFiniteDifference</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/LinearOperatorMRI.html">tfmri.LinearOperatorMRI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/admm_minimize.html">tfmri.admm_minimize</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/atanfilt.html">tfmri.atanfilt</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/block_soft_threshold.html">tfmri.block_soft_threshold</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/broadcast_dynamic_shapes.html">tfmri.broadcast_dynamic_shapes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/broadcast_static_shapes.html">tfmri.broadcast_static_shapes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/cartesian_product.html">tfmri.cartesian_product</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/central_crop.html">tfmri.central_crop</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/combine_coils.html">tfmri.combine_coils</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/compress_coils.html">tfmri.compress_coils</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/conjugate_gradient.html">tfmri.conjugate_gradient</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/crop_kspace.html">tfmri.crop_kspace</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/density_grid.html">tfmri.density_grid</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/estimate_coil_sensitivities.html">tfmri.estimate_coil_sensitivities</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/estimate_density.html">tfmri.estimate_density</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/estimate_radial_density.html">tfmri.estimate_radial_density</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/euler_to_rotation_matrix_3d.html">tfmri.euler_to_rotation_matrix_3d</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/expand_density.html">tfmri.expand_density</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/expand_trajectory.html">tfmri.expand_trajectory</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/extract_from_complex.html">tfmri.extract_from_complex</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/extract_glimpses.html">tfmri.extract_glimpses</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/fftn.html">tfmri.fftn</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/filter_kspace.html">tfmri.filter_kspace</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/flatten_density.html">tfmri.flatten_density</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/flatten_trajectory.html">tfmri.flatten_trajectory</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/gmsd.html">tfmri.gmsd</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/gmsd2d.html">tfmri.gmsd2d</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/gmsd3d.html">tfmri.gmsd3d</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/gradient_magnitude.html">tfmri.gradient_magnitude</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/hann.html">tfmri.hann</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/hamming.html">tfmri.hamming</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/ifftn.html">tfmri.ifftn</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/image_gradients.html">tfmri.image_gradients</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/lbfgs_minimize.html">tfmri.lbfgs_minimize</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/make_val_and_grad_fn.html">tfmri.make_val_and_grad_fn</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/meshgrid.html">tfmri.meshgrid</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/normalize_no_nan.html">tfmri.normalize_no_nan</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/phantom.html">tfmri.phantom</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/psnr.html">tfmri.psnr</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/psnr2d.html">tfmri.psnr2d</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/psnr3d.html">tfmri.psnr3d</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/radial_density.html">tfmri.radial_density</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/radial_trajectory.html">tfmri.radial_trajectory</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/radial_waveform.html">tfmri.radial_waveform</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/random_sampling_mask.html">tfmri.random_sampling_mask</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/ravel_multi_index.html">tfmri.ravel_multi_index</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/reconstruct_adj.html">tfmri.reconstruct_adj</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/reconstruct_grappa.html">tfmri.reconstruct_grappa</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/reconstruct_lstsq.html">tfmri.reconstruct_lstsq</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/reconstruct_pf.html">tfmri.reconstruct_pf</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/reconstruct_sense.html">tfmri.reconstruct_sense</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/resize_with_crop_or_pad.html">tfmri.resize_with_crop_or_pad</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/rotate_2d.html">tfmri.rotate_2d</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/rotate_3d.html">tfmri.rotate_3d</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/scale_by_min_max.html">tfmri.scale_by_min_max</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/shrinkage.html">tfmri.shrinkage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/soft_threshold.html">tfmri.soft_threshold</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/spiral_trajectory.html">tfmri.spiral_trajectory</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/spiral_waveform.html">tfmri.spiral_waveform</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/ssim.html">tfmri.ssim</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/ssim2d.html">tfmri.ssim2d</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/ssim3d.html">tfmri.ssim3d</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/ssim_multiscale.html">tfmri.ssim_multiscale</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/ssim2d_multiscale.html">tfmri.ssim2d_multiscale</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/ssim3d_multiscale.html">tfmri.ssim3d_multiscale</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/total_variation.html">tfmri.total_variation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/unravel_index.html">tfmri.unravel_index</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/view_as_complex.html">tfmri.view_as_complex</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ops/view_as_real.html">tfmri.view_as_real</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/CoilCompressorSVD.html">CoilCompressorSVD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/ConvexFunction.html">ConvexFunction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/ConvexFunctionAffineMappingComposition.html">ConvexFunctionAffineMappingComposition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/ConvexFunctionLinearOperatorComposition.html">ConvexFunctionLinearOperatorComposition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/ConvexFunctionL1Norm.html">ConvexFunctionL1Norm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/ConvexFunctionL2Norm.html">ConvexFunctionL2Norm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/ConvexFunctionL2NormSquared.html">ConvexFunctionL2NormSquared</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/ConvexFunctionLeastSquares.html">ConvexFunctionLeastSquares</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/ConvexFunctionQuadratic.html">ConvexFunctionQuadratic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/ConvexFunctionTikhonov.html">ConvexFunctionTikhonov</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/ConvexFunctionTotalVariation.html">ConvexFunctionTotalVariation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/admm_minimize.html">admm_minimize</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/atanfilt.html">atanfilt</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/block_soft_threshold.html">block_soft_threshold</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/broadcast_dynamic_shapes.html">broadcast_dynamic_shapes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/broadcast_static_shapes.html">broadcast_static_shapes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/cartesian_product.html">cartesian_product</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/central_crop.html">central_crop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/combine_coils.html">combine_coils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/compress_coils.html">compress_coils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/crop_kspace.html">crop_kspace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/density_grid.html">density_grid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/estimate_coil_sensitivities.html">estimate_coil_sensitivities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/estimate_density.html">estimate_density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/estimate_radial_density.html">estimate_radial_density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/euler_to_rotation_matrix_3d.html">euler_to_rotation_matrix_3d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/expand_density.html">expand_density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/expand_trajectory.html">expand_trajectory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/extract_from_complex.html">extract_from_complex</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/extract_glimpses.html">extract_glimpses</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/fftn.html">fftn</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/filter_kspace.html">filter_kspace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/flatten_density.html">flatten_density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/flatten_trajectory.html">flatten_trajectory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/gmsd.html">gmsd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/gmsd2d.html">gmsd2d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/gmsd3d.html">gmsd3d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/gradient_magnitude.html">gradient_magnitude</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/hann.html">hann</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/hamming.html">hamming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/ifftn.html">ifftn</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/image_gradients.html">image_gradients</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/lbfgs_minimize.html">lbfgs_minimize</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/make_val_and_grad_fn.html">make_val_and_grad_fn</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/meshgrid.html">meshgrid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/normalize_no_nan.html">normalize_no_nan</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/phantom.html">phantom</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/psnr.html">psnr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/psnr2d.html">psnr2d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/psnr3d.html">psnr3d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/radial_density.html">radial_density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/radial_trajectory.html">radial_trajectory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/radial_waveform.html">radial_waveform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/random_sampling_mask.html">random_sampling_mask</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/ravel_multi_index.html">ravel_multi_index</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/resize_with_crop_or_pad.html">resize_with_crop_or_pad</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/rotate_2d.html">rotate_2d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/rotate_3d.html">rotate_3d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/scale_by_min_max.html">scale_by_min_max</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/shrinkage.html">shrinkage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/soft_threshold.html">soft_threshold</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/spiral_trajectory.html">spiral_trajectory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/spiral_waveform.html">spiral_waveform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/ssim.html">ssim</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/ssim2d.html">ssim2d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/ssim3d.html">ssim3d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/ssim_multiscale.html">ssim_multiscale</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/ssim2d_multiscale.html">ssim2d_multiscale</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/ssim3d_multiscale.html">ssim3d_multiscale</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/total_variation.html">total_variation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/unravel_index.html">unravel_index</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/view_as_complex.html">view_as_complex</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ops/view_as_real.html">view_as_real</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../callbacks.html">tfmri.callbacks</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../callbacks/TensorBoardImages.html">tfmri.callbacks.TensorBoardImages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../callbacks/TensorBoardImages.html">TensorBoardImages</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../io.html">tfmri.io</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../io/encode_gif.html">tfmri.io.encode_gif</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../io/encode_gif.html">encode_gif</a></li>
 </ul>
 </li>
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../../layers.html">tfmri.layers</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">tfmri.layers.ConvBlock</a></li>
-<li class="toctree-l2"><a class="reference internal" href="KSpaceResampling.html">tfmri.layers.KSpaceResampling</a></li>
-<li class="toctree-l2"><a class="reference internal" href="UNet.html">tfmri.layers.UNet</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">ConvBlock</a></li>
+<li class="toctree-l2"><a class="reference internal" href="KSpaceResampling.html">KSpaceResampling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="UNet.html">UNet</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../losses.html">tfmri.losses</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../losses/MultiscaleStructuralSimilarityLoss.html">tfmri.losses.MultiscaleStructuralSimilarityLoss</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../losses/StructuralSimilarityLoss.html">tfmri.losses.StructuralSimilarityLoss</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../losses/ssim_loss.html">tfmri.losses.ssim_loss</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../losses/ssim_multiscale_loss.html">tfmri.losses.ssim_multiscale_loss</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../linalg.html">tfmri.linalg</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../linalg/LinearOperator.html">LinearOperator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linalg/LinearOperatorAddition.html">LinearOperatorAddition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linalg/LinearOperatorAdjoint.html">LinearOperatorAdjoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linalg/LinearOperatorComposition.html">LinearOperatorComposition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linalg/LinearOperatorDiag.html">LinearOperatorDiag</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linalg/LinearOperatorFiniteDifference.html">LinearOperatorFiniteDifference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linalg/LinearOperatorGramMatrix.html">LinearOperatorGramMatrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linalg/LinearOperatorMRI.html">LinearOperatorMRI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linalg/LinearOperatorScaledIdentity.html">LinearOperatorScaledIdentity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linalg/conjugate_gradient.html">conjugate_gradient</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../metrics.html">tfmri.metrics</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/Accuracy.html">tfmri.metrics.Accuracy</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/ConfusionMetric.html">tfmri.metrics.ConfusionMetric</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/DiceIndex.html">tfmri.metrics.DiceIndex</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/F1Score.html">tfmri.metrics.F1Score</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/FBetaScore.html">tfmri.metrics.FBetaScore</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/IoU.html">tfmri.metrics.IoU</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/JaccardIndex.html">tfmri.metrics.JaccardIndex</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/MultiscaleStructuralSimilarity.html">tfmri.metrics.MultiscaleStructuralSimilarity</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/NegativePredictiveValue.html">tfmri.metrics.NegativePredictiveValue</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/PeakSignalToNoiseRatio.html">tfmri.metrics.PeakSignalToNoiseRatio</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/PositivePredictiveValue.html">tfmri.metrics.PositivePredictiveValue</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/Precision.html">tfmri.metrics.Precision</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/Recall.html">tfmri.metrics.Recall</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/Selectivity.html">tfmri.metrics.Selectivity</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/Sensitivity.html">tfmri.metrics.Sensitivity</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/Specificity.html">tfmri.metrics.Specificity</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/StructuralSimilarity.html">tfmri.metrics.StructuralSimilarity</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/TrueNegativeRate.html">tfmri.metrics.TrueNegativeRate</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/TruePositiveRate.html">tfmri.metrics.TruePositiveRate</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/TverskyIndex.html">tfmri.metrics.TverskyIndex</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../losses.html">tfmri.losses</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../losses/MultiscaleStructuralSimilarityLoss.html">MultiscaleStructuralSimilarityLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/StructuralSimilarityLoss.html">StructuralSimilarityLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/ssim_loss.html">ssim_loss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/ssim_multiscale_loss.html">ssim_multiscale_loss</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../summary.html">tfmri.summary</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../summary/gif.html">tfmri.summary.gif</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../metrics.html">tfmri.metrics</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/Accuracy.html">Accuracy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/ConfusionMetric.html">ConfusionMetric</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/DiceIndex.html">DiceIndex</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/F1Score.html">F1Score</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/FBetaScore.html">FBetaScore</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/IoU.html">IoU</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/JaccardIndex.html">JaccardIndex</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/MultiscaleStructuralSimilarity.html">MultiscaleStructuralSimilarity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/NegativePredictiveValue.html">NegativePredictiveValue</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/PeakSignalToNoiseRatio.html">PeakSignalToNoiseRatio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/PositivePredictiveValue.html">PositivePredictiveValue</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/Precision.html">Precision</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/Recall.html">Recall</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/Selectivity.html">Selectivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/Sensitivity.html">Sensitivity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/Specificity.html">Specificity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/StructuralSimilarity.html">StructuralSimilarity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/TrueNegativeRate.html">TrueNegativeRate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/TruePositiveRate.html">TruePositiveRate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/TverskyIndex.html">TverskyIndex</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../plot.html">tfmri.plot</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../plot/image_sequence.html">image_sequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../plot/show.html">show</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../plot/tiled_image_sequence.html">tiled_image_sequence</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../recon.html">tfmri.recon</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../recon/adj.html">adj</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../recon/grappa.html">grappa</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../recon/lstsq.html">lstsq</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../recon/pf.html">pf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../recon/sense.html">sense</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../summary.html">tfmri.summary</a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../summary/gif.html">gif</a></li>
 </ul>
 </li>
 </ul>
 
 </div>
 </div>
+
       </div>
       
     </div>
@@ -308,8 +326,13 @@
   <div class="main">
     <div class="content">
       <div class="article-container">
-        <div class="content-icon-container">
-          <div class="theme-toggle-container theme-toggle-content">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container"><div class="theme-toggle-container theme-toggle-content">
             <button class="theme-toggle">
               <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
               <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
@@ -324,10 +347,10 @@
         </div>
         <article role="main">
           <section id="tfmri-layers-convblock">
-<h1>tfmri.layers.ConvBlock<a class="headerlink" href="#tfmri-layers-convblock" title="Permalink to this headline">¶</a></h1>
+<h1>tfmri.layers.ConvBlock<a class="headerlink" href="#tfmri-layers-convblock" title="Permalink to this headline">#</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflow_mri.python.layers.ConvBlock">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ConvBlock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.11.0/tensorflow_mri/python/layers/conv_blocks.py#L40-L238"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.python.layers.ConvBlock" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ConvBlock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.12.0/tensorflow_mri/python/layers/conv_blocks.py#L40-L238"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.python.layers.ConvBlock" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">keras.engine.base_layer.Layer</span></code></p>
 <p>A basic convolution block.</p>
 <p>A Conv + BN + Activation block. The number of convolutional layers is
@@ -335,9 +358,10 @@ determined by <code class="docutils literal notranslate"><span class="pre">filte
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>filters</strong> – A list of <code class="docutils literal notranslate"><span class="pre">int</span></code> numbers or an <code class="docutils literal notranslate"><span class="pre">int</span></code> number of filters. Given an
-<code class="docutils literal notranslate"><span class="pre">int</span></code> input, a single convolution is applied; otherwise a series of
-convolutions are applied.</p></li>
+<li><p><strong>filters</strong> – <p>A list of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex">int</a> numbers or an <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex">int</a> number of filters. Given an
+<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex">int</a> input, a single convolution is applied; otherwise a series of
+convolutions are applied.</p>
+</p></li>
 <li><p><strong>kernel_size</strong> – An integer or tuple/list of <code class="docutils literal notranslate"><span class="pre">rank</span></code> integers, specifying the
 size of the convolution window. Can be a single integer to specify the
 same value for all spatial dimensions.</p></li>
@@ -350,8 +374,8 @@ use in all layers. Defaults to <code class="docutils literal notranslate"><span 
 <li><p><strong>out_activation</strong> – A callable or a Keras activation identifier. The activation
 to use in the last layer. Defaults to <code class="docutils literal notranslate"><span class="pre">'same'</span></code>, in which case we use the
 same activation as in previous layers as defined by <code class="docutils literal notranslate"><span class="pre">activation</span></code>.</p></li>
-<li><p><strong>use_bias</strong> – A <code class="docutils literal notranslate"><span class="pre">bool</span></code>, whether the block’s layers use bias vectors. Defaults to
-<code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+<li><p><strong>use_bias</strong> – A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#boolean-values">boolean</a>, whether the block’s layers use bias vectors. Defaults
+to <a class="reference external" href="https://docs.python.org/3/library/constants.html#True">True</a>.</p></li>
 <li><p><strong>kernel_initializer</strong> – A <code class="docutils literal notranslate"><span class="pre">tf.keras.initializers.Initializer</span></code> or a Keras
 initializer identifier. Initializer for convolutional kernels. Defaults to
 <code class="docutils literal notranslate"><span class="pre">'VarianceScaling'</span></code>.</p></li>
@@ -359,38 +383,46 @@ initializer identifier. Initializer for convolutional kernels. Defaults to
 initializer identifier. Initializer for bias terms. Defaults to <code class="docutils literal notranslate"><span class="pre">'Zeros'</span></code>.</p></li>
 <li><p><strong>kernel_regularizer</strong> – A <code class="docutils literal notranslate"><span class="pre">tf.keras.initializers.Regularizer</span></code> or a Keras
 regularizer identifier. Regularizer for convolutional kernels. Defaults to
-<code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
-<li><p><strong>bias_regularizer</strong> – A <code class="docutils literal notranslate"><span class="pre">tf.keras.initializers.Regularizer</span></code> or a Keras
-regularizer identifier. Regularizer for bias terms. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
-<li><p><strong>use_batch_norm</strong> – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, use batch normalization. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
-<li><p><strong>use_sync_bn</strong> – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, use synchronised batch normalization. Defaults to
-<code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
-<li><p><strong>bn_momentum</strong> – A <code class="docutils literal notranslate"><span class="pre">float</span></code>. Momentum for the moving average in batch
+<a class="reference external" href="https://docs.python.org/3/library/constants.html#None">None</a>.</p></li>
+<li><p><strong>bias_regularizer</strong> – <p>A <code class="docutils literal notranslate"><span class="pre">tf.keras.initializers.Regularizer</span></code> or a Keras
+regularizer identifier. Regularizer for bias terms. Defaults to <a class="reference external" href="https://docs.python.org/3/library/constants.html#None">None</a>.</p>
+</p></li>
+<li><p><strong>use_batch_norm</strong> – <p>If <a class="reference external" href="https://docs.python.org/3/library/constants.html#True">True</a>, use batch normalization. Defaults to <a class="reference external" href="https://docs.python.org/3/library/constants.html#False">False</a>.</p>
+</p></li>
+<li><p><strong>use_sync_bn</strong> – <p>If <a class="reference external" href="https://docs.python.org/3/library/constants.html#True">True</a>, use synchronised batch normalization. Defaults to
+<a class="reference external" href="https://docs.python.org/3/library/constants.html#False">False</a>.</p>
+</p></li>
+<li><p><strong>bn_momentum</strong> – A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex">float</a>. Momentum for the moving average in batch
 normalization.</p></li>
-<li><p><strong>bn_epsilon</strong> – A <code class="docutils literal notranslate"><span class="pre">float</span></code>. Small float added to variance to avoid dividing by
-zero during batch normalization.</p></li>
-<li><p><strong>use_residual</strong> – A <code class="docutils literal notranslate"><span class="pre">bool</span></code>. If <code class="docutils literal notranslate"><span class="pre">True</span></code>, the input is added to the outputs to
-create a residual learning block. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
-<li><p><strong>use_dropout</strong> – A <code class="docutils literal notranslate"><span class="pre">bool</span></code>. If <code class="docutils literal notranslate"><span class="pre">True</span></code>, a dropout layer is inserted after
-each activation. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
-<li><p><strong>dropout_rate</strong> – A <code class="docutils literal notranslate"><span class="pre">float</span></code>. The dropout rate. Only relevant if <code class="docutils literal notranslate"><span class="pre">use_dropout</span></code> is
-<code class="docutils literal notranslate"><span class="pre">True</span></code>. Defaults to 0.3.</p></li>
-<li><p><strong>dropout_type</strong> – A <code class="docutils literal notranslate"><span class="pre">str</span></code>. The dropout type. Must be one of <code class="docutils literal notranslate"><span class="pre">'standard'</span></code> or
+<li><p><strong>bn_epsilon</strong> – <p>A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex">float</a>. Small float added to variance to avoid dividing by
+zero during batch normalization.</p>
+</p></li>
+<li><p><strong>use_residual</strong> – <p>A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#boolean-values">boolean</a>. If <a class="reference external" href="https://docs.python.org/3/library/constants.html#True">True</a>, the input is added to the outputs to
+create a residual learning block. Defaults to <a class="reference external" href="https://docs.python.org/3/library/constants.html#False">False</a>.</p>
+</p></li>
+<li><p><strong>use_dropout</strong> – <p>A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#boolean-values">boolean</a>. If <a class="reference external" href="https://docs.python.org/3/library/constants.html#True">True</a>, a dropout layer is inserted after
+each activation. Defaults to <a class="reference external" href="https://docs.python.org/3/library/constants.html#False">False</a>.</p>
+</p></li>
+<li><p><strong>dropout_rate</strong> – <p>A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex">float</a>. The dropout rate. Only relevant if <code class="docutils literal notranslate"><span class="pre">use_dropout</span></code> is
+<a class="reference external" href="https://docs.python.org/3/library/constants.html#True">True</a>. Defaults to 0.3.</p>
+</p></li>
+<li><p><strong>dropout_type</strong> – <p>A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#text-sequence-type-str">str</a>. The dropout type. Must be one of <code class="docutils literal notranslate"><span class="pre">'standard'</span></code> or
 <code class="docutils literal notranslate"><span class="pre">'spatial'</span></code>. Standard dropout drops individual elements from the feature
 maps, whereas spatial dropout drops entire feature maps. Only relevant if
-<code class="docutils literal notranslate"><span class="pre">use_dropout</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>. Defaults to <code class="docutils literal notranslate"><span class="pre">'standard'</span></code>.</p></li>
+<code class="docutils literal notranslate"><span class="pre">use_dropout</span></code> is <a class="reference external" href="https://docs.python.org/3/library/constants.html#True">True</a>. Defaults to <code class="docutils literal notranslate"><span class="pre">'standard'</span></code>.</p>
+</p></li>
 <li><p><strong>**kwargs</strong> – Additional keyword arguments to be passed to base class.</p></li>
 </ul>
 </dd>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflow_mri.python.layers.ConvBlock.call">
-<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.11.0/tensorflow_mri/python/layers/conv_blocks.py#L189-L212"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.python.layers.ConvBlock.call" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.12.0/tensorflow_mri/python/layers/conv_blocks.py#L189-L212"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.python.layers.ConvBlock.call" title="Permalink to this definition">#</a></dt>
 <dd><p>Runs forward pass on the input tensor.</p>
 </dd></dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflow_mri.python.layers.ConvBlock.get_config">
-<span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.11.0/tensorflow_mri/python/layers/conv_blocks.py#L214-L238"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.python.layers.ConvBlock.get_config" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.12.0/tensorflow_mri/python/layers/conv_blocks.py#L214-L238"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.python.layers.ConvBlock.get_config" title="Permalink to this definition">#</a></dt>
 <dd><p>Gets layer configuration.</p>
 </dd></dl>
 </dd></dl>
@@ -422,15 +454,21 @@ maps, whereas spatial dropout drops entire feature maps. Only relevant if
               </div>
             </a>
         </div>
-
-        <div class="related-information">
-              Copyright &#169; 2021 University College London |
-          Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
-          <a href="https://github.com/pradyunsg/furo">Furo theme</a>.
-            | <a class="muted-link" href="../../_sources/tfmri/layers/ConvBlock.rst.txt"
-               rel="nofollow">
-              Show Source
-            </a>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2021 University College London
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              
+            </div>
+          </div>
         </div>
         
       </footer>

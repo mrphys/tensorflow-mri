@@ -1,0 +1,6 @@
+﻿tfmri.plot.image\_sequence
+==========================
+
+.. currentmodule:: tensorflow_mri.plot
+
+.. autofunction:: image_sequence
