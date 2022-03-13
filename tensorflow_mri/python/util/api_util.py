@@ -24,12 +24,14 @@ _API_ATTR = '_api_names'
 
 _NAMESPACES = [
     'plot',
-    'recon'
+    'recon',
+    'summary'
 ]
 
 _NAMESPACE_DOCSTRINGS = {
     'plot': "Plotting utilities.",
-    'recon': "Image reconstruction."
+    'recon': "Image reconstruction.",
+    'summary': "Tensorboard summaries."
 }
 
 

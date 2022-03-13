@@ -29,6 +29,53 @@ sys.path.insert(0, ROOT_PATH)
 from tensorflow_mri.python.util import api_util
 
 
+INDEX_TEMPLATE = string.Template(
+"""TensorFlow MRI |release|
+========================
+
+.. image:: ../assets/view_on_github.svg
+   :target: https://github.com/mrphys/tensorflow-mri
+   :scale: 70%
+   :alt: View on GitHub
+
+|
+
+.. include:: ../../README.rst
+   :start-after: start-intro
+   :end-before: end-intro
+
+Installation
+------------
+
+.. include:: ../../README.rst
+   :start-after: start-install
+   :end-before: end-install
+
+FAQ
+---
+
+.. include:: ../../README.rst
+   :start-after: start-faq
+   :end-before: end-faq
+
+.. toctree::
+   :maxdepth: 3
+   :caption: API Documentation
+   :hidden:
+
+   ops
+   callbacks
+   io
+   layers
+   linalg
+   losses
+   metrics
+   ${namespaces}
+
+.. meta::
+   :google-site-verification: 8PySedj6KJ0kc5qC1CbO6_9blFB9Nho3SgXvbRzyVOU
+""")
+
 MODULE_DOC_TEMPLATE = string.Template(
 """tfmri.${module}
 ======${underline}
@@ -73,6 +120,7 @@ for name, symbol in api_util.get_api_symbols().items():
   elif inspect.isfunction(symbol):
     modules[namespace].functions.append(name)
 
+# Write namespace templates.
 for name, module in modules.items():
   classes = '\n    '.join(sorted(module.classes))
   functions = '\n    '.join(sorted(module.functions))
@@ -84,3 +132,8 @@ for name, module in modules.items():
         underline='=' * len(name),
         classes=classes,
         functions=functions))
+
+# Write index.rst.
+with open(os.path.join(DOCS_PATH, 'index.rst'), 'w') as f:
+  f.write(INDEX_TEMPLATE.substitute(
+      namespaces='\n   '.join(sorted(api_util.get_namespaces()))))

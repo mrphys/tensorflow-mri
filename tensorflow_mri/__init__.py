@@ -35,7 +35,6 @@ from tensorflow_mri.python import io
 from tensorflow_mri.python import layers
 from tensorflow_mri.python import losses
 from tensorflow_mri.python import metrics
-from tensorflow_mri.python import summary
 from tensorflow_mri.python import util
 
 # Import public API.

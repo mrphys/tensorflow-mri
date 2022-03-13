@@ -24,7 +24,7 @@ import tensorflow as tf
 from tensorflow_mri.python.util import api_util
 
 
-@api_util.export('plot.image_sequence')
+@api_util.export("plot.image_sequence")
 def plot_image_sequence(images,
                         part=None,
                         cmap='gray',
@@ -71,7 +71,7 @@ def plot_image_sequence(images,
   return animation
 
 
-@api_util.export('plot.tiled_image_sequence')
+@api_util.export("plot.tiled_image_sequence")
 def plot_tiled_image_sequence(images,
                                part=None,
                                cmap='gray',

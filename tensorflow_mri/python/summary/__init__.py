@@ -14,4 +14,4 @@
 # ==============================================================================
 """Tensorboard summaries."""
 
-from tensorflow_mri.python.summary.image_summary import *
+from tensorflow_mri.python.summary import image_summary

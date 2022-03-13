@@ -20,8 +20,10 @@ import tensorflow as tf
 import tensorboard as tb
 
 from tensorflow_mri.python.io import image_io
+from tensorflow_mri.python.util import api_util
 
 
+@api_util.export("summary.gif")
 def gif(name,
         data,
         step=None,

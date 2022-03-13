@@ -9,4 +9,3 @@ tools/docs/_build
 tools/docs/_templates
 tools/docs/tfmri
 tools/docs/*.rst
-!tools/docs/index.rst

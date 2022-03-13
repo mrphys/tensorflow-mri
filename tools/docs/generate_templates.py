@@ -52,8 +52,7 @@ NAMESPACES += [
     'linalg',
     'losses',
     'metrics',
-    'ops',
-    'summary'
+    'ops'
 ]
 
 TEMPLATE_PATH = os.path.join(
