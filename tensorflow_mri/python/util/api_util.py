@@ -22,6 +22,26 @@ _API_SYMBOLS = dict()
 
 _API_ATTR = '_api_names'
 
+_NAMESPACES = [
+    'plot',
+    'recon'
+]
+
+_NAMESPACE_DOCSTRINGS = {
+    'plot': "Plotting utilities.",
+    'recon': "Image reconstruction."
+}
+
+
+def get_api_symbols():
+  """Returns a live reference to the global API symbols dictionary."""
+  return _API_SYMBOLS
+
+
+def get_namespaces():
+  """Returns a list of TFMRI namespaces."""
+  return _NAMESPACES
+
 
 def get_symbol_from_name(name):
   """Get API symbol from its name.
@@ -73,12 +93,24 @@ def export(*names):
 
     Returns:
       The input symbol with the _api_names attribute set.
+
+    Raises:
+      ValueError: If the name is invalid or the symbol is already exported.
     """
     setattr(symbol, _API_ATTR, names)
     for name in names:
+      # API name must have format "namespace.name".
+      if name.count('.') != 1:
+        raise ValueError(f"Invalid API name: {name}")
+      # API namespace must be one of the supported ones.
+      namespace, _ = name.split('.')
+      if namespace not in _NAMESPACES:
+        raise ValueError(f"Invalid API namespace: {namespace}")
+      # API name must be unique.
       if name in _API_SYMBOLS:
         raise ValueError(
             f"Name {name} already used for exported symbol {symbol}")
+      # Add symbol to the API symbols table.
       _API_SYMBOLS[name] = symbol
     return symbol
   return decorator
@@ -112,4 +144,5 @@ def import_namespace(namespace):
   module = importlib.util.module_from_spec(spec)
   sys.modules[spec.name] = module
   spec.loader.exec_module(module)
+  module.__doc__ = _NAMESPACE_DOCSTRINGS[namespace]
   return module

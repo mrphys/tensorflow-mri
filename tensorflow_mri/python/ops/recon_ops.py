@@ -45,7 +45,7 @@ def reconstruct_adj(kspace,
                     sensitivities=None,
                     phase=None,
                     sens_norm=True):
-  r"""Reconstructs an image using the adjoint MRI operator.
+  r"""Reconstructs an MR image using the adjoint MRI operator.
 
   Given *k*-space data :math:`b`, this function estimates the corresponding
   image as :math:`x = A^H b`, where :math:`A` is the MRI linear operator.
@@ -154,7 +154,7 @@ def reconstruct_lstsq(kspace,
                       optimizer=None,
                       optimizer_kwargs=None,
                       filter_corners=False):
-  r"""Reconstructs an image using a least-squares formulation.
+  r"""Reconstructs an MR image using a least-squares formulation.
 
   This is an iterative reconstruction method which formulates the image
   reconstruction problem as follows:
@@ -424,7 +424,7 @@ def reconstruct_sense(kspace,
                       rank=None,
                       l2_regularizer=0.0,
                       fast=True):
-  r"""MR image reconstruction using sensitivity encoding (SENSE).
+  r"""Reconstructs an MR image using SENSE.
 
   Args:
     kspace: A `Tensor`. The *k*-space samples. Must have type `complex64` or
@@ -600,7 +600,7 @@ def reconstruct_grappa(kspace,
                        combine_coils=True,
                        sensitivities=None,
                        return_kspace=False):
-  """MR image reconstruction using GRAPPA.
+  """Reconstructs an MR image using GRAPPA.
 
   Args:
     kspace: A `Tensor`. The *k*-space samples. Must have type `complex64` or
@@ -902,7 +902,7 @@ def reconstruct_pf(kspace,
                    return_kspace=False,
                    method='zerofill',
                    **kwargs):
-  """Partial Fourier image reconstruction.
+  """Reconstructs an MR image using partial Fourier methods.
 
   Args:
     kspace: A `Tensor`. The *k*-space data. Must have type `complex64` or

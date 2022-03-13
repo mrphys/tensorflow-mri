@@ -28,7 +28,9 @@ from tensorflow_mri.python.util import api_util
 def plot_image_sequence(images,
                         part=None,
                         cmap='gray',
-                        fps=20.0):
+                        fps=20.0,
+                        fig_size=None,
+                        bg_color='dimgray'):
   """Plots a sequence of images.
 
   Args:
@@ -39,16 +41,19 @@ def plot_image_sequence(images,
     cmap: A `str` or `matplotlib.colors.Colormap`_. The colormap used to map
       pixel values to colors. Defaults to `'gray'`.
     fps: A `float`. The number of frames per second. Defaults to 20.
+    fig_size: A `tuple` of `float`s. Width and height of the figure in inches.
+    bg_color: A `color`_. The background color.
 
   Returns:
     A `matplotlib.animation.ArtistAnimation`_ object.
 
+  .. _color: https://matplotlib.org/stable/tutorials/colors/colors.html
   .. _matplotlib.animation.ArtistAnimation: https://matplotlib.org/stable/api/_as_gen/matplotlib.animation.ArtistAnimation.html
   .. _matplotlib.colors.Colormap: https://matplotlib.org/stable/api/_as_gen/matplotlib.colors.Colormap.html
   """
   images = _preprocess_image(images, part=part, expected_ndim=3)
 
-  fig = plt.figure()
+  fig = plt.figure(figsize=fig_size, facecolor=bg_color)
   artists = []
   for image in images:
     artist = plt.imshow(image,
@@ -71,10 +76,10 @@ def plot_tiled_image_sequence(images,
                                part=None,
                                cmap='gray',
                                fps=20.0,
-                               aspect=1.77,  # 16:9
-                               grid_shape=None,
                                fig_size=None,
-                               bg_color='dimgray'):
+                               bg_color='dimgray',
+                               aspect=1.77,  # 16:9
+                               grid_shape=None):
   r"""Plots one or more image sequences in a grid.
 
   Args:

@@ -16,6 +16,14 @@
 
 import os
 import string
+import sys
+
+DOCS_PATH = os.path.dirname(os.path.realpath(__file__))
+ROOT_PATH = os.path.join(DOCS_PATH, '..', '..')
+
+sys.path.insert(0, ROOT_PATH)
+
+from tensorflow_mri.python.util import api_util
 
 
 CLASS_TEMPLATE = string.Template(
@@ -36,32 +44,31 @@ FUNCTION_TEMPLATE = string.Template(
 .. auto{{ objtype }}:: {{ objname }}
 """)
 
-MODULES = {
+NAMESPACES = api_util.get_namespaces()
+NAMESPACES += [
     'callbacks',
     'io',
     'layers',
     'linalg',
     'losses',
     'metrics',
-    'plot',
     'ops',
-    'recon',
     'summary'
-}
+]
 
 TEMPLATE_PATH = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), '_templates')
 
-for module in MODULES:
-  # Create directory for this module.
-  os.makedirs(os.path.join(TEMPLATE_PATH, module), exist_ok=True)
+for namespace in NAMESPACES:
+  # Create directory for this namespace.
+  os.makedirs(os.path.join(TEMPLATE_PATH, namespace), exist_ok=True)
 
-  # Special treatment for module `ops`, which maps to the `tfmri` parent module.
-  module_path = module
-  if module == 'ops':
+  # Special treatment for namespace `ops`, which maps to the `tfmri` parent
+  # module.
+  if namespace == 'ops':
     module = 'tfmri'
   else:
-    module = f'tfmri.{module}'
+    module = f'tfmri.{namespace}'
 
   # Substitute the templates for this module.
   class_template = CLASS_TEMPLATE.substitute(
@@ -70,7 +77,7 @@ for module in MODULES:
       module=module, underline='=' * (len(module) + 1))
 
   # Write template files.
-  with open(os.path.join(TEMPLATE_PATH, module_path, 'class.rst'), 'w') as f:
+  with open(os.path.join(TEMPLATE_PATH, namespace, 'class.rst'), 'w') as f:
     f.write(class_template)
-  with open(os.path.join(TEMPLATE_PATH, module_path, 'function.rst'), 'w') as f:
+  with open(os.path.join(TEMPLATE_PATH, namespace, 'function.rst'), 'w') as f:
     f.write(function_template)

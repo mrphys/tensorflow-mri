@@ -63,19 +63,15 @@ class Module:
   classes: typing.List[str] = dataclasses.field(default_factory=list)
   functions: typing.List[str] = dataclasses.field(default_factory=list)
 
+modules = {namespace: Module() for namespace in api_util.get_namespaces()}
 
-modules = {}
-
-for name, symbol in api_util._API_SYMBOLS.items():  # pylint: disable=protected-access
-  module, name = name.split('.', maxsplit=1)
-
-  if module not in modules:
-    modules[module] = Module()
+for name, symbol in api_util.get_api_symbols().items():
+  namespace, name = name.split('.', maxsplit=1)
 
   if inspect.isclass(symbol):
-    modules[module].classes.append(name)
+    modules[namespace].classes.append(name)
   elif inspect.isfunction(symbol):
-    modules[module].functions.append(name)
+    modules[namespace].functions.append(name)
 
 for name, module in modules.items():
   classes = '\n    '.join(sorted(module.classes))

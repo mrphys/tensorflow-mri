@@ -197,6 +197,9 @@ COMMON_TYPES_PATTERNS = {
 COMMON_TYPES_REPLACEMENTS = {
     k: rf"`{k} <{v}>`_" for k, v in COMMON_TYPES_LINKS.items()}
 
+CODE_LETTER_PATTERN = re.compile(r"``(?P<code>\w+)``(?P<letter>[a-zA-Z])")
+CODE_LETTER_REPL = r"``\g<code>``\ \g<letter>"
+
 LINK_PATTERN = re.compile(r"``(?P<link_text>[\w\.]+)``_")
 LINK_REPL = r"`\g<link_text>`_"
 
@@ -207,6 +210,8 @@ def process_docstring(app, what, name, obj, options, lines):  # pylint: disable=
   myst = '\n'.join(lines)
   text = myst.replace('`', '``')
   text = text.replace(':math:``', ':math:`')
+  # Correct inline code followed by word characters.
+  text = CODE_LETTER_PATTERN.sub(CODE_LETTER_REPL, text)
   # Add links to some common types.
   for k in COMMON_TYPES_LINKS:
     text = COMMON_TYPES_PATTERNS[k].sub(COMMON_TYPES_REPLACEMENTS[k], text)

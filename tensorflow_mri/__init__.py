@@ -41,7 +41,7 @@ from tensorflow_mri.python import util
 # Import public API.
 from tensorflow_mri.python.util import api_util
 
-for namespace in ['plot', 'recon']:
+for namespace in api_util.get_namespaces():
   globals()[namespace] = api_util.import_namespace(namespace)
 
 del api_util
