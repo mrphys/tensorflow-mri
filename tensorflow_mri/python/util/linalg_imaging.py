@@ -29,84 +29,7 @@ from tensorflow_mri.python.util import tensor_util
 
 
 class LinalgImagingMixin(tf.linalg.LinearOperator):
-  r"""Mixin for linear operators meant to operate on images.
-
-  This mixin adds some additional methods to any linear operator to simplify
-  operations on images, while maintaining compatibility with the TensorFlow
-  linear algebra framework.
-
-  Inputs and outputs to operators derived from this mixin may have meaningful
-  non-vectorized N-D shapes. Thus this mixin defines the additional properties
-  `domain_shape` and `range_shape` and the methods `domain_shape_tensor` and
-  `range_shape_tensor`. These enrich the information provided by the built-in
-  properties `shape`, `domain_dimension`, `range_dimension` and methods
-  `domain_dimension_tensor` and `range_dimension_tensor`, which only have
-  information about the vectorized 1D shapes.
-
-  Subclasses of this mixin must define the methods `_domain_shape` and
-  `_range_shape`, which return the static domain and range shapes of the
-  operator. Optionally, subclasses may also define the methods
-  `_domain_shape_tensor` and `_range_shape_tensor`, which return the dynamic
-  domain and range shapes of the operator. These two methods will only be called
-  if `_domain_shape` and `_range_shape` do not return fully defined static
-  shapes.
-
-  Subclasses of this mixin must define the abstract method `_transform`, which
-  applies the operator (or its adjoint) to a batch of images. This internal
-  method is called by `transform`. In general, subclasses of this mixin should
-  not define the methods `_matvec` or `_matmul`. These have default
-  implementations which call `_transform`.
-
-  Operators derived from this mixin may be used in any of the following ways:
-
-   1. Using method `transform`, which expects a full-shaped input and returns
-      a full-shaped output, i.e. a tensor with shape `[...] + shape`, where
-      `shape` is either the `domain_shape` or the `range_shape`. This method is
-      unique to operators derived from this mixin.
-   2. Using method `matvec`, which expects a vectorized input and returns a
-      vectorized output, i.e. a tensor with shape `[..., n]` where `n` is
-      either the `domain_dimension` or the `range_dimension`. This method is
-      part of the TensorFlow linear algebra framework.
-   3. Using method `matmul`, which expects matrix inputs and returns matrix
-      outputs. Note that a matrix is just a column vector in this context, i.e.
-      a tensor with shape `[..., n, 1]`, where `n` is either the
-      `domain_dimension` or the `range_dimension`. Matrices which are not column
-      vectors (i.e. whose last dimension is not 1) are not supported. This
-      method is part of the TensorFlow linear algebra framework.
-
-  Operators derived from this mixin may also be used with the functions
-  `tf.linalg.matvec` and `tf.linalg.matmul`, which will call the corresponding
-  methods.
-
-  This mixin also provides the convenience functions `flatten_domain_shape` and
-  `flatten_range_shape` to flatten full-shaped inputs/outputs to their
-  vectorized form. Conversely, `expand_domain_dimension` and
-  `expand_range_dimension` may be used to expand vectorized inputs/outputs to
-  their full-shaped form.
-
-  Subclassing
-  ===========
-
-  Subclasses must always define `_transform`, which implements this operator's
-  functionality (and its adjoint). In general, subclasses should not define the
-  methods `_matvec` or `_matmul`. These have default implementations which call
-  `_transform`.
-
-  Subclasses must always define `_domain_shape`
-  and `_range_shape`, which return the static domain/range shapes of the
-  operator. If the subclassed operator needs to provide dynamic domain/range
-  shapes and the static shapes are not always fully-defined, it must also define
-  `_domain_shape_tensor` and `_range_shape_tensor`, which return the dynamic
-  domain/range shapes of the operator. In general, subclasses should not define
-  the methods `_shape` or `_shape_tensor`. These have default implementations.
-
-  If the subclassed operator has a non-scalar batch shape, it must also define
-  `_batch_shape` which returns the static batch shape. If the static batch shape
-  is not always fully-defined, the subclass must also define
-  `_batch_shape_tensor`, which returns the dynamic batch shape.
-
-  For the parameters, see `tf.linalg.LinearOperator`.
-  """
+  """Mixin for linear operators meant to operate on images."""
   def transform(self, x, adjoint=False, name="transform"):
     """Transform a batch of images.
 
@@ -346,14 +269,115 @@ class LinalgImagingMixin(tf.linalg.LinearOperator):
     return tf.ensure_shape(x, output_shape)
 
 
+@api_util.export("linalg.LinearOperator")
+class LinearOperator(LinalgImagingMixin, tf.linalg.LinearOperator):  # pylint: disable=abstract-method
+  r"""Base class defining a [batch of] linear operator[s].
+
+  Provides access to common matrix operations without the need to materialize
+  the matrix.
+
+  This operator is similar to `tf.linalg.LinearOperator`_, but has additional
+  methods to simplify operations on images, while maintaining compatibility
+  with the TensorFlow linear algebra framework.
+
+  Inputs and outputs to this linear operator or its subclasses may have
+  meaningful non-vectorized N-D shapes. Thus this class defines the additional
+  properties `domain_shape` and `range_shape` and the methods
+  `domain_shape_tensor` and `range_shape_tensor`. These enrich the information
+  provided by the built-in properties `shape`, `domain_dimension`,
+  `range_dimension` and methods `domain_dimension_tensor` and
+  `range_dimension_tensor`, which only have information about the vectorized 1D
+  shapes.
+
+  Subclasses of this operator must define the methods `_domain_shape` and
+  `_range_shape`, which return the static domain and range shapes of the
+  operator. Optionally, subclasses may also define the methods
+  `_domain_shape_tensor` and `_range_shape_tensor`, which return the dynamic
+  domain and range shapes of the operator. These two methods will only be called
+  if `_domain_shape` and `_range_shape` do not return fully defined static
+  shapes.
+
+  Subclasses must define the abstract method `_transform`, which
+  applies the operator (or its adjoint) to a [batch of] images. This internal
+  method is called by `transform`. In general, subclasses of this operator
+  should not define the methods `_matvec` or `_matmul`. These have default
+  implementations which call `_transform`.
+
+  Operators derived from this class may be used in any of the following ways:
+
+  1. Using method `transform`, which expects a full-shaped input and returns
+     a full-shaped output, i.e. a tensor with shape `[...] + shape`, where
+     `shape` is either the `domain_shape` or the `range_shape`. This method is
+     unique to operators derived from this class.
+  2. Using method `matvec`, which expects a vectorized input and returns a
+     vectorized output, i.e. a tensor with shape `[..., n]` where `n` is
+     either the `domain_dimension` or the `range_dimension`. This method is
+     part of the TensorFlow linear algebra framework.
+  3. Using method `matmul`, which expects matrix inputs and returns matrix
+     outputs. Note that a matrix is just a column vector in this context, i.e.
+     a tensor with shape `[..., n, 1]`, where `n` is either the
+     `domain_dimension` or the `range_dimension`. Matrices which are not column
+     vectors (i.e. whose last dimension is not 1) are not supported. This
+     method is part of the TensorFlow linear algebra framework.
+
+  Operators derived from this class may also be used with the functions
+  `tf.linalg.matvec`_ and `tf.linalg.matmul`_, which will call the
+  corresponding methods.
+
+  This class also provides the convenience functions `flatten_domain_shape` and
+  `flatten_range_shape` to flatten full-shaped inputs/outputs to their
+  vectorized form. Conversely, `expand_domain_dimension` and
+  `expand_range_dimension` may be used to expand vectorized inputs/outputs to
+  their full-shaped form.
+
+  **Subclassing**
+
+  Subclasses must always define `_transform`, which implements this operator's
+  functionality (and its adjoint). In general, subclasses should not define the
+  methods `_matvec` or `_matmul`. These have default implementations which call
+  `_transform`.
+
+  Subclasses must always define `_domain_shape`
+  and `_range_shape`, which return the static domain/range shapes of the
+  operator. If the subclassed operator needs to provide dynamic domain/range
+  shapes and the static shapes are not always fully-defined, it must also define
+  `_domain_shape_tensor` and `_range_shape_tensor`, which return the dynamic
+  domain/range shapes of the operator. In general, subclasses should not define
+  the methods `_shape` or `_shape_tensor`. These have default implementations.
+
+  If the subclassed operator has a non-scalar batch shape, it must also define
+  `_batch_shape` which returns the static batch shape. If the static batch shape
+  is not always fully-defined, the subclass must also define
+  `_batch_shape_tensor`, which returns the dynamic batch shape.
+
+  Args:
+    dtype: The `tf.dtypes.DType` of the matrix that this operator represents.
+    is_non_singular: Expect that this operator is non-singular.
+    is_self_adjoint: Expect that this operator is equal to its Hermitian
+      transpose. If `dtype` is real, this is equivalent to being symmetric.
+    is_positive_definite: Expect that this operator is positive definite,
+      meaning the quadratic form :math:`x^H A x` has positive real part for all
+      nonzero :math:`x`. Note that we do not require the operator to be
+      self-adjoint to be positive-definite.
+    is_square: Expect that this operator acts like square [batch] matrices.
+    name: A name for this `LinearOperator`.
+
+  .. _tf.linalg.LinearOperator: https://www.tensorflow.org/api_docs/python/tf/linalg/LinearOperator
+  .. _tf.linalg.matvec: https://www.tensorflow.org/api_docs/python/tf/linalg/matvec
+  .. _tf.linalg.matmul: https://www.tensorflow.org/api_docs/python/tf/linalg/matmul
+  """
+
+
+@api_util.export("linalg.LinearOperatorAdjoint")
 class LinearOperatorAdjoint(LinalgImagingMixin,  # pylint: disable=abstract-method
                             tf.linalg.LinearOperatorAdjoint):
-  """`LinearOperator` representing the adjoint of another imaging operator.
+  """Linear operator representing the adjoint of another operator.
 
-  Like `tf.linalg.LinearOperatorAdjoint`, but with the imaging extensions
-  provided by `LinalgImagingMixin`.
+  Like `tf.linalg.LinearOperatorAdjoint`_, but with imaging extensions.
 
-  For the parameters, see `tf.linalg.LinearOperatorAdjoint`.
+  For the parameters, see `tf.linalg.LinearOperatorAdjoint`_.
+
+  .. _tf.linalg.LinearOperatorAdjoint: https://www.tensorflow.org/api_docs/python/tf/linalg/LinearOperatorAdjoint
   """
   def _transform(self, x, adjoint=False):
     # pylint: disable=protected-access
@@ -378,14 +402,16 @@ class LinearOperatorAdjoint(LinalgImagingMixin,  # pylint: disable=abstract-meth
     return self.operator.batch_shape_tensor()
 
 
+@api_util.export("linalg.LinearOperatorComposition")
 class LinearOperatorComposition(LinalgImagingMixin,  # pylint: disable=abstract-method
                                 tf.linalg.LinearOperatorComposition):
-  """Composes one or more imaging `LinearOperators`.
+  """Composes one or more linear operators.
 
-  Like `tf.linalg.LinearOperatorComposition`, but with additional imaging
-  extensions.
+  Like `tf.linalg.LinearOperatorComposition`_, but with imaging extensions.
 
-  For the parameters, see `tf.linalg.LinearOperatorComposition`.
+  For the parameters, see `tf.linalg.LinearOperatorComposition`_.
+
+  .. _tf.linalg.LinearOperatorComposition: https://www.tensorflow.org/api_docs/python/tf/linalg/LinearOperatorComposition
   """
   def _transform(self, x, adjoint=False):
     # pylint: disable=protected-access
@@ -420,15 +446,10 @@ class LinearOperatorComposition(LinalgImagingMixin,  # pylint: disable=abstract-
         *[operator.batch_shape_tensor() for operator in self.operators])
 
 
+@api_util.export("linalg.LinearOperatorAddition")
 class LinearOperatorAddition(LinalgImagingMixin,  # pylint: disable=abstract-method
                              linalg_ext.LinearOperatorAddition):
-  """Adds one or more imaging `LinearOperators`.
-
-  Like `tfmri.LinearOperatorAddition`, but with additional imaging
-  extensions.
-
-  For the parameters, see `LinearOperatorAddition`.
-  """
+  """Adds one or more linear operators."""
   def _transform(self, x, adjoint=False):
     # pylint: disable=protected-access
     result = self.operators[0]._transform(x, adjoint=adjoint)
@@ -457,11 +478,12 @@ class LinearOperatorAddition(LinalgImagingMixin,  # pylint: disable=abstract-met
         *[operator.batch_shape_tensor() for operator in self.operators])
 
 
+@api_util.export("linalg.LinearOperatorScaledIdentity")
 class LinearOperatorScaledIdentity(LinalgImagingMixin,  # pylint: disable=abstract-method
                                    tf.linalg.LinearOperatorScaledIdentity):
-  """`LinearOperator` acting like a scaled identity matrix.
+  """Linear operator representing a scaled identity matrix.
 
-  Like `tf.linalg.LinearOperatorScaledIdentity`, but with additional imaging
+  Like `tf.linalg.LinearOperatorScaledIdentity`_, but with additional imaging
   extensions.
 
   Args:
@@ -480,6 +502,8 @@ class LinearOperatorScaledIdentity(LinalgImagingMixin,  # pylint: disable=abstra
       checks that initialization and method arguments have proper shape.
       If `True`, and static checks are inconclusive, add asserts to the graph.
     name: A name for this `LinearOperator`.
+
+  .. _tf.linalg.LinearOperatorScaledIdentity: https://www.tensorflow.org/api_docs/python/tf/linalg/LinearOperatorScaledIdentity
   """
   def __init__(self,
                shape,
@@ -537,7 +561,7 @@ class LinearOperatorScaledIdentity(LinalgImagingMixin,  # pylint: disable=abstra
 
 @api_util.export("linalg.LinearOperatorDiag")
 class LinearOperatorDiag(LinalgImagingMixin, tf.linalg.LinearOperatorDiag): # pylint: disable=abstract-method
-  """Linear operator acting like a [batch] square diagonal matrix.
+  """Linear operator representing a square diagonal matrix.
 
   Like `tf.linalg.LinearOperatorDiag`_, but with additional imaging
   extensions.
@@ -612,9 +636,10 @@ class LinearOperatorDiag(LinalgImagingMixin, tf.linalg.LinearOperatorDiag): # py
     return self._shape_tensor_value[:-self._rank]
 
 
+@api_util.export("linalg.LinearOperatorGramMatrix")
 class LinearOperatorGramMatrix(LinalgImagingMixin,  # pylint: disable=abstract-method
                                tf.linalg.LinearOperator):
-  r"""Gram matrix of a linear operator.
+  r"""Linear operator representing the Gram matrix of an operator.
 
   If :math:`A` is a `LinearOperator`, this operator is equivalent to
   :math:`A^H A`.
@@ -694,43 +719,44 @@ class LinearOperatorGramMatrix(LinalgImagingMixin,  # pylint: disable=abstract-m
     return self._operator
 
 
+@api_util.export("linalg.LinearOperatorFiniteDifference")
 class LinearOperatorFiniteDifference(LinalgImagingMixin,  # pylint: disable=abstract-method
                                      tf.linalg.LinearOperator):
-  """Linear operator acting like a finite difference operator.
+  """Linear operator representing a finite difference matrix.
 
   Args:
-    image_shape: A `tf.TensorShape` or list of ints. The shape of the input
+    domain_shape: A `tf.TensorShape` or list of ints. The shape of the input
       images.
-    axis: An int. The axis along which the finite difference is taken. Defaults
-      to -1.
-    dtype: An optional `string` or `DType`. The data type for this operator.
-      Defaults to `float32`.
-    name: An optional `string`. A name for this operator.
+    axis: An `int`. The axis along which the finite difference is taken.
+      Defaults to -1.
+    dtype: A `tf.dtypes.DType`. The data type for this operator. Defaults to
+      `float32`.
+    name: A `str`. A name for this operator.
   """
   def __init__(self,
-               image_shape,
+               domain_shape,
                axis=-1,
                dtype=tf.dtypes.float32,
                name="LinearOperatorFiniteDifference"):
 
     parameters = dict(
-      image_shape=image_shape,
+      domain_shape=domain_shape,
       axis=axis,
       dtype=dtype,
       name=name
     )
 
-    image_shape = tf.TensorShape(image_shape)
-    self._axis = check_util.validate_axis(axis, image_shape.rank,
+    domain_shape = tf.TensorShape(domain_shape)
+    self._axis = check_util.validate_axis(axis, domain_shape.rank,
                                           max_length=1,
                                           canonicalize="negative",
                                           scalar_to_list=False)
 
-    range_shape = image_shape.as_list()
+    range_shape = domain_shape.as_list()
     range_shape[self.axis] = range_shape[self.axis] - 1
     range_shape = tf.TensorShape(range_shape)
 
-    self._domain_shape_value = image_shape
+    self._domain_shape_value = domain_shape
     self._range_shape_value = range_shape
 
     super().__init__(dtype,

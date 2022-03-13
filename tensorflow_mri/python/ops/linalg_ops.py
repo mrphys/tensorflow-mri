@@ -25,18 +25,20 @@ from tensorflow.python.ops.linalg import linear_operator
 
 from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.ops import math_ops
+from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import linalg_imaging
 from tensorflow_mri.python.util import tensor_util
 
 
+@api_util.export("linalg.LinearOperatorMRI")
 @linear_operator.make_composite_tensor
 class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,  # pylint: disable=abstract-method
                         tf.linalg.LinearOperator):
-  """The MR imaging operator.
+  """Linear operator representing an MRI encoding matrix.
 
-  The MR imaging operator is a linear operator, :math:`A`, that maps a [batch
-  of] images, :math:`x` to a [batch of] measurement data (*k*-space), :math:`b`.
+  The MRI operator, :math:`A`, maps a [batch of] images, :math:`x` to a
+  [batch of] measurement data (*k*-space), :math:`b`.
 
   .. math::
     A x = b
@@ -101,9 +103,9 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,  # pylint: disable=ab
       dimension of `extra_shape`. The `'time'` mode (default) should be
       used for regular dynamic reconstruction. The `'frequency'` mode should be
       used for reconstruction in x-f space.
-    dtype: A `tf.DType`. The dtype of this operator. Must be `complex64` or
-      `complex128`. Defaults to `complex64`.
-    name: An optional `string`. The name of this operator.
+    dtype: A `tf.dtypes.DType`. The dtype of this operator. Must be `complex64`
+      or `complex128`. Defaults to `complex64`.
+    name: An optional `str`. The name of this operator.
   """
   def __init__(self,
                image_shape,
@@ -468,9 +470,6 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,  # pylint: disable=ab
             "fft_norm")
 
 
-LinearOperatorFiniteDifference = linalg_imaging.LinearOperatorFiniteDifference
-
-
 # Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -486,6 +485,7 @@ LinearOperatorFiniteDifference = linalg_imaging.LinearOperatorFiniteDifference
 # limitations under the License.
 # ==============================================================================
 
+@api_util.export("linalg.conjugate_gradient")
 def conjugate_gradient(operator,
                        rhs,
                        preconditioner=None,
@@ -495,12 +495,13 @@ def conjugate_gradient(operator,
                        name=None):
   r"""Conjugate gradient solver.
 
-  Solves a linear system of equations `A*x = rhs` for self-adjoint, positive
-  definite matrix `A` and right-hand side vector `rhs`, using an iterative,
-  matrix-free algorithm where the action of the matrix A is represented by
-  `operator`. The iteration terminates when either the number of iterations
-  exceeds `max_iterations` or when the residual norm has been reduced to `tol`
-  times its initial value, i.e. \\(||rhs - A x_k|| <= tol ||rhs||\\).
+  Solves a linear system of equations :math:`Ax = b` for self-adjoint, positive
+  definite matrix :math:`A` and right-hand side vector :math:`b`, using an
+  iterative, matrix-free algorithm where the action of the matrix :math:`A` is
+  represented by `operator`. The iteration terminates when either the number of
+  iterations exceeds `max_iterations` or when the residual norm has been reduced
+  to `tol` times its initial value, i.e.
+  :math:`(\left\| rhs - A x_k \right\| <= \mathrm{tol} \left\| b \right\|\\)`.
 
   .. note::
     This function is similar to
@@ -509,16 +510,15 @@ def conjugate_gradient(operator,
 
   Args:
     operator: A `LinearOperator` that is self-adjoint and positive definite.
-    rhs: A possibly batched vector of shape `[..., N]` containing the right-hand
-      size vector.
+    rhs: A `tf.Tensor` of shape `[..., N]`. The right hand-side of the linear
+      system.
     preconditioner: A `LinearOperator` that approximates the inverse of `A`.
       An efficient preconditioner could dramatically improve the rate of
       convergence. If `preconditioner` represents matrix `M`(`M` approximates
       `A^{-1}`), the algorithm uses `preconditioner.apply(x)` to estimate
       `A^{-1}x`. For this to be useful, the cost of applying `M` should be
       much lower than computing `A^{-1}` directly.
-    x: A possibly batched vector of shape `[..., N]` containing the initial
-      guess for the solution.
+    x: A `tf.Tensor` of shape `[..., N]`. The initial guess for the solution.
     tol: A float scalar convergence tolerance.
     max_iterations: An integer giving the maximum number of iterations.
     name: A name scope for the operation.
