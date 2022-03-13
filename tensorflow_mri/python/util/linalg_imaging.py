@@ -373,9 +373,24 @@ class LinearOperatorAdjoint(LinalgImagingMixin,  # pylint: disable=abstract-meth
                             tf.linalg.LinearOperatorAdjoint):
   """Linear operator representing the adjoint of another operator.
 
-  Like `tf.linalg.LinearOperatorAdjoint`_, but with imaging extensions.
+  `LinearOperatorAdjoint` is initialized with an operator :math:`A` and
+  represents its adjoint :math:`A^H`.
 
-  For the parameters, see `tf.linalg.LinearOperatorAdjoint`_.
+  .. note:
+    Similar to `tf.linalg.LinearOperatorAdjoint`_, but with imaging extensions.
+
+  Args:
+    operator: A `LinearOperator`.
+    is_non_singular: Expect that this operator is non-singular.
+    is_self_adjoint: Expect that this operator is equal to its Hermitian
+      transpose.
+    is_positive_definite: Expect that this operator is positive definite,
+      meaning the quadratic form :math:`x^H A x` has positive real part for all
+      nonzero :math:`x`. Note that we do not require the operator to be
+      self-adjoint to be positive-definite.
+    is_square: Expect that this operator acts like square [batch] matrices.
+    name: A name for this `LinearOperator`. Default is `operator.name +
+      "_adjoint"`.
 
   .. _tf.linalg.LinearOperatorAdjoint: https://www.tensorflow.org/api_docs/python/tf/linalg/LinearOperatorAdjoint
   """
@@ -407,9 +422,27 @@ class LinearOperatorComposition(LinalgImagingMixin,  # pylint: disable=abstract-
                                 tf.linalg.LinearOperatorComposition):
   """Composes one or more linear operators.
 
-  Like `tf.linalg.LinearOperatorComposition`_, but with imaging extensions.
+  `LinearOperatorComposition` is initialized with a list of operators
+  :math:`A_1, A_2, ..., A_J` and represents their composition
+  :math:`A_1 A_2 ... A_J`.
 
-  For the parameters, see `tf.linalg.LinearOperatorComposition`_.
+  .. note:
+    Similar to `tf.linalg.LinearOperatorComposition`_, but with imaging
+    extensions.
+
+  Args:
+    operators: A `list` of `LinearOperator` objects, each with the same `dtype`
+      and composable shape.
+    is_non_singular: Expect that this operator is non-singular.
+    is_self_adjoint: Expect that this operator is equal to its Hermitian
+      transpose.
+    is_positive_definite: Expect that this operator is positive definite,
+      meaning the quadratic form :math:`x^H A x` has positive real part for all
+      nonzero :math:`x`. Note that we do not require the operator to be
+      self-adjoint to be positive-definite.
+    is_square: Expect that this operator acts like square [batch] matrices.
+    name: A name for this `LinearOperator`.  Default is the individual
+      operators names joined with `_o_`.
 
   .. _tf.linalg.LinearOperatorComposition: https://www.tensorflow.org/api_docs/python/tf/linalg/LinearOperatorComposition
   """
@@ -449,7 +482,26 @@ class LinearOperatorComposition(LinalgImagingMixin,  # pylint: disable=abstract-
 @api_util.export("linalg.LinearOperatorAddition")
 class LinearOperatorAddition(LinalgImagingMixin,  # pylint: disable=abstract-method
                              linalg_ext.LinearOperatorAddition):
-  """Adds one or more linear operators."""
+  """Adds one or more linear operators.
+
+  `LinearOperatorAddition` is initialized with a list of operators
+  :math:`A_1, A_2, ..., A_J` and represents their addition
+  :math:`A_1 + A_2 + ... + A_J`.
+
+  Args:
+    operators: A `list` of `LinearOperator` objects, each with the same `dtype`
+      and shape.
+    is_non_singular: Expect that this operator is non-singular.
+    is_self_adjoint: Expect that this operator is equal to its Hermitian
+      transpose.
+    is_positive_definite: Expect that this operator is positive definite,
+      meaning the quadratic form :math:`x^H A x` has positive real part for all
+      nonzero :math:`x`. Note that we do not require the operator to be
+      self-adjoint to be positive-definite.
+    is_square: Expect that this operator acts like square [batch] matrices.
+    name: A name for this `LinearOperator`.  Default is the individual
+      operators names joined with `_p_`.
+  """
   def _transform(self, x, adjoint=False):
     # pylint: disable=protected-access
     result = self.operators[0]._transform(x, adjoint=adjoint)
@@ -483,12 +535,13 @@ class LinearOperatorScaledIdentity(LinalgImagingMixin,  # pylint: disable=abstra
                                    tf.linalg.LinearOperatorScaledIdentity):
   """Linear operator representing a scaled identity matrix.
 
-  Like `tf.linalg.LinearOperatorScaledIdentity`_, but with additional imaging
-  extensions.
+  .. note:
+    Similar to `tf.linalg.LinearOperatorScaledIdentity`_, but with imaging
+    extensions.
 
   Args:
     shape: Non-negative integer `Tensor`. The shape of the operator.
-    multiplier: A `Tensor` of shape `[B1,...,Bb]`, or `[]` (a scalar).
+    multiplier: A `Tensor` of shape `[B1, ..., Bb]`, or `[]` (a scalar).
     is_non_singular: Expect that this operator is non-singular.
     is_self_adjoint: Expect that this operator is equal to its hermitian
       transpose.
@@ -563,18 +616,18 @@ class LinearOperatorScaledIdentity(LinalgImagingMixin,  # pylint: disable=abstra
 class LinearOperatorDiag(LinalgImagingMixin, tf.linalg.LinearOperatorDiag): # pylint: disable=abstract-method
   """Linear operator representing a square diagonal matrix.
 
-  Like `tf.linalg.LinearOperatorDiag`_, but with additional imaging
-  extensions.
-
   This operator acts like a [batch] diagonal matrix `A` with shape
   `[B1, ..., Bb, N, N]` for some `b >= 0`.  The first `b` indices index a
   batch member. For every batch index `(i1, ..., ib)`, `A[i1, ..., ib, : :]` is
   an `N x N` matrix. This matrix `A` is not materialized, but for
   purposes of broadcasting this shape will be relevant.
 
+  .. note:
+    Similar to `tf.linalg.LinearOperatorDiag`_, but with imaging extensions.
+
   Args:
     diag: A `tf.Tensor` of shape `[B1, ..., Bb, *S]`.
-    rank: An `int`. The rank of `S`.
+    rank: An `int`. The rank of `S`. Must be <= `diag.shape.rank`.
     is_non_singular: Expect that this operator is non-singular.
     is_self_adjoint: Expect that this operator is equal to its Hermitian
       transpose. If `diag` is real, this is auto-set to `True`.
@@ -590,7 +643,7 @@ class LinearOperatorDiag(LinalgImagingMixin, tf.linalg.LinearOperatorDiag): # py
   # pylint: disable=invalid-unary-operand-type
   def __init__(self,
                diag,
-               rank=None,
+               rank,
                is_non_singular=None,
                is_self_adjoint=None,
                is_positive_definite=None,
@@ -598,15 +651,17 @@ class LinearOperatorDiag(LinalgImagingMixin, tf.linalg.LinearOperatorDiag): # py
                name='LinearOperatorDiag'):
     # pylint: disable=invalid-unary-operand-type
     diag = tf.convert_to_tensor(diag, name='diag')
-    self._rank = check_util.validate_rank(rank, name='rank', accept_none=True)
-    if self._rank is None:
-      self._rank = diag.shape.rank
+    self._rank = check_util.validate_rank(rank, name='rank', accept_none=False)
+    if self._rank >= diag.shape.rank:
+      raise ValueError(
+          f"Argument `rank` must be <= `diag.shape.rank`, but got: {rank}")
 
     self._shape_tensor_value = tf.shape(diag)
     self._shape_value = diag.shape
+    batch_shape = self._shape_tensor_value[:-self._rank]
 
     super().__init__(
-        diag=tf.reshape(diag, tf.concat([self.batch_shape_tensor(), [-1]], 0)),
+        diag=tf.reshape(diag, tf.concat([batch_shape, [-1]], 0)),
         is_non_singular=is_non_singular,
         is_self_adjoint=is_self_adjoint,
         is_positive_definite=is_positive_definite,
@@ -646,19 +701,27 @@ class LinearOperatorGramMatrix(LinalgImagingMixin,  # pylint: disable=abstract-m
 
   The Gram matrix of :math:`A` appears in the normal equation
   :math:`A^H A x = A^H b` associated with the least squares problem
-  :math:`{\mathop{\mathrm{argmin}}_x {\left \| Ax-b \right \|_2^2}`.
+  :math:`{\mathop{\mathrm{argmin}}_x} {\left \| Ax-b \right \|_2^2}`.
 
   This operator is self-adjoint and positive definite. Therefore, linear systems
   defined by this linear operator can be solved using the conjugate gradient
   method.
 
-  This operator supports the addition of a regularization parameter
+  This operator supports the optional addition of a regularization parameter
   :math:`\lambda` and a transform matrix :math:`T`. If these are provided,
   this operator becomes :math:`A^H A + \lambda T^H T`. This appears
   in the regularized normal equation
   :math:`\left ( A^H A + \lambda T^H T \right ) x = A^H b + \lambda T^H T x_0`,
   associated with the regularized least squares problem
   :math:`{\mathop{\mathrm{argmin}}_x} {\left \| Ax-b \right \|_2^2 + \lambda \left \| T(x-x_0) \right \|_2^2}`.
+
+  Args:
+    operator: A `LinearOperator`.
+    reg_parameter: A `Tensor` of shape `[B1, ..., Bb]` and real dtype.
+      The regularization parameter :math:`\lambda`. Defaults to 0.
+    reg_operator: A `LinearOperator`. The regularization transform :math:`T`.
+      Defaults to the identity.
+    name: A name for this `LinearOperator`.
   """
   def __init__(self,
                operator,
@@ -668,6 +731,7 @@ class LinearOperatorGramMatrix(LinalgImagingMixin,  # pylint: disable=abstract-m
     parameters = dict(
         operator=operator,
         reg_parameter=reg_parameter,
+        reg_operator=reg_operator,
         name=name)
     self._operator = operator
     self._reg_parameter = reg_parameter

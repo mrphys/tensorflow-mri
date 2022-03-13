@@ -152,14 +152,14 @@ class LinearOperatorDiagTest(test_util.TestCase):
   def test_transform(self):
     """Test `transform` method."""
     diag = tf.constant([[1., 2.], [3., 4.]])
-    diag_linop = linalg_imaging.LinearOperatorDiag(diag)
+    diag_linop = linalg_imaging.LinearOperatorDiag(diag, rank=2)
     x = tf.constant([[2., 2.], [2., 2.]])
     self.assertAllClose([[2., 4.], [6., 8.]], diag_linop.transform(x))
 
   def test_transform_adjoint(self):
     """Test `transform` method with adjoint."""
     diag = tf.constant([[1., 2.], [3., 4.]])
-    diag_linop = linalg_imaging.LinearOperatorDiag(diag)
+    diag_linop = linalg_imaging.LinearOperatorDiag(diag, rank=2)
     x = tf.constant([[2., 2.], [2., 2.]])
     self.assertAllClose([[2., 4.], [6., 8.]],
                         diag_linop.transform(x, adjoint=True))
@@ -168,7 +168,7 @@ class LinearOperatorDiagTest(test_util.TestCase):
     """Test `transform` method with complex values."""
     diag = tf.constant([[1. + 1.j, 2. + 2.j], [3. + 3.j, 4. + 4.j]],
                        dtype=tf.complex64)
-    diag_linop = linalg_imaging.LinearOperatorDiag(diag)
+    diag_linop = linalg_imaging.LinearOperatorDiag(diag, rank=2)
     x = tf.constant([[2., 2.], [2., 2.]], dtype=tf.complex64)
     self.assertAllClose([[2. + 2.j, 4. + 4.j], [6. + 6.j, 8. + 8.j]],
                         diag_linop.transform(x))
@@ -177,7 +177,7 @@ class LinearOperatorDiagTest(test_util.TestCase):
     """Test `transform` method with adjoint and complex values."""
     diag = tf.constant([[1. + 1.j, 2. + 2.j], [3. + 3.j, 4. + 4.j]],
                        dtype=tf.complex64)
-    diag_linop = linalg_imaging.LinearOperatorDiag(diag)
+    diag_linop = linalg_imaging.LinearOperatorDiag(diag, rank=2)
     x = tf.constant([[2., 2.], [2., 2.]], dtype=tf.complex64)
     self.assertAllClose([[2. - 2.j, 4. - 4.j], [6. - 6.j, 8. - 8.j]],
                         diag_linop.transform(x, adjoint=True))
@@ -185,7 +185,7 @@ class LinearOperatorDiagTest(test_util.TestCase):
   def test_shapes(self):
     """Test shapes."""
     diag = tf.constant([[1., 2.], [3., 4.]])
-    diag_linop = linalg_imaging.LinearOperatorDiag(diag)
+    diag_linop = linalg_imaging.LinearOperatorDiag(diag, rank=2)
     self.assertIsInstance(diag_linop.domain_shape, tf.TensorShape)
     self.assertIsInstance(diag_linop.range_shape, tf.TensorShape)
     self.assertAllEqual([2, 2], diag_linop.domain_shape)
@@ -194,7 +194,7 @@ class LinearOperatorDiagTest(test_util.TestCase):
   def test_tensor_shapes(self):
     """Test tensor shapes."""
     diag = tf.constant([[1., 2.], [3., 4.]])
-    diag_linop = linalg_imaging.LinearOperatorDiag(diag)
+    diag_linop = linalg_imaging.LinearOperatorDiag(diag, rank=2)
     self.assertIsInstance(diag_linop.domain_shape_tensor(), tf.Tensor)
     self.assertIsInstance(diag_linop.range_shape_tensor(), tf.Tensor)
     self.assertAllEqual([2, 2], diag_linop.domain_shape_tensor())
@@ -221,6 +221,12 @@ class LinearOperatorDiagTest(test_util.TestCase):
     self.assertAllEqual([3], diag_linop.domain_shape)
     self.assertAllEqual([3], diag_linop.range_shape)
     self.assertAllEqual([2], diag_linop.batch_shape)
+
+  def test_name(self):
+    """Test names."""
+    diag = tf.constant([[1., 2.], [3., 4.]])
+    diag_linop = linalg_imaging.LinearOperatorDiag(diag, rank=2)
+    self.assertEqual("LinearOperatorDiag", diag_linop.name)
 
 
 class LinearOperatorFiniteDifferenceTest(test_util.TestCase):

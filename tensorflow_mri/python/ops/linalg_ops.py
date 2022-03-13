@@ -501,7 +501,7 @@ def conjugate_gradient(operator,
   represented by `operator`. The iteration terminates when either the number of
   iterations exceeds `max_iterations` or when the residual norm has been reduced
   to `tol` times its initial value, i.e.
-  :math:`(\left\| rhs - A x_k \right\| <= \mathrm{tol} \left\| b \right\|\\)`.
+  :math:`(\left\| b - A x_k \right\| <= \mathrm{tol} \left\| b \right\|\\)`.
 
   .. note::
     This function is similar to

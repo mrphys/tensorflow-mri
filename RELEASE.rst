@@ -1,13 +1,18 @@
 Release 0.12.0
 ==============
 
-Breaking Changes
-----------------
-
-
 
 Major Features and Improvements
 -------------------------------
+
+* ``tfmri.linalg``:
+
+  * New module containing linear algebra operators.
+  * New classes ``LinearOperator``, ``LinearOperatorAddition``,
+    ``LinearOperatorAdjoint``, ``LinearOperatorComposition``,
+    ``LinearOperatorDiag``, ``LinearOperatorFiniteDifference``,
+    ``LinearOperatorGramMatrix``, ``LinearOperatorMRI`` and
+    ``LinearOperatorScaledIdentity`` and new function ``conjugate_gradient``.
 
 * ``tfmri.plot``:
 

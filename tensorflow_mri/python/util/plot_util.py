@@ -170,7 +170,7 @@ def show(*args, **kwargs):
   return plt.show(*args, **kwargs)
 
 
-def _preprocess_image(image, part=None, expected_ndim=None):
+def _preprocess_image(image, part=None, expected_ndim=None):  # pylint: disable=missing-param-doc
   """Preprocesses an image."""
   image = np.asarray(image)
   if expected_ndim is not None:
