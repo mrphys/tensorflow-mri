@@ -1,0 +1,8 @@
+﻿tfmri.convex.ConvexFunctionTikhonov
+===================================
+
+.. currentmodule:: tensorflow_mri.convex
+
+.. autoclass:: ConvexFunctionTikhonov
+    :members:
+    :show-inheritance:

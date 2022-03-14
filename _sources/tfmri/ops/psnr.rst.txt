@@ -1,6 +1,0 @@
-﻿tfmri.psnr
-==========
-
-.. currentmodule:: tensorflow_mri
-
-.. autofunction:: psnr

@@ -1,0 +1,6 @@
+﻿tfmri.optimize.lbfgs\_minimize
+==============================
+
+.. currentmodule:: tensorflow_mri.optimize
+
+.. autofunction:: lbfgs_minimize

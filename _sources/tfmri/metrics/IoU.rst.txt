@@ -1,8 +1,0 @@
-﻿tfmri.metrics.IoU
-=================
-
-.. currentmodule:: tensorflow_mri.python.metrics
-
-.. autoclass:: IoU
-    :members:
-    :show-inheritance:

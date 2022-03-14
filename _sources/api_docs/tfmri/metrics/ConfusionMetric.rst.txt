@@ -1,0 +1,8 @@
+﻿tfmri.metrics.ConfusionMetric
+=============================
+
+.. currentmodule:: tensorflow_mri.metrics
+
+.. autoclass:: ConfusionMetric
+    :members:
+    :show-inheritance:

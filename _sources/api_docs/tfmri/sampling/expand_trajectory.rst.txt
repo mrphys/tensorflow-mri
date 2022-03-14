@@ -1,0 +1,6 @@
+﻿tfmri.sampling.expand\_trajectory
+=================================
+
+.. currentmodule:: tensorflow_mri.sampling
+
+.. autofunction:: expand_trajectory

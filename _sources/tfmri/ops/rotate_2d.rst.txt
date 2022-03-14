@@ -1,6 +1,0 @@
-﻿tfmri.rotate\_2d
-================
-
-.. currentmodule:: tensorflow_mri
-
-.. autofunction:: rotate_2d

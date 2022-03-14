@@ -1,0 +1,6 @@
+﻿tfmri.sampling.random\_mask
+===========================
+
+.. currentmodule:: tensorflow_mri.sampling
+
+.. autofunction:: random_mask

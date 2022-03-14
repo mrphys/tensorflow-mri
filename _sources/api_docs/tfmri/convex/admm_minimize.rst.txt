@@ -1,0 +1,6 @@
+﻿tfmri.convex.admm\_minimize
+===========================
+
+.. currentmodule:: tensorflow_mri.convex
+
+.. autofunction:: admm_minimize

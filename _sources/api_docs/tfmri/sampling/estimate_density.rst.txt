@@ -1,0 +1,6 @@
+﻿tfmri.sampling.estimate\_density
+================================
+
+.. currentmodule:: tensorflow_mri.sampling
+
+.. autofunction:: estimate_density

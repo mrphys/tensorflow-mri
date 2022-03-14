@@ -1,0 +1,35 @@
+tfmri.sampling
+==============
+
+.. automodule:: tensorflow_mri.sampling
+
+Classes
+-------
+
+.. autosummary::
+    :toctree: sampling
+    :template: sampling/class.rst
+    :nosignatures:
+
+    
+
+Functions
+---------
+
+.. autosummary::
+    :toctree: sampling
+    :template: sampling/function.rst
+    :nosignatures:
+
+    density_grid
+    estimate_density
+    estimate_radial_density
+    expand_density
+    expand_trajectory
+    flatten_density
+    flatten_trajectory
+    radial_density
+    radial_trajectory
+    radial_waveform
+    random_mask
+    spiral_trajectory

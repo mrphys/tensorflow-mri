@@ -1,0 +1,6 @@
+﻿tfmri.sampling.expand\_density
+==============================
+
+.. currentmodule:: tensorflow_mri.sampling
+
+.. autofunction:: expand_density

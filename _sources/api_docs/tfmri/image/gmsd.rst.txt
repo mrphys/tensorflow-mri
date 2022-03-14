@@ -1,0 +1,6 @@
+﻿tfmri.image.gmsd
+================
+
+.. currentmodule:: tensorflow_mri.image
+
+.. autofunction:: gmsd

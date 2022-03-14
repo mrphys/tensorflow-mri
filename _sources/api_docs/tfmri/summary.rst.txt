@@ -1,0 +1,24 @@
+tfmri.summary
+=============
+
+.. automodule:: tensorflow_mri.summary
+
+Classes
+-------
+
+.. autosummary::
+    :toctree: summary
+    :template: summary/class.rst
+    :nosignatures:
+
+    
+
+Functions
+---------
+
+.. autosummary::
+    :toctree: summary
+    :template: summary/function.rst
+    :nosignatures:
+
+    gif

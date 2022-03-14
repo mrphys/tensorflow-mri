@@ -1,0 +1,8 @@
+﻿tfmri.convex.ConvexFunctionLeastSquares
+=======================================
+
+.. currentmodule:: tensorflow_mri.convex
+
+.. autoclass:: ConvexFunctionLeastSquares
+    :members:
+    :show-inheritance:

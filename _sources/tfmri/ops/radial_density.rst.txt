@@ -1,6 +1,0 @@
-﻿tfmri.radial\_density
-=====================
-
-.. currentmodule:: tensorflow_mri
-
-.. autofunction:: radial_density

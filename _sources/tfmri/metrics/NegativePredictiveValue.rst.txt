@@ -1,8 +1,0 @@
-﻿tfmri.metrics.NegativePredictiveValue
-=====================================
-
-.. currentmodule:: tensorflow_mri.python.metrics
-
-.. autoclass:: NegativePredictiveValue
-    :members:
-    :show-inheritance:

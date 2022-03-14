@@ -1,6 +1,0 @@
-﻿tfmri.hann
-==========
-
-.. currentmodule:: tensorflow_mri
-
-.. autofunction:: hann

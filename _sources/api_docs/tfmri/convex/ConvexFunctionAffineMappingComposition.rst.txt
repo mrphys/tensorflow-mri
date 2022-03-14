@@ -1,0 +1,8 @@
+﻿tfmri.convex.ConvexFunctionAffineMappingComposition
+===================================================
+
+.. currentmodule:: tensorflow_mri.convex
+
+.. autoclass:: ConvexFunctionAffineMappingComposition
+    :members:
+    :show-inheritance:

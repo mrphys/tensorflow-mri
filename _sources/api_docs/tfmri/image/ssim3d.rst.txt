@@ -1,0 +1,6 @@
+﻿tfmri.image.ssim3d
+==================
+
+.. currentmodule:: tensorflow_mri.image
+
+.. autofunction:: ssim3d

@@ -1,6 +1,0 @@
-﻿tfmri.fftn
-==========
-
-.. currentmodule:: tensorflow_mri
-
-.. autofunction:: fftn

@@ -1,0 +1,439 @@
+<!doctype html>
+<html class="no-js">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+<link rel="index" title="Index" href="../../../genindex.html" /><link rel="search" title="Search" href="../../../search.html" /><link rel="next" title="tfmri.image.gmsd" href="gmsd.html" /><link rel="prev" title="tfmri.image" href="../image.html" />
+
+    <link rel="shortcut icon" href="../../../_static/tfmr_icon.svg"/><meta name="generator" content="sphinx-4.4.0, furo 2022.03.04"/>
+        <title>tfmri.image.extract_glimpses - TensorFlow MRI Documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?digest=935aa2abcc5c1da4283d1dc201fb1f0add16d23a" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?digest=25ceb02ed1c46dc30f2321ff83e92799f69dfdb9" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f8f8f8;
+  --color-code-foreground: black;
+  --color-brand-primary: #128091;
+  --color-brand-content: #128091;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #18A8BE;
+  --color-brand-content: #18A8BE;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #18A8BE;
+  --color-brand-content: #18A8BE;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../../index.html"><div class="brand">TensorFlow MRI Documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../index.html">
+  
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo only-light" src="../../../_static/tfmr_logo.svg" alt="Light Logo"/>
+    <img class="sidebar-logo only-dark" src="../../../_static/tmfr_logo_dark.svg" alt="Dark Logo"/>
+  </div>
+  
+  
+</a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
+  <input class="sidebar-search" placeholder=Search name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../tfmri.html">tfmri</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../broadcast_dynamic_shapes.html">broadcast_dynamic_shapes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../broadcast_static_shapes.html">broadcast_static_shapes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cartesian_product.html">cartesian_product</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../central_crop.html">central_crop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../meshgrid.html">meshgrid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ravel_multi_index.html">ravel_multi_index</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../resize_with_crop_or_pad.html">resize_with_crop_or_pad</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scale_by_min_max.html">scale_by_min_max</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../unravel_index.html">unravel_index</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../callbacks.html">tfmri.callbacks</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../callbacks/TensorBoardImages.html">TensorBoardImages</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../coils.html">tfmri.coils</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../coils/CoilCompressorSVD.html">CoilCompressorSVD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../coils/combine_coils.html">combine_coils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../coils/compress_coils.html">compress_coils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../coils/estimate_sensitivities.html">estimate_sensitivities</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../convex.html">tfmri.convex</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunction.html">ConvexFunction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionAffineMappingComposition.html">ConvexFunctionAffineMappingComposition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionL1Norm.html">ConvexFunctionL1Norm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionL2Norm.html">ConvexFunctionL2Norm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionL2NormSquared.html">ConvexFunctionL2NormSquared</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionLeastSquares.html">ConvexFunctionLeastSquares</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionLinearOperatorComposition.html">ConvexFunctionLinearOperatorComposition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionQuadratic.html">ConvexFunctionQuadratic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionTikhonov.html">ConvexFunctionTikhonov</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionTotalVariation.html">ConvexFunctionTotalVariation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../convex/admm_minimize.html">admm_minimize</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../image.html">tfmri.image</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">extract_glimpses</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gmsd.html">gmsd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gmsd2d.html">gmsd2d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gmsd3d.html">gmsd3d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gradient_magnitude.html">gradient_magnitude</a></li>
+<li class="toctree-l2"><a class="reference internal" href="image_gradients.html">image_gradients</a></li>
+<li class="toctree-l2"><a class="reference internal" href="phantom.html">phantom</a></li>
+<li class="toctree-l2"><a class="reference internal" href="psnr.html">psnr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="psnr2d.html">psnr2d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="psnr3d.html">psnr3d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ssim.html">ssim</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ssim2d.html">ssim2d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ssim2d_multiscale.html">ssim2d_multiscale</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ssim3d.html">ssim3d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ssim3d_multiscale.html">ssim3d_multiscale</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ssim_multiscale.html">ssim_multiscale</a></li>
+<li class="toctree-l2"><a class="reference internal" href="total_variation.html">total_variation</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../io.html">tfmri.io</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../io/encode_gif.html">encode_gif</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../layers.html">tfmri.layers</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../layers/ConvBlock.html">ConvBlock</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../layers/UNet.html">UNet</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../linalg.html">tfmri.linalg</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../linalg/LinearOperator.html">LinearOperator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linalg/LinearOperatorAddition.html">LinearOperatorAddition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linalg/LinearOperatorAdjoint.html">LinearOperatorAdjoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linalg/LinearOperatorComposition.html">LinearOperatorComposition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linalg/LinearOperatorDiag.html">LinearOperatorDiag</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linalg/LinearOperatorFiniteDifference.html">LinearOperatorFiniteDifference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linalg/LinearOperatorGramMatrix.html">LinearOperatorGramMatrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linalg/LinearOperatorMRI.html">LinearOperatorMRI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linalg/LinearOperatorScaledIdentity.html">LinearOperatorScaledIdentity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../linalg/conjugate_gradient.html">conjugate_gradient</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../losses.html">tfmri.losses</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../losses/MultiscaleStructuralSimilarityLoss.html">MultiscaleStructuralSimilarityLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/StructuralSimilarityLoss.html">StructuralSimilarityLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/ssim_loss.html">ssim_loss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/ssim_multiscale_loss.html">ssim_multiscale_loss</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../math.html">tfmri.math</a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../math/block_soft_threshold.html">block_soft_threshold</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../math/extract_from_complex.html">extract_from_complex</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../math/make_val_and_grad_fn.html">make_val_and_grad_fn</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../math/normalize_no_nan.html">normalize_no_nan</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../math/shrinkage.html">shrinkage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../math/soft_threshold.html">soft_threshold</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../metrics.html">tfmri.metrics</a><input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/Accuracy.html">Accuracy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/ConfusionMetric.html">ConfusionMetric</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/F1Score.html">F1Score</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/FBetaScore.html">FBetaScore</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/IoU.html">IoU</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/MultiscaleStructuralSimilarity.html">MultiscaleStructuralSimilarity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/NegativePredictiveValue.html">NegativePredictiveValue</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/PeakSignalToNoiseRatio.html">PeakSignalToNoiseRatio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/PositivePredictiveValue.html">PositivePredictiveValue</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/StructuralSimilarity.html">StructuralSimilarity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/TrueNegativeRate.html">TrueNegativeRate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/TruePositiveRate.html">TruePositiveRate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/TverskyIndex.html">TverskyIndex</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../optimize.html">tfmri.optimize</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../optimize/lbfgs_minimize.html">lbfgs_minimize</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../plot.html">tfmri.plot</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../plot/image_sequence.html">image_sequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../plot/show.html">show</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../plot/tiled_image_sequence.html">tiled_image_sequence</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../recon.html">tfmri.recon</a><input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../recon/adj.html">adj</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../recon/grappa.html">grappa</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../recon/lstsq.html">lstsq</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../recon/pf.html">pf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../recon/sense.html">sense</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../sampling.html">tfmri.sampling</a><input class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../sampling/density_grid.html">density_grid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sampling/estimate_density.html">estimate_density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sampling/estimate_radial_density.html">estimate_radial_density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sampling/expand_density.html">expand_density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sampling/expand_trajectory.html">expand_trajectory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sampling/flatten_density.html">flatten_density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sampling/flatten_trajectory.html">flatten_trajectory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sampling/radial_density.html">radial_density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sampling/radial_trajectory.html">radial_trajectory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sampling/radial_waveform.html">radial_waveform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sampling/random_mask.html">random_mask</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sampling/spiral_trajectory.html">spiral_trajectory</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../signal.html">tfmri.signal</a><input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../signal/atanfilt.html">atanfilt</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../signal/crop_kspace.html">crop_kspace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../signal/fft.html">fft</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../signal/filter_kspace.html">filter_kspace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../signal/hamming.html">hamming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../signal/hann.html">hann</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../signal/ifft.html">ifft</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../signal/nufft.html">nufft</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../summary.html">tfmri.summary</a><input class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../summary/gif.html">gif</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container"><div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="tfmri-image-extract-glimpses">
+<h1>tfmri.image.extract_glimpses<a class="headerlink" href="#tfmri-image-extract-glimpses" title="Permalink to this headline">#</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="tensorflow_mri.image.extract_glimpses">
+<span class="sig-name descname"><span class="pre">extract_glimpses</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">images</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sizes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offsets</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.13.0/tensorflow_mri/python/ops/image_ops.py#L1380-L1429"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.image.extract_glimpses" title="Permalink to this definition">#</a></dt>
+<dd><p>Extract glimpses (patches) from a tensor at the given offsets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>images</strong> – A <code class="docutils literal notranslate"><span class="pre">Tensor</span></code>. Must have shape <code class="docutils literal notranslate"><span class="pre">[batch_size,</span> <span class="pre">...,</span> <span class="pre">channels]</span></code>, where
+<code class="docutils literal notranslate"><span class="pre">...</span></code> are the <code class="docutils literal notranslate"><span class="pre">N</span></code> spatial dimensions.</p></li>
+<li><p><strong>sizes</strong> – A list of <code class="docutils literal notranslate"><span class="pre">ints</span></code> of length <code class="docutils literal notranslate"><span class="pre">N</span></code>.</p></li>
+<li><p><strong>offsets</strong> – A <code class="docutils literal notranslate"><span class="pre">Tensor</span></code> of shape <code class="docutils literal notranslate"><span class="pre">[M,</span> <span class="pre">N]</span></code> containing indices into the upper-left
+corners of the patches to be extracted.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A <code class="docutils literal notranslate"><span class="pre">Tensor</span></code> with shape <code class="docutils literal notranslate"><span class="pre">[batch_size,</span> <span class="pre">M,</span> <span class="pre">prod(sizes)</span> <span class="pre">*</span> <span class="pre">channels]</span></code>,
+where the last dimension are the flattened glimpses.</p>
+</dd>
+</dl>
+</dd></dl>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="gmsd.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">tfmri.image.gmsd</div>
+              </div>
+              <svg><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="../image.html">
+              <svg><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">tfmri.image</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2021 University College London
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/scripts/furo.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    </body>
+</html>

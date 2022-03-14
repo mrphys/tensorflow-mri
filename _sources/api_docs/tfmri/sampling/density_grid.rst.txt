@@ -1,0 +1,6 @@
+﻿tfmri.sampling.density\_grid
+============================
+
+.. currentmodule:: tensorflow_mri.sampling
+
+.. autofunction:: density_grid

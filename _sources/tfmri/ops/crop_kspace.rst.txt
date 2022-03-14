@@ -1,6 +1,0 @@
-﻿tfmri.crop\_kspace
-==================
-
-.. currentmodule:: tensorflow_mri
-
-.. autofunction:: crop_kspace

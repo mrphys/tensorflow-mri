@@ -1,0 +1,8 @@
+﻿tfmri.coils.CoilCompressorSVD
+=============================
+
+.. currentmodule:: tensorflow_mri.coils
+
+.. autoclass:: CoilCompressorSVD
+    :members:
+    :show-inheritance:

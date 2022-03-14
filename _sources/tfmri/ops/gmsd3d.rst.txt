@@ -1,6 +1,0 @@
-﻿tfmri.gmsd3d
-============
-
-.. currentmodule:: tensorflow_mri
-
-.. autofunction:: gmsd3d

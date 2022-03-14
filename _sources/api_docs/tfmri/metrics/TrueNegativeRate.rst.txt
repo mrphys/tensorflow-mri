@@ -1,0 +1,8 @@
+﻿tfmri.metrics.TrueNegativeRate
+==============================
+
+.. currentmodule:: tensorflow_mri.metrics
+
+.. autoclass:: TrueNegativeRate
+    :members:
+    :show-inheritance:

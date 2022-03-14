@@ -1,0 +1,33 @@
+tfmri.convex
+============
+
+.. automodule:: tensorflow_mri.convex
+
+Classes
+-------
+
+.. autosummary::
+    :toctree: convex
+    :template: convex/class.rst
+    :nosignatures:
+
+    ConvexFunction
+    ConvexFunctionAffineMappingComposition
+    ConvexFunctionL1Norm
+    ConvexFunctionL2Norm
+    ConvexFunctionL2NormSquared
+    ConvexFunctionLeastSquares
+    ConvexFunctionLinearOperatorComposition
+    ConvexFunctionQuadratic
+    ConvexFunctionTikhonov
+    ConvexFunctionTotalVariation
+
+Functions
+---------
+
+.. autosummary::
+    :toctree: convex
+    :template: convex/function.rst
+    :nosignatures:
+
+    admm_minimize

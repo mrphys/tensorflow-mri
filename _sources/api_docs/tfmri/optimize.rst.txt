@@ -1,0 +1,24 @@
+tfmri.optimize
+==============
+
+.. automodule:: tensorflow_mri.optimize
+
+Classes
+-------
+
+.. autosummary::
+    :toctree: optimize
+    :template: optimize/class.rst
+    :nosignatures:
+
+    
+
+Functions
+---------
+
+.. autosummary::
+    :toctree: optimize
+    :template: optimize/function.rst
+    :nosignatures:
+
+    lbfgs_minimize

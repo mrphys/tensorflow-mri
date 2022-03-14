@@ -1,8 +1,0 @@
-﻿tfmri.metrics.JaccardIndex
-==========================
-
-.. currentmodule:: tensorflow_mri.python.metrics
-
-.. autoclass:: JaccardIndex
-    :members:
-    :show-inheritance:

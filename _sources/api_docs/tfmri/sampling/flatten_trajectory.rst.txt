@@ -1,0 +1,6 @@
+﻿tfmri.sampling.flatten\_trajectory
+==================================
+
+.. currentmodule:: tensorflow_mri.sampling
+
+.. autofunction:: flatten_trajectory

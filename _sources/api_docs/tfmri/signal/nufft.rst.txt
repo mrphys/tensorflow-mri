@@ -1,0 +1,6 @@
+﻿tfmri.signal.nufft
+==================
+
+.. currentmodule:: tensorflow_mri.signal
+
+.. autofunction:: nufft

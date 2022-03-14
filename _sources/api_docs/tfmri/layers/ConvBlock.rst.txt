@@ -1,0 +1,8 @@
+﻿tfmri.layers.ConvBlock
+======================
+
+.. currentmodule:: tensorflow_mri.layers
+
+.. autoclass:: ConvBlock
+    :members:
+    :show-inheritance:

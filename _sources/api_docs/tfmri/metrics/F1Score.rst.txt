@@ -1,0 +1,8 @@
+﻿tfmri.metrics.F1Score
+=====================
+
+.. currentmodule:: tensorflow_mri.metrics
+
+.. autoclass:: F1Score
+    :members:
+    :show-inheritance:

@@ -1,8 +1,0 @@
-﻿tfmri.ConvexFunctionTotalVariation
-==================================
-
-.. currentmodule:: tensorflow_mri
-
-.. autoclass:: ConvexFunctionTotalVariation
-    :members:
-    :show-inheritance:

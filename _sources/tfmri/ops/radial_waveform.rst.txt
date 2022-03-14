@@ -1,6 +1,0 @@
-﻿tfmri.radial\_waveform
-======================
-
-.. currentmodule:: tensorflow_mri
-
-.. autofunction:: radial_waveform

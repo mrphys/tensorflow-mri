@@ -1,0 +1,6 @@
+﻿tfmri.coils.estimate\_sensitivities
+===================================
+
+.. currentmodule:: tensorflow_mri.coils
+
+.. autofunction:: estimate_sensitivities

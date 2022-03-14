@@ -1,6 +1,0 @@
-﻿tfmri.atanfilt
-==============
-
-.. currentmodule:: tensorflow_mri
-
-.. autofunction:: atanfilt

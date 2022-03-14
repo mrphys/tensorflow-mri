@@ -1,0 +1,24 @@
+tfmri.io
+========
+
+.. automodule:: tensorflow_mri.io
+
+Classes
+-------
+
+.. autosummary::
+    :toctree: io
+    :template: io/class.rst
+    :nosignatures:
+
+    
+
+Functions
+---------
+
+.. autosummary::
+    :toctree: io
+    :template: io/function.rst
+    :nosignatures:
+
+    encode_gif

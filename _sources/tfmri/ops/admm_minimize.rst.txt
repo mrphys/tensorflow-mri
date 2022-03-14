@@ -1,6 +1,0 @@
-﻿tfmri.admm\_minimize
-====================
-
-.. currentmodule:: tensorflow_mri
-
-.. autofunction:: admm_minimize

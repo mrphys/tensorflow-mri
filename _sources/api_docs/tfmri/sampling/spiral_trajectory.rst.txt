@@ -1,0 +1,6 @@
+﻿tfmri.sampling.spiral\_trajectory
+=================================
+
+.. currentmodule:: tensorflow_mri.sampling
+
+.. autofunction:: spiral_trajectory

@@ -1,6 +1,0 @@
-﻿tfmri.compress\_coils
-=====================
-
-.. currentmodule:: tensorflow_mri
-
-.. autofunction:: compress_coils

@@ -1,8 +1,0 @@
-﻿tfmri.metrics.Recall
-====================
-
-.. currentmodule:: tensorflow_mri.python.metrics
-
-.. autoclass:: Recall
-    :members:
-    :show-inheritance:

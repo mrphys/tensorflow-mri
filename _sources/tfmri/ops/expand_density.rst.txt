@@ -1,6 +1,0 @@
-﻿tfmri.expand\_density
-=====================
-
-.. currentmodule:: tensorflow_mri
-
-.. autofunction:: expand_density

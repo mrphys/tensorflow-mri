@@ -1,0 +1,26 @@
+tfmri.coils
+===========
+
+.. automodule:: tensorflow_mri.coils
+
+Classes
+-------
+
+.. autosummary::
+    :toctree: coils
+    :template: coils/class.rst
+    :nosignatures:
+
+    CoilCompressorSVD
+
+Functions
+---------
+
+.. autosummary::
+    :toctree: coils
+    :template: coils/function.rst
+    :nosignatures:
+
+    combine_coils
+    compress_coils
+    estimate_sensitivities

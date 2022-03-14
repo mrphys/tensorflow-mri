@@ -1,6 +1,0 @@
-﻿tfmri.filter\_kspace
-====================
-
-.. currentmodule:: tensorflow_mri
-
-.. autofunction:: filter_kspace

@@ -1,0 +1,6 @@
+﻿tfmri.image.image\_gradients
+============================
+
+.. currentmodule:: tensorflow_mri.image
+
+.. autofunction:: image_gradients
