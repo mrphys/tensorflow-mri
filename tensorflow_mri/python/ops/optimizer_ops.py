@@ -24,6 +24,7 @@ import tensorflow_probability as tfp
 
 from tensorflow_mri.python.ops import convex_ops
 from tensorflow_mri.python.ops import linalg_ops
+from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import linalg_ext
 
 
@@ -41,6 +42,7 @@ AdmmOptimizerResults = collections.namedtuple(
 )
 
 
+@api_util.export("convex.admm_minimize")
 def admm_minimize(function_f,
                   function_g,
                   operator_a=None,
@@ -320,9 +322,12 @@ def _get_admm_update_fn(function, operator):
       f"{function.name} and operator {operator.name}.")
 
 
+@api_util.export("optimize.lbfgs_minimize")
 def lbfgs_minimize(*args, **kwargs):
   """Applies the L-BFGS algorithm to minimize a differentiable function.
 
-  For the parameters, see `tfp.optimizer.lbfgs_minimize`.
+  For the parameters, see `tfp.optimizer.lbfgs_minimize`_.
+
+  .. _tfp.optimizer.lbfgs_minimize: https://www.tensorflow.org/probability/api_docs/python/tfp/optimizer/lbfgs_minimize
   """
   return tfp.optimizer.lbfgs_minimize(*args, **kwargs)

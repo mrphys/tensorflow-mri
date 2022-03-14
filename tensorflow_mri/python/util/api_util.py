@@ -24,27 +24,39 @@ _API_ATTR = '_api_names'
 
 _NAMESPACES = [
     'callbacks',
+    'coils',
+    'convex',
     'image',
     'io',
+    'math',
     'layers',
     'linalg',
     'losses',
     'metrics',
+    'optimize',
     'plot',
     'recon',
+    'sampling',
+    'signal',
     'summary'
 ]
 
 _NAMESPACE_DOCSTRINGS = {
     'callbacks': "Keras callbacks.",
+    'coils': "Parallel imaging operations.",
+    'convex': "Convex optimization operations.",
     'image': "Image processing operations.",
     'io': "Input/output operations.",
     'layers': "Keras layers.",
-    'linalg': "Linear algebra.",
+    'linalg': "Linear algebra operations.",
     'losses': "Keras losses.",
+    'math': "Math operations.",
     'metrics': "Keras metrics.",
+    'optimize': "Optimization operations.",
     'plot': "Plotting utilities.",
     'recon': "Image reconstruction.",
+    'sampling': "k-space sampling operations.",
+    'signal': "Signal processing operations.",
     'summary': "Tensorboard summaries."
 }
 
@@ -108,12 +120,11 @@ def export(*names):
       symbol: Symbol to decorate.
 
     Returns:
-      The input symbol with the _api_names attribute set.
+      The input symbol with the `_api_names` attribute set.
 
     Raises:
-      ValueError: If the name is invalid or the symbol is already exported.
+      ValueError: If the name is invalid or already used.
     """
-    setattr(symbol, _API_ATTR, names)
     for name in names:
       # API name must have format "namespace.name".
       if name.count('.') != 1:
@@ -128,7 +139,10 @@ def export(*names):
             f"Name {name} already used for exported symbol {symbol}")
       # Add symbol to the API symbols table.
       _API_SYMBOLS[name] = symbol
+      # Set the _api_names attribute.
+      setattr(symbol, _API_ATTR, names)
     return symbol
+
   return decorator
 
 

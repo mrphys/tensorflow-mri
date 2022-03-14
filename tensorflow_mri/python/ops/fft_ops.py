@@ -15,13 +15,16 @@
 """Fast Fourier transform operations."""
 
 import tensorflow as tf
+import tensorflow_nufft as tfft
 
-from tensorflow_mri.python.ops import image_ops
+from tensorflow_mri.python.ops import array_ops
+from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 
 
+@api_util.export("signal.fft")
 def fftn(x, shape=None, axes=None, norm='backward', shift=False):
-  """Compute the N-dimensional discrete Fourier Transform.
+  """Computes the N-dimensional discrete Fourier Transform.
 
   This function computes the `N`-dimensional discrete Fourier Transform over any
   number of axes in an `M`-dimensional array by means of the Fast Fourier
@@ -69,8 +72,9 @@ def fftn(x, shape=None, axes=None, norm='backward', shift=False):
   return _fft_internal(x, shape, axes, norm, shift, 'forward')
 
 
+@api_util.export("signal.ifft")
 def ifftn(x, shape=None, axes=None, norm='backward', shift=False):
-  """Compute the N-dimensional inverse discrete Fourier Transform.
+  """Computes the N-dimensional inverse discrete Fourier Transform.
 
   This function computes the inverse of the `N`-dimensional discrete Fourier
   Transform over any number of axes in an M-dimensional array by means of
@@ -218,7 +222,7 @@ def _fft_internal(x, shape, axes, norm, shift, transform): # pylint: disable=mis
     pad_shape = tf.tensor_scatter_nd_update(
       pad_shape, tf.expand_dims(axes, -1), shape)
     if shift:
-      x = image_ops.resize_with_crop_or_pad(x, pad_shape)
+      x = array_ops.resize_with_crop_or_pad(x, pad_shape)
     else:
       x = _right_pad_or_crop(x, pad_shape)
 
@@ -356,3 +360,6 @@ def _right_pad_or_crop(tensor, shape):
   tensor = tf.slice(tensor, begin, shape)
 
   return tensor
+
+
+nufft = api_util.export("signal.nufft")(tfft.nufft)

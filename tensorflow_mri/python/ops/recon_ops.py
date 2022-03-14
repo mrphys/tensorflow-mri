@@ -779,7 +779,7 @@ def reconstruct_grappa(kspace,
                                               targets)
 
   # `full_kspace` was zero-padded at the beginning. Crop it to correct shape.
-  full_kspace = image_ops.central_crop(
+  full_kspace = array_ops.central_crop(
       full_kspace, tf.concat([[-1], full_shape[1:-1], [-1]], 0))
 
   # Move coil axis back. [batch, *dims, coil] -> [batch, coil, *dims]

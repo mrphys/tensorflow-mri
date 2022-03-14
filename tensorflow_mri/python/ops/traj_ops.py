@@ -30,6 +30,7 @@ from tensorflow_graphics.geometry.transformation import rotation_matrix_3d # pyl
 from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import geom_ops
 from tensorflow_mri.python.ops import signal_ops
+from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import math_util
 from tensorflow_mri.python.util import sys_util
@@ -41,6 +42,7 @@ if sys_util.is_op_library_enabled():
       tf.compat.v1.resource_loader.get_path_to_datafile('_mri_ops.so'))
 
 
+@api_util.export("sampling.density_grid")
 def density_grid(shape,
                  inner_density=1.0,
                  outer_density=1.0,
@@ -107,6 +109,7 @@ def density_grid(shape,
     return density
 
 
+@api_util.export("sampling.random_mask")
 def random_sampling_mask(shape, density=1.0, seed=None, rng=None, name=None):
   """Returns a random sampling mask with the given density.
 
@@ -143,6 +146,7 @@ def random_sampling_mask(shape, density=1.0, seed=None, rng=None, name=None):
     return tf.cast(mask, tf.bool)
 
 
+@api_util.export("sampling.radial_trajectory")
 def radial_trajectory(base_resolution,
                       views=1,
                       phases=None,
@@ -225,6 +229,7 @@ def radial_trajectory(base_resolution,
                             tiny_number=tiny_number)
 
 
+@api_util.export("sampling.spiral_trajectory")
 def spiral_trajectory(base_resolution,
                       spiral_arms,
                       field_of_view,
@@ -417,6 +422,7 @@ def _kspace_trajectory(traj_type,
   return traj
 
 
+@api_util.export("sampling.radial_density")
 def radial_density(base_resolution,
                    views=1,
                    phases=None,
@@ -542,6 +548,7 @@ def _radial_density_from_theta(base_resolution, theta, readout_os=2.0):
   return weights
 
 
+@api_util.export("sampling.estimate_radial_density")
 def estimate_radial_density(points, readout_os=2.0):
   """Estimate the sampling density of a radial *k*-space trajectory.
 
@@ -590,6 +597,7 @@ def estimate_radial_density(points, readout_os=2.0):
   return tf.math.reciprocal_no_nan(weights)
 
 
+@api_util.export("sampling.radial_waveform")
 def radial_waveform(base_resolution, readout_os=2.0, rank=2):
   """Calculate a radial readout waveform.
 
@@ -814,6 +822,7 @@ def _radial_trajectory_from_spherical_coordinates(waveform, angles):
   return tf.stack([z, x, y], -1)
 
 
+@api_util.export("sampling.estimate_density")
 def estimate_density(points, grid_shape, method='jackson', max_iter=50):
   """Estimate the density of an arbitrary set of points.
 
@@ -917,6 +926,7 @@ def _next_smooth_int(n):
   return n
 
 
+@api_util.export("sampling.flatten_trajectory")
 def flatten_trajectory(trajectory):
   """Flatten a trajectory tensor.
 
@@ -932,6 +942,7 @@ def flatten_trajectory(trajectory):
   return tf.reshape(trajectory, new_shape)
 
 
+@api_util.export("sampling.flatten_density")
 def flatten_density(density):
   """Flatten a density tensor.
 
@@ -947,6 +958,7 @@ def flatten_density(density):
   return tf.reshape(density, new_shape)
 
 
+@api_util.export("sampling.expand_trajectory")
 def expand_trajectory(trajectory, samples):
   """Expands a trajectory tensor.
 
@@ -963,6 +975,7 @@ def expand_trajectory(trajectory, samples):
   return tf.reshape(trajectory, shape)
 
 
+@api_util.export("sampling.expand_density")
 def expand_density(density, samples):
   """Expands a density tensor.
 

@@ -18,9 +18,11 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import array_ops
+from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 
 
+@api_util.export("signal.hann")
 def hann(arg, name=None):
   """Calculate a Hann window at the specified coordinates.
 
@@ -38,6 +40,7 @@ def hann(arg, name=None):
     return _raised_cosine(arg, 0.5, 0.5)
 
 
+@api_util.export("signal.hamming")
 def hamming(arg, name=None):
   """Calculate a Hamming window at the specified coordinates.
 
@@ -71,6 +74,7 @@ def _raised_cosine(arg, a, b):
                   a - b * tf.math.cos(arg + np.pi), 0.0)
 
 
+@api_util.export("signal.atanfilt")
 def atanfilt(arg, cutoff=np.pi, beta=100.0, name=None):
   """Calculate an inverse tangent filter window at the specified coordinates.
 
@@ -95,6 +99,7 @@ def atanfilt(arg, cutoff=np.pi, beta=100.0, name=None):
     return 0.5 + (1.0 / np.pi) * tf.math.atan(beta * (cutoff - arg) / cutoff)
 
 
+@api_util.export("signal.filter_kspace")
 def filter_kspace(kspace,
                   traj=None,
                   filter_fn='hamming',
@@ -148,6 +153,7 @@ def filter_kspace(kspace,
   return kspace * tf.cast(filter_fn(traj_norm, **filter_kwargs), kspace.dtype)
 
 
+@api_util.export("signal.crop_kspace")
 def crop_kspace(kspace, traj=None, cutoff=None, mode='low_pass'):  # pylint: disable=missing-raises-doc
   """Crop *k*-space.
 

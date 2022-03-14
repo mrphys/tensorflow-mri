@@ -66,11 +66,55 @@ FAQ
    :caption: API Documentation
    :hidden:
 
-   ops
+   api_docs/tfmri
    ${namespaces}
 
 .. meta::
    :google-site-verification: 8PySedj6KJ0kc5qC1CbO6_9blFB9Nho3SgXvbRzyVOU
+""")
+
+TFMRI_DOC_TEMPLATE = string.Template(
+"""tfmri
+=====
+
+.. automodule:: tensorflow_mri
+
+Modules
+-------
+
+.. autosummary::
+    :nosignatures:
+
+    ${namespaces}
+
+
+Classes
+-------
+
+.. autosummary::
+    :toctree: tfmri/ops
+    :template: ops/class.rst
+    :nosignatures:
+
+
+
+Functions
+---------
+
+.. autosummary::
+    :toctree: tfmri/ops
+    :template: ops/function.rst
+    :nosignatures:
+
+    broadcast_dynamic_shapes
+    broadcast_static_shapes
+    cartesian_product
+    central_crop
+    meshgrid
+    ravel_multi_index
+    resize_with_crop_or_pad
+    scale_by_min_max
+    unravel_index
 """)
 
 MODULE_DOC_TEMPLATE = string.Template(
@@ -110,6 +154,7 @@ class Module:
 modules = {namespace: Module() for namespace in api_util.get_namespaces()}
 
 for name, symbol in api_util.get_api_symbols().items():
+  name = api_util.get_canonical_name_for_symbol(symbol)
   namespace, name = name.split('.', maxsplit=1)
 
   if inspect.isclass(symbol):
@@ -119,8 +164,8 @@ for name, symbol in api_util.get_api_symbols().items():
 
 # Write namespace templates.
 for name, module in modules.items():
-  classes = '\n    '.join(sorted(module.classes))
-  functions = '\n    '.join(sorted(module.functions))
+  classes = '\n    '.join(sorted(set(module.classes)))
+  functions = '\n    '.join(sorted(set(module.functions)))
 
   filename = os.path.join(API_DOCS_PATH, f'tfmri/{name}.rst')
   with open(filename, 'w') as f:
@@ -130,8 +175,16 @@ for name, module in modules.items():
         classes=classes,
         functions=functions))
 
+# Write top-level API doc tfmri.rst.
+filename = os.path.join(API_DOCS_PATH, 'tfmri.rst')
+with open(filename, 'w') as f:
+  namespaces = api_util.get_namespaces()
+  f.write(TFMRI_DOC_TEMPLATE.substitute(
+      namespaces='\n   '.join(sorted(namespaces))))
+
 # Write index.rst.
-with open(os.path.join(DOCS_PATH, 'index.rst'), 'w') as f:
+filename = os.path.join(DOCS_PATH, 'index.rst')
+with open(filename, 'w') as f:
   namespaces = api_util.get_namespaces()
   namespaces = ['api_docs/tfmri/' + namespace for namespace in namespaces]
   f.write(INDEX_TEMPLATE.substitute(

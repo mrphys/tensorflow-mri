@@ -31,6 +31,7 @@ from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 
 
+@api_util.export("image.psnr")
 def psnr(img1, img2, max_val=None, rank=None, name='psnr'):
   """Computes the peak signal-to-noise ratio (PSNR) between two N-D images.
 
@@ -148,6 +149,7 @@ def psnr3d(img1, img2, max_val, name='psnr3d'):
   return psnr(img1, img2, max_val=max_val, rank=3, name=name)
 
 
+@api_util.export("image.ssim")
 def ssim(img1,
          img2,
          max_val=None,
@@ -359,6 +361,7 @@ def ssim3d(img1,
 _MSSSIM_WEIGHTS = (0.0448, 0.2856, 0.3001, 0.2363, 0.1333)
 
 
+@api_util.export("image.ssim_multiscale")
 def ssim_multiscale(img1,
                     img2,
                     max_val=None,
@@ -1001,6 +1004,7 @@ def _filter_image(image, kernels):
   return output
 
 
+@api_util.export("image.gmsd")
 def gmsd(img1, img2, max_val=1.0, rank=None, name=None):
   """Computes the gradient magnitude similarity deviation (GMSD).
 
@@ -1315,165 +1319,6 @@ def _image_dynamic_range(dtype):
   else:
     raise ValueError(f"Invalid image dtype: {dtype.name}")
   return tf.cast(max_val, dtype)
-
-
-def central_crop(tensor, shape):
-  """Crop the central region of a tensor.
-
-  Args:
-    tensor: A `Tensor`.
-    shape: A `Tensor`. The shape of the region to crop. The length of `shape`
-      must be equal to or less than the rank of `tensor`. If the length of
-      `shape` is less than the rank of tensor, the operation is applied along
-      the last `len(shape)` dimensions of `tensor`. Any component of `shape` can
-      be set to the special value -1 to leave the corresponding dimension
-      unchanged.
-
-  Returns:
-    A `Tensor`. Has the same type as `tensor`. The centrally cropped tensor.
-
-  Raises:
-    ValueError: If `shape` has a rank other than 1.
-  """
-  tensor = tf.convert_to_tensor(tensor)
-  input_shape_tensor = tf.shape(tensor)
-  target_shape_tensor = tf.convert_to_tensor(shape)
-
-  # Static checks.
-  if target_shape_tensor.shape.rank != 1:
-    raise ValueError(f"`shape` must have rank 1. Received: {shape}")
-
-  # Support a target shape with less dimensions than input. In that case, the
-  # target shape applies to the last dimensions of input.
-  if not isinstance(shape, tf.Tensor):
-    shape = [-1] * (tensor.shape.rank - len(shape)) + list(shape)
-  target_shape_tensor = tf.concat([
-      tf.tile([-1], [tf.rank(tensor) - tf.size(target_shape_tensor)]),
-      target_shape_tensor], 0)
-
-  # Dynamic checks.
-  checks = [
-      tf.debugging.assert_greater_equal(tf.rank(tensor), tf.size(shape)),
-      tf.debugging.assert_less_equal(
-          target_shape_tensor, tf.shape(tensor), message=(
-              "Target shape cannot be greater than input shape."))
-  ]
-  with tf.control_dependencies(checks):
-    tensor = tf.identity(tensor)
-
-  # Crop the tensor.
-  slice_begin = tf.where(
-      target_shape_tensor >= 0,
-      tf.math.maximum(input_shape_tensor - target_shape_tensor, 0) // 2,
-      0)
-  slice_size = tf.where(
-      target_shape_tensor >= 0,
-      tf.math.minimum(input_shape_tensor, target_shape_tensor),
-      -1)
-  tensor = tf.slice(tensor, slice_begin, slice_size)
-
-  # Set static shape, if possible.
-  static_shape = _compute_static_output_shape(tensor.shape, shape)
-  if static_shape is not None:
-    tensor = tf.ensure_shape(tensor, static_shape)
-
-  return tensor
-
-
-@api_util.export("image.resize_with_crop_or_pad")
-def resize_with_crop_or_pad(tensor, shape, padding_mode='constant'):
-  """Crops and/or pads a tensor to a target shape.
-
-  Pads symmetrically or crops centrally the input tensor as necessary to achieve
-  the requested shape.
-
-  Args:
-    tensor: A `Tensor`.
-    shape: A `Tensor`. The shape of the output tensor. The length of `shape`
-      must be equal to or less than the rank of `tensor`. If the length of
-      `shape` is less than the rank of tensor, the operation is applied along
-      the last `len(shape)` dimensions of `tensor`. Any component of `shape` can
-      be set to the special value -1 to leave the corresponding dimension
-      unchanged.
-    padding_mode: A `str`. Must be one of `'constant'`, `'reflect'` or
-      `'symmetric'`.
-
-  Returns:
-    A `Tensor`. Has the same type as `tensor`. The symmetrically padded/cropped
-    tensor.
-  """
-  tensor = tf.convert_to_tensor(tensor)
-  input_shape = tensor.shape
-  input_shape_tensor = tf.shape(tensor)
-  target_shape = shape
-  target_shape_tensor = tf.convert_to_tensor(shape)
-
-  # Support a target shape with less dimensions than input. In that case, the
-  # target shape applies to the last dimensions of input.
-  if not isinstance(target_shape, tf.Tensor):
-    target_shape = [-1] * (input_shape.rank - len(shape)) + list(shape)
-  target_shape_tensor = tf.concat([
-      tf.tile([-1], [tf.rank(tensor) - tf.size(shape)]),
-      target_shape_tensor], 0)
-
-  # Dynamic checks.
-  checks = [
-      tf.debugging.assert_greater_equal(tf.rank(tensor),
-                                        tf.size(target_shape_tensor)),
-  ]
-  with tf.control_dependencies(checks):
-    tensor = tf.identity(tensor)
-
-  # Pad the tensor.
-  pad_left = tf.where(
-      target_shape_tensor >= 0,
-      tf.math.maximum(target_shape_tensor - input_shape_tensor, 0) // 2,
-      0)
-  pad_right = tf.where(
-      target_shape_tensor >= 0,
-      (tf.math.maximum(target_shape_tensor - input_shape_tensor, 0) + 1) // 2,
-      0)
-
-  tensor = tf.pad(tensor, tf.transpose(tf.stack([pad_left, pad_right])), # pylint: disable=no-value-for-parameter,unexpected-keyword-arg
-                  mode=padding_mode)
-
-  # Crop the tensor.
-  tensor = central_crop(tensor, target_shape)
-
-  static_shape = _compute_static_output_shape(input_shape, target_shape)
-  if static_shape is not None:
-    tensor = tf.ensure_shape(tensor, static_shape)
-
-  return tensor
-
-
-def _compute_static_output_shape(input_shape, target_shape):
-  """Compute the static output shape of a resize operation.
-
-  Args:
-    input_shape: The static shape of the input tensor.
-    target_shape: The target shape.
-
-  Returns:
-    The static output shape.
-  """
-  output_shape = None
-
-  if isinstance(target_shape, tf.Tensor):
-    # If target shape is a tensor, we can't infer the output shape.
-    return None
-
-  # Get static tensor shape, after replacing -1 values by `None`.
-  output_shape = tf.TensorShape(
-      [s if s >= 0 else None for s in target_shape])
-
-  # Complete any unspecified target dimensions with those of the
-  # input tensor, if known.
-  output_shape = tf.TensorShape(
-      [s_target or s_input for (s_target, s_input) in zip(
-          output_shape.as_list(), input_shape.as_list())])
-
-  return output_shape
 
 
 @api_util.export("image.total_variation")
