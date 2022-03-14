@@ -92,7 +92,7 @@ Classes
 -------
 
 .. autosummary::
-    :toctree: tfmri/ops
+    :toctree: tfmri
     :template: ops/class.rst
     :nosignatures:
 
@@ -102,7 +102,7 @@ Functions
 ---------
 
 .. autosummary::
-    :toctree: tfmri/ops
+    :toctree: tfmri
     :template: ops/function.rst
     :nosignatures:
 

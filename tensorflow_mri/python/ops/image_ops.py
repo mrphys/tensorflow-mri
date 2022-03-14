@@ -164,10 +164,6 @@ def ssim(img1,
   This function operates on batches of multi-channel inputs and returns an SSIM
   value for each image in the batch.
 
-  .. warning::
-    As of TensorFlow 2.6.0, 3D inputs with `channels` > 1 can only be processed
-    on GPU.
-
   Args:
     img1: A `Tensor`. First batch of images. For 2D images, must have rank >= 3
       with shape `batch_shape + [height, width, channels]`. For 3D images, must
@@ -310,10 +306,6 @@ def ssim3d(img1,
   This function operates on batches of multi-channel inputs and returns an SSIM
   value for each image in the batch.
 
-  .. warning::
-    As of TensorFlow 2.6.0, 3D inputs with `channels` > 1 can only be processed
-    on GPU.
-
   Args:
     img1: A `Tensor`. First batch of images. Must have rank >= 4 with shape
       `batch_shape + [depth, height, width, channels]`. `depth`, `height` and
@@ -376,10 +368,6 @@ def ssim_multiscale(img1,
 
   This function operates on batches of multi-channel inputs and returns an
   MS-SSIM value for each image in the batch.
-
-  .. warning::
-    As of TensorFlow 2.6.0, 3D inputs with `channels` > 1 can only be processed
-    on GPU.
 
   Args:
     img1: A `Tensor`. First batch of images. For 2D images, must have rank >= 3
@@ -618,10 +606,6 @@ def ssim3d_multiscale(img1,
 
   This function operates on batches of multi-channel inputs and returns an
   MS-SSIM value for each image in the batch.
-
-  .. warning::
-    As of TensorFlow 2.6.0, 3D inputs with `channels` > 1 can only be processed
-    on GPU.
 
   Args:
     img1: A `Tensor`. First batch of images. Must have rank >= 4 with shape
