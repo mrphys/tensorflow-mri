@@ -23,11 +23,14 @@ import typing
 
 DOCS_PATH = os.path.dirname(os.path.realpath(__file__))
 ROOT_PATH = os.path.join(DOCS_PATH, '..', '..')
+API_DOCS_PATH = os.path.join(DOCS_PATH, 'api_docs')
 
 sys.path.insert(0, ROOT_PATH)
 
 from tensorflow_mri.python.util import api_util
 
+# Create API docs directory.
+os.makedirs(os.path.join(API_DOCS_PATH, 'tfmri'), exist_ok=True)
 
 INDEX_TEMPLATE = string.Template(
 """TensorFlow MRI |release|
@@ -80,7 +83,7 @@ Classes
 -------
 
 .. autosummary::
-    :toctree: tfmri/${module}
+    :toctree: ${module}
     :template: ${module}/class.rst
     :nosignatures:
 
@@ -90,7 +93,7 @@ Functions
 ---------
 
 .. autosummary::
-    :toctree: tfmri/${module}
+    :toctree: ${module}
     :template: ${module}/function.rst
     :nosignatures:
 
@@ -119,7 +122,7 @@ for name, module in modules.items():
   classes = '\n    '.join(sorted(module.classes))
   functions = '\n    '.join(sorted(module.functions))
 
-  filename = os.path.join(DOCS_PATH, f'{name}.rst')
+  filename = os.path.join(API_DOCS_PATH, f'tfmri/{name}.rst')
   with open(filename, 'w') as f:
     f.write(MODULE_DOC_TEMPLATE.substitute(
         module=name,
@@ -127,10 +130,9 @@ for name, module in modules.items():
         classes=classes,
         functions=functions))
 
-additional_namespaces = ['callbacks', 'io', 'layers', 'losses', 'metrics']
-
 # Write index.rst.
 with open(os.path.join(DOCS_PATH, 'index.rst'), 'w') as f:
+  namespaces = api_util.get_namespaces()
+  namespaces = ['api_docs/tfmri/' + namespace for namespace in namespaces]
   f.write(INDEX_TEMPLATE.substitute(
-      namespaces='\n   '.join(
-          sorted(api_util.get_namespaces() + additional_namespaces))))
+      namespaces='\n   '.join(sorted(namespaces))))

@@ -17,8 +17,11 @@
 import tensorflow as tf
 import tensorflow_io as tfio
 
+from tensorflow_mri.python.util import api_util
 
-def encode_gif(image, loop_count=0, name='encode_gif'):
+
+@api_util.export("io.encode_gif")
+def encode_gif(image, loop_count=0, name=None):
   """Encode a uint8 tensor to gif image with extensions.
 
   Based on `tfio.image.encode_gif`, but also supports grayscale images and
@@ -37,7 +40,7 @@ def encode_gif(image, loop_count=0, name='encode_gif'):
   Raises:
     ValueError: If `loop_count` is not in the range `[0, 65535]`.
   """
-  with tf.name_scope(name):
+  with tf.name_scope(name or "encode_gif"):
 
     # Check channels.
     channels = tf.shape(image)[-1]

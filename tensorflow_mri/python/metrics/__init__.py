@@ -14,5 +14,5 @@
 # ==============================================================================
 """Keras metrics."""
 
-from tensorflow_mri.python.metrics.confusion_metrics import *
-from tensorflow_mri.python.metrics.iqa_metrics import *
+from tensorflow_mri.python.metrics import confusion_metrics
+from tensorflow_mri.python.metrics import iqa_metrics

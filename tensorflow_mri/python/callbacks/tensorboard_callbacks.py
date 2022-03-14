@@ -20,9 +20,11 @@ import tensorflow as tf
 
 from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.summary import image_summary
+from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import nest_util
 
 
+@api_util.export("callbacks.TensorBoardImages")
 class TensorBoardImages(tf.keras.callbacks.Callback):
   """Keras callback to write image summaries to Tensorboard.
 

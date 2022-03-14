@@ -27,6 +27,7 @@ import tensorflow as tf
 
 from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import geom_ops
+from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 
 
@@ -93,6 +94,7 @@ def psnr(img1, img2, max_val=None, rank=None, name='psnr'):
       return tf.identity(psnr_val)
 
 
+@api_util.export("image.psnr2d")
 def psnr2d(img1, img2, max_val=None, name='psnr2d'):
   """Computes the peak signal-to-noise ratio (PSNR) between two 2D images.
 
@@ -119,6 +121,7 @@ def psnr2d(img1, img2, max_val=None, name='psnr2d'):
   return psnr(img1, img2, max_val=max_val, rank=2, name=name)
 
 
+@api_util.export("image.psnr3d")
 def psnr3d(img1, img2, max_val, name='psnr3d'):
   """Computes the peak signal-to-noise ratio (PSNR) between two 3D images.
 
@@ -127,10 +130,10 @@ def psnr3d(img1, img2, max_val, name='psnr3d'):
 
   Arguments:
     img1: A `Tensor`. First batch of images. Must have rank >= 4 with shape
-      `batch_shape + [height, width, channels]`. Can have integer or
+      `batch_shape + [depth, height, width, channels]`. Can have integer or
       floating point type, with values in the range `[0, max_val]`.
     img2: A `Tensor`. Second batch of images. Must have rank >= 4 with shape
-      `batch_shape + [height, width, channels]`. Can have integer or
+      `batch_shape + [depth, height, width, channels]`. Can have integer or
       floating point type, with values in the range `[0, max_val]`.
     max_val: The dynamic range of the images (i.e., the difference between
       the maximum and the minimum allowed values). Defaults to 1 for floating
@@ -234,6 +237,7 @@ def ssim(img1,
     return tf.math.reduce_mean(ssim_per_channel, [-1])
 
 
+@api_util.export("image.ssim2d")
 def ssim2d(img1,
            img2,
            max_val=None,
@@ -290,6 +294,7 @@ def ssim2d(img1,
               name=name)
 
 
+@api_util.export("image.ssim3d")
 def ssim3d(img1,
            img2,
            max_val=None,
@@ -530,6 +535,7 @@ def ssim_multiscale(img1,
     return tf.math.reduce_mean(ms_ssim, [-1])  # Avg over color channels.
 
 
+@api_util.export("image.ssim2d_multiscale")
 def ssim2d_multiscale(img1,
                       img2,
                       max_val=None,
@@ -595,6 +601,7 @@ def ssim2d_multiscale(img1,
                          name=name)
 
 
+@api_util.export("image.ssim3d_multiscale")
 def ssim3d_multiscale(img1,
                       img2,
                       max_val=None,
@@ -843,8 +850,11 @@ def _fspecial_gauss_3d(size, sigma): # pylint: disable=missing-param-doc
   return tf.reshape(g, shape=[size, size, size, 1, 1])
 
 
+@api_util.export("image.image_gradients")
 def image_gradients(image, method='sobel', norm=False, name=None):
   """Computes image gradients.
+
+  Supports 2D and 3D inputs.
 
   Args:
     image: A `Tensor` of shape `[batch_size] + spatial_dims + [channels]`.
@@ -869,8 +879,11 @@ def image_gradients(image, method='sobel', norm=False, name=None):
     return _filter_image(image, kernels)
 
 
+@api_util.export("image.gradient_magnitude")
 def gradient_magnitude(image, method='sobel', norm=False, name=None):
   """Computes the gradient magnitude (GM) of an image.
+
+  Supports 2D and 3D inputs.
 
   Args:
     image: A `Tensor` of shape `[batch_size] + spatial_dims + [channels]`.
@@ -1068,6 +1081,7 @@ def gmsd(img1, img2, max_val=1.0, rank=None, name=None):
     return gmsd_values
 
 
+@api_util.export("image.gmsd2d")
 def gmsd2d(img1, img2, max_val=1.0, name=None):
   """Computes the gradient magnitude similarity deviation (GMSD).
 
@@ -1097,6 +1111,7 @@ def gmsd2d(img1, img2, max_val=1.0, name=None):
   return gmsd(img1, img2, max_val=max_val, rank=2, name=(name or 'gmsd2d'))
 
 
+@api_util.export("image.gmsd3d")
 def gmsd3d(img1, img2, max_val=1.0, name=None):
   """Computes the gradient magnitude similarity deviation (GMSD).
 
@@ -1365,6 +1380,7 @@ def central_crop(tensor, shape):
   return tensor
 
 
+@api_util.export("image.resize_with_crop_or_pad")
 def resize_with_crop_or_pad(tensor, shape, padding_mode='constant'):
   """Crops and/or pads a tensor to a target shape.
 
@@ -1460,7 +1476,8 @@ def _compute_static_output_shape(input_shape, target_shape):
   return output_shape
 
 
-def total_variation(tensor,
+@api_util.export("image.total_variation")
+def total_variation(image,
                     axis=None,
                     keepdims=False,
                     name='total_variation'):
@@ -1469,12 +1486,10 @@ def total_variation(tensor,
   The total variation is the sum of the absolute differences for neighboring
   values in the input tensor. This is a measure of the noise present.
 
-  This implements the anisotropic N-D version of the formula described here:
-
-  https://en.wikipedia.org/wiki/Total_variation_denoising
+  Supports ND inputs.
 
   Args:
-    tensor: A `Tensor`. Can have any shape.
+    image: A `Tensor` of shape `[batch_size] + spatial_dims + [channels]`.
     axis: An `int` or a list of `ints`. The axes along which the differences are
       taken. Defaults to `list(range(1, tensor.shape.rank - 1))`, i.e.
       differences are taken along all axes except the first and the last, which
@@ -1484,19 +1499,19 @@ def total_variation(tensor,
     name: A name for the operation (optional).
 
   Returns:
-    The total variation of `images`.
+    The total variation of `image`.
 
   Raises:
     ValueError: If `tensor` has unknown static rank or `axis` is out of bounds.
   """
   with tf.name_scope(name):
 
-    tensor = tf.convert_to_tensor(tensor)
-    rank = tensor.shape.rank
+    image = tf.convert_to_tensor(image)
+    rank = image.shape.rank
 
     if rank is None:
       raise ValueError(
-          "`total_variation` requires known rank for input `tensor`")
+          "`total_variation` requires known rank for input `image`")
 
     # If `axis` was not specified, compute along all axes.
     if axis is None:
@@ -1509,7 +1524,7 @@ def total_variation(tensor,
             f"axis {ax} is out of bounds for tensor of rank {rank}")
 
     # Total variation.
-    tot_var = tf.constant(0, dtype=tensor.dtype.real_dtype)
+    tot_var = tf.constant(0, dtype=image.dtype.real_dtype)
 
     for ax in axis:
       slice1 = [slice(None)] * rank
@@ -1518,7 +1533,7 @@ def total_variation(tensor,
       slice2[ax] = slice(None, -1)
 
       # Calculate the difference of neighboring values.
-      pixel_diff = tensor[slice1] - tensor[slice2]
+      pixel_diff = image[slice1] - image[slice2]
 
       # Add the difference for the current axis to total. Use `keepdims=True`
       # to enable broadcasting.
@@ -1533,6 +1548,7 @@ def total_variation(tensor,
     return tot_var
 
 
+@api_util.export("image.extract_glimpses")
 def extract_glimpses(images, sizes, offsets):
   """Extract glimpses (patches) from a tensor at the given offsets.
 
@@ -1584,12 +1600,13 @@ def extract_glimpses(images, sizes, offsets):
   return patches
 
 
-def phantom(phantom_type='modified_shepp_logan', # pylint: disable=dangerous-default-value
+@api_util.export("image.phantom")
+def phantom(phantom_type='modified_shepp_logan',  # pylint: disable=dangerous-default-value
             shape=[256, 256],
             num_coils=None,
             dtype=tf.dtypes.float32,
             return_sensitivities=False):
-  """Generate a phantom image.
+  """Generates a phantom image.
 
   Available 2D phantoms are:
 

@@ -65,7 +65,8 @@ extensions = [
   'sphinx.ext.napoleon',
   'sphinx.ext.autosummary',
   'sphinx.ext.linkcode',
-  'nbsphinx'
+  'nbsphinx',
+  'sphinx_sitemap'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -111,7 +112,14 @@ html_theme_options = {
   }
 }
 
+# Additional files to copy to output directory.
+html_extra_path = ['robots.txt']
 
+# For sitemap generation.
+html_baseurl = 'https://mrphys.github.io/tensorflow-mri/'
+sitemap_url_scheme = '{link}'
+
+# For autosummary generation.
 autosummary_filename_map = conf_helper.AutosummaryFilenameMap()
 
 

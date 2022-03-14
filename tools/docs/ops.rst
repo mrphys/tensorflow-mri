@@ -3,6 +3,22 @@ tfmri
 
 .. automodule:: tensorflow_mri
 
+Modules
+-------
+
+.. autosummary::
+    :nosignatures:
+
+    callbacks
+    io
+    layers
+    losses
+    metrics
+    plot
+    recon
+    summary
+
+
 Classes
 -------
 
@@ -50,27 +66,17 @@ Functions
     expand_density
     expand_trajectory
     extract_from_complex
-    extract_glimpses
     fftn
     filter_kspace
     flatten_density
     flatten_trajectory
-    gmsd
-    gmsd2d
-    gmsd3d
-    gradient_magnitude
     hann
     hamming
     ifftn
-    image_gradients
     lbfgs_minimize
     make_val_and_grad_fn
     meshgrid
     normalize_no_nan
-    phantom
-    psnr
-    psnr2d
-    psnr3d
     radial_density
     radial_trajectory
     radial_waveform
@@ -84,13 +90,6 @@ Functions
     soft_threshold
     spiral_trajectory
     spiral_waveform
-    ssim
-    ssim2d
-    ssim3d
-    ssim_multiscale
-    ssim2d_multiscale
-    ssim3d_multiscale
-    total_variation
     unravel_index
     view_as_complex
     view_as_real
