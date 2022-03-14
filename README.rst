@@ -79,6 +79,7 @@ versions of TensorFlow and TensorFlow MRI according to the table below.
 ======================  ========================  ============
 TensorFlow MRI Version  TensorFlow Compatibility  Release Date
 ======================  ========================  ============
+v0.13.0                 v2.8.x                    Mar 15, 2022
 v0.12.0                 v2.8.x                    Mar 14, 2022
 v0.11.0                 v2.8.x                    Mar 10, 2022
 v0.10.0                 v2.8.x                    Mar 3, 2022
