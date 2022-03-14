@@ -1,0 +1,3 @@
+User-agent: *
+
+Sitemap: https://mrphys.github.io/tensorflow-mri/sitemap.xml
