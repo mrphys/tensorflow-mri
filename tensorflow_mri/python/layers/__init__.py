@@ -14,6 +14,6 @@
 # ==============================================================================
 """Keras layers."""
 
-from tensorflow_mri.python.layers.conv_blocks import *
-from tensorflow_mri.python.layers.conv_endec import *
-from tensorflow_mri.python.layers.preproc_layers import *
+from tensorflow_mri.python.layers import conv_blocks
+from tensorflow_mri.python.layers import conv_endec
+from tensorflow_mri.python.layers import preproc_layers

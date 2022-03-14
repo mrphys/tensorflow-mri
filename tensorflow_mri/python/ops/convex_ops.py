@@ -21,11 +21,13 @@ import tensorflow as tf
 
 from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.ops import math_ops
+from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import linalg_ext
 from tensorflow_mri.python.util import linalg_imaging
 
 
+@api_util.export("convex.ConvexFunction")
 class ConvexFunction():
   r"""Base class defining a [batch of] convex function[s].
 
@@ -149,6 +151,7 @@ class ConvexFunction():
           (self.dtype, arg.dtype, arg))
 
 
+@api_util.export("convex.ConvexFunctionAffineMappingComposition")
 class ConvexFunctionAffineMappingComposition(ConvexFunction):
   """Composes a convex function and an affine mapping.
 
@@ -205,6 +208,7 @@ class ConvexFunctionAffineMappingComposition(ConvexFunction):
     return self._constant
 
 
+@api_util.export("convex.ConvexFunctionLinearOperatorComposition")
 class ConvexFunctionLinearOperatorComposition(  # pylint: disable=abstract-method
     ConvexFunctionAffineMappingComposition):
   r"""Composes a convex function and a linear operator.
@@ -229,6 +233,7 @@ class ConvexFunctionLinearOperatorComposition(  # pylint: disable=abstract-metho
                      name=name)
 
 
+@api_util.export("convex.ConvexFunctionL1Norm")
 class ConvexFunctionL1Norm(ConvexFunction):
   """A `ConvexFunction` computing the [scaled] L1-norm of a [batch of] inputs.
 
@@ -258,6 +263,7 @@ class ConvexFunctionL1Norm(ConvexFunction):
     return math_ops.soft_threshold(x, self._scale * (scale or 1.0))
 
 
+@api_util.export("convex.ConvexFunctionL2Norm")
 class ConvexFunctionL2Norm(ConvexFunction):
   """A `ConvexFunction` computing the [scaled] L2-norm of a [batch of] inputs.
 
@@ -287,6 +293,7 @@ class ConvexFunctionL2Norm(ConvexFunction):
     return math_ops.block_soft_threshold(x, self._scale * (scale or 1.0))
 
 
+@api_util.export("convex.ConvexFunctionL2NormSquared")
 class ConvexFunctionL2NormSquared(ConvexFunction):
   """A `ConvexFunction` computing the [scaled] squared L2-norm of an input.
 
@@ -318,6 +325,7 @@ class ConvexFunctionL2NormSquared(ConvexFunction):
     return math_ops.shrinkage(x, 2.0 * scale)
 
 
+@api_util.export("convex.ConvexFunctionTikhonov")
 class ConvexFunctionTikhonov(ConvexFunctionAffineMappingComposition):  # pylint: disable=abstract-method
   r"""Tikhonov convex function.
 
@@ -372,6 +380,7 @@ class ConvexFunctionTikhonov(ConvexFunctionAffineMappingComposition):  # pylint:
     return self._prior
 
 
+@api_util.export("convex.ConvexFunctionTotalVariation")
 class ConvexFunctionTotalVariation(ConvexFunctionLinearOperatorComposition):  # pylint: disable=abstract-method
   r"""Total variation convex function.
 
@@ -409,6 +418,7 @@ class ConvexFunctionTotalVariation(ConvexFunctionLinearOperatorComposition):  # 
                      name=name)
 
 
+@api_util.export("convex.ConvexFunctionQuadratic")
 class ConvexFunctionQuadratic(ConvexFunction):
   r"""A `ConvexFunction` representing a generic quadratic function.
 
@@ -508,6 +518,7 @@ class ConvexFunctionQuadratic(ConvexFunction):
     return self._constant_coefficient
 
 
+@api_util.export("convex.ConvexFunctionLeastSquares")
 class ConvexFunctionLeastSquares(ConvexFunctionQuadratic):
   r"""A `ConvexFunction` representing a least squares function.
 

@@ -20,6 +20,7 @@ This module contains metrics and operations for image quality assessment (IQA).
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import image_ops
+from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 
 
@@ -87,6 +88,7 @@ class _MeanMetricWrapperIQA(tf.keras.metrics.MeanMetricWrapper):
     return {**base_config, **config}
 
 
+@api_util.export("metrics.PeakSignalToNoiseRatio")
 @tf.keras.utils.register_keras_serializable(package="MRI")
 class PeakSignalToNoiseRatio(_MeanMetricWrapperIQA):
   """Peak signal-to-noise ratio (PSNR) metric.
@@ -138,6 +140,7 @@ class PeakSignalToNoiseRatio(_MeanMetricWrapperIQA):
                      complex_part=complex_part)
 
 
+@api_util.export("metrics.StructuralSimilarity")
 @tf.keras.utils.register_keras_serializable(package="MRI")
 class StructuralSimilarity(_MeanMetricWrapperIQA):
   """Structural similarity index (SSIM) metric.
@@ -209,6 +212,7 @@ class StructuralSimilarity(_MeanMetricWrapperIQA):
                      complex_part=complex_part)
 
 
+@api_util.export("metrics.MultiscaleStructuralSimilarity")
 @tf.keras.utils.register_keras_serializable(package="MRI")
 class MultiscaleStructuralSimilarity(_MeanMetricWrapperIQA):
   """Multiscale structural similarity index (MS-SSIM) metric.

@@ -17,10 +17,12 @@
 import tensorflow as tf
 
 from tensorflow_mri.python.layers import conv_blocks
+from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import layer_util
 
 
+@api_util.export("layers.UNet")
 @tf.keras.utils.register_keras_serializable(package='MRI')
 class UNet(tf.keras.layers.Layer):
   """A UNet layer.

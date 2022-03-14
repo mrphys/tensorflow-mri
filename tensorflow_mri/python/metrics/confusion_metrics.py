@@ -26,6 +26,8 @@ import abc
 
 import tensorflow as tf
 
+from tensorflow_mri.python.util import api_util
+
 
 _CONFUSION_METRIC_INTRO_DOCTRING = """
   Inputs `y_true` and `y_pred` are expected to have shape `[..., num_classes]`,
@@ -102,6 +104,7 @@ _CONFUSION_METRIC_ARGS_DOCSTRING = """
       This parameter is required for multilabel classification.
 """
 
+@api_util.export("metrics.ConfusionMetric")
 class ConfusionMetric(tf.keras.metrics.Metric): # pylint: disable=abstract-method
   """Abstract base class for metrics derived from the confusion matrix.
 
@@ -290,6 +293,7 @@ class ConfusionMetric(tf.keras.metrics.Metric): # pylint: disable=abstract-metho
     self.true_instances.assign(reset_value)
 
 
+@api_util.export("metrics.Accuracy")
 @tf.keras.utils.register_keras_serializable(package="MRI")
 class Accuracy(ConfusionMetric):
   r"""Computes accuracy.
@@ -325,6 +329,8 @@ class Accuracy(ConfusionMetric):
         self.false_positives + self.false_negatives)
 
 
+@api_util.export("metrics.TruePositiveRate", "metrics.Recall",
+                 "metrics.Sensitivity")
 @tf.keras.utils.register_keras_serializable(package="MRI")
 class TruePositiveRate(ConfusionMetric):
   r"""Computes the true positive rate (TPR).
@@ -360,6 +366,8 @@ class TruePositiveRate(ConfusionMetric):
       self.true_positives + self.false_negatives)
 
 
+@api_util.export("metrics.TrueNegativeRate", "metrics.Specificity",
+                 "metrics.Selectivity")
 @tf.keras.utils.register_keras_serializable(package="MRI")
 class TrueNegativeRate(ConfusionMetric):
   r"""Computes the true negative rate (TNR).
@@ -395,6 +403,7 @@ class TrueNegativeRate(ConfusionMetric):
       self.true_negatives + self.false_positives)
 
 
+@api_util.export("metrics.PositivePredictiveValue", "metrics.Precision")
 @tf.keras.utils.register_keras_serializable(package="MRI")
 class PositivePredictiveValue(ConfusionMetric):
   r"""Computes the positive predictive value (PPV).
@@ -430,6 +439,7 @@ class PositivePredictiveValue(ConfusionMetric):
       self.true_positives + self.false_positives)
 
 
+@api_util.export("metrics.NegativePredictiveValue")
 @tf.keras.utils.register_keras_serializable(package="MRI")
 class NegativePredictiveValue(ConfusionMetric):
   r"""Computes the negative predictive value (NPV).
@@ -465,6 +475,7 @@ class NegativePredictiveValue(ConfusionMetric):
       self.true_negatives + self.false_negatives)
 
 
+@api_util.export("metrics.TverskyIndex")
 @tf.keras.utils.register_keras_serializable(package="MRI")
 class TverskyIndex(ConfusionMetric):
   r"""Computes Tversky index.
@@ -524,6 +535,7 @@ class TverskyIndex(ConfusionMetric):
     return {**base_config, **config}
 
 
+@api_util.export("metrics.FBetaScore")
 @tf.keras.utils.register_keras_serializable(package="MRI")
 class FBetaScore(TverskyIndex):
   r"""Computes F-beta score.
@@ -569,6 +581,7 @@ class FBetaScore(TverskyIndex):
     return {**base_config, **config}
 
 
+@api_util.export("metrics.F1Score", "metrics.DiceIndex")
 @tf.keras.utils.register_keras_serializable(package="MRI")
 class F1Score(FBetaScore):
   r"""Computes F-1 score.
@@ -581,7 +594,7 @@ class F1Score(FBetaScore):
   Args:
     name: String name of the metric instance.
     dtype: Data type of the metric result.
-  """ # pylint: disable=line-too-long
+  """  # pylint: disable=line-too-long
   def __init__(self,
                num_classes=None,
                class_id=None,
@@ -603,6 +616,7 @@ class F1Score(FBetaScore):
     return base_config
 
 
+@api_util.export("metrics.IoU", "metrics.JaccardIndex")
 @tf.keras.utils.register_keras_serializable(package="MRI")
 class IoU(TverskyIndex):
   r"""Computes the intersection-over-union (IoU) metric.
@@ -662,13 +676,3 @@ TverskyIndex.__doc__ = _update_docstring(TverskyIndex.__doc__)
 FBetaScore.__doc__ = _update_docstring(FBetaScore.__doc__)
 F1Score.__doc__ = _update_docstring(F1Score.__doc__)
 IoU.__doc__ = _update_docstring(IoU.__doc__)
-
-
-# Aliases.
-Precision = PositivePredictiveValue
-Recall = TruePositiveRate
-Sensitivity = TruePositiveRate
-Specificity = TrueNegativeRate
-Selectivity = TrueNegativeRate
-DiceIndex = F1Score
-JaccardIndex = IoU

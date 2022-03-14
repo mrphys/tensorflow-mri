@@ -16,8 +16,7 @@
 
 from tensorflow_mri.__about__ import *
 
-# TODO(jmontalt): Remove these imports once the corresponding API symbols have
-# been registered.
+# TODO(jmontalt): Remove these imports on release 1.0.0.
 from tensorflow_mri.python.ops.array_ops import *
 from tensorflow_mri.python.ops.coil_ops import *
 from tensorflow_mri.python.ops.convex_ops import *
@@ -31,12 +30,7 @@ from tensorflow_mri.python.ops.recon_ops import *
 from tensorflow_mri.python.ops.signal_ops import *
 from tensorflow_mri.python.ops.traj_ops import *
 
-from tensorflow_mri.python import callbacks
-from tensorflow_mri.python import experimental
-from tensorflow_mri.python import io
-from tensorflow_mri.python import layers
-from tensorflow_mri.python import losses
-from tensorflow_mri.python import metrics
+from tensorflow_mri import python
 
 # Import public API.
 from tensorflow_mri.python.util import api_util

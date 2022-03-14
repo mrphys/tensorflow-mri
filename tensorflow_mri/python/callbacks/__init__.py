@@ -14,4 +14,4 @@
 # ==============================================================================
 """Keras callbacks."""
 
-from tensorflow_mri.python.callbacks.tensorboard_callbacks import *
+from tensorflow_mri.python.callbacks import tensorboard_callbacks

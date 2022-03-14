@@ -14,5 +14,5 @@
 # ==============================================================================
 """Keras losses."""
 
-from tensorflow_mri.python.losses.confusion_losses import *
-from tensorflow_mri.python.losses.iqa_losses import *
+from tensorflow_mri.python.losses import confusion_losses
+from tensorflow_mri.python.losses import iqa_losses

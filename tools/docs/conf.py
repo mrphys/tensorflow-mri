@@ -65,7 +65,8 @@ extensions = [
   'sphinx.ext.napoleon',
   'sphinx.ext.autosummary',
   'sphinx.ext.linkcode',
-  'nbsphinx'
+  'nbsphinx',
+  'sphinx_sitemap'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -111,7 +112,14 @@ html_theme_options = {
   }
 }
 
+# Additional files to copy to output directory.
+html_extra_path = ['robots.txt']
 
+# For sitemap generation.
+html_baseurl = 'https://mrphys.github.io/tensorflow-mri/'
+sitemap_url_scheme = '{link}'
+
+# For autosummary generation.
 autosummary_filename_map = conf_helper.AutosummaryFilenameMap()
 
 
@@ -120,14 +128,18 @@ import tensorflow_mri as tfmri
 
 def linkcode_resolve(domain, info):
   """Find the GitHub URL where an object is defined.
-  
+
   Args:
     domain: The language domain. This is always `py`.
     info: A `dict` with keys `module` and `fullname`.
-  
+
   Returns:
     The GitHub URL to the object, or `None` if not relevant.
-  """  
+  """
+  if info['fullname'] == 'nufft':
+    # Can't provide link for nufft, since it lives in external package.
+    return None
+
   # Obtain fully-qualified name of object.
   qualname = info['module'] + '.' + info['fullname']
   # Remove the `tensorflow_mri` bit.

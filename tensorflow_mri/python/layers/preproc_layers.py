@@ -17,7 +17,7 @@
 import tensorflow as tf
 import tensorflow_nufft as tfft
 
-from tensorflow_mri.python.ops import image_ops
+from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import math_ops
 from tensorflow_mri.python.ops import traj_ops
 from tensorflow_mri.python.util import check_util
@@ -414,7 +414,7 @@ class ResizeWithCropOrPad(tf.keras.layers.Layer):
 
   def call(self, inputs):
     """Runs forward pass on the input tensor."""
-    return image_ops.resize_with_crop_or_pad(inputs, self._shape_internal,
+    return array_ops.resize_with_crop_or_pad(inputs, self._shape_internal,
                                              padding_mode=self._padding_mode)
 
   def get_config(self):

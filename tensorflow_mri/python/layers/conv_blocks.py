@@ -33,10 +33,12 @@ import itertools
 
 import tensorflow as tf
 
+from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import layer_util
 
 
+@api_util.export("layers.ConvBlock")
 @tf.keras.utils.register_keras_serializable(package='MRI')
 class ConvBlock(tf.keras.layers.Layer):
   """A basic convolution block.

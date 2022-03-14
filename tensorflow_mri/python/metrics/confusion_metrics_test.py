@@ -16,8 +16,8 @@
 
 from absl.testing import parameterized
 import tensorflow as tf
+import tensorflow_mri as tfmri
 
-from tensorflow_mri.python.metrics import confusion_metrics
 from tensorflow_mri.python.util import test_util
 
 
@@ -46,7 +46,7 @@ class ConfusionMetricTest(test_util.TestCase):
   @parameterized.parameters(*names)
   def test_binary_metric(self, name): # pylint: disable=missing-param-doc
     """Test binary metric."""
-    metric = getattr(confusion_metrics, name)
+    metric = getattr(tfmri.metrics, name)
 
     y_true = [[1, 1, 0],
               [1, 0, 0],
@@ -76,7 +76,7 @@ class ConfusionMetricTest(test_util.TestCase):
   @parameterized.parameters(*names)
   def test_binary_metric_custom_threshold(self, name): # pylint: disable=missing-param-doc
     """Test binary metric with a custom threshold."""
-    metric = getattr(confusion_metrics, name)
+    metric = getattr(tfmri.metrics, name)
 
     y_true = [[1, 1, 0],
               [1, 0, 0],
@@ -108,7 +108,7 @@ class ConfusionMetricTest(test_util.TestCase):
                          average=[None, 'macro', 'micro'])
   def test_multiclass_metric(self, name, class_id, average): # pylint: disable=missing-param-doc
     """Test multiclass metric."""
-    metric = getattr(confusion_metrics, name)
+    metric = getattr(tfmri.metrics, name)
 
     y_true = [[1, 0, 0],
               [1, 0, 0],
@@ -159,7 +159,7 @@ class ConfusionMetricTest(test_util.TestCase):
   @parameterized.parameters(*names)
   def test_metric_reset(self, name): # pylint: disable=missing-param-doc
     """Test metric reset."""
-    metric = getattr(confusion_metrics, name)
+    metric = getattr(tfmri.metrics, name)
     y_true = tf.concat([tf.ones([4, 1]), tf.zeros([4, 1])], 0)
     y_pred = y_true
     m = metric()

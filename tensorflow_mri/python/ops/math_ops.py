@@ -19,9 +19,11 @@ import functools
 import tensorflow as tf
 import tensorflow_probability as tfp
 
+from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 
 
+@api_util.export("math.extract_from_complex")
 def extract_from_complex(tensor, part, name='extract_from_complex'):
   """Extract parts from a complex tensor.
 
@@ -58,6 +60,7 @@ def extract_from_complex(tensor, part, name='extract_from_complex'):
     return tensor
 
 
+@api_util.export("math.make_val_and_grad_fn")
 def make_val_and_grad_fn(value_fn):
   """Function decorator to compute both function value and gradient.
 
@@ -80,6 +83,7 @@ def make_val_and_grad_fn(value_fn):
   return val_and_grad
 
 
+@api_util.export("math.normalize_no_nan")
 def normalize_no_nan(tensor, ord='euclidean', axis=None, name=None):  # pylint: disable=redefined-builtin
   """Normalizes `tensor` along dimension `axis` using specified norm.
 
@@ -230,6 +234,7 @@ def view_as_real(x, stacked=True):
   return x
 
 
+@api_util.export("math.block_soft_threshold")
 def block_soft_threshold(x, threshold, name=None):
   r"""Block soft thresholding operator.
 
@@ -256,6 +261,7 @@ def block_soft_threshold(x, threshold, name=None):
         one - tf.math.divide_no_nan(threshold, x_norm), 0.), x.dtype)
 
 
+@api_util.export("math.shrinkage")
 def shrinkage(x, threshold, name=None):
   r"""Shrinkage operator.
 
@@ -277,6 +283,7 @@ def shrinkage(x, threshold, name=None):
     return x / (one + threshold)
 
 
+@api_util.export("math.soft_threshold")
 def soft_threshold(x, threshold, name=None):
   r"""Soft thresholding operator.
 

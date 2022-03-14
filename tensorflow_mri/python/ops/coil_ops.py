@@ -26,11 +26,13 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.experimental.numpy as tnp
 
+from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import fft_ops
-from tensorflow_mri.python.ops import image_ops
+from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 
 
+@api_util.export("coils.estimate_sensitivities")
 def estimate_coil_sensitivities(input_,
                                 coil_axis=-1,
                                 method='walsh',
@@ -141,6 +143,7 @@ def estimate_coil_sensitivities(input_,
   return maps
 
 
+@api_util.export("coils.combine_coils")
 def combine_coils(images, maps=None, coil_axis=-1, keepdims=False):
   """Sum of squares or adaptive coil combination.
 
@@ -337,7 +340,7 @@ def _estimate_coil_sensitivities_espirit(kspace,
     kspace = tf.identity(kspace)
 
   # Get calibration region.
-  calib = image_ops.central_crop(kspace, calib_size + [-1])
+  calib = array_ops.central_crop(kspace, calib_size + [-1])
 
   # Construct the calibration block Hankel matrix.
   conv_size = [cs - ks + 1 for cs, ks in zip(calib_size, kernel_size)]
@@ -406,6 +409,7 @@ def _estimate_coil_sensitivities_espirit(kspace,
   return maps
 
 
+@api_util.export("coils.compress_coils")
 def compress_coils(kspace,
                    coil_axis=-1,
                    out_coils=None,
@@ -501,6 +505,7 @@ class _CoilCompressor():
     return self.fit(kspace).transform(kspace)
 
 
+@api_util.export("coils.CoilCompressorSVD")
 class CoilCompressorSVD(_CoilCompressor):
   """SVD-based coil compression.
 

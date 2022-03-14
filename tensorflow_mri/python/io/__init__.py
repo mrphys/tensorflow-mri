@@ -14,4 +14,4 @@
 # ==============================================================================
 """Input/output."""
 
-from tensorflow_mri.python.io.image_io import *
+from tensorflow_mri.python.io import image_io
