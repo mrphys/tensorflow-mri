@@ -16,6 +16,7 @@
 
 import functools
 
+import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
@@ -304,3 +305,88 @@ def soft_threshold(x, threshold, name=None):
                                      name='threshold')
     return tf.math.sign(x) * tf.cast(
         tf.math.maximum(tf.math.abs(x) - threshold, 0.), x.dtype)
+
+
+def indicator_unit_ball(x, order=2):
+  """Indicator function of the unit ball.
+
+  Returns 1 if `x` is in the unit ball, 0 otherwise.
+
+  Args:
+    x: A `tf.Tensor` of shape `[..., n]`.
+    order: An `int`. The order of the norm.
+
+  Returns:
+    A `tf.Tensor` of shape `[...]` and dtype equal to `x.dtype.real_dtype`.
+  """
+  x_norm = tf.math.real(tf.norm(x, ord=order, axis=-1))
+  zero = tf.constant(0.0, dtype=x.dtype.real_dtype)
+  inf = tf.constant(np.inf, dtype=x.dtype.real_dtype)
+  return tf.where(x_norm <= 1, zero, inf)  # multiplex
+
+
+# def projection_onto_unit_ball(x, order=2):
+#   """Projects an input vector onto the unit ball.
+
+#   Args:
+#     x: A `tf.Tensor` of shape `[..., n]`.
+
+#   Returns:
+#     A `tf.Tensor` of shape `[..., n]` and dtype equal to `x.dtype`.
+#   """
+#   if order == 2:
+#     x_norm = tf.math.real(tf.norm(x, ord=order, axis=-1, keepdims=True))
+#     return tf.where(x_norm <= 1, x, x / x_norm)
+#   if order == np.inf:
+
+
+@api_util.export("math.projection_onto_simplex")
+def projection_onto_simplex(x, radius=1.0):
+  """Projects an input vector onto the unit simplex.
+
+  Args:
+    x: A `tf.Tensor` of shape `[..., n]`.
+    radius: A scalar `tf.Tensor` of type `x.dtype.real_dtype`. The radius of
+      the simplex. Defaults to 1.0.
+
+  Returns:
+    A `tf.Tensor` of shape `[..., n]` and dtype equal to `x.dtype`.
+
+  Raises:
+    ValueError: If `x` has unknown rank.
+
+  References:
+    .. [1] Duchi, J., Shalev-Shwartz, S., Singer, Y., & Chandra, T. (2008).
+      Efficient projections onto the l1-ball for learning in high dimensions.
+      In Proceedings of the 25th International Conference on Machine Learning
+      (pp. 272-279).
+  """
+  x = tf.convert_to_tensor(x, name='x')
+  radius = tf.convert_to_tensor(radius, name='radius')
+  if radius.dtype != x.dtype.real_dtype:
+    radius = tf.cast(radius, x.dtype.real_dtype)
+  if radius.shape.rank != 0:
+    raise ValueError('radius must be a scalar.')
+
+  if x.shape.rank is None:
+    raise ValueError('input must have known rank.')
+
+  if x.shape.rank == 0:
+    return radius
+
+  # Sort the input vector[s] in descending order.
+  x_sorted = tf.sort(x, axis=-1, direction='DESCENDING')
+
+  # Find the critical indices.
+  ndim = tf.shape(x)[-1]  # Dimensionality of inputs.
+  j = tf.range(1, ndim + 1)  # [1, 2, ..., n]
+  x_sorted_accu = tf.math.cumsum(x_sorted, axis=-1)
+  avg = (x_sorted_accu - radius) / tf.cast(j, x.dtype)
+  rho = tf.math.reduce_max(tf.where(x_sorted >= avg, j - 1, 0), axis=-1)
+
+  # Compute the threshold.
+  threshold = tf.gather(avg, rho, axis=-1, batch_dims=(x.shape.rank - 1))
+  threshold = tf.expand_dims(threshold, -1)
+
+  # Compute the projection by shifting and thresholding.
+  return tf.math.maximum(x - threshold, 0)

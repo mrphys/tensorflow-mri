@@ -42,6 +42,15 @@ AdmmOptimizerResults = collections.namedtuple(
 )
 
 
+PdhgOptimizerResults = collections.namedtuple(
+    'PdhgOptimizerResults', [
+        'i',      # The number of iterations of the PDHG update.
+        'x',      # The primal variable.
+        'z',      # The dual variable.
+    ]
+)
+
+
 @api_util.export("convex.admm_minimize")
 def admm_minimize(function_f,
                   function_g,
@@ -198,7 +207,7 @@ def admm_minimize(function_f,
     return (not _stopping_condition(state)) and (state.i < max_iterations)
 
   def _body(state):  # pylint: disable=missing-param-doc
-    """A single ADMM step."""
+    """The ADMM update."""
     # x-minimization step.
     state_bz = tf.linalg.matvec(operator_b, state.z)
     if linearized:
@@ -320,6 +329,47 @@ def _get_admm_update_fn(function, operator):
   raise NotImplementedError(
       f"No rules to evaluate the ADMM update for function "
       f"{function.name} and operator {operator.name}.")
+
+
+# @api_util.export("convex.pdhg_minimize")
+# def pdhg_minimize(function_f,
+#                   function_g,
+#                   operator_a=None,
+#                   penalty_rho=1.0,
+#                   atol=1e-5,
+#                   rtol=1e-5,
+#                   max_iterations=50,
+#                   linearized=False):
+#   r"""Applies the PDHG algorithm to minimize a separable convex function.
+
+#   The primal-dual hybrid gradient (PDHG) algorithm may be used for minimization
+#   probles of the form :math:`f(x) + g(Az)`.
+
+#   Args:
+#     function_f: A `tfmri.convex.ConvexFunction`.
+#     function_g: A `tfmri.convex.ConvexFunction`.
+#     operator_a: A `tfmri.linalg.LinearOperator`.
+
+#   Returns:
+#   """
+#   def _cond(state):
+#     """Returns `True` if optimization should continue."""
+#     return False
+  
+#   def _body(state):
+#     """The PDHG update."""
+#     # x-minimization step.
+#     pass
+
+#   # Initial state.
+#   state = PdhgOptimizerResults(
+#       i=tf.constant(0, dtype=tf.dtypes.int32),
+#       x=tf.constant(0.0, dtype=dtype, shape=x_shape),
+#       z=tf.constant(0.0, dtype=dtype, shape=z_shape),
+#   state = _body(state)[0]
+
+#   return tf.while_loop(_cond, _body, [state])[0]
+
 
 
 @api_util.export("optimize.lbfgs_minimize")
