@@ -106,7 +106,6 @@ class ScaleMinmaxTest(test_util.TestCase):
           tf.math.angle(y) * mag, tf.math.angle(x) * mag)
 
 
-
 @test_util.run_all_in_graph_and_eager_modes
 class BlockSoftThresholdTest(test_util.TestCase):
   """Tests for `block_soft_threshold` operator."""
@@ -173,6 +172,26 @@ class SoftThresholdTest(test_util.TestCase):
     x = tf.convert_to_tensor(x, dtype=tf.complex64)
     y = math_ops.soft_threshold(x, threshold)
     self.assertAllClose(y, expected_y)
+
+
+@test_util.run_all_in_graph_and_eager_modes
+class IndicatorSimplexTest(test_util.TestCase):
+  """Tests for `indicator_ball` operator."""
+  @parameterized.parameters(
+      # x, radius, expected
+      (-1.0, 1.0, np.inf),
+      (0.95, 1.0, np.inf),
+      (1.0, 1.0, 0.0),
+      ([1.0], 1.0, 0.0),
+      ([1.5], 1.0, np.inf),
+      ([1.5, -2.0], 1.0, np.inf),
+      ([0.5, -0.5], 1.0, np.inf),
+      ([0.5, 0.5], 1.0, 0.0),
+      ([[0.5, 0.5], [0.3, 0.7], [-0.1, -0.9]], 1.0, [0.0, 0.0, np.inf])
+  )  # pylint: disable=missing-function-docstring
+  def test_indicator_simplex(self, x, radius, expected):
+    y = math_ops.indicator_simplex(x, radius=radius)
+    self.assertAllClose(expected, y)
 
 
 @test_util.run_all_in_graph_and_eager_modes

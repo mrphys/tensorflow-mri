@@ -307,11 +307,68 @@ def soft_threshold(x, threshold, name=None):
         tf.math.maximum(tf.math.abs(x) - threshold, 0.), x.dtype)
 
 
+@api_util.export("math.indicator_simplex")
+def indicator_simplex(x, radius=1.0, name=None):
+  r"""Indicator function of the simplex.
+
+  Returns `0` if `x` is in the simplex, `inf` otherwise.
+
+  The simplex of radius :math:`r` is defined as the set of points of
+  :math:`{R}^{n}` whose elements are nonnegative and sum up to `r`.
+
+  .. math::
+    \Delta_r = \left\{x \in \mathbb{R}^{n} : \sum_{i=1}^{n} x_i = r \text{ and } x_i >= 0, \forall i = 1, \dots, n \right\}
+
+  If :math:`r` is 1, the simplex is also called the unit simplex, standard
+  simplex or probability simplex.
+
+  Args:
+    x: A `tf.Tensor` of shape `[..., n]`.
+    radius: A scalar `tf.Tensor`. The radius of the circumscribed circle of the
+      simplex, or the distance to the vertices. Defaults to 1.
+    name: A `str`. The name of this operation.
+
+  Returns:
+    A `tf.Tensor` of shape `[...]` and dtype equal to `x.dtype.real_dtype`.
+
+  Raises:
+    ValueError: If inputs are invalid.
+  """
+  with tf.name_scope(name or 'indicator_ball'):
+    x = tf.convert_to_tensor(x, name='x')
+    radius = tf.convert_to_tensor(
+        radius, dtype=x.dtype.real_dtype, name='radius')
+    if radius.shape.rank != 0:
+      raise ValueError('radius must be a scalar.')
+
+    if x.shape.rank == 0:
+      non_negative = tf.math.greater_equal(x, 0.0)
+      sum_equals_radius = tf.math.equal(x, radius)
+    else:
+      non_negative = tf.math.reduce_all(x >= 0.0, axis=-1, keepdims=False)
+      sum_equals_radius = tf.math.equal(
+          tf.math.reduce_sum(x, axis=-1, keepdims=False), radius)
+    zero = tf.constant(0.0, dtype=x.dtype.real_dtype)
+    inf = tf.constant(np.inf, dtype=x.dtype.real_dtype)
+    cond = tf.math.logical_and(non_negative, sum_equals_radius)
+    return tf.where(cond, zero, inf)
+
+
 @api_util.export("math.indicator_ball")
 def indicator_ball(x, order=2, radius=1.0, name=None):
-  """Indicator function of the Lp ball.
+  r"""Indicator function of the Lp ball.
 
-  Returns 0 if `x` is in the Lp ball, `inf` otherwise.
+  Returns `0` if `x` is in the Lp ball, `inf` otherwise.
+
+  The :math:`L_p` ball of radius :math:`r` is defined as the set of points of
+  :math:`{R}^{n}` whose distance from the origin, as defined by the :math:`L_p`
+  norm, is less than or equal to :math:`r`.
+
+  .. math::
+    \mathcal{B}_r = \left\{x \in \mathbb{R}^{n} : \left\|x\right\|_{p} \leq r \right\}
+
+  If :math:`r` is 1, this ball is also called the unit ball of the
+  :math`L_p` norm.
 
   Args:
     x: A `tf.Tensor` of shape `[..., n]`.
@@ -366,8 +423,9 @@ def project_onto_simplex(x, radius=1.0, name=None):
 
   Args:
     x: A `tf.Tensor` of shape `[..., n]`.
-    radius: A scalar `tf.Tensor` of type `x.dtype.real_dtype`. The radius of
-      the simplex. Defaults to 1.0.
+    radius: A scalar `tf.Tensor`. Must have type `x.dtype.real_dtype`. The
+      radius of the circumscribed circle of the simplex, or the distance to
+      the vertices. Defaults to 1.
     name: A `str`. The name of this operation.
 
   Returns:
