@@ -176,6 +176,39 @@ class SoftThresholdTest(test_util.TestCase):
 
 
 @test_util.run_all_in_graph_and_eager_modes
+class IndicatorBallTest(test_util.TestCase):
+  """Tests for `indicator_ball` operator."""
+  @parameterized.parameters(
+      # x, radius, expected_l1, expected_l2, expected_linf
+      (-1.0, 1.0, 0.0, 0.0, 0.0),
+      (0.95, 1.0, 0.0, 0.0, 0.0),
+      (1.05, 1.0, np.inf, np.inf, np.inf),
+      (-1.5, 2.0, 0.0, 0.0, 0.0),
+      ([1.0], 1.0, 0.0, 0.0, 0.0),
+      ([0.5], 1.0, 0.0, 0.0, 0.0),
+      ([1.5], 1.0, np.inf, np.inf, np.inf),
+      ([1.5], 2.0, 0.0, 0.0, 0.0),
+      ([1.5, -2.0], 1.0, np.inf, np.inf, np.inf),
+      ([1.5, -2.0], 2.5, np.inf, 0.0, 0.0),
+      ([1.5, -2.0], 5.0, 0.0, 0.0, 0.0),
+      ([[1.0, 0.75], [-3., 4.]], 1.0,
+          [np.inf, np.inf], [np.inf, np.inf], [0.0, np.inf]),
+      ([[1.0, 0.75], [-3., 4.]], 2.0,
+          [0.0, np.inf], [0.0, np.inf], [0.0, np.inf]),
+      ([[0.1, -0.5, -0.2], [1., 4., -2.]], 3.0,
+          [0.0, np.inf], [0.0, np.inf], [0.0, np.inf]),
+  )  # pylint: disable=missing-function-docstring
+  def test_indicator_ball(self, x, radius,
+                          expected_l1, expected_l2, expected_linf):
+    orders = [1, 2, np.inf]
+    expecteds = [expected_l1, expected_l2, expected_linf]
+    for order, expected in zip(orders, expecteds):
+      with self.subTest(order=order):
+        y = math_ops.indicator_ball(x, order=order, radius=radius)
+        self.assertAllClose(expected, y)
+
+
+@test_util.run_all_in_graph_and_eager_modes
 class ProjectionOntoBoxTest(test_util.TestCase):
   """Tests for `projection_onto_box` operator."""
   @parameterized.parameters(
@@ -256,8 +289,6 @@ class ProjectionOntoBallTest(test_util.TestCase):
       with self.subTest(order=order):
         y = math_ops.projection_onto_ball(x, order=order, radius=radius)
         self.assertAllClose(expected, y)
-      y = math_ops.projection_onto_ball(x, radius=radius, order=order)
-      self.assertAllClose(expected, y)
 
 
 if __name__ == '__main__':

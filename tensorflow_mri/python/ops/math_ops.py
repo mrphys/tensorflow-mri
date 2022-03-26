@@ -323,7 +323,16 @@ def indicator_ball(x, order=2, radius=1.0, name=None):
     A `tf.Tensor` of shape `[...]` and dtype equal to `x.dtype.real_dtype`.
   """
   with tf.name_scope(name or 'indicator_ball'):
-    x_norm = tf.math.real(tf.norm(x, ord=order, axis=-1))
+    x = tf.convert_to_tensor(x, name='x')
+    radius = tf.convert_to_tensor(
+        radius, dtype=x.dtype.real_dtype, name='radius')
+    if radius.shape.rank != 0:
+      raise ValueError('radius must be a scalar.')
+
+    if x.shape.rank == 0:
+      x_norm = tf.math.abs(x)
+    else:
+      x_norm = tf.math.real(tf.norm(x, ord=order, axis=-1, keepdims=False))
     zero = tf.constant(0.0, dtype=x.dtype.real_dtype)
     inf = tf.constant(np.inf, dtype=x.dtype.real_dtype)
     return tf.where(x_norm <= radius, zero, inf)  # multiplex
@@ -372,9 +381,8 @@ def projection_onto_simplex(x, radius=1.0, name=None):
   """
   with tf.name_scope(name or 'projection_onto_simplex'):
     x = tf.convert_to_tensor(x, name='x')
-    radius = tf.convert_to_tensor(radius, name='radius')
-    if radius.dtype != x.dtype.real_dtype:
-      radius = tf.cast(radius, x.dtype.real_dtype)
+    radius = tf.convert_to_tensor(
+        radius, dtype=x.dtype.real_dtype, name='radius')
     if radius.shape.rank != 0:
       raise ValueError('radius must be a scalar.')
 
@@ -431,11 +439,8 @@ def projection_onto_ball(x, order=2, radius=1.0, name=None):
   """
   with tf.name_scope(name or 'projection_onto_ball'):
     x = tf.convert_to_tensor(x, name='x')
-    radius = tf.convert_to_tensor(radius, name='radius')
-    if radius.dtype != x.dtype.real_dtype:
-      radius = tf.cast(radius, x.dtype.real_dtype)
-    if radius.shape.rank != 0:
-      raise ValueError('radius must be a scalar.')
+    radius = tf.convert_to_tensor(
+        radius, dtype=x.dtype.real_dtype, name='radius')
     if x.shape.rank is None:
       raise ValueError('input must have known rank.')
 
