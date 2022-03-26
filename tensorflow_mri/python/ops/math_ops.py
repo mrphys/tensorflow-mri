@@ -307,53 +307,62 @@ def soft_threshold(x, threshold, name=None):
         tf.math.maximum(tf.math.abs(x) - threshold, 0.), x.dtype)
 
 
-def indicator_unit_ball(x, order=2):
-  """Indicator function of the unit ball.
+@api_util.export("math.indicator_ball")
+def indicator_ball(x, order=2, radius=1.0, name=None):
+  """Indicator function of the Lp ball.
 
-  Returns 1 if `x` is in the unit ball, 0 otherwise.
+  Returns 0 if `x` is in the Lp ball, `inf` otherwise.
 
   Args:
     x: A `tf.Tensor` of shape `[..., n]`.
-    order: An `int`. The order of the norm.
+    order: A `float`. The order of the norm. Defaults to 2.
+    radius: A scalar `tf.Tensor`. The radius of the ball. Defaults to 1.
+    name: A `str`. The name of this operation.
 
   Returns:
     A `tf.Tensor` of shape `[...]` and dtype equal to `x.dtype.real_dtype`.
   """
-  x_norm = tf.math.real(tf.norm(x, ord=order, axis=-1))
-  zero = tf.constant(0.0, dtype=x.dtype.real_dtype)
-  inf = tf.constant(np.inf, dtype=x.dtype.real_dtype)
-  return tf.where(x_norm <= 1, zero, inf)  # multiplex
+  with tf.name_scope(name or 'indicator_ball'):
+    x_norm = tf.math.real(tf.norm(x, ord=order, axis=-1))
+    zero = tf.constant(0.0, dtype=x.dtype.real_dtype)
+    inf = tf.constant(np.inf, dtype=x.dtype.real_dtype)
+    return tf.where(x_norm <= radius, zero, inf)  # multiplex
 
 
-# def projection_onto_unit_ball(x, order=2):
-#   """Projects an input vector onto the unit ball.
+@api_util.export("math.projection_onto_box")
+def projection_onto_box(x, lower_bound=-1.0, upper_bound=1.0, name=None):
+  """Projects an input vector onto the box.
 
-#   Args:
-#     x: A `tf.Tensor` of shape `[..., n]`.
+  Args:
+    x: A `tf.Tensor` of shape `[..., n]`.
+    lower_bound: A scalar `tf.Tensor` of type `x.dtype.real_dtype`. The lower
+      bound of the box. Defaults to -1.0.
+    upper_bound: A scalar `tf.Tensor` of type `x.dtype.real_dtype`. The upper
+      bound of the box. Defaults to 1.0.
+    name: A `str`. The name of this operation.
 
-#   Returns:
-#     A `tf.Tensor` of shape `[..., n]` and dtype equal to `x.dtype`.
-#   """
-#   if order == 2:
-#     x_norm = tf.math.real(tf.norm(x, ord=order, axis=-1, keepdims=True))
-#     return tf.where(x_norm <= 1, x, x / x_norm)
-#   if order == np.inf:
+  Returns:
+    A `tf.Tensor` of shape `[..., n]` and dtype equal to `x.dtype`.
+  """
+  with tf.name_scope(name or 'projection_onto_box'):
+    return tf.math.minimum(tf.math.maximum(x, lower_bound), upper_bound)
 
 
 @api_util.export("math.projection_onto_simplex")
-def projection_onto_simplex(x, radius=1.0):
-  """Projects an input vector onto the unit simplex.
+def projection_onto_simplex(x, radius=1.0, name=None):
+  """Projects an input vector onto the simplex.
 
   Args:
     x: A `tf.Tensor` of shape `[..., n]`.
     radius: A scalar `tf.Tensor` of type `x.dtype.real_dtype`. The radius of
       the simplex. Defaults to 1.0.
+    name: A `str`. The name of this operation.
 
   Returns:
     A `tf.Tensor` of shape `[..., n]` and dtype equal to `x.dtype`.
 
   Raises:
-    ValueError: If `x` has unknown rank.
+    ValueError: If inputs are invalid.
 
   References:
     .. [1] Duchi, J., Shalev-Shwartz, S., Singer, Y., & Chandra, T. (2008).
@@ -361,32 +370,95 @@ def projection_onto_simplex(x, radius=1.0):
       In Proceedings of the 25th International Conference on Machine Learning
       (pp. 272-279).
   """
-  x = tf.convert_to_tensor(x, name='x')
-  radius = tf.convert_to_tensor(radius, name='radius')
-  if radius.dtype != x.dtype.real_dtype:
-    radius = tf.cast(radius, x.dtype.real_dtype)
-  if radius.shape.rank != 0:
-    raise ValueError('radius must be a scalar.')
+  with tf.name_scope(name or 'projection_onto_simplex'):
+    x = tf.convert_to_tensor(x, name='x')
+    radius = tf.convert_to_tensor(radius, name='radius')
+    if radius.dtype != x.dtype.real_dtype:
+      radius = tf.cast(radius, x.dtype.real_dtype)
+    if radius.shape.rank != 0:
+      raise ValueError('radius must be a scalar.')
 
-  if x.shape.rank is None:
-    raise ValueError('input must have known rank.')
+    if x.shape.rank is None:
+      raise ValueError('input must have known rank.')
 
-  if x.shape.rank == 0:
-    return radius
+    if x.shape.rank == 0:
+      return radius
 
-  # Sort the input vector[s] in descending order.
-  x_sorted = tf.sort(x, axis=-1, direction='DESCENDING')
+    # Sort the input vector[s] in descending order.
+    x_sorted = tf.sort(x, axis=-1, direction='DESCENDING')
 
-  # Find the critical indices.
-  ndim = tf.shape(x)[-1]  # Dimensionality of inputs.
-  j = tf.range(1, ndim + 1)  # [1, 2, ..., n]
-  x_sorted_accu = tf.math.cumsum(x_sorted, axis=-1)
-  avg = (x_sorted_accu - radius) / tf.cast(j, x.dtype)
-  rho = tf.math.reduce_max(tf.where(x_sorted >= avg, j - 1, 0), axis=-1)
+    # Find the critical indices.
+    ndim = tf.shape(x)[-1]  # Dimensionality of inputs.
+    j = tf.range(1, ndim + 1)  # [1, 2, ..., n]
+    x_sorted_accu = tf.math.cumsum(x_sorted, axis=-1)
+    avg = (x_sorted_accu - radius) / tf.cast(j, x.dtype)
+    rho = tf.math.reduce_max(tf.where(x_sorted >= avg, j - 1, 0), axis=-1)
 
-  # Compute the threshold.
-  threshold = tf.gather(avg, rho, axis=-1, batch_dims=(x.shape.rank - 1))
-  threshold = tf.expand_dims(threshold, -1)
+    # Compute the threshold.
+    threshold = tf.gather(avg, rho, axis=-1, batch_dims=(x.shape.rank - 1))
+    threshold = tf.expand_dims(threshold, -1)
 
-  # Compute the projection by shifting and thresholding.
-  return tf.math.maximum(x - threshold, 0)
+    # Compute the projection by shifting and thresholding.
+    return tf.math.maximum(x - threshold, 0)
+
+
+@api_util.export("math.projection_onto_ball")
+def projection_onto_ball(x, order=2, radius=1.0, name=None):
+  """Projects an input vector onto the Lp ball.
+
+  Args:
+    x: A `tf.Tensor` of shape `[..., n]`.
+    order: A `float`. The order of the norm. Must be `1`, `2`, or `np.inf`.
+    radius: A scalar `tf.Tensor` of type `x.dtype.real_dtype`. The radius of
+      the ball. Defaults to 1.0.
+    name: A `str`. The name of this operation.
+
+  Returns:
+    A `tf.Tensor` of shape `[..., n]` and dtype equal to `x.dtype`.
+
+  Raises:
+    NotImplementedError: If `order` is not `1`, `2`, or `np.inf`.
+    ValueError: If inputs are invalid.
+
+  References:
+    .. [1] Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
+      Trends in optimization, 1(3), 127-239.
+
+    .. [2] Duchi, J., Shalev-Shwartz, S., Singer, Y., & Chandra, T. (2008).
+      Efficient projections onto the l1-ball for learning in high dimensions.
+      In Proceedings of the 25th International Conference on Machine Learning
+      (pp. 272-279).
+  """
+  with tf.name_scope(name or 'projection_onto_ball'):
+    x = tf.convert_to_tensor(x, name='x')
+    radius = tf.convert_to_tensor(radius, name='radius')
+    if radius.dtype != x.dtype.real_dtype:
+      radius = tf.cast(radius, x.dtype.real_dtype)
+    if radius.shape.rank != 0:
+      raise ValueError('radius must be a scalar.')
+    if x.shape.rank is None:
+      raise ValueError('input must have known rank.')
+
+    if order == 1:
+      proj_simplex = tf.math.sign(x) * projection_onto_simplex(
+          tf.math.abs(x), radius=radius)
+      if x.shape.rank == 0:
+        x_norm = tf.math.abs(x)
+      else:
+        x_norm = tf.math.real(tf.norm(x, ord=1, axis=-1, keepdims=True))
+      return tf.where(x_norm <= radius, x, proj_simplex)
+
+    if order == 2:
+      if x.shape.rank == 0:
+        x_norm = tf.math.abs(x) / radius
+      else:
+        x_norm = tf.math.real(tf.norm(x, ord=2, axis=-1, keepdims=True))
+        x_norm /= radius
+      return tf.where(x_norm <= 1.0, x, x / x_norm)
+
+    if order == np.inf:
+      # The L-infinity ball is a box.
+      return projection_onto_box(x, lower_bound=-radius, upper_bound=radius)
+
+    raise NotImplementedError(
+        f"Projection onto the L-{order} ball is not implemented.")
