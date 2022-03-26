@@ -321,6 +321,9 @@ def indicator_ball(x, order=2, radius=1.0, name=None):
 
   Returns:
     A `tf.Tensor` of shape `[...]` and dtype equal to `x.dtype.real_dtype`.
+
+  Raises:
+    ValueError: If inputs are invalid.
   """
   with tf.name_scope(name or 'indicator_ball'):
     x = tf.convert_to_tensor(x, name='x')
