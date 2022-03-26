@@ -277,9 +277,14 @@ class ConvexFunctionIndicatorBall(ConvexFunction):
     self._order = check_util.validate_enum(order, [1, 2, np.inf], name='order')
 
   def _call(self, x):
-    return self._scale * math_ops.indicator_ball(x, order=self._order)
+    # Note that the scale has no effect, as the indicator function is always
+    # zero or infinity.
+    return math_ops.indicator_ball(x, order=self._order)
 
-  # def _prox(self, x):
+  def _prox(self, x, scale=None):
+    # The proximal operator of the indicator function of a closed convex set
+    # (such as the Lp ball) is the projection onto the set.
+    return math_ops.project_onto_ball(x, order=self._order)
 
   def _conj(self):
     # The convex conjugate of the indicator function on the unit ball defined
@@ -471,7 +476,7 @@ class ConvexFunctionL2NormSquared(ConvexFunction):
 
 @api_util.export("convex.ConvexFunctionTikhonov")
 class ConvexFunctionTikhonov(ConvexFunctionAffineMappingComposition):  # pylint: disable=abstract-method
-  r"""Tikhonov convex function.
+  r"""A `ConvexFunction` representing a Tikhonov regularization term.
 
   For a given input :math:`x`, computes
   :math:`\lambda \left\| T(x - x_0) \right\|_2^2`, where :math:`\lambda` is a
@@ -526,7 +531,7 @@ class ConvexFunctionTikhonov(ConvexFunctionAffineMappingComposition):  # pylint:
 
 @api_util.export("convex.ConvexFunctionTotalVariation")
 class ConvexFunctionTotalVariation(ConvexFunctionLinearOperatorComposition):  # pylint: disable=abstract-method
-  r"""Total variation convex function.
+  r"""A `ConvexFunction` representing a total variation regularization term.
 
   For a given input :math:`x`, computes :math:`\lambda \left\| Dx \right\|_1`,
   where :math:`\lambda` is a scaling factor and :math:`D` is the finite

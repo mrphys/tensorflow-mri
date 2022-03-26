@@ -341,8 +341,8 @@ def indicator_ball(x, order=2, radius=1.0, name=None):
     return tf.where(x_norm <= radius, zero, inf)  # multiplex
 
 
-@api_util.export("math.projection_onto_box")
-def projection_onto_box(x, lower_bound=-1.0, upper_bound=1.0, name=None):
+@api_util.export("math.project_onto_box")
+def project_onto_box(x, lower_bound=-1.0, upper_bound=1.0, name=None):
   """Projects an input vector onto the box.
 
   Args:
@@ -356,12 +356,12 @@ def projection_onto_box(x, lower_bound=-1.0, upper_bound=1.0, name=None):
   Returns:
     A `tf.Tensor` of shape `[..., n]` and dtype equal to `x.dtype`.
   """
-  with tf.name_scope(name or 'projection_onto_box'):
+  with tf.name_scope(name or 'project_onto_box'):
     return tf.math.minimum(tf.math.maximum(x, lower_bound), upper_bound)
 
 
-@api_util.export("math.projection_onto_simplex")
-def projection_onto_simplex(x, radius=1.0, name=None):
+@api_util.export("math.project_onto_simplex")
+def project_onto_simplex(x, radius=1.0, name=None):
   """Projects an input vector onto the simplex.
 
   Args:
@@ -382,7 +382,7 @@ def projection_onto_simplex(x, radius=1.0, name=None):
       In Proceedings of the 25th International Conference on Machine Learning
       (pp. 272-279).
   """
-  with tf.name_scope(name or 'projection_onto_simplex'):
+  with tf.name_scope(name or 'project_onto_simplex'):
     x = tf.convert_to_tensor(x, name='x')
     radius = tf.convert_to_tensor(
         radius, dtype=x.dtype.real_dtype, name='radius')
@@ -413,8 +413,8 @@ def projection_onto_simplex(x, radius=1.0, name=None):
     return tf.math.maximum(x - threshold, 0)
 
 
-@api_util.export("math.projection_onto_ball")
-def projection_onto_ball(x, order=2, radius=1.0, name=None):
+@api_util.export("math.project_onto_ball")
+def project_onto_ball(x, order=2, radius=1.0, name=None):
   """Projects an input vector onto the Lp ball.
 
   Args:
@@ -440,7 +440,7 @@ def projection_onto_ball(x, order=2, radius=1.0, name=None):
       In Proceedings of the 25th International Conference on Machine Learning
       (pp. 272-279).
   """
-  with tf.name_scope(name or 'projection_onto_ball'):
+  with tf.name_scope(name or 'project_onto_ball'):
     x = tf.convert_to_tensor(x, name='x')
     radius = tf.convert_to_tensor(
         radius, dtype=x.dtype.real_dtype, name='radius')
@@ -448,7 +448,7 @@ def projection_onto_ball(x, order=2, radius=1.0, name=None):
       raise ValueError('input must have known rank.')
 
     if order == 1:
-      proj_simplex = tf.math.sign(x) * projection_onto_simplex(
+      proj_simplex = tf.math.sign(x) * project_onto_simplex(
           tf.math.abs(x), radius=radius)
       if x.shape.rank == 0:
         x_norm = tf.math.abs(x)
@@ -466,7 +466,7 @@ def projection_onto_ball(x, order=2, radius=1.0, name=None):
 
     if order == np.inf:
       # The L-infinity ball is a box.
-      return projection_onto_box(x, lower_bound=-radius, upper_bound=radius)
+      return project_onto_box(x, lower_bound=-radius, upper_bound=radius)
 
     raise NotImplementedError(
         f"Projection onto the L-{order} ball is not implemented.")

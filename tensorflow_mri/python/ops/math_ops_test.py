@@ -210,7 +210,7 @@ class IndicatorBallTest(test_util.TestCase):
 
 @test_util.run_all_in_graph_and_eager_modes
 class ProjectionOntoBoxTest(test_util.TestCase):
-  """Tests for `projection_onto_box` operator."""
+  """Tests for `project_onto_box` operator."""
   @parameterized.parameters(
       # x, lbound, ubound, expected
       (0.5, 0.5, 0.5, 0.5),
@@ -226,14 +226,14 @@ class ProjectionOntoBoxTest(test_util.TestCase):
       ([1., 2., 3.], 1., 2., [1., 2., 2.]),
       ([[2.1, -1.3], [0.7, 2.2]], -2., 2., [[2., -1.3], [0.7, 2.]])
   )  # pylint: disable=missing-function-docstring
-  def test_projection_onto_simplex(self, x, lbound, ubound, expected):
-    y = math_ops.projection_onto_box(x, lower_bound=lbound, upper_bound=ubound)
+  def test_project_onto_simplex(self, x, lbound, ubound, expected):
+    y = math_ops.project_onto_box(x, lower_bound=lbound, upper_bound=ubound)
     self.assertAllClose(expected, y)
 
 
 @test_util.run_all_in_graph_and_eager_modes
 class ProjectionOntoSimplexTest(test_util.TestCase):
-  """Tests for `projection_onto_simplex` operator."""
+  """Tests for `project_onto_simplex` operator."""
   @parameterized.parameters(
       # x, radius, expected
       (0.5, 0.5, 0.5),
@@ -252,14 +252,14 @@ class ProjectionOntoSimplexTest(test_util.TestCase):
       ([1., 2., 3.], 2., [0.0, 0.5, 1.5]),
       ([[2.1, 1.3], [0.7, 2.2]], 1.6, [[1.2, 0.4], [0.05, 1.55]])
   )  # pylint: disable=missing-function-docstring
-  def test_projection_onto_simplex(self, x, radius, expected):
-    y = math_ops.projection_onto_simplex(x, radius=radius)
+  def test_project_onto_simplex(self, x, radius, expected):
+    y = math_ops.project_onto_simplex(x, radius=radius)
     self.assertAllClose(expected, y)
 
 
 @test_util.run_all_in_graph_and_eager_modes
 class ProjectionOntoBallTest(test_util.TestCase):
-  """Tests for `projection_onto_ball` operator."""
+  """Tests for `project_onto_ball` operator."""
   @parameterized.parameters(
       # x, radius, expected_l1, expected_l2, expected_linf
       (0.5, 0.5, 0.5, 0.5, 0.5),
@@ -281,13 +281,13 @@ class ProjectionOntoBallTest(test_util.TestCase):
       ([[-3., 4.], [0.0, -1.5]], 2.0, [[-0.5, 1.5], [0.0, -1.5]],
           [[-1.2, 1.6], [0.0, -1.5]], [[-2., 2.], [0.0, -1.5]])
   )  # pylint: disable=missing-function-docstring
-  def test_projection_onto_ball(self, x, radius,
+  def test_project_onto_ball(self, x, radius,
                                 expected_l1, expected_l2, expected_linf):
     orders = [1, 2, np.inf]
     expecteds = [expected_l1, expected_l2, expected_linf]
     for order, expected in zip(orders, expecteds):
       with self.subTest(order=order):
-        y = math_ops.projection_onto_ball(x, order=order, radius=radius)
+        y = math_ops.project_onto_ball(x, order=order, radius=radius)
         self.assertAllClose(expected, y)
 
 

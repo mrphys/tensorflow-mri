@@ -122,6 +122,18 @@ class ConvexFunctionIndicatorL1BallTest(test_util.TestCase):
     f = convex_ops.ConvexFunctionIndicatorL1Ball(scale=scale)
     self.assertAllClose(expected, f(x))
 
+  @parameterized.parameters(
+      ([0.], 1., [0.]),
+      ([0.8], 1., [0.8]),
+      ([-4.], 1., [-1.]),
+      ([4., 3.], 1., [1.0, 0.0]),
+      ([0., 0.5], 1., [0.0, 0.5]),
+      ([[-3., 4.], [0.0, -1.5]], 1., [[0.0, 1.0], [0.0, -1.0]])
+  )
+  def test_prox(self, x, scale, expected):
+    f = convex_ops.ConvexFunctionIndicatorL1Ball(scale=scale)
+    self.assertAllClose(expected, f.prox(x))
+
   def test_conj(self):
     f = convex_ops.ConvexFunctionIndicatorL1Ball()
     self.assertIsInstance(f.conj(), convex_ops.ConvexFunctionNorm)
@@ -147,6 +159,18 @@ class ConvexFunctionIndicatorL2BallTest(test_util.TestCase):
   def test_call(self, x, scale, expected):
     f = convex_ops.ConvexFunctionIndicatorL2Ball(scale=scale)
     self.assertAllClose(expected, f(x))
+
+  @parameterized.parameters(
+      ([0.], 1., [0.]),
+      ([0.8], 1., [0.8]),
+      ([-4.], 1., [-1.]),
+      ([4., 3.], 1., [0.8, 0.6]),
+      ([0., 0.5], 1., [0.0, 0.5]),
+      ([[-3., 4.], [0.0, -1.5]], 1., [[-0.6, 0.8], [0.0, -1.0]])
+  )
+  def test_prox(self, x, scale, expected):
+    f = convex_ops.ConvexFunctionIndicatorL2Ball(scale=scale)
+    self.assertAllClose(expected, f.prox(x))
 
   def test_conj(self):
     f = convex_ops.ConvexFunctionIndicatorL2Ball()
