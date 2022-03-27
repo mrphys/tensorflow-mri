@@ -4,9 +4,25 @@ Release 0.13.0
 Major Features and Improvements
 -------------------------------
 
+* ``tfmri.convex``:
+
+  * Added new classes ``ConvexFunctionNorm``, ``ConvexFunctionIndicatorBall``,
+    ``ConvexFunctionIndicatorL1Ball`` and ``ConvexFunctionIndicatorL2Ball``.
+  * Added new method ``conj`` to ``ConvexFunction`` and its subclasses to
+    support computation of convex conjugates.
+
 * ``tfmri.math``:
 
-  * Added new indicator ops: ``indicator_box``, ``indicator_simplex`` and
+  * Added new indicator functions: ``indicator_box``, ``indicator_simplex`` and
     ``indicator_ball``.
-  * Added new projection ops: ``project_onto_box``, ``project_onto_simplex``
-    and ``project_onto_ball``.
+  * Added new projection functions: ``project_onto_box``,
+    ``project_onto_simplex`` and ``project_onto_ball``.
+
+
+Bug Fixes and Other Changes
+---------------------------
+
+* ``tfmri.convex``:
+
+  * ``ConvexFunction`` will no longer raise an error when passed a
+    ``tf.Tensor`` in the ``scale`` parameter.

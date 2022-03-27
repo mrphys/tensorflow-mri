@@ -175,8 +175,29 @@ class SoftThresholdTest(test_util.TestCase):
 
 
 @test_util.run_all_in_graph_and_eager_modes
+class IndicatorBoxTest(test_util.TestCase):
+  """Tests for `indicator_box` operator."""
+  @parameterized.parameters(
+      # x, lower_bound, upper_bound, expected
+      (-1.1, -1.0, 1.0, np.inf),
+      (-0.9, -1.0, 1.0, 0.0),
+      ([0.9], -1.0, 1.0, 0.0),
+      ([1.1], -1.0, 1.0, np.inf),
+      ([0.0], -1.0, 1.0, 0.0),
+      ([1.8], -1.0, 2.0, 0.0),
+      ([1.5, -2.0], -2.0, 2.0, 0.0),
+      ([-0.5, 1.5], -1.0, 1.0, np.inf),
+      ([[0.5, 0.5], [-0.5, 0.5], [-0.5, 1.5]], 0.0, 1.0, [0.0, np.inf, np.inf])
+  )  # pylint: disable=missing-function-docstring
+  def test_indicator_box(self, x, lower_bound, upper_bound, expected):
+    y = math_ops.indicator_box(
+        x, lower_bound=lower_bound, upper_bound=upper_bound)
+    self.assertAllClose(expected, y)
+
+
+@test_util.run_all_in_graph_and_eager_modes
 class IndicatorSimplexTest(test_util.TestCase):
-  """Tests for `indicator_ball` operator."""
+  """Tests for `indicator_simplex` operator."""
   @parameterized.parameters(
       # x, radius, expected
       (-1.0, 1.0, np.inf),

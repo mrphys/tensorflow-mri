@@ -307,6 +307,58 @@ def soft_threshold(x, threshold, name=None):
         tf.math.maximum(tf.math.abs(x) - threshold, 0.), x.dtype)
 
 
+@api_util.export("math.indicator_box")
+def indicator_box(x, lower_bound=-1.0, upper_bound=1.0, name=None):
+  r"""Indicator function of a box.
+
+  Returns `0` if `x` is in the box, `inf` otherwise.
+
+  The box of radius :math:`r` is defined as the set of points of
+  :math:`{R}^{n}` whose components are within the range :math:`[l, u]`.
+
+  .. math::
+    \mathcal{C} = \left\{x \in \mathbb{R}^{n} : l \leq x_i \leq u, \forall i = 1, \dots, n \right\}
+
+  Args:
+    x: A `tf.Tensor` of shape `[..., n]`.
+    lower_bound: A scalar `tf.Tensor`. The lower bound of the box.
+      Defaults to -1.
+    upper_bound: A scalar `tf.Tensor`. The upper bound of the box.
+      Defaults to 1.
+    name: A `str`. The name of this operation.
+
+  Returns:
+    A `tf.Tensor` of shape `[...]` and dtype equal to `x.dtype.real_dtype`.
+
+  Raises:
+    ValueError: If inputs are invalid.
+  """
+  with tf.name_scope(name or 'indicator_box'):
+    x = tf.convert_to_tensor(x, name='x')
+    lower_bound = tf.convert_to_tensor(
+        lower_bound, dtype=x.dtype.real_dtype, name='lower_bound')
+    if lower_bound.shape.rank != 0:
+      raise ValueError('lower_bound must be a scalar.')
+    upper_bound = tf.convert_to_tensor(
+        upper_bound, dtype=x.dtype.real_dtype, name='upper_bound')
+    if upper_bound.shape.rank != 0:
+      raise ValueError('upper_bound must be a scalar.')
+
+    if x.shape.rank == 0:
+      within_lbound = tf.math.greater_equal(x, lower_bound)
+      within_ubound = tf.math.less_equal(x, upper_bound)
+    else:
+      within_lbound = tf.math.reduce_all(
+          tf.math.greater_equal(x, lower_bound), axis=-1, keepdims=False)
+      within_ubound = tf.math.reduce_all(
+          tf.math.less_equal(x, upper_bound), axis=-1, keepdims=False)
+
+    zero = tf.constant(0.0, dtype=x.dtype.real_dtype)
+    inf = tf.constant(np.inf, dtype=x.dtype.real_dtype)
+    cond = tf.math.logical_and(within_lbound, within_ubound)
+    return tf.where(cond, zero, inf)
+
+
 @api_util.export("math.indicator_simplex")
 def indicator_simplex(x, radius=1.0, name=None):
   r"""Indicator function of the simplex.
@@ -314,7 +366,7 @@ def indicator_simplex(x, radius=1.0, name=None):
   Returns `0` if `x` is in the simplex, `inf` otherwise.
 
   The simplex of radius :math:`r` is defined as the set of points of
-  :math:`{R}^{n}` whose elements are nonnegative and sum up to `r`.
+  :math:`\mathbb{R}^{n}` whose elements are nonnegative and sum up to `r`.
 
   .. math::
     \Delta_r = \left\{x \in \mathbb{R}^{n} : \sum_{i=1}^{n} x_i = r \text{ and } x_i >= 0, \forall i = 1, \dots, n \right\}
@@ -345,7 +397,8 @@ def indicator_simplex(x, radius=1.0, name=None):
       non_negative = tf.math.greater_equal(x, 0.0)
       sum_equals_radius = tf.math.equal(x, radius)
     else:
-      non_negative = tf.math.reduce_all(x >= 0.0, axis=-1, keepdims=False)
+      non_negative = tf.math.reduce_all(
+          tf.math.greater_equal(x, 0.0), axis=-1, keepdims=False)
       sum_equals_radius = tf.math.equal(
           tf.math.reduce_sum(x, axis=-1, keepdims=False), radius)
     zero = tf.constant(0.0, dtype=x.dtype.real_dtype)
@@ -395,7 +448,7 @@ def indicator_ball(x, order=2, radius=1.0, name=None):
       x_norm = tf.math.real(tf.norm(x, ord=order, axis=-1, keepdims=False))
     zero = tf.constant(0.0, dtype=x.dtype.real_dtype)
     inf = tf.constant(np.inf, dtype=x.dtype.real_dtype)
-    return tf.where(x_norm <= radius, zero, inf)  # multiplex
+    return tf.where(tf.math.less_equal(x_norm, radius), zero, inf)  # multiplex
 
 
 @api_util.export("math.project_onto_box")
@@ -512,7 +565,7 @@ def project_onto_ball(x, order=2, radius=1.0, name=None):
         x_norm = tf.math.abs(x)
       else:
         x_norm = tf.math.real(tf.norm(x, ord=1, axis=-1, keepdims=True))
-      return tf.where(x_norm <= radius, x, proj_simplex)
+      return tf.where(tf.math.less_equal(x_norm, radius), x, proj_simplex)
 
     if order == 2:
       if x.shape.rank == 0:
@@ -520,7 +573,7 @@ def project_onto_ball(x, order=2, radius=1.0, name=None):
       else:
         x_norm = tf.math.real(tf.norm(x, ord=2, axis=-1, keepdims=True))
         x_norm /= radius
-      return tf.where(x_norm <= 1.0, x, x / x_norm)
+      return tf.where(tf.math.less_equal(x_norm, 1.0), x, x / x_norm)
 
     if order == np.inf:
       # The L-infinity ball is a box.
