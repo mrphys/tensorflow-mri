@@ -18,6 +18,12 @@ Major Features and Improvements
   * Added new projection functions: ``project_onto_box``,
     ``project_onto_simplex`` and ``project_onto_ball``.
 
+* ``tfmri.plot``:
+
+  * ``image_sequence`` and ``tiled_image_sequence`` now support RGB(A) data.
+  * ``image_sequence`` and ``tiled_image_sequence`` now support use of
+    titles via the arguments ``fig_title`` and ``subplot_titles``. 
+
 
 Bug Fixes and Other Changes
 ---------------------------

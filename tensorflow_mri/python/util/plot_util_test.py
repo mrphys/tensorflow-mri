@@ -30,8 +30,25 @@ class PlotImageSequenceTest(test_util.TestCase):
     rng = np.random.default_rng(432)
     images = rng.random((10, 16, 16))
     # Create a dummy figure.
-    fig = plot_util.plot_image_sequence(images)
-    self.assertIsInstance(fig, ani.ArtistAnimation)
+    anim = plot_util.plot_image_sequence(images)
+    self.assertIsInstance(anim, ani.ArtistAnimation)
+
+  def test_rgb(self):
+    """Test with RGB data."""
+    # Create a dummy image sequence.
+    rng = np.random.default_rng(432)
+    images = rng.random((10, 16, 16, 3))
+    # Create a dummy figure.
+    plot_util.plot_image_sequence(images)
+
+  def test_fig_title(self):
+    """Test figure title."""
+    # Create a dummy image sequence.
+    rng = np.random.default_rng(432)
+    images = rng.random((10, 16, 16, 3))
+    # Create a dummy figure.
+    plot_util.plot_image_sequence(
+        images, fig_title='Title')
 
 
 class PlotTiledImageSequenceTest(test_util.TestCase):
@@ -43,5 +60,31 @@ class PlotTiledImageSequenceTest(test_util.TestCase):
     rng = np.random.default_rng(432)
     images = rng.random((4, 10, 16, 16))
     # Create a dummy figure.
-    fig = plot_util.plot_tiled_image_sequence(images)
-    self.assertIsInstance(fig, ani.ArtistAnimation)
+    anim = plot_util.plot_tiled_image_sequence(images)
+    self.assertIsInstance(anim, ani.ArtistAnimation)
+
+  def test_rgb(self):
+    """Test with RGB data."""
+    # Create a dummy image sequence.
+    rng = np.random.default_rng(432)
+    images = rng.random((4, 10, 16, 16, 3))
+    # Create a dummy figure.
+    plot_util.plot_tiled_image_sequence(images)
+
+  def test_subplot_titles(self):
+    """Test subplot titles."""
+    # Create a dummy image sequence.
+    rng = np.random.default_rng(432)
+    images = rng.random((4, 10, 16, 16, 3))
+    # Create a dummy figure.
+    plot_util.plot_tiled_image_sequence(
+        images, subplot_titles=['A', 'B', 'C', 'D'])
+
+  def test_fig_title(self):
+    """Test figure title."""
+    # Create a dummy image sequence.
+    rng = np.random.default_rng(432)
+    images = rng.random((4, 10, 16, 16, 3))
+    # Create a dummy figure.
+    plot_util.plot_tiled_image_sequence(
+        images, fig_title='Title')

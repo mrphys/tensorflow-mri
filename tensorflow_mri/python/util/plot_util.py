@@ -32,19 +32,24 @@ def plot_image_sequence(images,
                         cmap='gray',
                         fps=20.0,
                         fig_size=None,
-                        bg_color='dimgray'):
+                        bg_color='dimgray',
+                        fig_title=None):
   """Plots a sequence of images.
 
   Args:
-    images: A 3D `np.ndarray` of shape `[time, height, width]`.
+    images: A 3D `np.ndarray` of shape `[time, height, width]` (scalar values,
+      mapped to colors using `cmap`) or a 4D `np.ndarray` of shape
+      `[time, height, width, 3]` (RGB) or `[time, height, width, 4]` (RGBA).
     part: An optional `str`. The part to display for complex numbers. One of
       `'abs'`, `'angle'`, `'real'` or `'imag'`. Must be specified if `images`
       has complex dtype.
     cmap: A `str` or `matplotlib.colors.Colormap`_. The colormap used to map
-      pixel values to colors. Defaults to `'gray'`.
+      scalar values to colors. This parameter is ignored for RGB(A) data.
+      Defaults to `'gray'`.
     fps: A `float`. The number of frames per second. Defaults to 20.
     fig_size: A `tuple` of `float`s. Width and height of the figure in inches.
     bg_color: A `color`_. The background color.
+    fig_title: A `str`. The title of the figure.
 
   Returns:
     A `matplotlib.animation.ArtistAnimation`_ object.
@@ -53,9 +58,12 @@ def plot_image_sequence(images,
   .. _matplotlib.animation.ArtistAnimation: https://matplotlib.org/stable/api/_as_gen/matplotlib.animation.ArtistAnimation.html
   .. _matplotlib.colors.Colormap: https://matplotlib.org/stable/api/_as_gen/matplotlib.colors.Colormap.html
   """
-  images = _preprocess_image(images, part=part, expected_ndim=3)
+  images = _preprocess_image(images, part=part, expected_ndim=(3, 4))
 
   fig = plt.figure(figsize=fig_size, facecolor=bg_color)
+  if fig_title is not None:
+    fig.suptitle(fig_title)
+
   artists = []
   for image in images:
     artist = plt.imshow(image,
@@ -75,22 +83,28 @@ def plot_image_sequence(images,
 
 @api_util.export("plot.tiled_image_sequence")
 def plot_tiled_image_sequence(images,
-                               part=None,
-                               cmap='gray',
-                               fps=20.0,
-                               fig_size=None,
-                               bg_color='dimgray',
-                               aspect=1.77,  # 16:9
-                               grid_shape=None):
+                              part=None,
+                              cmap='gray',
+                              fps=20.0,
+                              fig_size=None,
+                              bg_color='dimgray',
+                              aspect=1.77,  # 16:9
+                              grid_shape=None,
+                              fig_title=None,
+                              subplot_titles=None):
   r"""Plots one or more image sequences in a grid.
 
   Args:
-    images: A 4D `np.ndarray` of shape `[batch, time, height, width]`.
+    images: A 4D `np.ndarray` of shape `[batch, time, height, width]` (scalar
+      values, mapped to colors using `cmap`) or a 5D `np.ndarray` of shape
+      `[batch, time, height, width, 3]` (RGB) or
+      `[batch, time, height, width, 4]` (RGBA).
     part: An optional `str`. The part to display for complex numbers. One of
       `'abs'`, `'angle'`, `'real'` or `'imag'`. Must be specified if `images`
       has complex dtype.
     cmap: A `str` or `matplotlib.colors.Colormap`_. The colormap used to map
-      pixel values to colors. Defaults to `'gray'`.
+      scalar values to colors. This parameter is ignored for RGB(A) data.
+      Defaults to `'gray'`.
     fps: A `float`. The number of frames per second. Defaults to 20.
     aspect: A `float`. The desired aspect ratio of the overall figure. Ignored
       if `grid_shape` is specified.
@@ -98,6 +112,8 @@ def plot_tiled_image_sequence(images,
       grid. If `None`, the grid shape is computed from `aspect`.
     fig_size: A `tuple` of `float`s. Width and height of the figure in inches.
     bg_color: A `color`_. The background color.
+    fig_title: A `str`. The title of the figure.
+    subplot_titles: A `list` of `str`s. The titles of the subplots.
 
   Returns:
     A `matplotlib.animation.ArtistAnimation`_ object.
@@ -106,8 +122,8 @@ def plot_tiled_image_sequence(images,
   .. _matplotlib.animation.ArtistAnimation: https://matplotlib.org/stable/api/_as_gen/matplotlib.animation.ArtistAnimation.html
   .. _matplotlib.colors.Colormap: https://matplotlib.org/stable/api/_as_gen/matplotlib.colors.Colormap.html
   """
-  images = _preprocess_image(images, part=part, expected_ndim=4)
-  num_tiles, num_frames, image_rows, image_cols = images.shape
+  images = _preprocess_image(images, part=part, expected_ndim=(4, 5))
+  num_tiles, num_frames, image_rows, image_cols = images.shape[:4]
 
   # Compute the number of rows and cols for tile.
   if grid_shape is not None:
@@ -118,6 +134,8 @@ def plot_tiled_image_sequence(images,
 
   fig, axs = plt.subplots(grid_rows, grid_cols,
                           figsize=fig_size, facecolor=bg_color)
+  if fig_title is not None:
+    fig.suptitle(fig_title)
 
   artists = []
   for frame_idx in range(num_frames):  # For each frame.
@@ -139,6 +157,9 @@ def plot_tiled_image_sequence(images,
       if tile_idx >= num_tiles:
         # This tile is empty.
         continue
+      # Set the title.
+      if subplot_titles is not None:
+        ax.set_title(subplot_titles[tile_idx])
       # Get image for this tile and frame.
       image = images[tile_idx, frame_idx, :, :]
       # Render image.
@@ -174,7 +195,9 @@ def _preprocess_image(image, part=None, expected_ndim=None):  # pylint: disable=
   """Preprocesses an image."""
   image = np.asarray(image)
   if expected_ndim is not None:
-    if image.ndim != expected_ndim:
+    if isinstance(expected_ndim, int):
+      expected_ndim = (expected_ndim,)
+    if image.ndim not in expected_ndim:
       raise ValueError(
           f"Expected input to be {expected_ndim}-D, "
           f"but got shape {image.shape}")
