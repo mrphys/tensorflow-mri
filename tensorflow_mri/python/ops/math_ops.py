@@ -332,7 +332,7 @@ def indicator_box(x, lower_bound=-1.0, upper_bound=1.0, name=None):
 
   Raises:
     ValueError: If inputs are invalid.
-  """
+  """  # pylint: disable=line-too-long
   with tf.name_scope(name or 'indicator_box'):
     x = tf.convert_to_tensor(x, name='x')
     lower_bound = tf.convert_to_tensor(
@@ -385,7 +385,7 @@ def indicator_simplex(x, radius=1.0, name=None):
 
   Raises:
     ValueError: If inputs are invalid.
-  """
+  """  # pylint: disable=line-too-long
   with tf.name_scope(name or 'indicator_ball'):
     x = tf.convert_to_tensor(x, name='x')
     radius = tf.convert_to_tensor(
@@ -434,7 +434,7 @@ def indicator_ball(x, order=2, radius=1.0, name=None):
 
   Raises:
     ValueError: If inputs are invalid.
-  """
+  """  # pylint: disable=line-too-long
   with tf.name_scope(name or 'indicator_ball'):
     x = tf.convert_to_tensor(x, name='x')
     radius = tf.convert_to_tensor(

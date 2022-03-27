@@ -443,7 +443,7 @@ class ConvexFunctionL2Norm(ConvexFunctionNorm):
 
 
 @api_util.export("convex.ConvexFunctionL2NormSquared")
-class ConvexFunctionL2NormSquared(ConvexFunction):
+class ConvexFunctionL2NormSquared(ConvexFunction):  # pylint: disable=abstract-method
   """A `ConvexFunction` computing the [scaled] squared L2-norm of an input.
 
   Args:
@@ -568,7 +568,7 @@ class ConvexFunctionTotalVariation(ConvexFunctionLinearOperatorComposition):  # 
 
 
 @api_util.export("convex.ConvexFunctionQuadratic")
-class ConvexFunctionQuadratic(ConvexFunction):
+class ConvexFunctionQuadratic(ConvexFunction):  # pylint: disable=abstract-method
   r"""A `ConvexFunction` representing a generic quadratic function.
 
   Represents :math:`f(x) = \frac{1}{2} x^{T} A x + b^{T} x + c`.
@@ -668,7 +668,7 @@ class ConvexFunctionQuadratic(ConvexFunction):
 
 
 @api_util.export("convex.ConvexFunctionLeastSquares")
-class ConvexFunctionLeastSquares(ConvexFunctionQuadratic):
+class ConvexFunctionLeastSquares(ConvexFunctionQuadratic):  # pylint: disable=abstract-method
   r"""A `ConvexFunction` representing a least squares function.
 
   Represents :math:`f(x) = \frac{1}{2} {\left \| A x - b \right \|}_{2}^{2}`.
