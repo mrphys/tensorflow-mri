@@ -1,4 +1,4 @@
-Release 0.13.0
+Release 0.14.0
 ==============
 
 Major Features and Improvements
@@ -32,3 +32,7 @@ Bug Fixes and Other Changes
 
   * ``ConvexFunction`` will no longer raise an error when passed a
     ``tf.Tensor`` in the ``scale`` parameter.
+
+* ``tfmri.sampling``:
+
+  * ``spiral_trajectory`` will now return a tensor with known static shape.

@@ -261,6 +261,17 @@ class SpiralTrajectoryTest(test_util.TestCase):
                                         dwell_time=2.6)
     self.assertAllClose(waveform, self.data['spiral/waveform'])
 
+  @test_util.run_in_graph_and_eager_modes
+  def test_waveform_shape(self):
+    """Test spiral waveform."""
+    waveform = traj_ops.spiral_waveform(base_resolution=128,
+                                        spiral_arms=64,
+                                        field_of_view=300.0,
+                                        max_grad_ampl=20.0,
+                                        min_rise_time=10.0,
+                                        dwell_time=2.6)
+    self.assertAllEqual([494, 2], waveform.shape)
+
   @parameterized.product(vd_type=['linear', 'quadratic', 'hanning'])
   @test_util.run_in_graph_and_eager_modes
   def test_waveform_vd(self, vd_type): # pylint: disable=missing-param-doc
