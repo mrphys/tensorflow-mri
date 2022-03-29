@@ -17,6 +17,7 @@
 import abc
 import contextlib
 
+import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import linalg_ops
@@ -50,8 +51,9 @@ class ConvexFunction():
     self._ndim = check_util.validate_rank(ndim, 'ndim', accept_none=True)
     self._dtype = tf.dtypes.as_dtype(dtype or tf.dtypes.float32)
     self._name = name or type(self).__name__
-    self._scale = tf.convert_to_tensor(scale or 1.0,
-                                       dtype=self.dtype.real_dtype)
+    if scale is None:
+      scale = 1.0
+    self._scale = tf.convert_to_tensor(scale, dtype=self.dtype.real_dtype)
 
   def __call__(self, x):
     return self.call(x)
@@ -89,15 +91,30 @@ class ConvexFunction():
       self._check_input_dtype(x)
       return self._prox(x, scale=scale)
 
+  def conj(self, name=None):
+    """Returns the conjugate of this function.
+
+    Args:
+      name: A name for this operation (optional).
+
+    Returns:
+      A `ConvexFunction` which represents the convex conjugate of `self`.
+    """
+    with self._name_scope(name or "conj"):
+      return self._conj()
+
   @abc.abstractmethod
   def _call(self, x):
     # Must be implemented by subclasses.
     raise NotImplementedError("Method `_call` is not implemented.")
 
-  @abc.abstractmethod
   def _prox(self, x, scale=None):
     # Must be implemented by subclasses.
     raise NotImplementedError("Method `_prox` is not implemented.")
+
+  def _conj(self):
+    # Must be implemented by subclasses.
+    raise NotImplementedError("Method `_conj` is not implemented.")
 
   @property
   def scale(self):
@@ -233,15 +250,62 @@ class ConvexFunctionLinearOperatorComposition(  # pylint: disable=abstract-metho
                      name=name)
 
 
-@api_util.export("convex.ConvexFunctionL1Norm")
-class ConvexFunctionL1Norm(ConvexFunction):
-  """A `ConvexFunction` computing the [scaled] L1-norm of a [batch of] inputs.
+@api_util.export("convex.ConvexFunctionIndicatorBall")
+class ConvexFunctionIndicatorBall(ConvexFunction):
+  """A `ConvexFunction` representing the indicator function of an Lp ball.
+
+  Args:
+    order: A `float`. The order of the norm. Supported values are `1`, `2`,
+      `np.inf`.
+    scale: A `float`. A scaling factor. Defaults to 1.0.
+    ndim: An `int`. The dimensionality of the domain of this `ConvexFunction`.
+      Defaults to `None`.
+    dtype: A `tf.dtypes.DType`. The type of this `ConvexFunction`. Defaults to
+      `tf.dtypes.float32`.
+    name: A name for this `ConvexFunction`.
+  """
+  def __init__(self,
+               order=2,
+               scale=None,
+               ndim=None,
+               dtype=None,
+               name=None):
+    super().__init__(scale=scale,
+                     ndim=ndim,
+                     dtype=dtype,
+                     name=name)
+    self._order = check_util.validate_enum(order, [1, 2, np.inf], name='order')
+
+  def _call(self, x):
+    # Note that the scale has no effect, as the indicator function is always
+    # zero or infinity.
+    return math_ops.indicator_ball(x, order=self._order)
+
+  def _prox(self, x, scale=None):
+    # The proximal operator of the indicator function of a closed convex set
+    # (such as the Lp ball) is the projection onto the set.
+    return math_ops.project_onto_ball(x, order=self._order)
+
+  def _conj(self):
+    # The convex conjugate of the indicator function on the unit ball defined
+    # by the Lp-norm is the dual norm function.
+    return ConvexFunctionNorm(
+        order=_conjugate_exponent(self._order),
+        scale=self._scale,
+        ndim=self.ndim,
+        dtype=self.dtype,
+        name=f"{self.name}_conj")
+
+
+@api_util.export("convex.ConvexFunctionIndicatorL1Ball")
+class ConvexFunctionIndicatorL1Ball(ConvexFunctionIndicatorBall):
+  """A `ConvexFunction` representing the indicator function of an L1 ball.
 
   Args:
     scale: A `float`. A scaling factor. Defaults to 1.0.
     ndim: An `int`. The dimensionality of the domain of this `ConvexFunction`.
       Defaults to `None`.
-    dtype: A `string` or `DType`. The type of this `ConvexFunction`. Defaults to
+    dtype: A `tf.dtypes.DType`. The type of this `ConvexFunction`. Defaults to
       `tf.dtypes.float32`.
     name: A name for this `ConvexFunction`.
 
@@ -254,17 +318,108 @@ class ConvexFunctionL1Norm(ConvexFunction):
                ndim=None,
                dtype=None,
                name=None):
+    super().__init__(order=1, scale=scale, ndim=ndim, dtype=dtype, name=name)
+
+
+@api_util.export("convex.ConvexFunctionIndicatorL2Ball")
+class ConvexFunctionIndicatorL2Ball(ConvexFunctionIndicatorBall):
+  """A `ConvexFunction` representing the indicator function of an L2 ball.
+
+  Args:
+    scale: A `float`. A scaling factor. Defaults to 1.0.
+    ndim: An `int`. The dimensionality of the domain of this `ConvexFunction`.
+      Defaults to `None`.
+    dtype: A `tf.dtypes.DType`. The type of this `ConvexFunction`. Defaults to
+      `tf.dtypes.float32`.
+    name: A name for this `ConvexFunction`.
+
+  References:
+    .. [1] Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
+      Trends in optimization, 1(3), 127-239.
+  """
+  def __init__(self,
+               scale=None,
+               ndim=None,
+               dtype=None,
+               name=None):
+    super().__init__(order=2, scale=scale, ndim=ndim, dtype=dtype, name=name)
+
+
+@api_util.export("convex.ConvexFunctionNorm")
+class ConvexFunctionNorm(ConvexFunction):
+  """A `ConvexFunction` computing the [scaled] Lp-norm of a [batch of] inputs.
+
+  Args:
+    order: A `float`. The order of the norm. Supported values are `1`, `2`,
+      `np.inf`.
+    scale: A `float`. A scaling factor. Defaults to 1.0.
+    ndim: An `int`. The dimensionality of the domain of this `ConvexFunction`.
+      Defaults to `None`.
+    dtype: A `tf.dtypes.DType`. The type of this `ConvexFunction`. Defaults to
+      `tf.dtypes.float32`.
+    name: A name for this `ConvexFunction`.
+
+  References:
+    .. [1] Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
+      Trends in optimization, 1(3), 127-239.
+  """
+  def __init__(self,
+               order,
+               scale=None,
+               ndim=None,
+               dtype=None,
+               name=None):
     super().__init__(scale=scale, ndim=ndim, dtype=dtype, name=name)
+    self._order = check_util.validate_enum(order, [1, 2, np.inf], name='order')
 
   def _call(self, x):
-    return self._scale * tf.math.real(tf.norm(x, ord=1, axis=-1))
+    return self._scale * tf.math.real(tf.norm(x, ord=self._order, axis=-1))
 
   def _prox(self, x, scale=None):
-    return math_ops.soft_threshold(x, self._scale * (scale or 1.0))
+    if self._order == 1:
+      return math_ops.soft_threshold(x, self._scale * (scale or 1.0))
+    if self._order == 2:
+      return math_ops.block_soft_threshold(x, self._scale * (scale or 1.0))
+    raise NotImplementedError(
+        f"The proximal operator of the L{self._order}-norm is not implemented.")
+
+  def _conj(self):
+    # The convex conjugate of the Lp-norm is the indicator function on the unit
+    # ball defined by the dual norm.
+    return ConvexFunctionIndicatorBall(
+        order=_conjugate_exponent(self._order),
+        scale=self._scale,
+        ndim=self.ndim,
+        dtype=self.dtype,
+        name=f"{self.name}_conj")
+
+
+@api_util.export("convex.ConvexFunctionL1Norm")
+class ConvexFunctionL1Norm(ConvexFunctionNorm):
+  """A `ConvexFunction` computing the [scaled] L1-norm of a [batch of] inputs.
+
+  Args:
+    scale: A `float`. A scaling factor. Defaults to 1.0.
+    ndim: An `int`. The dimensionality of the domain of this `ConvexFunction`.
+      Defaults to `None`.
+    dtype: A `tf.dtypes.DType`. The type of this `ConvexFunction`. Defaults to
+      `tf.dtypes.float32`.
+    name: A name for this `ConvexFunction`.
+
+  References:
+    .. [1] Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
+      Trends in optimization, 1(3), 127-239.
+  """
+  def __init__(self,
+               scale=None,
+               ndim=None,
+               dtype=None,
+               name=None):
+    super().__init__(order=1, scale=scale, ndim=ndim, dtype=dtype, name=name)
 
 
 @api_util.export("convex.ConvexFunctionL2Norm")
-class ConvexFunctionL2Norm(ConvexFunction):
+class ConvexFunctionL2Norm(ConvexFunctionNorm):
   """A `ConvexFunction` computing the [scaled] L2-norm of a [batch of] inputs.
 
   Args:
@@ -284,17 +439,11 @@ class ConvexFunctionL2Norm(ConvexFunction):
                ndim=None,
                dtype=None,
                name=None):
-    super().__init__(scale=scale, ndim=ndim, dtype=dtype, name=name)
-
-  def _call(self, x):
-    return self._scale * tf.math.real(tf.norm(x, ord=2, axis=-1))
-
-  def _prox(self, x, scale=None):
-    return math_ops.block_soft_threshold(x, self._scale * (scale or 1.0))
+    super().__init__(order=2, scale=scale, ndim=ndim, dtype=dtype, name=name)
 
 
 @api_util.export("convex.ConvexFunctionL2NormSquared")
-class ConvexFunctionL2NormSquared(ConvexFunction):
+class ConvexFunctionL2NormSquared(ConvexFunction):  # pylint: disable=abstract-method
   """A `ConvexFunction` computing the [scaled] squared L2-norm of an input.
 
   Args:
@@ -327,7 +476,7 @@ class ConvexFunctionL2NormSquared(ConvexFunction):
 
 @api_util.export("convex.ConvexFunctionTikhonov")
 class ConvexFunctionTikhonov(ConvexFunctionAffineMappingComposition):  # pylint: disable=abstract-method
-  r"""Tikhonov convex function.
+  r"""A `ConvexFunction` representing a Tikhonov regularization term.
 
   For a given input :math:`x`, computes
   :math:`\lambda \left\| T(x - x_0) \right\|_2^2`, where :math:`\lambda` is a
@@ -382,7 +531,7 @@ class ConvexFunctionTikhonov(ConvexFunctionAffineMappingComposition):  # pylint:
 
 @api_util.export("convex.ConvexFunctionTotalVariation")
 class ConvexFunctionTotalVariation(ConvexFunctionLinearOperatorComposition):  # pylint: disable=abstract-method
-  r"""Total variation convex function.
+  r"""A `ConvexFunction` representing a total variation regularization term.
 
   For a given input :math:`x`, computes :math:`\lambda \left\| Dx \right\|_1`,
   where :math:`\lambda` is a scaling factor and :math:`D` is the finite
@@ -419,7 +568,7 @@ class ConvexFunctionTotalVariation(ConvexFunctionLinearOperatorComposition):  # 
 
 
 @api_util.export("convex.ConvexFunctionQuadratic")
-class ConvexFunctionQuadratic(ConvexFunction):
+class ConvexFunctionQuadratic(ConvexFunction):  # pylint: disable=abstract-method
   r"""A `ConvexFunction` representing a generic quadratic function.
 
   Represents :math:`f(x) = \frac{1}{2} x^{T} A x + b^{T} x + c`.
@@ -519,7 +668,7 @@ class ConvexFunctionQuadratic(ConvexFunction):
 
 
 @api_util.export("convex.ConvexFunctionLeastSquares")
-class ConvexFunctionLeastSquares(ConvexFunctionQuadratic):
+class ConvexFunctionLeastSquares(ConvexFunctionQuadratic):  # pylint: disable=abstract-method
   r"""A `ConvexFunction` representing a least squares function.
 
   Represents :math:`f(x) = \frac{1}{2} {\left \| A x - b \right \|}_{2}^{2}`.
@@ -564,3 +713,12 @@ def _dot(x, y):
       tf.linalg.matvec(
           x[..., tf.newaxis],
           y, adjoint_a=True), axis=-1)
+
+
+def _conjugate_exponent(exp):
+  """Returns the conjugate exponent of `exp`."""
+  if exp == 1.0:
+    return np.inf
+  if exp == np.inf:
+    return 1.0
+  return exp / (exp - 1.0)

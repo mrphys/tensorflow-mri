@@ -16,12 +16,71 @@ limitations under the License.
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/shape_inference.h"
 
+#include "spiral_waveform.h"
+
 using namespace tensorflow;
 
 
 Status SpiralWaveformShapeFn(shape_inference::InferenceContext* c) {
-  
-  const PartialTensorShape output_shape({-1, 2});
+
+  int base_resolution;
+  int spiral_arms;
+  float field_of_view;
+  float max_grad_ampl;
+  float min_rise_time;
+  float dwell_time;
+  float readout_os;
+  float gradient_delay;
+  float larmor_const;
+  float vd_inner_cutoff;
+  float vd_outer_cutoff;
+  float vd_outer_density;
+  string vd_type_str;
+
+  TF_RETURN_IF_ERROR(c->GetAttr("base_resolution", &base_resolution));
+  TF_RETURN_IF_ERROR(c->GetAttr("spiral_arms", &spiral_arms));
+  TF_RETURN_IF_ERROR(c->GetAttr("field_of_view", &field_of_view));
+  TF_RETURN_IF_ERROR(c->GetAttr("max_grad_ampl", &max_grad_ampl));
+  TF_RETURN_IF_ERROR(c->GetAttr("min_rise_time", &min_rise_time));
+  TF_RETURN_IF_ERROR(c->GetAttr("dwell_time", &dwell_time));
+  TF_RETURN_IF_ERROR(c->GetAttr("readout_os", &readout_os));
+  TF_RETURN_IF_ERROR(c->GetAttr("gradient_delay", &gradient_delay));
+  TF_RETURN_IF_ERROR(c->GetAttr("larmor_const", &larmor_const));
+  TF_RETURN_IF_ERROR(c->GetAttr("vd_inner_cutoff", &vd_inner_cutoff));
+  TF_RETURN_IF_ERROR(c->GetAttr("vd_outer_cutoff", &vd_outer_cutoff));
+  TF_RETURN_IF_ERROR(c->GetAttr("vd_outer_density", &vd_outer_density));
+  TF_RETURN_IF_ERROR(c->GetAttr("vd_type", &vd_type_str));
+
+  SpiralWaveform::VDType vd_type;
+  if (vd_type_str == "linear") {
+    vd_type = SpiralWaveform::VDType::Linear;
+  } else if (vd_type_str == "quadratic") {
+    vd_type = SpiralWaveform::VDType::Quadratic;
+  } else if (vd_type_str == "hanning") {
+    vd_type = SpiralWaveform::VDType::Hanning;
+  }
+
+  // At the moment we do not have a way to infer the output shape of the
+  // waveform without actually computing it, so we compute the waveform.
+  float waveform_ptr[SWF_MAX_WAVEFORM_SIZE * 2];
+  long waveform_length = 0;
+  int result = calculate_spiral_trajectory(&waveform_ptr[0],
+                                           &waveform_length,
+                                           (long) base_resolution,
+                                           (long) spiral_arms,
+                                           (double) field_of_view,
+                                           (double) max_grad_ampl,
+                                           (double) min_rise_time,
+                                           (double) dwell_time,
+                                           (double) readout_os,
+                                           (double) gradient_delay,
+                                           (double) larmor_const,
+                                           (double) vd_inner_cutoff,
+                                           (double) vd_outer_cutoff,
+                                           (double) vd_outer_density,
+                                           (int) vd_type);
+
+  const PartialTensorShape output_shape({waveform_length, 2});
 
   shape_inference::ShapeHandle shape_handle;
   TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(output_shape, &shape_handle));

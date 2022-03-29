@@ -15,6 +15,7 @@
 """Tests for module `convex_ops`."""
 
 from absl.testing import parameterized
+import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import convex_ops
@@ -46,6 +47,10 @@ class ConvexFunctionL1NormTest(test_util.TestCase):
   def test_prox(self, x, scale, expected):
     f = convex_ops.ConvexFunctionL1Norm(scale=scale)
     self.assertAllClose(expected, f.prox(x))
+
+  def test_conj(self):
+    f = convex_ops.ConvexFunctionL1Norm()
+    self.assertIsInstance(f.conj(), convex_ops.ConvexFunctionIndicatorBall)
 
 
 @test_util.run_all_in_graph_and_eager_modes
@@ -95,6 +100,82 @@ class ConvexFunctionL2NormSquaredTest(test_util.TestCase):
   def test_prox(self, x, scale, expected):
     f = convex_ops.ConvexFunctionL2NormSquared(scale=scale)
     self.assertAllClose(expected, f.prox(x))
+
+
+@test_util.run_all_in_graph_and_eager_modes
+class ConvexFunctionIndicatorL1BallTest(test_util.TestCase):
+  """Tests for `ConvexFunctionIndicatorL1Ball`."""
+  # pylint: disable=missing-function-docstring
+  @parameterized.parameters(
+      # x, scale, expected
+      ([1.0], 1.0, 0.0),
+      ([0.5], 1.0, 0.0),
+      ([1.5], 1.0, np.inf),
+      ([0.5], 2.0, 0.0),
+      ([1.5], 2.0, np.inf),
+      ([1.5, -2.0], 1.0, np.inf),
+      ([-0.4, 0.8], 1.0, np.inf),
+      ([[1.0, 0.75], [-3., 4.]], 1.0, [np.inf, np.inf]),
+      ([[0.1, -0.5, -0.2], [1., 4., -2.]], 1.0, [0.0, np.inf])
+  )
+  def test_call(self, x, scale, expected):
+    f = convex_ops.ConvexFunctionIndicatorL1Ball(scale=scale)
+    self.assertAllClose(expected, f(x))
+
+  @parameterized.parameters(
+      ([0.], 1., [0.]),
+      ([0.8], 1., [0.8]),
+      ([-4.], 1., [-1.]),
+      ([4., 3.], 1., [1.0, 0.0]),
+      ([0., 0.5], 1., [0.0, 0.5]),
+      ([[-3., 4.], [0.0, -1.5]], 1., [[0.0, 1.0], [0.0, -1.0]])
+  )
+  def test_prox(self, x, scale, expected):
+    f = convex_ops.ConvexFunctionIndicatorL1Ball(scale=scale)
+    self.assertAllClose(expected, f.prox(x))
+
+  def test_conj(self):
+    f = convex_ops.ConvexFunctionIndicatorL1Ball()
+    self.assertIsInstance(f.conj(), convex_ops.ConvexFunctionNorm)
+    self.assertEqual(np.inf, f.conj()._order)  # pylint: disable=protected-access
+
+
+@test_util.run_all_in_graph_and_eager_modes
+class ConvexFunctionIndicatorL2BallTest(test_util.TestCase):
+  """Tests for `ConvexFunctionIndicatorL2Ball`."""
+  # pylint: disable=missing-function-docstring
+  @parameterized.parameters(
+      # x, scale, expected
+      ([1.0], 1.0, 0.0),
+      ([0.5], 1.0, 0.0),
+      ([1.5], 1.0, np.inf),
+      ([0.5], 2.0, 0.0),
+      ([1.5], 2.0, np.inf),
+      ([1.5, -2.0], 1.0, np.inf),
+      ([-0.4, 0.8], 1.0, 0.0),
+      ([[1.0, 0.75], [-3., 4.]], 1.0, [np.inf, np.inf]),
+      ([[0.1, -0.5, -0.2], [1., 4., -2.]], 1.0, [0.0, np.inf])
+  )
+  def test_call(self, x, scale, expected):
+    f = convex_ops.ConvexFunctionIndicatorL2Ball(scale=scale)
+    self.assertAllClose(expected, f(x))
+
+  @parameterized.parameters(
+      ([0.], 1., [0.]),
+      ([0.8], 1., [0.8]),
+      ([-4.], 1., [-1.]),
+      ([4., 3.], 1., [0.8, 0.6]),
+      ([0., 0.5], 1., [0.0, 0.5]),
+      ([[-3., 4.], [0.0, -1.5]], 1., [[-0.6, 0.8], [0.0, -1.0]])
+  )
+  def test_prox(self, x, scale, expected):
+    f = convex_ops.ConvexFunctionIndicatorL2Ball(scale=scale)
+    self.assertAllClose(expected, f.prox(x))
+
+  def test_conj(self):
+    f = convex_ops.ConvexFunctionIndicatorL2Ball()
+    self.assertIsInstance(f.conj(), convex_ops.ConvexFunctionNorm)
+    self.assertEqual(2, f.conj()._order)  # pylint: disable=protected-access
 
 
 @test_util.run_all_in_graph_and_eager_modes

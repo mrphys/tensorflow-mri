@@ -17,6 +17,7 @@
 import itertools
 
 from absl.testing import parameterized
+import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import math_ops
@@ -105,7 +106,6 @@ class ScaleMinmaxTest(test_util.TestCase):
           tf.math.angle(y) * mag, tf.math.angle(x) * mag)
 
 
-
 @test_util.run_all_in_graph_and_eager_modes
 class BlockSoftThresholdTest(test_util.TestCase):
   """Tests for `block_soft_threshold` operator."""
@@ -172,6 +172,163 @@ class SoftThresholdTest(test_util.TestCase):
     x = tf.convert_to_tensor(x, dtype=tf.complex64)
     y = math_ops.soft_threshold(x, threshold)
     self.assertAllClose(y, expected_y)
+
+
+@test_util.run_all_in_graph_and_eager_modes
+class IndicatorBoxTest(test_util.TestCase):
+  """Tests for `indicator_box` operator."""
+  @parameterized.parameters(
+      # x, lower_bound, upper_bound, expected
+      (-1.1, -1.0, 1.0, np.inf),
+      (-0.9, -1.0, 1.0, 0.0),
+      ([0.9], -1.0, 1.0, 0.0),
+      ([1.1], -1.0, 1.0, np.inf),
+      ([0.0], -1.0, 1.0, 0.0),
+      ([1.8], -1.0, 2.0, 0.0),
+      ([1.5, -2.0], -2.0, 2.0, 0.0),
+      ([-0.5, 1.5], -1.0, 1.0, np.inf),
+      ([[0.5, 0.5], [-0.5, 0.5], [-0.5, 1.5]], 0.0, 1.0, [0.0, np.inf, np.inf])
+  )  # pylint: disable=missing-function-docstring
+  def test_indicator_box(self, x, lower_bound, upper_bound, expected):
+    y = math_ops.indicator_box(
+        x, lower_bound=lower_bound, upper_bound=upper_bound)
+    self.assertAllClose(expected, y)
+
+
+@test_util.run_all_in_graph_and_eager_modes
+class IndicatorSimplexTest(test_util.TestCase):
+  """Tests for `indicator_simplex` operator."""
+  @parameterized.parameters(
+      # x, radius, expected
+      (-1.0, 1.0, np.inf),
+      (0.95, 1.0, np.inf),
+      (1.0, 1.0, 0.0),
+      ([1.0], 1.0, 0.0),
+      ([1.5], 1.0, np.inf),
+      ([1.5, -2.0], 1.0, np.inf),
+      ([0.5, -0.5], 1.0, np.inf),
+      ([0.5, 0.5], 1.0, 0.0),
+      ([[0.5, 0.5], [0.3, 0.7], [-0.1, -0.9]], 1.0, [0.0, 0.0, np.inf])
+  )  # pylint: disable=missing-function-docstring
+  def test_indicator_simplex(self, x, radius, expected):
+    y = math_ops.indicator_simplex(x, radius=radius)
+    self.assertAllClose(expected, y)
+
+
+@test_util.run_all_in_graph_and_eager_modes
+class IndicatorBallTest(test_util.TestCase):
+  """Tests for `indicator_ball` operator."""
+  @parameterized.parameters(
+      # x, radius, expected_l1, expected_l2, expected_linf
+      (-1.0, 1.0, 0.0, 0.0, 0.0),
+      (0.95, 1.0, 0.0, 0.0, 0.0),
+      (1.05, 1.0, np.inf, np.inf, np.inf),
+      (-1.5, 2.0, 0.0, 0.0, 0.0),
+      ([1.0], 1.0, 0.0, 0.0, 0.0),
+      ([0.5], 1.0, 0.0, 0.0, 0.0),
+      ([1.5], 1.0, np.inf, np.inf, np.inf),
+      ([1.5], 2.0, 0.0, 0.0, 0.0),
+      ([1.5, -2.0], 1.0, np.inf, np.inf, np.inf),
+      ([1.5, -2.0], 2.5, np.inf, 0.0, 0.0),
+      ([1.5, -2.0], 5.0, 0.0, 0.0, 0.0),
+      ([[1.0, 0.75], [-3., 4.]], 1.0,
+          [np.inf, np.inf], [np.inf, np.inf], [0.0, np.inf]),
+      ([[1.0, 0.75], [-3., 4.]], 2.0,
+          [0.0, np.inf], [0.0, np.inf], [0.0, np.inf]),
+      ([[0.1, -0.5, -0.2], [1., 4., -2.]], 3.0,
+          [0.0, np.inf], [0.0, np.inf], [0.0, np.inf]),
+  )  # pylint: disable=missing-function-docstring
+  def test_indicator_ball(self, x, radius,
+                          expected_l1, expected_l2, expected_linf):
+    orders = [1, 2, np.inf]
+    expecteds = [expected_l1, expected_l2, expected_linf]
+    for order, expected in zip(orders, expecteds):
+      with self.subTest(order=order):
+        y = math_ops.indicator_ball(x, order=order, radius=radius)
+        self.assertAllClose(expected, y)
+
+
+@test_util.run_all_in_graph_and_eager_modes
+class ProjectionOntoBoxTest(test_util.TestCase):
+  """Tests for `project_onto_box` operator."""
+  @parameterized.parameters(
+      # x, lbound, ubound, expected
+      (0.5, 0.5, 0.5, 0.5),
+      (0.5, 0.1, 0.2, 0.2),
+      (0.5, 0.0, 1.5, 0.5),
+      (1.5, 0.7, 2.5, 1.5),
+      ([4.], 1., 2., [2.]),
+      ([0.], -4., 1., [0.]),
+      ([0.8], 0.7, 0.9, [0.8]),
+      ([1.3], 1.5, 2.5, [1.5]),
+      ([-6.3], -2.0, 2.5, [-2.0]),
+      ([3., 2.], 1., 2.5, [2.5, 2.]),
+      ([1., 2., 3.], 1., 2., [1., 2., 2.]),
+      ([[2.1, -1.3], [0.7, 2.2]], -2., 2., [[2., -1.3], [0.7, 2.]])
+  )  # pylint: disable=missing-function-docstring
+  def test_project_onto_simplex(self, x, lbound, ubound, expected):
+    y = math_ops.project_onto_box(x, lower_bound=lbound, upper_bound=ubound)
+    self.assertAllClose(expected, y)
+
+
+@test_util.run_all_in_graph_and_eager_modes
+class ProjectionOntoSimplexTest(test_util.TestCase):
+  """Tests for `project_onto_simplex` operator."""
+  @parameterized.parameters(
+      # x, radius, expected
+      (0.5, 0.5, 0.5),
+      (0.5, 0.25, 0.25),
+      (0.5, 1.0, 1.0),
+      (1.5, 0.75, 0.75),
+      ([4.], 1., [1.]),
+      ([0.], 1., [1.]),
+      ([0.8], 1., [1.]),
+      ([-1.3], 2.5, [2.5]),
+      ([6.3], 2.5, [2.5]),
+      ([3., 2.], 1., [1., 0.]),
+      ([0., 0.], 1., [0.5, 0.5]),
+      ([4., 1.], 2., [2., 0.]),
+      ([-2.5, 1.], 2., [0., 2.]),
+      ([1., 2., 3.], 2., [0.0, 0.5, 1.5]),
+      ([[2.1, 1.3], [0.7, 2.2]], 1.6, [[1.2, 0.4], [0.05, 1.55]])
+  )  # pylint: disable=missing-function-docstring
+  def test_project_onto_simplex(self, x, radius, expected):
+    y = math_ops.project_onto_simplex(x, radius=radius)
+    self.assertAllClose(expected, y)
+
+
+@test_util.run_all_in_graph_and_eager_modes
+class ProjectionOntoBallTest(test_util.TestCase):
+  """Tests for `project_onto_ball` operator."""
+  @parameterized.parameters(
+      # x, radius, expected_l1, expected_l2, expected_linf
+      (0.5, 0.5, 0.5, 0.5, 0.5),
+      (0.5, 1.0, 0.5, 0.5, 0.5),
+      (1.5, 1.0, 1.0, 1.0, 1.0),
+      (-2.5, 2.0, -2.0, -2.0, -2.0),
+      ([4.], 1., [1.], [1.], [1.]),
+      ([0.], 1., [0.], [0.], [0.]),
+      ([0.8], 1., [0.8], [0.8], [0.8]),
+      ([-0.8], 1., [-0.8], [-0.8], [-0.8]),
+      ([-4.], 1., [-1.], [-1.], [-1.]),
+      ([1.3], 2.5, [1.3], [1.3], [1.3]),
+      ([6.3], 2.5, [2.5], [2.5], [2.5]),
+      ([4., 3.], 1., [1.0, 0.0], [0.8, 0.6], [1.0, 1.0]),
+      ([0., 0.5], 1., [0.0, 0.5], [0.0, 0.5], [0.0, 0.5]),
+      ([-2.5, 1.], 2., [-1.75, 0.25], [-1.8569534, 0.74278134], [-2., 1.]),
+      ([[-3., 4.], [0.0, -1.5]], 1.0, [[0.0, 1.0], [0.0, -1.0]],
+          [[-0.6, 0.8], [0.0, -1.0]], [[-1., 1.], [0.0, -1.0]]),
+      ([[-3., 4.], [0.0, -1.5]], 2.0, [[-0.5, 1.5], [0.0, -1.5]],
+          [[-1.2, 1.6], [0.0, -1.5]], [[-2., 2.], [0.0, -1.5]])
+  )  # pylint: disable=missing-function-docstring
+  def test_project_onto_ball(self, x, radius,
+                                expected_l1, expected_l2, expected_linf):
+    orders = [1, 2, np.inf]
+    expecteds = [expected_l1, expected_l2, expected_linf]
+    for order, expected in zip(orders, expecteds):
+      with self.subTest(order=order):
+        y = math_ops.project_onto_ball(x, order=order, radius=radius)
+        self.assertAllClose(expected, y)
 
 
 if __name__ == '__main__':

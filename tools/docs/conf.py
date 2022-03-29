@@ -197,10 +197,15 @@ COMMON_TYPES_LINKS = {
     'None': 'https://docs.python.org/3/library/constants.html#None',
     # NumPy types.
     'np.ndarray': 'https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html',
+    'np.inf': 'https://numpy.org/doc/stable/reference/constants.html#numpy.inf',
+    'np.nan': 'https://numpy.org/doc/stable/reference/constants.html#numpy.nan',
     # TensorFlow types.
     'tf.Tensor': 'https://www.tensorflow.org/api_docs/python/tf/Tensor',
     'tf.TensorShape': 'https://www.tensorflow.org/api_docs/python/tf/TensorShape',
-    'tf.dtypes.DType': 'https://www.tensorflow.org/api_docs/python/tf/dtypes/DType'
+    'tf.dtypes.DType': 'https://www.tensorflow.org/api_docs/python/tf/dtypes/DType',
+    # TFMRI types.
+    'tfmri.linalg.LinearOperator': 'https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/linalg/LinearOperator.html',
+    'tfmri.convex.ConvexFunction': 'https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/convex/ConvexFunction.html'
 }
 
 COMMON_TYPES_PATTERNS = {

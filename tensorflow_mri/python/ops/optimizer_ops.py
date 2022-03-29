@@ -42,6 +42,15 @@ AdmmOptimizerResults = collections.namedtuple(
 )
 
 
+PdhgOptimizerResults = collections.namedtuple(
+    'PdhgOptimizerResults', [
+        'i',      # The number of iterations of the PDHG update.
+        'x',      # The primal variable.
+        'z',      # The dual variable.
+    ]
+)
+
+
 @api_util.export("convex.admm_minimize")
 def admm_minimize(function_f,
                   function_g,
@@ -198,7 +207,7 @@ def admm_minimize(function_f,
     return (not _stopping_condition(state)) and (state.i < max_iterations)
 
   def _body(state):  # pylint: disable=missing-param-doc
-    """A single ADMM step."""
+    """The ADMM update."""
     # x-minimization step.
     state_bz = tf.linalg.matvec(operator_b, state.z)
     if linearized:
