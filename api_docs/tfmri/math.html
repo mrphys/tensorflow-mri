@@ -189,11 +189,15 @@
 <li class="toctree-l1 has-children"><a class="reference internal" href="convex.html">tfmri.convex</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="convex/ConvexFunction.html">ConvexFunction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="convex/ConvexFunctionAffineMappingComposition.html">ConvexFunctionAffineMappingComposition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="convex/ConvexFunctionIndicatorBall.html">ConvexFunctionIndicatorBall</a></li>
+<li class="toctree-l2"><a class="reference internal" href="convex/ConvexFunctionIndicatorL1Ball.html">ConvexFunctionIndicatorL1Ball</a></li>
+<li class="toctree-l2"><a class="reference internal" href="convex/ConvexFunctionIndicatorL2Ball.html">ConvexFunctionIndicatorL2Ball</a></li>
 <li class="toctree-l2"><a class="reference internal" href="convex/ConvexFunctionL1Norm.html">ConvexFunctionL1Norm</a></li>
 <li class="toctree-l2"><a class="reference internal" href="convex/ConvexFunctionL2Norm.html">ConvexFunctionL2Norm</a></li>
 <li class="toctree-l2"><a class="reference internal" href="convex/ConvexFunctionL2NormSquared.html">ConvexFunctionL2NormSquared</a></li>
 <li class="toctree-l2"><a class="reference internal" href="convex/ConvexFunctionLeastSquares.html">ConvexFunctionLeastSquares</a></li>
 <li class="toctree-l2"><a class="reference internal" href="convex/ConvexFunctionLinearOperatorComposition.html">ConvexFunctionLinearOperatorComposition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="convex/ConvexFunctionNorm.html">ConvexFunctionNorm</a></li>
 <li class="toctree-l2"><a class="reference internal" href="convex/ConvexFunctionQuadratic.html">ConvexFunctionQuadratic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="convex/ConvexFunctionTikhonov.html">ConvexFunctionTikhonov</a></li>
 <li class="toctree-l2"><a class="reference internal" href="convex/ConvexFunctionTotalVariation.html">ConvexFunctionTotalVariation</a></li>
@@ -252,8 +256,14 @@
 <li class="toctree-l1 current has-children current-page"><a class="current reference internal" href="#">tfmri.math</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="math/block_soft_threshold.html">block_soft_threshold</a></li>
 <li class="toctree-l2"><a class="reference internal" href="math/extract_from_complex.html">extract_from_complex</a></li>
+<li class="toctree-l2"><a class="reference internal" href="math/indicator_ball.html">indicator_ball</a></li>
+<li class="toctree-l2"><a class="reference internal" href="math/indicator_box.html">indicator_box</a></li>
+<li class="toctree-l2"><a class="reference internal" href="math/indicator_simplex.html">indicator_simplex</a></li>
 <li class="toctree-l2"><a class="reference internal" href="math/make_val_and_grad_fn.html">make_val_and_grad_fn</a></li>
 <li class="toctree-l2"><a class="reference internal" href="math/normalize_no_nan.html">normalize_no_nan</a></li>
+<li class="toctree-l2"><a class="reference internal" href="math/project_onto_ball.html">project_onto_ball</a></li>
+<li class="toctree-l2"><a class="reference internal" href="math/project_onto_box.html">project_onto_box</a></li>
+<li class="toctree-l2"><a class="reference internal" href="math/project_onto_simplex.html">project_onto_simplex</a></li>
 <li class="toctree-l2"><a class="reference internal" href="math/shrinkage.html">shrinkage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="math/soft_threshold.html">soft_threshold</a></li>
 </ul>
@@ -382,11 +392,29 @@
 <tr class="row-even"><td><p><a class="reference internal" href="math/extract_from_complex.html#tensorflow_mri.math.extract_from_complex" title="tensorflow_mri.math.extract_from_complex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">extract_from_complex</span></code></a></p></td>
 <td><p>Extract parts from a complex tensor.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="math/make_val_and_grad_fn.html#tensorflow_mri.math.make_val_and_grad_fn" title="tensorflow_mri.math.make_val_and_grad_fn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_val_and_grad_fn</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="math/indicator_ball.html#tensorflow_mri.math.indicator_ball" title="tensorflow_mri.math.indicator_ball"><code class="xref py py-obj docutils literal notranslate"><span class="pre">indicator_ball</span></code></a></p></td>
+<td><p>Indicator function of the Lp ball.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="math/indicator_box.html#tensorflow_mri.math.indicator_box" title="tensorflow_mri.math.indicator_box"><code class="xref py py-obj docutils literal notranslate"><span class="pre">indicator_box</span></code></a></p></td>
+<td><p>Indicator function of a box.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="math/indicator_simplex.html#tensorflow_mri.math.indicator_simplex" title="tensorflow_mri.math.indicator_simplex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">indicator_simplex</span></code></a></p></td>
+<td><p>Indicator function of the simplex.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="math/make_val_and_grad_fn.html#tensorflow_mri.math.make_val_and_grad_fn" title="tensorflow_mri.math.make_val_and_grad_fn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_val_and_grad_fn</span></code></a></p></td>
 <td><p>Function decorator to compute both function value and gradient.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="math/normalize_no_nan.html#tensorflow_mri.math.normalize_no_nan" title="tensorflow_mri.math.normalize_no_nan"><code class="xref py py-obj docutils literal notranslate"><span class="pre">normalize_no_nan</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="math/normalize_no_nan.html#tensorflow_mri.math.normalize_no_nan" title="tensorflow_mri.math.normalize_no_nan"><code class="xref py py-obj docutils literal notranslate"><span class="pre">normalize_no_nan</span></code></a></p></td>
 <td><p>Normalizes <code class="docutils literal notranslate"><span class="pre">tensor</span></code> along dimension <code class="docutils literal notranslate"><span class="pre">axis</span></code> using specified norm.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="math/project_onto_ball.html#tensorflow_mri.math.project_onto_ball" title="tensorflow_mri.math.project_onto_ball"><code class="xref py py-obj docutils literal notranslate"><span class="pre">project_onto_ball</span></code></a></p></td>
+<td><p>Projects an input vector onto the Lp ball.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="math/project_onto_box.html#tensorflow_mri.math.project_onto_box" title="tensorflow_mri.math.project_onto_box"><code class="xref py py-obj docutils literal notranslate"><span class="pre">project_onto_box</span></code></a></p></td>
+<td><p>Projects an input vector onto the box.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="math/project_onto_simplex.html#tensorflow_mri.math.project_onto_simplex" title="tensorflow_mri.math.project_onto_simplex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">project_onto_simplex</span></code></a></p></td>
+<td><p>Projects an input vector onto the simplex.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="math/shrinkage.html#tensorflow_mri.math.shrinkage" title="tensorflow_mri.math.shrinkage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shrinkage</span></code></a></p></td>
 <td><p>Shrinkage operator.</p></td>

@@ -23,7 +23,13 @@ Functions
 
     block_soft_threshold
     extract_from_complex
+    indicator_ball
+    indicator_box
+    indicator_simplex
     make_val_and_grad_fn
     normalize_no_nan
+    project_onto_ball
+    project_onto_box
+    project_onto_simplex
     shrinkage
     soft_threshold

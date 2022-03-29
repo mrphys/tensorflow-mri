@@ -1,0 +1,6 @@
+﻿tfmri.math.project\_onto\_ball
+==============================
+
+.. currentmodule:: tensorflow_mri.math
+
+.. autofunction:: project_onto_ball

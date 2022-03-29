@@ -1,0 +1,6 @@
+﻿tfmri.math.indicator\_box
+=========================
+
+.. currentmodule:: tensorflow_mri.math
+
+.. autofunction:: indicator_box

@@ -1,0 +1,6 @@
+﻿tfmri.math.indicator\_ball
+==========================
+
+.. currentmodule:: tensorflow_mri.math
+
+.. autofunction:: indicator_ball

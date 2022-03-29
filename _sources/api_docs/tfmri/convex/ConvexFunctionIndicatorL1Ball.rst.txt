@@ -1,0 +1,8 @@
+﻿tfmri.convex.ConvexFunctionIndicatorL1Ball
+==========================================
+
+.. currentmodule:: tensorflow_mri.convex
+
+.. autoclass:: ConvexFunctionIndicatorL1Ball
+    :members:
+    :show-inheritance:

@@ -13,11 +13,15 @@ Classes
 
     ConvexFunction
     ConvexFunctionAffineMappingComposition
+    ConvexFunctionIndicatorBall
+    ConvexFunctionIndicatorL1Ball
+    ConvexFunctionIndicatorL2Ball
     ConvexFunctionL1Norm
     ConvexFunctionL2Norm
     ConvexFunctionL2NormSquared
     ConvexFunctionLeastSquares
     ConvexFunctionLinearOperatorComposition
+    ConvexFunctionNorm
     ConvexFunctionQuadratic
     ConvexFunctionTikhonov
     ConvexFunctionTotalVariation

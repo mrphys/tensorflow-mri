@@ -3,7 +3,7 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
-<link rel="index" title="Index" href="../../../genindex.html" /><link rel="search" title="Search" href="../../../search.html" /><link rel="next" title="tfmri.math.make_val_and_grad_fn" href="make_val_and_grad_fn.html" /><link rel="prev" title="tfmri.math.block_soft_threshold" href="block_soft_threshold.html" />
+<link rel="index" title="Index" href="../../../genindex.html" /><link rel="search" title="Search" href="../../../search.html" /><link rel="next" title="tfmri.math.indicator_ball" href="indicator_ball.html" /><link rel="prev" title="tfmri.math.block_soft_threshold" href="block_soft_threshold.html" />
 
     <link rel="shortcut icon" href="../../../_static/tfmr_icon.svg"/><meta name="generator" content="sphinx-4.4.0, furo 2022.03.04"/>
         <title>tfmri.math.extract_from_complex - TensorFlow MRI Documentation</title>
@@ -189,11 +189,15 @@
 <li class="toctree-l1 has-children"><a class="reference internal" href="../convex.html">tfmri.convex</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunction.html">ConvexFunction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionAffineMappingComposition.html">ConvexFunctionAffineMappingComposition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionIndicatorBall.html">ConvexFunctionIndicatorBall</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionIndicatorL1Ball.html">ConvexFunctionIndicatorL1Ball</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionIndicatorL2Ball.html">ConvexFunctionIndicatorL2Ball</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionL1Norm.html">ConvexFunctionL1Norm</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionL2Norm.html">ConvexFunctionL2Norm</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionL2NormSquared.html">ConvexFunctionL2NormSquared</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionLeastSquares.html">ConvexFunctionLeastSquares</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionLinearOperatorComposition.html">ConvexFunctionLinearOperatorComposition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionNorm.html">ConvexFunctionNorm</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionQuadratic.html">ConvexFunctionQuadratic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionTikhonov.html">ConvexFunctionTikhonov</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionTotalVariation.html">ConvexFunctionTotalVariation</a></li>
@@ -252,8 +256,14 @@
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../math.html">tfmri.math</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="block_soft_threshold.html">block_soft_threshold</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">extract_from_complex</a></li>
+<li class="toctree-l2"><a class="reference internal" href="indicator_ball.html">indicator_ball</a></li>
+<li class="toctree-l2"><a class="reference internal" href="indicator_box.html">indicator_box</a></li>
+<li class="toctree-l2"><a class="reference internal" href="indicator_simplex.html">indicator_simplex</a></li>
 <li class="toctree-l2"><a class="reference internal" href="make_val_and_grad_fn.html">make_val_and_grad_fn</a></li>
 <li class="toctree-l2"><a class="reference internal" href="normalize_no_nan.html">normalize_no_nan</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project_onto_ball.html">project_onto_ball</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project_onto_box.html">project_onto_box</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project_onto_simplex.html">project_onto_simplex</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shrinkage.html">shrinkage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="soft_threshold.html">soft_threshold</a></li>
 </ul>
@@ -358,7 +368,7 @@
 <h1>tfmri.math.extract_from_complex<a class="headerlink" href="#tfmri-math-extract-from-complex" title="Permalink to this headline">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="tensorflow_mri.math.extract_from_complex">
-<span class="sig-name descname"><span class="pre">extract_from_complex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">part</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'extract_from_complex'</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.13.0/tensorflow_mri/python/ops/math_ops.py#L26-L60"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.math.extract_from_complex" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">extract_from_complex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">part</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'extract_from_complex'</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.14.0/tensorflow_mri/python/ops/math_ops.py#L27-L61"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.math.extract_from_complex" title="Permalink to this definition">#</a></dt>
 <dd><p>Extract parts from a complex tensor.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -383,12 +393,12 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="make_val_and_grad_fn.html">
+          <a class="next-page" href="indicator_ball.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">tfmri.math.make_val_and_grad_fn</div>
+                <div class="title">tfmri.math.indicator_ball</div>
               </div>
               <svg><use href="#svg-arrow-right"></use></svg>
             </a>

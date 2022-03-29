@@ -189,11 +189,15 @@
 <li class="toctree-l1 has-children"><a class="reference internal" href="../convex.html">tfmri.convex</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunction.html">ConvexFunction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionAffineMappingComposition.html">ConvexFunctionAffineMappingComposition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionIndicatorBall.html">ConvexFunctionIndicatorBall</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionIndicatorL1Ball.html">ConvexFunctionIndicatorL1Ball</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionIndicatorL2Ball.html">ConvexFunctionIndicatorL2Ball</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionL1Norm.html">ConvexFunctionL1Norm</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionL2Norm.html">ConvexFunctionL2Norm</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionL2NormSquared.html">ConvexFunctionL2NormSquared</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionLeastSquares.html">ConvexFunctionLeastSquares</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionLinearOperatorComposition.html">ConvexFunctionLinearOperatorComposition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionNorm.html">ConvexFunctionNorm</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionQuadratic.html">ConvexFunctionQuadratic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionTikhonov.html">ConvexFunctionTikhonov</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../convex/ConvexFunctionTotalVariation.html">ConvexFunctionTotalVariation</a></li>
@@ -252,8 +256,14 @@
 <li class="toctree-l1 has-children"><a class="reference internal" href="../math.html">tfmri.math</a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../math/block_soft_threshold.html">block_soft_threshold</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../math/extract_from_complex.html">extract_from_complex</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../math/indicator_ball.html">indicator_ball</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../math/indicator_box.html">indicator_box</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../math/indicator_simplex.html">indicator_simplex</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../math/make_val_and_grad_fn.html">make_val_and_grad_fn</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../math/normalize_no_nan.html">normalize_no_nan</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../math/project_onto_ball.html">project_onto_ball</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../math/project_onto_box.html">project_onto_box</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../math/project_onto_simplex.html">project_onto_simplex</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../math/shrinkage.html">shrinkage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../math/soft_threshold.html">soft_threshold</a></li>
 </ul>
@@ -358,17 +368,22 @@
 <h1>tfmri.plot.tiled_image_sequence<a class="headerlink" href="#tfmri-plot-tiled-image-sequence" title="Permalink to this headline">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="tensorflow_mri.plot.tiled_image_sequence">
-<span class="sig-name descname"><span class="pre">tiled_image_sequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">images</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">part</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bg_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dimgray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aspect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.77</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.13.0/tensorflow_mri/python/util/plot_util.py#L76-L157"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.plot.tiled_image_sequence" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">tiled_image_sequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">images</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">part</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bg_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dimgray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aspect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.77</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subplot_titles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.14.0/tensorflow_mri/python/util/plot_util.py#L84-L178"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.plot.tiled_image_sequence" title="Permalink to this definition">#</a></dt>
 <dd><p>Plots one or more image sequences in a grid.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>images</strong> – A 4D <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html">np.ndarray</a> of shape <code class="docutils literal notranslate"><span class="pre">[batch,</span> <span class="pre">time,</span> <span class="pre">height,</span> <span class="pre">width]</span></code>.</p></li>
+<li><p><strong>images</strong> – <p>A 4D <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html">np.ndarray</a> of shape <code class="docutils literal notranslate"><span class="pre">[batch,</span> <span class="pre">time,</span> <span class="pre">height,</span> <span class="pre">width]</span></code> (scalar
+values, mapped to colors using <code class="docutils literal notranslate"><span class="pre">cmap</span></code>) or a 5D <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html">np.ndarray</a> of shape
+<code class="docutils literal notranslate"><span class="pre">[batch,</span> <span class="pre">time,</span> <span class="pre">height,</span> <span class="pre">width,</span> <span class="pre">3]</span></code> (RGB) or
+<code class="docutils literal notranslate"><span class="pre">[batch,</span> <span class="pre">time,</span> <span class="pre">height,</span> <span class="pre">width,</span> <span class="pre">4]</span></code> (RGBA).</p>
+</p></li>
 <li><p><strong>part</strong> – An optional <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#text-sequence-type-str">str</a>. The part to display for complex numbers. One of
 <code class="docutils literal notranslate"><span class="pre">'abs'</span></code>, <code class="docutils literal notranslate"><span class="pre">'angle'</span></code>, <code class="docutils literal notranslate"><span class="pre">'real'</span></code> or <code class="docutils literal notranslate"><span class="pre">'imag'</span></code>. Must be specified if <code class="docutils literal notranslate"><span class="pre">images</span></code>
 has complex dtype.</p></li>
 <li><p><strong>cmap</strong> – <p>A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#text-sequence-type-str">str</a> or <a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.colors.Colormap.html">matplotlib.colors.Colormap</a>. The colormap used to map
-pixel values to colors. Defaults to <code class="docutils literal notranslate"><span class="pre">'gray'</span></code>.</p>
+scalar values to colors. This parameter is ignored for RGB(A) data.
+Defaults to <code class="docutils literal notranslate"><span class="pre">'gray'</span></code>.</p>
 </p></li>
 <li><p><strong>fps</strong> – A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex">float</a>. The number of frames per second. Defaults to 20.</p></li>
 <li><p><strong>aspect</strong> – <p>A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex">float</a>. The desired aspect ratio of the overall figure. Ignored
@@ -380,6 +395,10 @@ grid. If <a class="reference external" href="https://docs.python.org/3/library/c
 <li><p><strong>fig_size</strong> – <p>A <code class="docutils literal notranslate"><span class="pre">tuple</span></code> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex">float</a>s. Width and height of the figure in inches.</p>
 </p></li>
 <li><p><strong>bg_color</strong> – A <a class="reference external" href="https://matplotlib.org/stable/tutorials/colors/colors.html">color</a>. The background color.</p></li>
+<li><p><strong>fig_title</strong> – <p>A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#text-sequence-type-str">str</a>. The title of the figure.</p>
+</p></li>
+<li><p><strong>subplot_titles</strong> – <p>A <code class="docutils literal notranslate"><span class="pre">list</span></code> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#text-sequence-type-str">str</a>s. The titles of the subplots.</p>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
