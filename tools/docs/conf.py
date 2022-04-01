@@ -191,6 +191,9 @@ COMMON_TYPES_LINKS = {
     'complex': 'https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex',
     'str': 'https://docs.python.org/3/library/stdtypes.html#text-sequence-type-str',
     'boolean': 'https://docs.python.org/3/library/stdtypes.html#boolean-values',
+    'tuple': 'https://docs.python.org/3/library/stdtypes.html#tuples',
+    'list': 'https://docs.python.org/3/library/stdtypes.html#lists',
+    'dict': 'https://docs.python.org/3/library/stdtypes.html#mapping-types-dict',
     # Python constants.
     'False': 'https://docs.python.org/3/library/constants.html#False',
     'True': 'https://docs.python.org/3/library/constants.html#True',

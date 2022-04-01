@@ -56,35 +56,43 @@ class PlotTiledImageSequenceTest(test_util.TestCase):
   # TODO(jmontalt): improve testing.
   def test_return_type(self):
     """Tests that the function returns the correct type."""
-    # Create a dummy image sequence.
     rng = np.random.default_rng(432)
     images = rng.random((4, 10, 16, 16))
-    # Create a dummy figure.
     anim = plot_util.plot_tiled_image_sequence(images)
     self.assertIsInstance(anim, ani.ArtistAnimation)
 
   def test_rgb(self):
     """Test with RGB data."""
-    # Create a dummy image sequence.
     rng = np.random.default_rng(432)
     images = rng.random((4, 10, 16, 16, 3))
-    # Create a dummy figure.
     plot_util.plot_tiled_image_sequence(images)
 
   def test_subplot_titles(self):
     """Test subplot titles."""
-    # Create a dummy image sequence.
     rng = np.random.default_rng(432)
     images = rng.random((4, 10, 16, 16, 3))
-    # Create a dummy figure.
     plot_util.plot_tiled_image_sequence(
         images, subplot_titles=['A', 'B', 'C', 'D'])
 
   def test_fig_title(self):
     """Test figure title."""
-    # Create a dummy image sequence.
     rng = np.random.default_rng(432)
     images = rng.random((4, 10, 16, 16, 3))
-    # Create a dummy figure.
     plot_util.plot_tiled_image_sequence(
         images, fig_title='Title')
+
+  def test_tight_layout(self):
+    """Test tight layout."""
+    rng = np.random.default_rng(432)
+    images = rng.random((4, 10, 16, 16, 3))
+    plot_util.plot_tiled_image_sequence(
+        images, grid_shape=(1, 4), layout='tight',
+        subplot_titles=['A', 'B', 'C', 'D'])
+
+  def test_tight_bbox(self):
+    """Test tight bbox."""
+    rng = np.random.default_rng(432)
+    images = rng.random((4, 10, 16, 16, 3))
+    plot_util.plot_tiled_image_sequence(
+        images, grid_shape=(1, 4), layout='tight', bbox_inches='tight',
+        subplot_titles=['A', 'B', 'C', 'D'])
