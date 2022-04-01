@@ -241,6 +241,22 @@ class RadialTrajectoryTest(test_util.TestCase):
     with self.assertWarnsRegex(UserWarning, string):
       traj_ops.radial_trajectory(128, views=9, ordering='tiny')
 
+  def test_traj_flatten_encoding_dims(self):
+    """Test arg `flatten_encoding_dims` of `radial_trajectory`."""
+    traj = traj_ops.radial_trajectory(base_resolution=16, views=5)
+    expected = tf.reshape(traj, [-1, 2])
+    flat_traj = traj_ops.radial_trajectory(base_resolution=16, views=5,
+                                           flatten_encoding_dims=True)
+    self.assertAllClose(expected, flat_traj)
+
+  def test_dens_flatten_encoding_dims(self):
+    """Test arg `flatten_encoding_dims` of `radial_density`."""
+    dens = traj_ops.radial_density(base_resolution=16, views=5)
+    expected = tf.reshape(dens, [-1])
+    flat_dens = traj_ops.radial_density(base_resolution=16, views=5,
+                                        flatten_encoding_dims=True)
+    self.assertAllClose(expected, flat_dens)
+
 
 class SpiralTrajectoryTest(test_util.TestCase):
   """Spiral trajectory tests."""
@@ -303,6 +319,23 @@ class SpiralTrajectoryTest(test_util.TestCase):
     self.assertAllClose(trajectory,
                         _rotate_pi(self.data['spiral/trajectory/golden']),
                         rtol=1e-4, atol=1e-4)
+
+  def test_flatten_encoding_dims(self):
+    """Test flattening encoding dimensions."""
+    kwargs = dict(
+        base_resolution=64,
+        spiral_arms=5,
+        field_of_view=300.0,
+        max_grad_ampl=20.0,
+        min_rise_time=10.0,
+        dwell_time=2.6,
+        views=5
+    )
+    traj = traj_ops.spiral_trajectory(**kwargs)
+    expected = tf.reshape(traj, [-1, 2])
+    flat_traj = traj_ops.spiral_trajectory(
+        **kwargs, flatten_encoding_dims=True)
+    self.assertAllClose(expected, flat_traj)
 
 
 class TrajOpsTest(test_util.TestCase): # pylint: disable=missing-class-docstring

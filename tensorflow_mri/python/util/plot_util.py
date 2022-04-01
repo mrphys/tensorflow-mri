@@ -20,8 +20,10 @@ import tensorflow as tf
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import import_util
 
+mpl = import_util.lazy_import("matplotlib")
 ani = import_util.lazy_import("matplotlib.animation")
 plt = import_util.lazy_import("matplotlib.pyplot")
+tight_bbox = import_util.lazy_import("matplotlib.tight_bbox")
 go = import_util.lazy_import("plotly.graph_objects")
 ps = import_util.lazy_import("plotly.subplots")
 
@@ -33,6 +35,9 @@ def plot_image_sequence(images,
                         fps=20.0,
                         fig_size=None,
                         bg_color='dimgray',
+                        layout=None,
+                        bbox_inches=None,
+                        pad_inches=0.1,
                         fig_title=None):
   """Plots a sequence of images.
 
@@ -49,6 +54,13 @@ def plot_image_sequence(images,
     fps: A `float`. The number of frames per second. Defaults to 20.
     fig_size: A `tuple` of `float`s. Width and height of the figure in inches.
     bg_color: A `color`_. The background color.
+    layout: A `str`. One of `None`, `'tight'` (default) or `'constrained'`.
+      The layout mechanism. See `matplotlib.figure.Figure`_ for details.
+    bbox_inches: A `str` or `matplotlib.transforms.Bbox`_. Bounding box in
+      inches: only the given portion of the figure is displayed. If `'tight'`,
+      try to figure out the tight bbox of the figure.
+    pad_inches: A `float`. Amount of padding around the figure when bbox_inches
+      is `'tight'`. Defaults to 0.1.
     fig_title: A `str`. The title of the figure.
 
   Returns:
@@ -57,12 +69,11 @@ def plot_image_sequence(images,
   .. _color: https://matplotlib.org/stable/tutorials/colors/colors.html
   .. _matplotlib.animation.ArtistAnimation: https://matplotlib.org/stable/api/_as_gen/matplotlib.animation.ArtistAnimation.html
   .. _matplotlib.colors.Colormap: https://matplotlib.org/stable/api/_as_gen/matplotlib.colors.Colormap.html
+  .. _matplotlib.transforms.Bbox: https://matplotlib.org/stable/api/transformations.html#matplotlib.transforms.Bbox
   """
   images = _preprocess_image(images, part=part, expected_ndim=(3, 4))
 
-  fig = plt.figure(figsize=fig_size, facecolor=bg_color)
-  if fig_title is not None:
-    fig.suptitle(fig_title)
+  fig = plt.figure(figsize=fig_size, facecolor=bg_color, layout=layout)
 
   artists = []
   for image in images:
@@ -71,6 +82,18 @@ def plot_image_sequence(images,
                         animated=True)
     artist.axes.axis('off')
     artists.append([artist])
+
+  if fig_title is not None:
+    fig.suptitle(fig_title)
+
+  if bbox_inches is not None:
+    if bbox_inches == 'tight':
+      bbox_inches = fig.get_tightbbox(fig.canvas.get_renderer())
+    if pad_inches is None:
+      pad_inches = mpl.rcParams['savefig.pad_inches']
+    bbox_inches = bbox_inches.padded(pad_inches)
+    tight_bbox.adjust_bbox(fig, bbox_inches)
+    fig.set_size_inches(bbox_inches.width, bbox_inches.height)
 
   animation = ani.ArtistAnimation(fig, artists,
                                   interval=int(1000 / fps),
@@ -88,6 +111,9 @@ def plot_tiled_image_sequence(images,
                               fps=20.0,
                               fig_size=None,
                               bg_color='dimgray',
+                              layout=None,
+                              bbox_inches=None,
+                              pad_inches=0.1,
                               aspect=1.77,  # 16:9
                               grid_shape=None,
                               fig_title=None,
@@ -106,12 +132,19 @@ def plot_tiled_image_sequence(images,
       scalar values to colors. This parameter is ignored for RGB(A) data.
       Defaults to `'gray'`.
     fps: A `float`. The number of frames per second. Defaults to 20.
+    fig_size: A `tuple` of `float`s. Width and height of the figure in inches.
+    bg_color: A `color`_. The background color.
+    layout: A `str`. One of `None`, `'tight'` (default) or `'constrained'`.
+      The layout mechanism. See `matplotlib.figure.Figure`_ for details.
+    bbox_inches: A `str` or `matplotlib.transforms.Bbox`_. Bounding box in
+      inches: only the given portion of the figure is displayed. If `'tight'`,
+      try to figure out the tight bbox of the figure.
+    pad_inches: A `float`. Amount of padding around the figure when bbox_inches
+      is `'tight'`. Defaults to 0.1.
     aspect: A `float`. The desired aspect ratio of the overall figure. Ignored
       if `grid_shape` is specified.
     grid_shape: A `tuple` of `float`s. The number of rows and columns in the
       grid. If `None`, the grid shape is computed from `aspect`.
-    fig_size: A `tuple` of `float`s. Width and height of the figure in inches.
-    bg_color: A `color`_. The background color.
     fig_title: A `str`. The title of the figure.
     subplot_titles: A `list` of `str`s. The titles of the subplots.
 
@@ -121,6 +154,7 @@ def plot_tiled_image_sequence(images,
   .. _color: https://matplotlib.org/stable/tutorials/colors/colors.html
   .. _matplotlib.animation.ArtistAnimation: https://matplotlib.org/stable/api/_as_gen/matplotlib.animation.ArtistAnimation.html
   .. _matplotlib.colors.Colormap: https://matplotlib.org/stable/api/_as_gen/matplotlib.colors.Colormap.html
+  .. _matplotlib.transforms.Bbox: https://matplotlib.org/stable/api/transformations.html#matplotlib.transforms.Bbox
   """
   images = _preprocess_image(images, part=part, expected_ndim=(4, 5))
   num_tiles, num_frames, image_rows, image_cols = images.shape[:4]
@@ -132,25 +166,15 @@ def plot_tiled_image_sequence(images,
     grid_rows, grid_cols = _compute_grid_shape(
         num_tiles, (image_rows, image_cols), aspect)
 
-  fig, axs = plt.subplots(grid_rows, grid_cols,
-                          figsize=fig_size, facecolor=bg_color)
-  if fig_title is not None:
-    fig.suptitle(fig_title)
+  fig, axs = plt.subplots(grid_rows, grid_cols, squeeze=False,
+                          figsize=fig_size, facecolor=bg_color, layout=layout)
 
   artists = []
   for frame_idx in range(num_frames):  # For each frame.
     frame_artists = []
     for row, col in np.ndindex(grid_rows, grid_cols):  # For each tile.
-      tile_idx = row * grid_cols + col
-      # Get axis.
-      if grid_rows > 1 and grid_cols > 1:
-        ax = axs[row, col]
-      elif grid_rows > 1 and grid_cols == 1:
-        ax = axs[row]
-      elif grid_rows == 1 and grid_cols > 1:
-        ax = axs[col]
-      else:
-        ax = axs
+      tile_idx = row * grid_cols + col  # Index of current tile.
+      ax = axs[row, col]  # Current axes.
       # Set axis properties. This is always done, regardless of whether there's
       # actually anything to display on this tile.
       ax.axis('off')
@@ -168,6 +192,16 @@ def plot_tiled_image_sequence(images,
                          animated=True)
       frame_artists.append(artist)
     artists.append(frame_artists)
+
+  if fig_title is not None:
+    fig.suptitle(fig_title)
+
+  if bbox_inches is not None:
+    if bbox_inches == 'tight':
+      bbox_inches = fig.get_tightbbox(fig.canvas.get_renderer())
+      bbox_inches = bbox_inches.padded(pad_inches)
+    tight_bbox.adjust_bbox(fig, bbox_inches)
+    fig.set_size_inches(bbox_inches.width, bbox_inches.height)
 
   animation = ani.ArtistAnimation(fig, artists,
                                   interval=int(1000 / fps),

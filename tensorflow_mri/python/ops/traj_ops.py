@@ -153,7 +153,8 @@ def radial_trajectory(base_resolution,
                       ordering='linear',
                       angle_range='full',
                       tiny_number=7,
-                      readout_os=2.0):
+                      readout_os=2.0,
+                      flatten_encoding_dims=False):
   """Calculate a radial trajectory.
 
   This function supports the following 2D ordering methods:
@@ -190,15 +191,17 @@ def radial_trajectory(base_resolution,
     views: An `int`. The number of radial views per phase.
     phases: An `int`. The number of phases for cine acquisitions. If `None`,
       this is assumed to be a non-cine acquisition with no time dimension.
-    ordering: A `string`. The ordering type. Must be one of: `{'linear',
+    ordering: A `str`. The ordering type. Must be one of: `{'linear',
       'golden', 'tiny', 'sorted', 'sphere_archimedean'}`.
-    angle_range: A `string`. The range of the rotation angle. Must be one of:
+    angle_range: A `str`. The range of the rotation angle. Must be one of:
       `{'full', 'half'}`. If `angle_range` is `'full'`, the full circle/sphere
       is included in the range. If `angle_range` is `'half'`, only a
       semicircle/hemisphere is included.
     tiny_number: An `int`. The tiny golden angle number. Only used if `ordering`
       is `'tiny'` or `'tiny_half'`. Must be >= 2. Defaults to 7.
     readout_os: A `float`. The readout oversampling factor. Defaults to 2.0.
+    flatten_encoding_dims: A `boolean`. If `True`, the encoding dimensions are
+      flattened to a single dimension. Defaults to `False`.
 
   Returns:
     A `Tensor` of type `float32` and shape `[views, samples, 2]` if `phases` is
@@ -226,7 +229,8 @@ def radial_trajectory(base_resolution,
                             phases=phases,
                             ordering=ordering,
                             angle_range=angle_range,
-                            tiny_number=tiny_number)
+                            tiny_number=tiny_number,
+                            flatten_encoding_dims=flatten_encoding_dims)
 
 
 @api_util.export("sampling.spiral_trajectory")
@@ -247,7 +251,8 @@ def spiral_trajectory(base_resolution,
                       vd_inner_cutoff=1.0,
                       vd_outer_cutoff=1.0,
                       vd_outer_density=1.0,
-                      vd_type='linear'):
+                      vd_type='linear',
+                      flatten_encoding_dims=False):
   """Calculate a spiral trajectory.
 
   Args:
@@ -264,9 +269,9 @@ def spiral_trajectory(base_resolution,
     views: An `int`. The number of radial views per phase.
     phases: An `int`. The number of phases for cine acquisitions. If `None`,
       this is assumed to be a non-cine acquisition with no time dimension.
-    ordering: A `string`. The ordering type. Must be one of: `{'linear',
+    ordering: A `str`. The ordering type. Must be one of: `{'linear',
       'golden', 'tiny', 'sorted'}`.
-    angle_range: A `string`. The range of the rotation angle. Must be one of:
+    angle_range: A `str`. The range of the rotation angle. Must be one of:
       `{'full', 'half'}`. If `angle_range` is `'full'`, the full circle/sphere
       is included in the range. If `angle_range` is `'half'`, only a
       semicircle/hemisphere is included.
@@ -293,6 +298,8 @@ def spiral_trajectory(base_resolution,
       variable-density portion of *k*-space, i.e., between `vd_inner_cutoff`
       and `vd_outer_cutoff`. Must be one of `'linear'`, `'quadratic'` or
       `'hanning'`.
+    flatten_encoding_dims: A `boolean`. If `True`, the encoding dimensions are
+      flattened to a single dimension. Defaults to `False`.
 
   Returns:
     A `Tensor` of type `float32` and shape `[views, samples, 2]` if `phases` is
@@ -323,7 +330,8 @@ def spiral_trajectory(base_resolution,
                             phases=phases,
                             ordering=ordering,
                             angle_range=angle_range,
-                            tiny_number=tiny_number)
+                            tiny_number=tiny_number,
+                            flatten_encoding_dims=flatten_encoding_dims)
 
 
 def _kspace_trajectory(traj_type,
@@ -332,11 +340,12 @@ def _kspace_trajectory(traj_type,
                        phases=None,
                        ordering='linear',
                        angle_range='full',
-                       tiny_number=7):
+                       tiny_number=7,
+                       flatten_encoding_dims=False):
   """Calculate a k-space trajectory.
 
   Args:
-    traj_type: A `string`. The trajectory type. Must be one of: `{'radial',
+    traj_type: A `str`. The trajectory type. Must be one of: `{'radial',
       'spiral'}`.
     waveform_params: A `dict`. Must contain the parameters needed to calculate
       the view waveform. The accepted parameters depend on the trajectory type:
@@ -419,6 +428,9 @@ def _kspace_trajectory(traj_type,
   else:
     traj = _rotate_waveform_2d(waveform, angles)
 
+  if flatten_encoding_dims:
+    traj = flatten_trajectory(traj)
+
   return traj
 
 
@@ -429,7 +441,8 @@ def radial_density(base_resolution,
                    ordering='linear',
                    angle_range='full',
                    tiny_number=7,
-                   readout_os=2.0):
+                   readout_os=2.0,
+                   flatten_encoding_dims=False):
   """Calculate sampling density for radial trajectories.
 
   This is an exact density calculation method based on geometrical
@@ -465,6 +478,9 @@ def radial_density(base_resolution,
     weights = weights[0, ...]
 
   density = tf.math.reciprocal(weights)
+
+  if flatten_encoding_dims:
+    density = flatten_density(density)
 
   return density
 
