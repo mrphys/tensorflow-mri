@@ -70,6 +70,7 @@ def plot_image_sequence(images,
   .. _matplotlib.animation.ArtistAnimation: https://matplotlib.org/stable/api/_as_gen/matplotlib.animation.ArtistAnimation.html
   .. _matplotlib.colors.Colormap: https://matplotlib.org/stable/api/_as_gen/matplotlib.colors.Colormap.html
   .. _matplotlib.transforms.Bbox: https://matplotlib.org/stable/api/transformations.html#matplotlib.transforms.Bbox
+  .. _matplotlib.figure.Figure: https://matplotlib.org/stable/api/figure_api.html#matplotlib.figure.Figure
   """
   images = _preprocess_image(images, part=part, expected_ndim=(3, 4))
 
@@ -155,6 +156,7 @@ def plot_tiled_image_sequence(images,
   .. _matplotlib.animation.ArtistAnimation: https://matplotlib.org/stable/api/_as_gen/matplotlib.animation.ArtistAnimation.html
   .. _matplotlib.colors.Colormap: https://matplotlib.org/stable/api/_as_gen/matplotlib.colors.Colormap.html
   .. _matplotlib.transforms.Bbox: https://matplotlib.org/stable/api/transformations.html#matplotlib.transforms.Bbox
+  .. _matplotlib.figure.Figure: https://matplotlib.org/stable/api/figure_api.html#matplotlib.figure.Figure
   """
   images = _preprocess_image(images, part=part, expected_ndim=(4, 5))
   num_tiles, num_frames, image_rows, image_cols = images.shape[:4]
