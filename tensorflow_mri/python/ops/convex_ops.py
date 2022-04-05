@@ -376,10 +376,14 @@ class ConvexFunctionNorm(ConvexFunction):
     return self._scale * tf.math.real(tf.norm(x, ord=self._order, axis=-1))
 
   def _prox(self, x, scale=None):
+    combined_scale = self._scale
+    if scale is not None:
+      combined_scale *= tf.cast(scale, self.dtype.real_dtype)
+
     if self._order == 1:
-      return math_ops.soft_threshold(x, self._scale * (scale or 1.0))
+      return math_ops.soft_threshold(x, combined_scale)
     if self._order == 2:
-      return math_ops.block_soft_threshold(x, self._scale * (scale or 1.0))
+      return math_ops.block_soft_threshold(x, combined_scale)
     raise NotImplementedError(
         f"The proximal operator of the L{self._order}-norm is not implemented.")
 
@@ -470,8 +474,11 @@ class ConvexFunctionL2NormSquared(ConvexFunction):  # pylint: disable=abstract-m
     return self._scale * tf.math.reduce_sum(x * tf.math.conj(x), axis=-1)
 
   def _prox(self, x, scale=None):
-    scale = self._scale * (scale or 1.0)
-    return math_ops.shrinkage(x, 2.0 * scale)
+    combined_scale = self._scale
+    if scale is not None:
+      combined_scale *= tf.cast(scale, self.dtype.real_dtype)
+
+    return math_ops.shrinkage(x, 2.0 * combined_scale)
 
 
 @api_util.export("convex.ConvexFunctionTikhonov")
@@ -581,6 +588,8 @@ class ConvexFunctionQuadratic(ConvexFunction):  # pylint: disable=abstract-metho
       `[..., n]`. The coefficient of the linear term.
     constant_coefficient: A scalar `Tensor` representing the constant term `c`.
     scale: A `float`. A scaling factor. Defaults to 1.0.
+    cg_kwargs: A `dict` of keyword arguments to pass to the conjugate gradient
+      solver used during the computation of the proximal operator.
     name: A name for this `ConvexFunction`.
   """
   def __init__(self,
@@ -588,6 +597,7 @@ class ConvexFunctionQuadratic(ConvexFunction):  # pylint: disable=abstract-metho
                linear_coefficient=None,
                constant_coefficient=None,
                scale=None,
+               cg_kwargs=None,
                name=None):
     super().__init__(scale=scale,
                      ndim=quadratic_coefficient.shape[-1],
@@ -598,6 +608,7 @@ class ConvexFunctionQuadratic(ConvexFunction):  # pylint: disable=abstract-metho
         linear_coefficient)
     self._constant_coefficient = self._validate_constant_coefficient(
         constant_coefficient)
+    self._cg_kwargs = cg_kwargs or {}
 
   def _call(self, x):
     # Calculate the quadratic term.
@@ -612,7 +623,11 @@ class ConvexFunctionQuadratic(ConvexFunction):  # pylint: disable=abstract-metho
     return self._scale * result
 
   def _prox(self, x, scale=None):
-    one_over_scale = 1.0 / (self._scale * (scale or 1.0))
+    combined_scale = self._scale
+    if scale is not None:
+      combined_scale *= tf.cast(scale, self.dtype.real_dtype)
+
+    one_over_scale = 1.0 / combined_scale
     # Operator A^T A + 1 / \lambda * I.
     self._operator = linalg_ext.LinearOperatorAddition([
         self._quadratic_coefficient,
@@ -624,7 +639,9 @@ class ConvexFunctionQuadratic(ConvexFunction):  # pylint: disable=abstract-metho
     rhs = one_over_scale * x
     if self._linear_coefficient is not None:
       rhs -= self._linear_coefficient
-    return linalg_ops.conjugate_gradient(self._operator, rhs).x
+
+    return linalg_ops.conjugate_gradient(
+        self._operator, rhs, **self._cg_kwargs).x
 
   def _validate_linear_coefficient(self, coef):  # pylint: disable=missing-param-doc
     """Validates the linear coefficient."""
@@ -682,9 +699,11 @@ class ConvexFunctionLeastSquares(ConvexFunctionQuadratic):  # pylint: disable=ab
     rhs: A `Tensor` representing a vector `b` with shape `[..., m]`. The
       right-hand side of the linear system.
     scale: A `float`. A scaling factor. Defaults to 1.0.
+    cg_kwargs: A `dict` of keyword arguments to pass to the conjugate gradient
+      solver used during the computation of the proximal operator.
     name: A name for this `ConvexFunction`.
   """
-  def __init__(self, operator, rhs, scale=None, name=None):
+  def __init__(self, operator, rhs, scale=None, cg_kwargs=None, name=None):
     if isinstance(operator, linalg_imaging.LinalgImagingMixin):
       rhs = operator.flatten_range_shape(rhs)
     quadratic_coefficient = tf.linalg.LinearOperatorComposition(
@@ -696,6 +715,7 @@ class ConvexFunctionLeastSquares(ConvexFunctionQuadratic):  # pylint: disable=ab
                      linear_coefficient=linear_coefficient,
                      constant_coefficient=constant_coefficient,
                      scale=scale,
+                     cg_kwargs=cg_kwargs,
                      name=name)
 
   @property

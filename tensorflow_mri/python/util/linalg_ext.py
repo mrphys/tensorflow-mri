@@ -339,9 +339,9 @@ class _LinearOperatorStackBase(tf.linalg.LinearOperator):  # pylint: disable=abs
     # Apply each operator, then stack the results.
     if xor(adjoint, is_hstack):  # Adjoint V-stack OR non-adjoint H-stack.
       if is_hstack:  # H-stack operator.
-        size_splits = [op.domain_dimension for op in self.operators]
+        size_splits = [op.domain_dimension_tensor() for op in self.operators]
       else:  # Adjoint V-stack operator.
-        size_splits = [op.range_dimension for op in self.operators]
+        size_splits = [op.range_dimension_tensor() for op in self.operators]
       tensors = tf.split(x, size_splits, axis=-2)  # pylint: disable=redundant-keyword-arg,no-value-for-parameter
       results = [op.matmul(x, adjoint=adjoint, adjoint_arg=adjoint_arg)
                  for op, x in zip(self.operators, tensors)]

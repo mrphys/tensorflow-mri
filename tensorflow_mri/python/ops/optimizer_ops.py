@@ -61,7 +61,8 @@ def admm_minimize(function_f,
                   atol=1e-5,
                   rtol=1e-5,
                   max_iterations=50,
-                  linearized=False):
+                  linearized=False,
+                  cg_kwargs=None):
   r"""Applies the ADMM algorithm to minimize a separable convex function.
 
   Minimizes :math:`f(x) + g(z)`, subject to :math:`Ax + Bz = c`.
@@ -89,9 +90,12 @@ def admm_minimize(function_f,
       of `g(x)`. This is useful when the proximal operator of `g(Ax)` cannot be
       easily evaluated, but the proximal operator of `g(x)` can. Defaults to
       `False`.
+    cg_kwargs: A `dict`. Keyword arguments to pass to the conjugate gradient
+      solver (see `tfmri.linalg.conjugate_gradient`).
 
   Returns:
-    A namedtuple containing the following fields:
+    A namedtuple containing the following fields
+
       - `i`: The number of iterations of the ADMM update.
       - `x`: The first primal variable.
       - `z`: The second primal variable.
@@ -180,8 +184,10 @@ def admm_minimize(function_f,
     x_update_fn = function_f.prox
     z_update_fn = function_g.prox
   else:
-    x_update_fn = _get_admm_update_fn(function_f, operator_a)
-    z_update_fn = _get_admm_update_fn(function_g, operator_b)
+    x_update_fn = _get_admm_update_fn(function_f, operator_a,
+                                      cg_kwargs=cg_kwargs)
+    z_update_fn = _get_admm_update_fn(function_g, operator_b,
+                                      cg_kwargs=cg_kwargs)
 
   x_shape = tf.TensorShape([x_ndim])
   z_shape = tf.TensorShape([z_ndim])
@@ -270,7 +276,7 @@ def admm_minimize(function_f,
   return tf.while_loop(_cond, _body, [state])[0]
 
 
-def _get_admm_update_fn(function, operator):
+def _get_admm_update_fn(function, operator, cg_kwargs=None):
   r"""Returns a function for the ADMM update.
 
   The returned function evaluates the expression
@@ -283,6 +289,8 @@ def _get_admm_update_fn(function, operator):
   Args:
     function: A `ConvexFunction` instance.
     operator: A `LinearOperator` instance.
+    cg_kwargs: A `dict` of keyword arguments to pass to the conjugate gradient
+      solver.
 
   Returns:
     A function that evaluates the ADMM update.
@@ -291,6 +299,8 @@ def _get_admm_update_fn(function, operator):
     NotImplementedError: If no rules exist to evaluate the ADMM update for the
       specified inputs.
   """  # pylint: disable=line-too-long
+  cg_kwargs = cg_kwargs or {}
+
   if isinstance(operator, tf.linalg.LinearOperatorIdentity):
     def _update_fn(x, rho):
       return function.prox(x, scale=1.0 / rho)
@@ -323,7 +333,8 @@ def _get_admm_update_fn(function, operator):
       rhs = (rho * tf.linalg.matvec(operator, v, adjoint_a=True) -
              function.linear_coefficient)
       # Solve the linear system using CG (see ref [1], section 4.3.4).
-      return linalg_ops.conjugate_gradient(ls_operator, rhs).x
+      return linalg_ops.conjugate_gradient(ls_operator, rhs, **cg_kwargs).x
+
     return _update_fn
 
   raise NotImplementedError(

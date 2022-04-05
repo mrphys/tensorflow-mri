@@ -205,11 +205,10 @@ COMMON_TYPES_LINKS = {
     # TensorFlow types.
     'tf.Tensor': 'https://www.tensorflow.org/api_docs/python/tf/Tensor',
     'tf.TensorShape': 'https://www.tensorflow.org/api_docs/python/tf/TensorShape',
-    'tf.dtypes.DType': 'https://www.tensorflow.org/api_docs/python/tf/dtypes/DType',
-    # TFMRI types.
-    'tfmri.linalg.LinearOperator': 'https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/linalg/LinearOperator.html',
-    'tfmri.convex.ConvexFunction': 'https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/convex/ConvexFunction.html'
+    'tf.dtypes.DType': 'https://www.tensorflow.org/api_docs/python/tf/dtypes/DType'
 }
+
+TFMRI_OBJECTS_PATTERN = re.compile(r"``(?P<name>tfmri.[a-zA-Z0-9_.]+)``")
 
 COMMON_TYPES_PATTERNS = {
     k: re.compile(rf"``{k}``")for k in COMMON_TYPES_LINKS}
@@ -235,9 +234,24 @@ def process_docstring(app, what, name, obj, options, lines):  # pylint: disable=
   # Add links to some common types.
   for k in COMMON_TYPES_LINKS:
     text = COMMON_TYPES_PATTERNS[k].sub(COMMON_TYPES_REPLACEMENTS[k], text)
+  # Add links to TFMRI objects.
+  for match in TFMRI_OBJECTS_PATTERN.finditer(text):
+    name = match.group('name')
+    url = get_doc_url(name)
+    pattern = rf"``{name}``"
+    repl = rf"`{name} <{url}>`_"
+    text = text.replace(pattern, repl)
+
   # Correct double quotes.
   text = LINK_PATTERN.sub(LINK_REPL, text)
   lines[:] = text.splitlines()
+
+
+def get_doc_url(name):
+  """Get doc URL for the given TFMRI name."""
+  url = 'https://mrphys.github.io/tensorflow-mri/api_docs/'
+  url += name.replace('.', '/') + '.html'
+  return url
 
 
 def setup(app):
