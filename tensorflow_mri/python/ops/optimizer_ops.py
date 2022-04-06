@@ -19,6 +19,7 @@ This module contains solvers for nonlinear optimization problems.
 
 import collections
 
+import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
@@ -26,6 +27,17 @@ from tensorflow_mri.python.ops import convex_ops
 from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import linalg_ext
+
+
+GdOptimizerResults = collections.namedtuple(
+    'GdOptimizerResults', [
+        'converged',
+        'num_iterations',
+        'objective_gradient',
+        'objective_value',
+        'position'
+    ]
+)
 
 
 AdmmOptimizerResults = collections.namedtuple(
@@ -51,6 +63,125 @@ PdhgOptimizerResults = collections.namedtuple(
 )
 
 
+@api_util.export("optimize.gradient_descent")
+def gradient_descent(value_and_gradients_function,
+                     initial_position,
+                     step_size,
+                     max_iterations=50,
+                     grad_tolerance=1e-8,
+                     x_tolerance=0,
+                     f_relative_tolerance=0,
+                     f_absolute_tolerance=0,
+                     name=None):
+  r"""Applies gradient descent to minimize a differentiable function.
+
+  Args:
+    value_and_gradients_function: A `callable` that accepts a point as a
+      real/complex `tf.Tensor` and returns a tuple of `tf.Tensor` objects
+      containing the value of the function (real dtype) and its
+      gradient (real/complex dtype) at that point. The function to be minimized.
+      The input should be of shape `[..., n]`, where `n` is the size of the
+      domain of input points, and all others are batching dimensions. The first
+      component of the return value should be a real `tf.Tensor` of matching
+      shape `[...]`. The second component (the gradient) should also be of
+      shape `[..., n]` like the input value to the function. Given a function
+      definition that returns the value of the function to be minimized, the
+      value and gradients function may be obtained using the
+      `tfmri.math.make_val_and_grad_fn` decorator.
+    initial_position: A `tf.Tensor` of shape `[..., n]`. The starting point, or
+      points when using batch dimensions, of the search procedure.
+    step_size: A scalar real `tf.Tensor`. The step size to use in the gradient
+      descent update.
+    max_iterations: A scalar integer `tf.Tensor`. The maximum number of gradient
+      descent iterations.
+    grad_tolerance: A scalar `tf.Tensor` of real dtype. Specifies the gradient
+      tolerance for the procedure. If the supremum norm of the gradient vector
+      is below this number, the algorithm is stopped.
+    x_tolerance: A scalar `tf.Tensor` of real dtype. If the absolute change in
+      the position between one iteration and the next is smaller than this
+      number, the algorithm is stopped.
+    f_relative_tolerance: A scalar `tf.Tensor` of real dtype. If the relative
+      change in the objective value between one iteration and the next is
+      smaller than this value, the algorithm is stopped.
+    f_absolute_tolerance: A scalar `tf.Tensor` of real dtype. If the absolute
+      change in the objective value between one iteration and the next is
+      smaller than this value, the algorithm is stopped.
+    name: A `str`. The name of this operation.
+
+  Returns:
+    A `namedtuple` containing the following fields
+
+    - `converged`: A boolean `tf.Tensor` of shape `[...]` indicating whether the
+      minimum was found within tolerance for each batch member.
+    - `num_iterations`: A scalar integer `tf.Tensor` containing the number of
+      iterations of the GD update.
+    - `objective_value`: A `tf.Tensor` of shape `[...]` with the value of the
+      objective function at the `position`. If the search converged, then
+      this is the (local) minimum of the objective function.
+    - `objective_gradient`: A `tf.Tensor` of shape `[..., n]` containing the
+      gradient of the objective function at the `position`. If the search
+      converged the max-norm of this tensor should be below the tolerance.
+    - `position`: A `tf.Tensor` of shape `[..., n]` containing the last argument
+      value found during the search. If the search converged, then this value
+      is the argmin of the objective function.
+  """
+  with tf.name_scope(name or 'gradient_descent'):
+    initial_position = tf.convert_to_tensor(
+        initial_position, name='initial_position')
+    dtype = initial_position.dtype
+    step_size = tf.convert_to_tensor(
+        step_size, dtype=dtype.real_dtype, name='step_size')
+    max_iterations = tf.convert_to_tensor(
+        max_iterations, dtype=tf.int32, name='max_iterations')
+    grad_tolerance = tf.convert_to_tensor(
+        grad_tolerance, dtype=dtype.real_dtype, name='grad_tolerance')
+    x_tolerance = tf.convert_to_tensor(
+        x_tolerance, dtype=dtype.real_dtype, name='x_tolerance')
+    f_relative_tolerance = tf.convert_to_tensor(
+        f_relative_tolerance, dtype=dtype.real_dtype,
+        name='f_relative_tolerance')
+    f_absolute_tolerance = tf.convert_to_tensor(
+        f_absolute_tolerance, dtype=dtype.real_dtype,
+        name='f_absolute_tolerance')
+
+    def _cond(state):
+      return tf.math.logical_and(
+          state.num_iterations < max_iterations,
+          tf.math.logical_not(state.converged))
+
+    def _body(state):
+      position = state.position - step_size * state.objective_gradient
+      objective_value, objective_gradient = value_and_gradients_function(
+          position)
+
+      converged = _check_convergence(state.position,
+                                     position,
+                                     state.objective_value,
+                                     objective_value,
+                                     objective_gradient,
+                                     grad_tolerance,
+                                     x_tolerance,
+                                     f_relative_tolerance,
+                                     f_absolute_tolerance)
+
+      return [GdOptimizerResults(converged=converged,
+                                 num_iterations=state.num_iterations + 1,
+                                 objective_gradient=objective_gradient,
+                                 objective_value=objective_value,
+                                 position=position)]
+
+    batch_shape = tf.shape(initial_position)[:-1]
+    objective_value, objective_gradient = value_and_gradients_function(
+        initial_position)
+    state = GdOptimizerResults(converged=tf.constant(False, shape=batch_shape),
+                               num_iterations=tf.constant(0, dtype=tf.int32),
+                               objective_gradient=objective_gradient,
+                               objective_value=objective_value,
+                               position=initial_position)
+
+    return tf.while_loop(_cond, _body, [state])[0]
+
+
 @api_util.export("convex.admm_minimize")
 def admm_minimize(function_f,
                   function_g,
@@ -62,7 +193,8 @@ def admm_minimize(function_f,
                   rtol=1e-5,
                   max_iterations=50,
                   linearized=False,
-                  cg_kwargs=None):
+                  cg_kwargs=None,
+                  name=None):
   r"""Applies the ADMM algorithm to minimize a separable convex function.
 
   Minimizes :math:`f(x) + g(z)`, subject to :math:`Ax + Bz = c`.
@@ -92,10 +224,10 @@ def admm_minimize(function_f,
       `False`.
     cg_kwargs: A `dict`. Keyword arguments to pass to the conjugate gradient
       solver (see `tfmri.linalg.conjugate_gradient`).
+    name: A `str`. The name of this operation. Defaults to `'admm_minimize'`.
 
   Returns:
     A namedtuple containing the following fields
-
       - `i`: The number of iterations of the ADMM update.
       - `x`: The first primal variable.
       - `z`: The second primal variable.
@@ -114,166 +246,168 @@ def admm_minimize(function_f,
     TypeError: If inputs have incompatible types.
     ValueError: If inputs are incompatible.
   """
-  if linearized:
-    if operator_b is not None:
-      raise ValueError(
-          "Linearized ADMM does not support the use of `operator_b`.")
-    if constant_c is not None:
-      raise ValueError(
-          "Linearized ADMM does not support the use of `constant_c`.")
-
-  # Infer the dtype of the variables from the dtype of f.
-  dtype = tf.dtypes.as_dtype(function_f.dtype)
-  if function_g.dtype != dtype:
-    raise TypeError(
-        f"`function_f` and `function_g` must have the same dtype, but "
-        f"got: {dtype} and {function_g.dtype}")
-
-  # Infer the dimensionality of the primal variables x, z from the
-  # dimensionality of the domains and f and g.
-  x_ndim = function_f.ndim
-  z_ndim = function_g.ndim
-
-  if x_ndim is None:
-    raise ValueError("`function_f` must have a known domain dimension.")
-  if z_ndim is None:
-    raise ValueError("`function_g` must have a known domain dimension.")
-
-  # Provide default values for A and B.
-  if operator_a is None:
-    operator_a = tf.linalg.LinearOperatorScaledIdentity(
-        x_ndim, tf.constant(1.0, dtype=dtype))
-  if operator_b is None:
-    operator_b = tf.linalg.LinearOperatorScaledIdentity(
-        z_ndim, tf.constant(-1.0, dtype=dtype))
-
-  # Check that the domain shapes of the A, B operators are consistent with f and
-  # g.
-  if not operator_a.shape[-1:].is_compatible_with([x_ndim]):
-    raise ValueError(
-        f"`operator_a` must have the same domain dimension as `function_f`, "
-        f"but got: {operator_a.shape[-1]} and {x_ndim}")
-  if not operator_b.shape[-1:].is_compatible_with([z_ndim]):
-    raise ValueError(
-        f"`operator_b` must have the same domain dimension as `function_g`, "
-        f"but got: {operator_b.shape[-1]} and {z_ndim}")
-
-  # Infer the dimensionality of the dual variable u from the range shape of
-  # operator A.
-  u_ndim = operator_a.shape[-2]
-
-  # Check that the range dimension of operator B is compatible with that of
-  # operator A.
-  if not operator_b.shape[-2:-1].is_compatible_with([u_ndim]):
-    raise ValueError(
-        f"`operator_b` must have the same range dimension as `operator_a`, "
-        f"but got: {operator_b.shape[-2]} and {u_ndim}")
-
-  # Provide default value for constant c.
-  if constant_c is None:
-    constant_c = tf.constant(0.0, dtype=dtype, shape=[u_ndim])
-
-  # Check that the constant c has the same dimensionality as the dual variable.
-  if not constant_c.shape[-1:].is_compatible_with([u_ndim]):
-    raise ValueError(
-        f"The last dimension of `constant_c` must be equal to the range "
-        f"dimension of `operator_a`, but got: {constant_c.shape[-1]} and "
-        f"{u_ndim}")
-
-  if linearized:
-    x_update_fn = function_f.prox
-    z_update_fn = function_g.prox
-  else:
-    x_update_fn = _get_admm_update_fn(function_f, operator_a,
-                                      cg_kwargs=cg_kwargs)
-    z_update_fn = _get_admm_update_fn(function_g, operator_b,
-                                      cg_kwargs=cg_kwargs)
-
-  x_shape = tf.TensorShape([x_ndim])
-  z_shape = tf.TensorShape([z_ndim])
-  u_shape = tf.TensorShape([u_ndim])
-
-  x_ndim_sqrt = tf.math.sqrt(tf.cast(x_ndim, dtype.real_dtype))
-  u_ndim_sqrt = tf.math.sqrt(tf.cast(u_ndim, dtype.real_dtype))
-
-  atol = tf.convert_to_tensor(
-      atol, dtype=dtype.real_dtype, name='atol')
-  rtol = tf.convert_to_tensor(
-      rtol, dtype=dtype.real_dtype, name='rtol')
-  max_iterations = tf.convert_to_tensor(
-      max_iterations, dtype=tf.dtypes.int32, name='max_iterations')
-
-  def _stopping_condition(state):
-    return tf.math.logical_and(
-        tf.math.real(tf.norm(state.r, axis=-1)) <= state.ptol,
-        tf.math.real(tf.norm(state.s, axis=-1)) <= state.dtol)
-
-  def _cond(state):
-    """Returns `True` if optimization should continue."""
-    return (not _stopping_condition(state)) and (state.i < max_iterations)
-
-  def _body(state):  # pylint: disable=missing-param-doc
-    """The ADMM update."""
-    # x-minimization step.
-    state_bz = tf.linalg.matvec(operator_b, state.z)
+  with tf.name_scope(name or 'admm_minimize'):
     if linearized:
-      v = state.x - tf.linalg.matvec(
-          operator_a,
-          tf.linalg.matvec(operator_a, state.x) - state.z + state.u,
-          adjoint_a=True)
-    else:
-      v = constant_c - state_bz - state.u
-    x = x_update_fn(v, penalty_rho)
+      if operator_b is not None:
+        raise ValueError(
+            "Linearized ADMM does not support the use of `operator_b`.")
+      if constant_c is not None:
+        raise ValueError(
+            "Linearized ADMM does not support the use of `constant_c`.")
 
-    # z-minimization step.
-    ax = tf.linalg.matvec(operator_a, x)
+    # Infer the dtype of the variables from the dtype of f.
+    dtype = tf.dtypes.as_dtype(function_f.dtype)
+    if function_g.dtype != dtype:
+      raise TypeError(
+          f"`function_f` and `function_g` must have the same dtype, but "
+          f"got: {dtype} and {function_g.dtype}")
+
+    # Infer the dimensionality of the primal variables x, z from the
+    # dimensionality of the domains and f and g.
+    x_ndim = function_f.ndim
+    z_ndim = function_g.ndim
+
+    if x_ndim is None:
+      raise ValueError("`function_f` must have a known domain dimension.")
+    if z_ndim is None:
+      raise ValueError("`function_g` must have a known domain dimension.")
+
+    # Provide default values for A and B.
+    if operator_a is None:
+      operator_a = tf.linalg.LinearOperatorScaledIdentity(
+          x_ndim, tf.constant(1.0, dtype=dtype))
+    if operator_b is None:
+      operator_b = tf.linalg.LinearOperatorScaledIdentity(
+          z_ndim, tf.constant(-1.0, dtype=dtype))
+
+    # Check that the domain shapes of the A, B operators are consistent with f
+    # and g.
+    if not operator_a.shape[-1:].is_compatible_with([x_ndim]):
+      raise ValueError(
+          f"`operator_a` must have the same domain dimension as `function_f`, "
+          f"but got: {operator_a.shape[-1]} and {x_ndim}")
+    if not operator_b.shape[-1:].is_compatible_with([z_ndim]):
+      raise ValueError(
+          f"`operator_b` must have the same domain dimension as `function_g`, "
+          f"but got: {operator_b.shape[-1]} and {z_ndim}")
+
+    # Infer the dimensionality of the dual variable u from the range shape of
+    # operator A.
+    u_ndim = operator_a.shape[-2]
+
+    # Check that the range dimension of operator B is compatible with that of
+    # operator A.
+    if not operator_b.shape[-2:-1].is_compatible_with([u_ndim]):
+      raise ValueError(
+          f"`operator_b` must have the same range dimension as `operator_a`, "
+          f"but got: {operator_b.shape[-2]} and {u_ndim}")
+
+    # Provide default value for constant c.
+    if constant_c is None:
+      constant_c = tf.constant(0.0, dtype=dtype, shape=[u_ndim])
+
+    # Check that the constant c has the same dimensionality as the dual
+    # variable.
+    if not constant_c.shape[-1:].is_compatible_with([u_ndim]):
+      raise ValueError(
+          f"The last dimension of `constant_c` must be equal to the range "
+          f"dimension of `operator_a`, but got: {constant_c.shape[-1]} and "
+          f"{u_ndim}")
+
     if linearized:
-      v = ax + state.u
+      x_update_fn = function_f.prox
+      z_update_fn = function_g.prox
     else:
-      v = constant_c - ax - state.u
-    z = z_update_fn(v, penalty_rho)
+      x_update_fn = _get_admm_update_fn(function_f, operator_a,
+                                        cg_kwargs=cg_kwargs)
+      z_update_fn = _get_admm_update_fn(function_g, operator_b,
+                                        cg_kwargs=cg_kwargs)
 
-    # Dual variable update and compute residuals.
-    bz = tf.linalg.matvec(operator_b, z)
-    r = ax + bz - constant_c
-    u = state.u + r
-    s = penalty_rho * tf.linalg.matvec(
-        operator_a, bz - state_bz, adjoint_a=True)
+    x_shape = tf.TensorShape([x_ndim])
+    z_shape = tf.TensorShape([z_ndim])
+    u_shape = tf.TensorShape([u_ndim])
 
-    # Choose the primal tolerance.
-    ax_norm = tf.math.real(tf.norm(ax, axis=-1))
-    bz_norm = tf.math.real(tf.norm(bz, axis=-1))
-    c_norm = tf.math.real(tf.norm(constant_c, axis=-1))
-    max_norm = tf.math.maximum(tf.math.maximum(ax_norm, bz_norm), c_norm)
-    ptol = (atol * u_ndim_sqrt + rtol * max_norm)
+    x_ndim_sqrt = tf.math.sqrt(tf.cast(x_ndim, dtype.real_dtype))
+    u_ndim_sqrt = tf.math.sqrt(tf.cast(u_ndim, dtype.real_dtype))
 
-    # Choose the dual tolerance.
-    aty_norm = tf.math.real(tf.norm(
-        tf.linalg.matvec(operator_a, penalty_rho * state.u, adjoint_a=True),
-        axis=-1))
-    dtol = (atol * x_ndim_sqrt + rtol * aty_norm)
+    atol = tf.convert_to_tensor(
+        atol, dtype=dtype.real_dtype, name='atol')
+    rtol = tf.convert_to_tensor(
+        rtol, dtype=dtype.real_dtype, name='rtol')
+    max_iterations = tf.convert_to_tensor(
+        max_iterations, dtype=tf.dtypes.int32, name='max_iterations')
 
-    return [AdmmOptimizerResults(i=state.i + 1,
-                                 x=x,
-                                 z=z,
-                                 u=u,
-                                 r=r,
-                                 s=s,
-                                 ptol=ptol,
-                                 dtol=dtol)]
-  # Initial state.
-  state = AdmmOptimizerResults(
-      i=tf.constant(0, dtype=tf.dtypes.int32),
-      x=tf.constant(0.0, dtype=dtype, shape=x_shape),
-      z=tf.constant(0.0, dtype=dtype, shape=z_shape),
-      u=tf.constant(0.0, dtype=dtype, shape=u_shape),
-      r=None,     # Will be set in the first call to `_body`.
-      s=None,     # Ditto.
-      ptol=None,  # Ditto.
-      dtol=None)  # Ditto.
-  state = _body(state)[0]
+    def _stopping_condition(state):
+      return tf.math.logical_and(
+          tf.math.real(tf.norm(state.r, axis=-1)) <= state.ptol,
+          tf.math.real(tf.norm(state.s, axis=-1)) <= state.dtol)
 
-  return tf.while_loop(_cond, _body, [state])[0]
+    def _cond(state):
+      """Returns `True` if optimization should continue."""
+      return (not _stopping_condition(state)) and (state.i < max_iterations)
+
+    def _body(state):  # pylint: disable=missing-param-doc
+      """The ADMM update."""
+      # x-minimization step.
+      state_bz = tf.linalg.matvec(operator_b, state.z)
+      if linearized:
+        v = state.x - tf.linalg.matvec(
+            operator_a,
+            tf.linalg.matvec(operator_a, state.x) - state.z + state.u,
+            adjoint_a=True)
+      else:
+        v = constant_c - state_bz - state.u
+      x = x_update_fn(v, penalty_rho)
+
+      # z-minimization step.
+      ax = tf.linalg.matvec(operator_a, x)
+      if linearized:
+        v = ax + state.u
+      else:
+        v = constant_c - ax - state.u
+      z = z_update_fn(v, penalty_rho)
+
+      # Dual variable update and compute residuals.
+      bz = tf.linalg.matvec(operator_b, z)
+      r = ax + bz - constant_c
+      u = state.u + r
+      s = penalty_rho * tf.linalg.matvec(
+          operator_a, bz - state_bz, adjoint_a=True)
+
+      # Choose the primal tolerance.
+      ax_norm = tf.math.real(tf.norm(ax, axis=-1))
+      bz_norm = tf.math.real(tf.norm(bz, axis=-1))
+      c_norm = tf.math.real(tf.norm(constant_c, axis=-1))
+      max_norm = tf.math.maximum(tf.math.maximum(ax_norm, bz_norm), c_norm)
+      ptol = (atol * u_ndim_sqrt + rtol * max_norm)
+
+      # Choose the dual tolerance.
+      aty_norm = tf.math.real(tf.norm(
+          tf.linalg.matvec(operator_a, penalty_rho * state.u, adjoint_a=True),
+          axis=-1))
+      dtol = (atol * x_ndim_sqrt + rtol * aty_norm)
+
+      return [AdmmOptimizerResults(i=state.i + 1,
+                                  x=x,
+                                  z=z,
+                                  u=u,
+                                  r=r,
+                                  s=s,
+                                  ptol=ptol,
+                                  dtol=dtol)]
+    # Initial state.
+    state = AdmmOptimizerResults(
+        i=tf.constant(0, dtype=tf.dtypes.int32),
+        x=tf.constant(0.0, dtype=dtype, shape=x_shape),
+        z=tf.constant(0.0, dtype=dtype, shape=z_shape),
+        u=tf.constant(0.0, dtype=dtype, shape=u_shape),
+        r=None,     # Will be set in the first call to `_body`.
+        s=None,     # Ditto.
+        ptol=None,  # Ditto.
+        dtol=None)  # Ditto.
+    state = _body(state)[0]
+
+    return tf.while_loop(_cond, _body, [state])[0]
 
 
 def _get_admm_update_fn(function, operator, cg_kwargs=None):
@@ -351,3 +485,25 @@ def lbfgs_minimize(*args, **kwargs):
   .. _tfp.optimizer.lbfgs_minimize: https://www.tensorflow.org/probability/api_docs/python/tfp/optimizer/lbfgs_minimize
   """
   return tfp.optimizer.lbfgs_minimize(*args, **kwargs)
+
+
+def _check_convergence(current_position,  # pylint: missing-param-doc
+                       next_position,
+                       current_objective,
+                       next_objective,
+                       next_gradient,
+                       grad_tolerance,
+                       x_tolerance,
+                       f_relative_tolerance,
+                       f_absolute_tolerance):
+  """Checks if the minimization has converged."""
+  grad_converged = tf.norm(next_gradient, ord=np.inf, axis=-1) <= grad_tolerance
+  x_converged = (
+      tf.norm(next_position - current_position, ord=np.inf, axis=-1) <=
+      x_tolerance)
+  f_relative_converged = (
+      tf.math.abs(next_objective - current_objective) <=
+      f_relative_tolerance * current_objective)
+  f_absolute_converged = (
+      tf.math.abs(next_objective - current_objective) <= f_absolute_tolerance)
+  return (grad_converged | x_converged | f_relative_converged | f_absolute_converged)

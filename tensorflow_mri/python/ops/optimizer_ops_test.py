@@ -17,9 +17,37 @@
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import convex_ops
+from tensorflow_mri.python.ops import math_ops
 from tensorflow_mri.python.ops import optimizer_ops
 from tensorflow_mri.python.util import linalg_ext
 from tensorflow_mri.python.util import test_util
+
+
+class GradientDescentTest(test_util.TestCase):
+  """Tests for `gradient_descent` op."""
+  def test_quadratic(self):
+    """Test GD can minimize a quadratic function."""
+    @math_ops.make_val_and_grad_fn
+    def fn(x):
+      return tf.math.reduce_sum(tf.square(x - 2.0), axis=-1)
+
+    state = optimizer_ops.gradient_descent(fn, [0.0], 0.05, max_iterations=100)
+
+    self.assertAllEqual(False, state.converged)
+    self.assertAllEqual(100, state.num_iterations)
+    self.assertAllClose(0.0, state.objective_value, rtol=1e-3, atol=1e-3)
+    self.assertAllClose([0.0], state.objective_gradient, rtol=1e-3, atol=1e-3)
+    self.assertAllClose([2.0], state.position, rtol=1e-3, atol=1e-3)
+
+    state = optimizer_ops.gradient_descent(fn, [0.0], 0.05,
+                                           grad_tolerance=1e-3,
+                                           max_iterations=100)
+
+    self.assertAllEqual(True, state.converged)
+    self.assertAllEqual(79, state.num_iterations)
+    self.assertAllClose(0.0, state.objective_value, rtol=1e-3, atol=1e-3)
+    self.assertAllClose([0.0], state.objective_gradient, rtol=1e-3, atol=1e-3)
+    self.assertAllClose([2.0], state.position, rtol=1e-3, atol=1e-3)
 
 
 class ADMMTest(test_util.TestCase):

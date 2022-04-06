@@ -9,6 +9,9 @@ Major Features and Improvements
   * ``admm_minimize`` has a new argument ``cg_kwargs`` that allows passing
     additional arguments to the internal conjugate gradient solver.
 
+  * ``admm_minimize`` has a new argument ``name`` that allows specifying
+    the name of the operation.
+
   * ``ConvexFunctionQuadratic`` and ``ConvexFunctionLeastSquares`` have a new
     argument ``cg_kwargs`` that allows passing additional arguments to the
     internal conjugate gradient solver.
@@ -17,6 +20,11 @@ Major Features and Improvements
 
   * ``lstsq`` has a new argument ``return_optimizer_state`` which allows the
     user to retrieve the internal optimizer state.
+
+* ``tfmri.optimize``:
+
+  * New function ``gradient_descent`` implementing the gradient descent method
+    for minimization of differentiable functions.
 
 
 Bug Fixes and Other Changes
