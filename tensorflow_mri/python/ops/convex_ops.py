@@ -20,12 +20,14 @@ import contextlib
 import numpy as np
 import tensorflow as tf
 
+from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.ops import math_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import linalg_ext
 from tensorflow_mri.python.util import linalg_imaging
+from tensorflow_mri.python.util import tensor_util
 
 
 @api_util.export("convex.ConvexFunction")
@@ -62,11 +64,11 @@ class ConvexFunction():
     """Evaluate this `ConvexFunction` at input point[s] `x`.
 
     Args:
-      x: A `Tensor` of shape `[..., n]` and same dtype as `self`.
+      x: A `tf.Tensor` of shape `[..., n]` and same dtype as `self`.
       name: A name for this operation (optional).
 
     Returns:
-      A `Tensor` of shape `[...]` and same dtype as `self`.
+      A `tf.Tensor` of shape `[...]` and same dtype as `self`.
     """
     with self._name_scope(name or "call"):
       x = tf.convert_to_tensor(x, name="x")
@@ -78,12 +80,12 @@ class ConvexFunction():
     """Evaluate the proximal operator of this `ConvexFunction` at point[s] `x`.
 
     Args:
-      x: A `Tensor` of shape `[..., n]` and same dtype as `self`.
+      x: A `tf.Tensor` of shape `[..., n]` and same dtype as `self`.
       scale: A scalar `float`. Additional scaling factor.
       name: A name for this operation (optional).
 
     Returns:
-      A `Tensor` of shape `[..., n]` and same dtype as `self`.
+      A `tf.Tensor` of shape `[..., n]` and same dtype as `self`.
     """
     with self._name_scope(name or "prox"):
       x = tf.convert_to_tensor(x, name="x")
@@ -92,7 +94,7 @@ class ConvexFunction():
       return self._prox(x, scale=scale)
 
   def conj(self, name=None):
-    """Returns the conjugate of this function.
+    """Returns the convex conjugate of this `ConvexFunction`.
 
     Args:
       name: A name for this operation (optional).
@@ -102,6 +104,49 @@ class ConvexFunction():
     """
     with self._name_scope(name or "conj"):
       return self._conj()
+
+  def ndim_tensor(self, name=None):
+    """Returns the number of dimensions of this `ConvexFunction`.
+
+    Args:
+      name: A name for this operation (optional).
+
+    Returns:
+      A scalar integer `tf.Tensor`.
+    """
+    with self._name_scope(name or "ndim_tensor"):
+      # Prefer to use statically defined ndim if available.
+      if isinstance(self.ndim, int):
+        return tf.constant(self.ndim, dtype=tf.int32)
+      return self._ndim_tensor()
+
+  def shape_tensor(self, name=None):
+    """Returns the dynamic shape of this `ConvexFunction`.
+
+    Args:
+      name: A name for this operation (optional).
+
+    Returns:
+      A 1D integer `tf.Tensor`.
+    """
+    with self._name_scope(name or "shape_tensor"):
+      # Prefer to use statically defined shape if available.
+      if self.shape.is_fully_defined():
+        return tensor_util.convert_shape_to_tensor(
+            self.shape.as_list(), name="shape")
+      return self._shape_tensor()
+
+  def batch_shape_tensor(self, name=None):
+    """Returns the dynamic batch shape of this `ConvexFunction`.
+
+    Args:
+      name: A name for this operation (optional).
+
+    Returns:
+      A 1D integer `tf.Tensor`.
+    """
+    with self._name_scope(name or "batch_shape_tensor"):
+      return self._batch_shape_tensor()
 
   @abc.abstractmethod
   def _call(self, x):
@@ -116,6 +161,44 @@ class ConvexFunction():
     # Must be implemented by subclasses.
     raise NotImplementedError("Method `_conj` is not implemented.")
 
+  def _shape(self):
+    """Returns the static shape of this `ConvexFunction`.
+
+    Defaults to `[ndim]`. Subclasses should override this method if they
+    have any batch dimensions.
+
+    Returns:
+      A `tf.TensorShape`.
+    """
+    return tf.TensorShape([self.ndim])
+
+  def _ndim_tensor(self):
+    """Returns the dynamic number of dimensions of this `ConvexFunction`.
+
+    Returns:
+      A scalar integer `tf.Tensor`.
+    """
+    raise NotImplementedError("`_ndim_tensor` is not implemented.")
+
+  def _shape_tensor(self):
+    """Returns the dynamic shape of this `ConvexFunction`.
+
+    Returns:
+      A 1D integer `tf.Tensor`.
+    """
+    raise NotImplementedError("`_shape_tensor` is not implemented.")
+
+  def _batch_shape_tensor(self):
+    """Returns the dynamic batch shape of this `ConvexFunction`.
+
+    Returns:
+      A 1D integer `tf.Tensor`.
+    """
+    if self.batch_shape.is_fully_defined():
+      return tensor_util.convert_shape_to_tensor(
+          self.batch_shape.as_list(), name="batch_shape")
+    return self.shape_tensor()[:-1]
+
   @property
   def scale(self):
     """The scaling factor."""
@@ -123,8 +206,18 @@ class ConvexFunction():
 
   @property
   def ndim(self):
-    """The dimensionality of the domain of this `ConvexFunction`."""
+    """The number of dimensions of this `ConvexFunction`."""
     return self._ndim
+
+  @property
+  def shape(self):
+    """The static shape of this `ConvexFunction`."""
+    return self._shape()
+
+  @property
+  def batch_shape(self):
+    """The static batch shape of this `ConvexFunction`."""
+    return self.shape[:-1]
 
   @property
   def dtype(self):
@@ -581,12 +674,13 @@ class ConvexFunctionQuadratic(ConvexFunction):  # pylint: disable=abstract-metho
   Represents :math:`f(x) = \frac{1}{2} x^{T} A x + b^{T} x + c`.
 
   Args:
-    quadratic_coefficient: A `Tensor` or a `LinearOperator` representing a
-      self-adjoint, positive definite matrix `A` with shape `[..., n, n]`. The
-      coefficient of the quadratic term.
-    linear_coefficient: A `Tensor` representing a vector `b` with shape
+    quadratic_coefficient: A `tf.Tensor` or a `tf.linalg.LinearOperator`
+      representing a self-adjoint, positive definite matrix `A` with shape
+      `[..., n, n]`. The coefficient of the quadratic term.
+    linear_coefficient: A `tf.Tensor` representing a vector `b` with shape
       `[..., n]`. The coefficient of the linear term.
-    constant_coefficient: A scalar `Tensor` representing the constant term `c`.
+    constant_coefficient: A scalar `tf.Tensor` representing the constant term
+      `c` with shape `[...]`.
     scale: A `float`. A scaling factor. Defaults to 1.0.
     cg_kwargs: A `dict` of keyword arguments to pass to the conjugate gradient
       solver used during the computation of the proximal operator.
@@ -670,6 +764,22 @@ class ConvexFunctionQuadratic(ConvexFunction):  # pylint: disable=abstract-metho
           "Expected constant coefficient to have dtype %s, but found: %s in "
           "tensor %s" % (self.dtype, coef.dtype, coef))
     return coef
+
+  def _shape(self):
+    """Returns the static shape of this `ConvexFunction`."""
+    batch_shape = array_ops.broadcast_static_shapes(
+        self._quadratic_coefficient.shape[:-2],
+        self._linear_coefficient.shape[:-1],
+        self._constant_coefficient.shape)
+    return batch_shape.concatenate(tf.TensorShape([self.ndim]))
+
+  def _shape_tensor(self):
+    """Returns the dynamic shape of this `ConvexFunction`."""
+    batch_shape_tensor = array_ops.broadcast_dynamic_shapes(
+        tensor_util.object_shape(self._quadratic_coefficient)[:-2],
+        tf.shape(self._linear_coefficient)[:-1],
+        tf.shape(self._constant_coefficient))
+    return tf.concat([batch_shape_tensor, [self.ndim_tensor()]], 0)
 
   @property
   def quadratic_coefficient(self):

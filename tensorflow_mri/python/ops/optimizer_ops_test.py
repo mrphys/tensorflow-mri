@@ -63,21 +63,22 @@ class ADMMTest(test_util.TestCase):
                               0.35160690])
     rhs = operator.matvec(x)
     lambda_ = 0.5
-    atol = 1e-4
-    rtol = 1e-2
+    absolute_tolerance = 1e-4
+    relative_tolerance = 1e-2
     max_iterations = 100
 
     function_f = convex_ops.ConvexFunctionLeastSquares(operator, rhs)
     function_g = convex_ops.ConvexFunctionL1Norm(scale=lambda_, ndim=4)
 
     result = optimizer_ops.admm_minimize(function_f, function_g,
-                                         atol=atol, rtol=rtol,
+                                         absolute_tolerance=absolute_tolerance,
+                                         relative_tolerance=relative_tolerance,
                                          max_iterations=max_iterations)
     expected_i = 12
     expected_z = [1.57677657, 0., 0., 0.]
 
-    self.assertAllClose(result.z, expected_z)
-    self.assertEqual(result.i, expected_i)
+    self.assertAllClose(result.g_primal_variable, expected_z)
+    self.assertEqual(result.num_iterations, expected_i)
 
   def test_total_variation(self):
     """Test ADMM can minimize total variation problem."""
@@ -88,8 +89,8 @@ class ADMMTest(test_util.TestCase):
                               0.35160690])
     rhs = operator.matvec(x)
     lambda_ = 0.1
-    atol = 1e-4
-    rtol = 1e-2
+    absolute_tolerance = 1e-4
+    relative_tolerance = 1e-2
     max_iterations = 100
 
     function_f = convex_ops.ConvexFunctionLeastSquares(operator, rhs)
@@ -99,14 +100,15 @@ class ADMMTest(test_util.TestCase):
 
     result = optimizer_ops.admm_minimize(function_f, function_g,
                                          operator_a=operator_a,
-                                         atol=atol, rtol=rtol,
+                                         absolute_tolerance=absolute_tolerance,
+                                         relative_tolerance=relative_tolerance,
                                          max_iterations=max_iterations)
 
     expected_i = 12
     expected_x = [1.0638748, 0.628781, 0.2630071, 0.26281652]
 
-    self.assertAllClose(result.x, expected_x)
-    self.assertEqual(result.i, expected_i)
+    self.assertAllClose(result.f_primal_variable, expected_x)
+    self.assertEqual(result.num_iterations, expected_i)
 
   def test_linearized(self):
     """Test linearized variation of ADMM."""
@@ -117,8 +119,8 @@ class ADMMTest(test_util.TestCase):
                               0.35160690])
     rhs = operator.matvec(x)
     lambda_ = 0.1
-    atol = 1e-4
-    rtol = 1e-2
+    absolute_tolerance = 1e-4
+    relative_tolerance = 1e-2
     max_iterations = 100
 
     function_f = convex_ops.ConvexFunctionLeastSquares(operator, rhs)
@@ -128,15 +130,46 @@ class ADMMTest(test_util.TestCase):
 
     result = optimizer_ops.admm_minimize(function_f, function_g,
                                          operator_a=operator_a,
-                                         atol=atol, rtol=rtol,
+                                         absolute_tolerance=absolute_tolerance,
+                                         relative_tolerance=relative_tolerance,
                                          max_iterations=max_iterations,
                                          linearized=True)
 
     expected_i = 100
     expected_x = [1.064954, 0.626839, 0.27508 , 0.251607]
 
-    self.assertAllClose(expected_x, result.x)
-    self.assertEqual(expected_i, result.i)
+    self.assertAllClose(expected_x, result.f_primal_variable)
+    self.assertEqual(expected_i, result.num_iterations)
+
+  def test_lasso_batch(self):
+    """Test ADMM can minimize lasso problem (in batch mode)."""
+    operator = tf.linalg.LinearOperatorFullMatrix(
+        [[-0.69651254, 0.05905978, 0.26406853, -1.44617154],
+         [ 1.69614248, 1.79707178, 0.87167329, -0.70116535]],
+        [[0.25, 0.25, 0.25, 0.25],
+         [-0.25, -0.25, -0.25, -0.25]])
+
+    x = tf.convert_to_tensor([[1.16495351, 0.62683908, 0.07508015, 0.35160690],
+                              [1.0, 0.5, 0.25, 0.125]])
+
+    rhs = operator.matvec(x)
+    lambda_ = 0.5
+    absolute_tolerance = 1e-4
+    relative_tolerance = 1e-2
+    max_iterations = 100
+
+    function_f = convex_ops.ConvexFunctionLeastSquares(operator, rhs)
+    function_g = convex_ops.ConvexFunctionL1Norm(scale=lambda_, ndim=4)
+
+    result = optimizer_ops.admm_minimize(function_f, function_g,
+                                         absolute_tolerance=absolute_tolerance,
+                                         relative_tolerance=relative_tolerance,
+                                         max_iterations=max_iterations)
+
+    expected_z = [[1.5792599, 0., 0., 0.],
+                  [1.113416, 0.30522323, 0., 0.]]
+    self.assertAllClose(expected_z, result.g_primal_variable)
+    self.assertEqual(13, result.num_iterations)
 
 
 if __name__ == '__main__':

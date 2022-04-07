@@ -179,6 +179,53 @@ class ConvexFunctionIndicatorL2BallTest(test_util.TestCase):
 
 
 @test_util.run_all_in_graph_and_eager_modes
+class ConvexFunctionQuadraticTest(test_util.TestCase):
+  """Tests for `ConvexFunctionQuadratic`."""
+  def test_quadratic_simple(self):
+    """Tests a simple `ConvexFunctionQuadratic`."""
+    # Test operator.
+    a = tf.linalg.LinearOperatorFullMatrix([[13., 10.], [10., 5.]])
+    b = tf.constant([3., 0.])
+    c = tf.constant(2.)
+    f = convex_ops.ConvexFunctionQuadratic(a, b, c, scale=1.0)
+
+    # Test value.
+    x = tf.constant([-2., 1.])
+
+    self.assertAllClose(4.5, f(x))
+    self.assertIsInstance(f.shape, tf.TensorShape)
+    self.assertIsInstance(f.batch_shape, tf.TensorShape)
+    self.assertAllEqual([2], f.shape)
+    self.assertAllEqual([], f.batch_shape)
+    self.assertIsInstance(f.shape_tensor(), tf.Tensor)
+    self.assertIsInstance(f.batch_shape_tensor(), tf.Tensor)
+    self.assertAllEqual([], f.batch_shape_tensor())
+    self.assertEqual(2, f.ndim)
+
+  def test_quadratic_batch(self):
+    """Tests `ConvexFunctionQuadratic` with batch arguments."""
+    # Test operator.
+    a = tf.linalg.LinearOperatorFullMatrix(
+        [[[13., 10.], [10., 5.]], [[5., -1.], [-1., 1.]]])
+    b = tf.constant([3., 0.])
+    c = tf.constant(2.)
+    f = convex_ops.ConvexFunctionQuadratic(a, b, c, scale=2.0)
+
+    # Test value.
+    x = tf.constant([-2., 1.])
+
+    self.assertAllClose([9.0, 17.0], f(x))
+    self.assertIsInstance(f.shape, tf.TensorShape)
+    self.assertIsInstance(f.batch_shape, tf.TensorShape)
+    self.assertAllEqual([2, 2], f.shape)
+    self.assertAllEqual([2], f.batch_shape)
+    self.assertIsInstance(f.shape_tensor(), tf.Tensor)
+    self.assertIsInstance(f.batch_shape_tensor(), tf.Tensor)
+    self.assertAllEqual([2], f.batch_shape_tensor())
+    self.assertEqual(2, f.ndim)
+
+
+@test_util.run_all_in_graph_and_eager_modes
 class ConvexFunctionTikhonovTest(test_util.TestCase):
   """Tests for `ConvexFunctionTikhonov`."""
   # pylint: disable=missing-function-docstring

@@ -1,10 +1,21 @@
 Release 0.16.0
 ==============
 
+Breaking Changes
+----------------
+
+* ``tfmri.convex``:
+
+  * Several of the inputs and outputs of ``admm_minimize`` have been renamed
+    to improve clarity and to make the interface more consistent with the
+    ``tfmri.optimize`` module.
+
 Major Features and Improvements
 -------------------------------
 
 * ``tfmri.convex``:
+
+  * ``admm_minimize`` now supports batches of inputs.
 
   * ``admm_minimize`` has a new argument ``cg_kwargs`` that allows passing
     additional arguments to the internal conjugate gradient solver.
@@ -15,6 +26,13 @@ Major Features and Improvements
   * ``ConvexFunctionQuadratic`` and ``ConvexFunctionLeastSquares`` have a new
     argument ``cg_kwargs`` that allows passing additional arguments to the
     internal conjugate gradient solver.
+
+  * New properties ``shape`` and ``batch_shape`` for ``ConvexFunction`` and
+    its subclasses. These allow retrieval of static shape information.
+
+  * New methods ``ndim_tensor``, ``shape_tensor`` and ``batch_shape_tensor``
+    for ``ConvexFunction`` and its subclasses. These allow retrieval of the
+    dynamic shape information.
 
 * ``tfmri.recon``:
 

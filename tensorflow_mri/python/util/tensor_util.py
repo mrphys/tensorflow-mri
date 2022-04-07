@@ -76,3 +76,35 @@ def convert_partial_shape_to_tensor(shape, name=None):
   shape = tf.TensorShape(shape).as_list() # Canonicalize.
   shape = [-1 if s is None else s for s in shape]
   return tf.convert_to_tensor(shape, dtype=tf.dtypes.int32, name=name)
+
+
+def object_shape(tensor):
+  """Returns the shape of a tensor or an object.
+
+  Args:
+    tensor: A `tf.Tensor` or an object with a `shape_tensor` method.
+
+  Returns:
+    The shape of the input object.
+  """
+  if hasattr(tensor, 'shape_tensor'):
+    return tensor.shape_tensor()
+  return tf.shape(tensor)
+
+
+def maybe_get_static_value(tensor):
+  """Returns the static value of a tensor, if possible.
+
+  If the static value cannot be obtained, returns the input tensor.
+
+  Args:
+    tensor: A `tf.Tensor`.
+
+  Returns:
+    The static value of the input tensor, or the input tensor itself if its
+    static value cannot be obtained.
+  """
+  static = tf.get_static_value(tensor)
+  if static is not None:
+    return static
+  return tensor

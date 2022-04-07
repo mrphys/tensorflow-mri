@@ -27,6 +27,7 @@ from tensorflow_mri.python.util import math_util
 from tensorflow_mri.python.util import model_util
 from tensorflow_mri.python.util import nest_util
 from tensorflow_mri.python.util import plot_util
+from tensorflow_mri.python.util import prefer_static
 from tensorflow_mri.python.util import sys_util
 from tensorflow_mri.python.util import tensor_util
 from tensorflow_mri.python.util import test_util

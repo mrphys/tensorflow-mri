@@ -23,11 +23,10 @@ includes:
 
 * A fast, native non-uniform fast Fourier transform (NUFFT) operator (see
   also `TensorFlow NUFFT <https://github.com/mrphys/tensorflow-nufft>`_).
-* A unified gateway for MR image reconstruction, which supports parallel
-  imaging, compressed sensing, machine learning and partial Fourier methods. 
+* MR image reconstruction functions, which support parallel imaging, compressed
+  sensing, machine learning and partial Fourier methods. 
 * Common linear and nonlinear operators, such as Fourier operators and
-  regularizers, to aid in the development of novel image reconstruction
-  techniques. 
+  regularizers, to aid in the development of image reconstruction techniques. 
 * Multicoil imaging operators, such as coil combination, coil compression and
   estimation of coil sensitivity maps. 
 * Calculation of non-Cartesian k-space trajectories and sampling density
