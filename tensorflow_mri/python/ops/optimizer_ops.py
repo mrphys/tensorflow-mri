@@ -140,7 +140,7 @@ def gradient_descent(value_and_gradients_function,
     def _cond(state):
       return tf.math.logical_and(
           state.num_iterations < max_iterations,
-          tf.math.logical_not(state.converged))
+          tf.math.reduce_any(tf.math.logical_not(state.converged)))
 
     def _body(state):
       position = state.position - step_size * state.objective_gradient
@@ -166,7 +166,7 @@ def gradient_descent(value_and_gradients_function,
     batch_shape = tf.shape(initial_position)[:-1]
     objective_value, objective_gradient = value_and_gradients_function(
         initial_position)
-    state = GdOptimizerResults(converged=tf.constant(False, shape=batch_shape),
+    state = GdOptimizerResults(converged=tf.fill(batch_shape, False),
                                num_iterations=tf.constant(0, dtype=tf.int32),
                                objective_gradient=objective_gradient,
                                objective_value=objective_value,
@@ -431,7 +431,7 @@ def admm_minimize(function_f,
     u_shape = prefer_static.concat([batch_shape, [u_ndim]], axis=0)
 
     state = AdmmOptimizerResults(
-        converged=tf.constant(False, shape=batch_shape),
+        converged=tf.fill(batch_shape, False),
         f_primal_variable=tf.constant(0.0, dtype=dtype, shape=x_shape),
         g_primal_variable=tf.constant(0.0, dtype=dtype, shape=z_shape),
         dual_residual=None,

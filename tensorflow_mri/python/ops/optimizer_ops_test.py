@@ -23,6 +23,7 @@ from tensorflow_mri.python.util import linalg_ext
 from tensorflow_mri.python.util import test_util
 
 
+@test_util.run_all_in_graph_and_eager_modes
 class GradientDescentTest(test_util.TestCase):
   """Tests for `gradient_descent` op."""
   def test_quadratic(self):
@@ -49,7 +50,35 @@ class GradientDescentTest(test_util.TestCase):
     self.assertAllClose([0.0], state.objective_gradient, rtol=1e-3, atol=1e-3)
     self.assertAllClose([2.0], state.position, rtol=1e-3, atol=1e-3)
 
+  def test_quadratic_batch(self):
+    """Test GD can minimize a quadratic function with batch inputs."""
+    @math_ops.make_val_and_grad_fn
+    def fn(x):
+      return tf.math.reduce_sum(tf.square(x - [[2.0], [-2.0]]), axis=-1)
 
+    state = optimizer_ops.gradient_descent(fn, [[0.0], [0.0]], 0.05,
+                                           max_iterations=100)
+
+    self.assertAllEqual([False, False], state.converged)
+    self.assertAllEqual(100, state.num_iterations)
+    self.assertAllClose([0.0, 0.0], state.objective_value, rtol=1e-3, atol=1e-3)
+    self.assertAllClose([[0.0], [0.0]], state.objective_gradient,
+                        rtol=1e-3, atol=1e-3)
+    self.assertAllClose([[2.0], [-2.0]], state.position, rtol=1e-3, atol=1e-3)
+
+    state = optimizer_ops.gradient_descent(fn, [[0.0], [0.0]], 0.05,
+                                           grad_tolerance=1e-3,
+                                           max_iterations=100)
+
+    self.assertAllEqual([True, True], state.converged)
+    self.assertAllEqual(79, state.num_iterations)
+    self.assertAllClose([0.0, 0.0], state.objective_value, rtol=1e-3, atol=1e-3)
+    self.assertAllClose([[0.0], [0.0]], state.objective_gradient,
+                        rtol=1e-3, atol=1e-3)
+    self.assertAllClose([[2.0], [-2.0]], state.position, rtol=1e-3, atol=1e-3)
+
+
+@test_util.run_all_in_graph_and_eager_modes
 class ADMMTest(test_util.TestCase):
   """Tests for `admm_minimize` op."""
   def test_lasso(self):
@@ -77,8 +106,8 @@ class ADMMTest(test_util.TestCase):
     expected_i = 12
     expected_z = [1.57677657, 0., 0., 0.]
 
-    self.assertAllClose(result.g_primal_variable, expected_z)
-    self.assertEqual(result.num_iterations, expected_i)
+    self.assertAllClose(expected_z, result.g_primal_variable)
+    self.assertAllEqual(expected_i, result.num_iterations)
 
   def test_total_variation(self):
     """Test ADMM can minimize total variation problem."""
@@ -107,8 +136,8 @@ class ADMMTest(test_util.TestCase):
     expected_i = 12
     expected_x = [1.0638748, 0.628781, 0.2630071, 0.26281652]
 
-    self.assertAllClose(result.f_primal_variable, expected_x)
-    self.assertEqual(result.num_iterations, expected_i)
+    self.assertAllClose(expected_x, result.f_primal_variable)
+    self.assertAllEqual(expected_i, result.num_iterations)
 
   def test_linearized(self):
     """Test linearized variation of ADMM."""
@@ -139,7 +168,7 @@ class ADMMTest(test_util.TestCase):
     expected_x = [1.064954, 0.626839, 0.27508 , 0.251607]
 
     self.assertAllClose(expected_x, result.f_primal_variable)
-    self.assertEqual(expected_i, result.num_iterations)
+    self.assertAllEqual(expected_i, result.num_iterations)
 
   def test_lasso_batch(self):
     """Test ADMM can minimize lasso problem (in batch mode)."""
@@ -169,7 +198,7 @@ class ADMMTest(test_util.TestCase):
     expected_z = [[1.5792599, 0., 0., 0.],
                   [1.113416, 0.30522323, 0., 0.]]
     self.assertAllClose(expected_z, result.g_primal_variable)
-    self.assertEqual(13, result.num_iterations)
+    self.assertAllEqual(13, result.num_iterations)
 
 
 if __name__ == '__main__':
