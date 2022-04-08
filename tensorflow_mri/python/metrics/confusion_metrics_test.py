@@ -178,20 +178,20 @@ class ConfusionMetricTest(test_util.TestCase):
 
   def _compute_result(self, name, tp, tn, fp, fn):
     return {
-      'Accuracy': (tp + tn) / (tp + tn + fp + fn),
-      'TruePositiveRate': tp / (tp + fn),
-      'TrueNegativeRate': tn / (tn + fp),
-      'PositivePredictiveValue': tp / (tp + fp),
-      'NegativePredictiveValue': tn / (tn + fn),
-      'Precision': tp / (tp + fp),
-      'Recall': tp / (tp + fn),
-      'Sensitivity': tp / (tp + fn),
-      'Specificity': tn / (tn + fp),
-      'Selectivity': tn / (tn + fp),
-      'TverskyIndex': tp / (tp + 0.3 * fp + 0.7 * fn),
-      'FBetaScore': 1.25 * tp / (1.25 * tp + fp + 0.25 * fn),
-      'F1Score': tp / (tp + 0.5 * fp + 0.5 * fn),
-      'IoU': tp / (tp + fp + fn),
-      'DiceIndex': tp / (tp + 0.5 * fp + 0.5 * fn),
-      'JaccardIndex': tp / (tp + fp + fn)
+        'Accuracy': (tp + tn) / (tp + tn + fp + fn),
+        'TruePositiveRate': tp / (tp + fn),
+        'TrueNegativeRate': tn / (tn + fp),
+        'PositivePredictiveValue': tp / (tp + fp),
+        'NegativePredictiveValue': tn / (tn + fn),
+        'Precision': tp / (tp + fp),
+        'Recall': tp / (tp + fn),
+        'Sensitivity': tp / (tp + fn),
+        'Specificity': tn / (tn + fp),
+        'Selectivity': tn / (tn + fp),
+        'TverskyIndex': tp / (tp + 0.3 * fp + 0.7 * fn),
+        'FBetaScore': 1.25 * tp / (1.25 * tp + fp + 0.25 * fn),
+        'F1Score': tp / (tp + 0.5 * fp + 0.5 * fn),
+        'IoU': tp / (tp + fp + fn),
+        'DiceIndex': tp / (tp + 0.5 * fp + 0.5 * fn),
+        'JaccardIndex': tp / (tp + fp + fn)
     }[name]

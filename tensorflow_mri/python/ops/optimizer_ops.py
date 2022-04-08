@@ -432,14 +432,14 @@ def admm_minimize(function_f,
 
     state = AdmmOptimizerResults(
         converged=tf.fill(batch_shape, False),
-        f_primal_variable=tf.constant(0.0, dtype=dtype, shape=x_shape),
-        g_primal_variable=tf.constant(0.0, dtype=dtype, shape=z_shape),
+        f_primal_variable=tf.zeros(shape=x_shape, dtype=dtype),
+        g_primal_variable=tf.zeros(shape=z_shape, dtype=dtype),
         dual_residual=None,
         dual_tolerance=None,
         num_iterations=tf.constant(0, dtype=tf.dtypes.int32),
         primal_residual=None,
         primal_tolerance=None,
-        scaled_dual_variable=tf.constant(0.0, dtype=dtype, shape=u_shape))
+        scaled_dual_variable=tf.zeros(shape=u_shape, dtype=dtype))
     state = _body(state)[0]
 
     return tf.while_loop(_cond, _body, [state])[0]

@@ -260,8 +260,7 @@ class ConfusionMetric(tf.keras.metrics.Metric): # pylint: disable=abstract-metho
     # Average values.
     if self.average == 'weighted':
       weights = tf.math.divide_no_nan(
-        self.true_instances,
-        tf.reduce_sum(self.true_instances))
+          self.true_instances, tf.reduce_sum(self.true_instances))
       value = tf.math.reduce_sum(value * weights)
     elif self.average in ('micro', 'macro'):
       value = tf.math.reduce_mean(value)
