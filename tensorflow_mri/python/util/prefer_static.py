@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 """Operators that use static values if possible."""
+# pylint: disable=redefined-builtin,wildcard-import,unused-wildcard-import
 
 import tensorflow as tf
 from tensorflow_probability.python.internal.prefer_static import *

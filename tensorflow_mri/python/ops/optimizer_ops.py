@@ -186,7 +186,8 @@ def admm_minimize(function_f,
                   relative_tolerance=1e-8,
                   max_iterations=50,
                   linearized=False,
-                  cg_kwargs=None,
+                  f_prox_kwargs=None,
+                  g_prox_kwargs=None,
                   name=None):
   r"""Applies the ADMM algorithm to minimize a separable convex function.
 
@@ -221,8 +222,10 @@ def admm_minimize(function_f,
       of `g(x)`. This is useful when the proximal operator of `g(Ax)` cannot be
       easily evaluated, but the proximal operator of `g(x)` can. Defaults to
       `False`.
-    cg_kwargs: A `dict`. Keyword arguments to pass to the conjugate gradient
-      solver (see `tfmri.linalg.conjugate_gradient`).
+    f_prox_kwargs: A `dict`. Keyword arguments to pass to the proximal operator
+      of `function_f` during the x-minimization step.
+    g_prox_kwargs: A `dict`. Keyword arguments to pass to the proximal operator
+      of `function_g` during the z-minimization step.
     name: A `str`. The name of this operation. Defaults to `'admm_minimize'`.
 
   Returns:
@@ -346,9 +349,9 @@ def admm_minimize(function_f,
       g_update_fn = function_g.prox
     else:
       f_update_fn = _get_admm_update_fn(function_f, operator_a,
-                                        cg_kwargs=cg_kwargs)
+                                        prox_kwargs=f_prox_kwargs)
       g_update_fn = _get_admm_update_fn(function_g, operator_b,
-                                        cg_kwargs=cg_kwargs)
+                                        prox_kwargs=g_prox_kwargs)
 
     x_ndim_sqrt = tf.math.sqrt(tf.cast(x_ndim, dtype.real_dtype))
     u_ndim_sqrt = tf.math.sqrt(tf.cast(u_ndim, dtype.real_dtype))
@@ -445,7 +448,7 @@ def admm_minimize(function_f,
     return tf.while_loop(_cond, _body, [state])[0]
 
 
-def _get_admm_update_fn(function, operator, cg_kwargs=None):
+def _get_admm_update_fn(function, operator, prox_kwargs=None):
   r"""Returns a function for the ADMM update.
 
   The returned function evaluates the expression
@@ -458,8 +461,8 @@ def _get_admm_update_fn(function, operator, cg_kwargs=None):
   Args:
     function: A `ConvexFunction` instance.
     operator: A `LinearOperator` instance.
-    cg_kwargs: A `dict` of keyword arguments to pass to the conjugate gradient
-      solver.
+    prox_kwargs: A `dict` of keyword arguments to pass to the proximal operator
+      of `function`.
 
   Returns:
     A function that evaluates the ADMM update.
@@ -468,11 +471,11 @@ def _get_admm_update_fn(function, operator, cg_kwargs=None):
     NotImplementedError: If no rules exist to evaluate the ADMM update for the
       specified inputs.
   """  # pylint: disable=line-too-long
-  cg_kwargs = cg_kwargs or {}
+  prox_kwargs = prox_kwargs or {}
 
   if isinstance(operator, tf.linalg.LinearOperatorIdentity):
     def _update_fn(x, rho):
-      return function.prox(x, scale=1.0 / rho)
+      return function.prox(x, scale=1.0 / rho, **prox_kwargs)
     return _update_fn
 
   if isinstance(operator, tf.linalg.LinearOperatorScaledIdentity):
@@ -483,10 +486,12 @@ def _get_admm_update_fn(function, operator, cg_kwargs=None):
     multiplier = operator.multiplier
     def _update_fn(v, rho):  # pylint: disable=function-redefined
       return function.prox(
-          tf.math.sign(multiplier) * v, scale=tf.math.abs(multiplier) / rho)
+          tf.math.sign(multiplier) * v, scale=tf.math.abs(multiplier) / rho,
+          **prox_kwargs)
     return _update_fn
 
   if isinstance(function, convex_ops.ConvexFunctionQuadratic):
+    # TODO(jmontalt): add prox_kwargs here.
     # See ref. [1], section 4.2.
     def _update_fn(v, rho):  # pylint: disable=function-redefined
       # Create operator Q + rho * A^T A, where Q is the quadratic coefficient
@@ -502,7 +507,7 @@ def _get_admm_update_fn(function, operator, cg_kwargs=None):
       rhs = (rho * tf.linalg.matvec(operator, v, adjoint_a=True) -
              function.linear_coefficient)
       # Solve the linear system using CG (see ref [1], section 4.3.4).
-      return linalg_ops.conjugate_gradient(ls_operator, rhs, **cg_kwargs).x
+      return linalg_ops.conjugate_gradient(ls_operator, rhs, **cg_kwargs).x  
 
     return _update_fn
 
@@ -541,4 +546,7 @@ def _check_convergence(current_position,  # pylint: missing-param-doc
       f_relative_tolerance * current_objective)
   f_absolute_converged = (
       tf.math.abs(next_objective - current_objective) <= f_absolute_tolerance)
-  return (grad_converged | x_converged | f_relative_converged | f_absolute_converged)
+  return (grad_converged |
+          x_converged |
+          f_relative_converged |
+          f_absolute_converged)

@@ -27,6 +27,52 @@ from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 
 
+_CONFUSION_LOSS_INTRO_DOCSTRING = """
+  Inputs `y_true` and `y_pred` are expected to have shape `[..., num_classes]`,
+  with channel `i` containing labels/predictions for class `i`. `y_true[..., i]`
+  is 1 if the element represented by `y_true[...]` is a member of class `i` and
+  0 otherwise. `y_pred[..., i]` is the predicted probability, in the range
+  `[0.0, 1.0]`, that the element represented by `y_pred[...]` is a member of
+  class `i`.
+
+  This class further assumes that inputs `y_true` and `y_pred` have shape
+  `[batch_size, ..., num_classes]`. The loss is computed for each batch element
+  `y_true[i, ...]` and `y_pred[i, ...]`, and then reduced over this dimension
+  as specified by argument `reduction`.
+
+  This loss works for binary, multiclass and multilabel classification and/or
+  segmentation. In multiclass/multilabel problems, the different classes are
+  combined according to the `average` and `class_weights` arguments. Argument
+  `average` can take one of the following values:
+
+  * `'micro'`: Calculate the loss globally by counting the total number of
+    true positives, true negatives, false positives and false negatives.
+  * `'macro'`: Calculate the loss for each label, and return their unweighted
+    mean. This does not take label imbalance into account.
+  * `'weighted'`: Calculate the loss for each label, and find their average
+    weighted by `class_weights`. If `class_weights` is `None`, the classes
+    are weighted by support (the number of true instances for each label).
+    This alters 'macro' to account for label imbalance.
+
+"""
+
+
+_CONFUSION_LOSS_ARGS_DOCSTRING = """
+    average: A `str`. The class averaging mode. Valid values are `'micro'`,
+      `'macro'` and `'weighted'`. Defaults to `'macro'`. See above for details
+      on the different modes.
+    class_weights: A `list` of `float` values. The weights for each class.
+      Must have length equal to the number of classes. This parameter is only
+      relevant if `average` is `'weighted'`. Defaults is `None`.
+    reduction: A value in `tf.keras.losses.Reduction`_.
+      The type of loss reduction.
+    name: A `str`. The name of the loss instance.
+
+  .. _tf.keras.losses.Reduction: https://www.tensorflow.org/api_docs/python/tf/keras/losses/Reduction
+
+"""
+
+
 @dataclasses.dataclass
 class ConfusionMatrix():
   true_positives: tf.Tensor
@@ -57,23 +103,6 @@ class ConfusionLoss(tf.keras.losses.Loss):
   This loss may be used for binary, multi-class and multi-label classification.
 
   Args:
-    average: A `str`. The class averaging mode. Valid values are `'micro'`,
-      `'macro'` and `'weighted'`. Defaults to `'macro'`. See Notes for details
-      on the different modes.
-    class_weights: A `list` of `float` values. The weights for each class.
-      Only relevant if `average` is `'weighted'`. Defaults to `None`.
-    reduction: Type of reduction to apply.
-    name: String name of the loss instance.
-
-  Notes:
-    * `'micro'`: Calculate the loss globally by counting the total true
-      positives, true negatives, false positives and false negatives.
-    * `'macro'`: Calculate the loss for each label, and return their unweighted
-      mean. This does not take label imbalance into account.
-    * `'weighted'`: Calculate the loss for each label, and find their average
-      weighted by `class_weights`. If `class_weights` is `None`, the classes
-      are weighted by support (the number of true instances for each label).
-      This alters 'macro' to account for label imbalance.
   """
   def __init__(self,
                average='macro',
@@ -145,9 +174,16 @@ class ConfusionLoss(tf.keras.losses.Loss):
     Args:
       class_values: A `tf.Tensor` of shape `[batch_size, num_classes]`, or
         `[batch_size, 1]` if `average` is `'micro'`.
+      confusion_matrix: A `ConfusionMatrix` instance. The confusion matrix
+        is a `dataclass` with fields `true_positives`, `true_negatives`,
+        `false_positives` and `false_negatives`. Each of these is a `tf.Tensor`
+        of shape `[batch_size, num_classes]`.
 
     Returns:
       A `tf.Tensor` of shape `[batch_size]`. The averaged result.
+
+    Raises:
+      ValueError: If `self.average` has an invalid value.
     """
     if self.average == 'micro':
       # In this case the confusion matrix has been averaged over all classes,
@@ -166,7 +202,8 @@ class ConfusionLoss(tf.keras.losses.Loss):
         true_instances = confusion_matrix.true_positives + \
             confusion_matrix.false_negatives
         class_weights = tf.math.divide_no_nan(
-            true_instances, tf.reduce_sum(true_instances, axis=-1))
+            true_instances,
+            tf.reduce_sum(true_instances, axis=-1, keepdims=True))
       # Weighted average.
       class_average = tf.math.reduce_sum(
           class_values * class_weights, axis=-1)
@@ -187,30 +224,44 @@ class ConfusionLoss(tf.keras.losses.Loss):
 @api_util.export("losses.FocalTverskyLoss")
 @tf.keras.utils.register_keras_serializable(package='MRI')
 class FocalTverskyLoss(ConfusionLoss):
-  """Loss based on Tversky index with focusing.
+  r"""Focal Tversky loss function.
+
+  The focal Tversky loss is computed as:
+
+  .. math::
+    L = \left ( 1 - \frac{\mathrm{TP} + \epsilon}{\mathrm{TP} + \alpha \mathrm{FP} + \beta \mathrm{FN} + \epsilon} \right ) ^ \gamma
+
+  This loss allows control over the relative importance of false positives and
+  false negatives through the `alpha` and `beta` parameters, which may be useful
+  in imbalanced classes. Additionally, the `gamma` exponent can be used to
+  shift the focus towards difficult examples.
 
   Args:
-    alpha: A `float`. Weight given to false positives. Must be between 0.0 and
-      1.0. Default is 0.3.
-    beta: A `float`. Weight given to false negatives. Must be between 0.0 and
-      1.0. Default is 0.7.
-    gamma: A `float`. Focus parameter. Default is 1.33.
-    epsilon: A `float`. A smoothing factor.
-    average: Type of averaging to be performed on data. Acceptable values
-      are `None`, `micro`, `macro` and `weighted`. Default value is None.
-    reduction: Type of reduction to apply.
-    name: String name of the loss instance.
+    alpha: A `float`. Weight given to false positives. Defaults to 0.3.
+    beta: A `float`. Weight given to false negatives. Defaults to 0.7.
+    gamma: A `float`. The focus parameter. A lower value increases the
+      importance given to difficult examples. Default is 0.75.
+    epsilon: A `float`. A smoothing factor. Defaults to 1e-5.
+
+  Notes:
+    [1] and [2] use inverted notations for the :math:`\alpha` and :math:`\beta`
+    parameters. Here we use the notation of [1]. Also note that [2] refers to
+    :math:`\gamma` as :math:`\frac{1}{\gamma}`.
 
   References:
-    [1] Abraham, N., & Khan, N. M. (2019, April). A novel focal tversky loss
+    [1] Salehi, S. S. M., Erdogmus, D., & Gholipour, A. (2017, September).
+      Tversky loss function for image segmentation using 3D fully convolutional
+      deep networks. In International workshop on machine learning in medical
+      imaging (pp. 379-387). Springer, Cham.
+    [2] Abraham, N., & Khan, N. M. (2019, April). A novel focal tversky loss
       function with improved attention u-net for lesion segmentation. In 2019
       IEEE 16th international symposium on biomedical imaging (ISBI 2019)
       (pp. 683-687). IEEE.
-  """
+  """  # pylint: disable=line-too-long
   def __init__(self,
                alpha=0.3,
                beta=0.7,
-               gamma=1.33,
+               gamma=0.75,
                epsilon=1e-5,
                average='macro',
                class_weights=None,
@@ -220,14 +271,6 @@ class FocalTverskyLoss(ConfusionLoss):
                      class_weights=class_weights,
                      reduction=reduction,
                      name=name)
-    # Check inputs.
-    if alpha < 0.0 or alpha > 1.0:
-      raise ValueError("alpha value must be in range [0, 1].")
-    if beta < 0.0 or beta > 1.0:
-      raise ValueError("beta value must be in range [0, 1].")
-    if gamma < 1.0 or gamma > 3.0:
-      raise ValueError("gamma value must be in range [1, 3].")
-    # Set attributes.
     self.alpha = alpha
     self.beta = beta
     self.gamma = gamma
@@ -239,7 +282,7 @@ class FocalTverskyLoss(ConfusionLoss):
         self.alpha * confusion_matrix.false_positives + \
         self.beta * confusion_matrix.false_negatives
     index = (numerator + self.epsilon) / (denominator + self.epsilon)
-    return tf.math.pow(1.0 - index, 1.0 / self.gamma)
+    return tf.math.pow(1.0 - index, self.gamma)
 
   def get_config(self):
     config = {
@@ -249,3 +292,137 @@ class FocalTverskyLoss(ConfusionLoss):
         'epsilon': self.epsilon}
     base_config = super().get_config()
     return {**config, **base_config}
+
+
+@api_util.export("losses.TverskyLoss")
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class TverskyLoss(FocalTverskyLoss):
+  r"""Tversky loss function.
+
+  The Tversky loss is computed as:
+
+  .. math::
+    L = \left ( 1 - \frac{\mathrm{TP} + \epsilon}{\mathrm{TP} + \alpha \mathrm{FP} + \beta \mathrm{FN} + \epsilon} \right )
+
+  Args:
+    alpha: A `float`. Weight given to false positives. Defaults to 0.3.
+    beta: A `float`. Weight given to false negatives. Defaults to 0.7.
+    epsilon: A `float`. A smoothing factor. Defaults to 1e-5.
+  """  # pylint: disable=line-too-long
+  def __init__(self,
+               alpha=0.3,
+               beta=0.7,
+               epsilon=1e-5,
+               average='macro',
+               class_weights=None,
+               reduction=tf.keras.losses.Reduction.AUTO,
+               name='tversky_loss'):
+    super().__init__(alpha=alpha,
+                     beta=beta,
+                     gamma=1.0,
+                     epsilon=epsilon,
+                     average=average,
+                     class_weights=class_weights,
+                     reduction=reduction,
+                     name=name)
+
+  def get_config(self):
+    base_config = super().get_config()
+    base_config.pop('gamma')
+    return base_config
+
+
+@api_util.export("losses.F1Loss", "losses.DiceLoss")
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class F1Loss(TverskyLoss):
+  r"""F1 loss function (aka Dice loss).
+
+  The F1 loss is computed as:
+
+  .. math::
+    L = \left ( 1 - \frac{\mathrm{TP} + \epsilon}{\mathrm{TP} + \frac{1}{2} \mathrm{FP} + \frac{1}{2} \mathrm{FN} + \epsilon} \right )
+
+  Args:
+    epsilon: A `float`. A smoothing factor. Defaults to 1e-5.
+  """  # pylint: disable=line-too-long
+  def __init__(self,
+               epsilon=1e-5,
+               average='macro',
+               class_weights=None,
+               reduction=tf.keras.losses.Reduction.AUTO,
+               name='f1_loss'):
+    super().__init__(alpha=0.5,
+                     beta=0.5,
+                     epsilon=epsilon,
+                     average=average,
+                     class_weights=class_weights,
+                     reduction=reduction,
+                     name=name)
+
+  def get_config(self):
+    base_config = super().get_config()
+    base_config.pop('alpha')
+    base_config.pop('beta')
+    return base_config
+
+
+@api_util.export("losses.IoULoss", "losses.JaccardLoss")
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class IoULoss(TverskyLoss):
+  r"""IoU loss function (aka Jaccard loss).
+
+  The IoU loss is computed as:
+
+  .. math::
+    L = \left ( 1 - \frac{\mathrm{TP} + \epsilon}{\mathrm{TP} + \mathrm{FP} + \mathrm{FN} + \epsilon} \right )
+
+  Args:
+    epsilon: A `float`. A smoothing factor. Defaults to 1e-5.
+  """  # pylint: disable=line-too-long
+  def __init__(self,
+               epsilon=1e-5,
+               average='macro',
+               class_weights=None,
+               reduction=tf.keras.losses.Reduction.AUTO,
+               name='iou_loss'):
+    super().__init__(alpha=1.0,
+                     beta=1.0,
+                     epsilon=epsilon,
+                     average=average,
+                     class_weights=class_weights,
+                     reduction=reduction,
+                     name=name)
+
+  def get_config(self):
+    base_config = super().get_config()
+    base_config.pop('alpha')
+    base_config.pop('beta')
+    return base_config
+
+
+def _update_docstring(docstring):
+  """Updates the docstring of a loss function.
+
+  Args:
+    docstring: A `str`. The docstring of the loss function.
+
+  Returns:
+    A `str`. The updated docstring.
+  """
+  doclines = docstring.splitlines()
+  args_index = doclines.index("  Args:")
+  args_end_index = args_index
+  while doclines[args_end_index].strip() != "":
+    args_end_index += 1
+  doclines[args_end_index:args_end_index] = \
+      _CONFUSION_LOSS_ARGS_DOCSTRING.splitlines()
+  doclines[args_index-1:args_index-1] = \
+      _CONFUSION_LOSS_INTRO_DOCSTRING.splitlines()
+  return '\n'.join(doclines)
+
+
+ConfusionLoss.__doc__ = _update_docstring(ConfusionLoss.__doc__)
+FocalTverskyLoss.__doc__ = _update_docstring(FocalTverskyLoss.__doc__)
+TverskyLoss.__doc__ = _update_docstring(TverskyLoss.__doc__)
+F1Loss.__doc__ = _update_docstring(F1Loss.__doc__)
+IoULoss.__doc__ = _update_docstring(IoULoss.__doc__)

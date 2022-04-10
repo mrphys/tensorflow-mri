@@ -196,6 +196,7 @@ COMMON_TYPES_LINKS = {
     'dict': 'https://docs.python.org/3/library/stdtypes.html#mapping-types-dict',
     'namedtuple': 'https://docs.python.org/3/library/collections.html#namedtuple-factory-function-for-tuples-with-named-fields',
     'callable': 'https://docs.python.org/3/library/functions.html#callable',
+    'dataclass': 'https://docs.python.org/3/library/dataclasses.html',
     # Python constants.
     'False': 'https://docs.python.org/3/library/constants.html#False',
     'True': 'https://docs.python.org/3/library/constants.html#True',
