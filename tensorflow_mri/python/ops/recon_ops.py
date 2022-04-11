@@ -180,8 +180,9 @@ def reconstruct_lstsq(kspace,
     kspace: A `Tensor`. The *k*-space samples. Must have type `complex64` or
       `complex128`. `kspace` can be either Cartesian or non-Cartesian. A
       Cartesian `kspace` must have shape
-      `[..., num_coils, *image_shape]`, where `...` are batch dimensions. A
-      non-Cartesian `kspace` must have shape `[..., num_coils, num_samples]`.
+      `[..., *extra_shape, num_coils, *image_shape]`, where `...` are batch
+      dimensions. A non-Cartesian `kspace` must have shape
+      `[..., *extra_shape, num_coils, num_samples]`.
     image_shape: A `TensorShape` or a list of `ints`. Must have length 2 or 3.
       The shape of the reconstructed image[s].
     extra_shape: An optional `TensorShape` or list of `ints`. Additional

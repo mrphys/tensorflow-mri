@@ -113,7 +113,7 @@ class ConfusionLoss(tf.keras.losses.Loss):
     self.average = check_util.validate_enum(
         average, {'micro', 'macro', 'weighted'}, 'average')
     if class_weights is not None:
-      self.class_weights = tf.convert_to_tensor(class_weights)
+      self.class_weights = class_weights
     else:
       self.class_weights = None
 
@@ -196,7 +196,7 @@ class ConfusionLoss(tf.keras.losses.Loss):
     elif self.average == 'weighted':
       if self.class_weights is not None:
         # Use user-specified class weights.
-        class_weights = self.class_weights
+        class_weights = tf.convert_to_tensor(self.class_weights)
       else:
         # Weight by support, accounting for class imbalance.
         true_instances = confusion_matrix.true_positives + \
