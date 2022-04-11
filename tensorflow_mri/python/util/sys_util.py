@@ -24,10 +24,10 @@ _ENABLE_ASSISTANT = True
 def is_op_library_enabled():
   """Checks whether the op library is enabled.
 
-  Returns `True` unless the environment variable `TFMR_DISABLE_OP_LIBRARY` has
+  Returns `True` unless the environment variable `TFMRI_DISABLE_OP_LIBRARY` has
   been set to a true value (as defined by `distutils.util.strtobool`).
   """
-  str_value = os.getenv("TFMR_DISABLE_OP_LIBRARY", '0')
+  str_value = os.getenv("TFMRI_DISABLE_OP_LIBRARY", '0')
   bool_value = distutils.util.strtobool(str_value)
   return not bool_value
 
