@@ -224,6 +224,48 @@ class ConvexFunctionQuadraticTest(test_util.TestCase):
     self.assertAllEqual([2], f.batch_shape_tensor())
     self.assertEqual(2, f.ndim)
 
+  def test_prox(self):
+    """Tests `prox` method."""
+    a = tf.linalg.LinearOperatorFullMatrix([[2., 1.], [1., 2.]])
+    b = tf.constant([2., -3.])
+    c = tf.constant(2.)
+    f = convex_ops.ConvexFunctionQuadratic(a, b, c, scale=1.0)
+
+    # Solution: https://www.wolframalpha.com/input?i=minimize+2+%2B+%282+x+-+3y%29+%2B+1%2F2+*+%28x+%282+x+%2B+1+y%29+%2B+y+%281+x+%2B+2+y%29%29+%2B+1%2F2+*+%28%28x+-+4%29%5E2+%2B+%28y+%2B+4%29%5E2%29
+    expected = [7/8, -5/8]
+
+    self.assertAllClose(expected, f.prox([4., -4.]))
+
+  def test_prox_scaled(self):
+    """Tests `prox` method with scaling factor."""
+    a = tf.linalg.LinearOperatorFullMatrix([[2., 1.], [1., 2.]])
+    b = tf.constant([2., -3.])
+    c = tf.constant(2.)
+    # Solution: https://www.wolframalpha.com/input?i=minimize+2+%2B+%282+x+-+3y%29+%2B+1%2F2+*+%28x+%282+x+%2B+1+y%29+%2B+y+%281+x+%2B+2+y%29%29+%2B+1%2F%282+*+1%2F2%29+*+%28%28x+-+4%29%5E2+%2B+%28y+%2B+4%29%5E2%29
+    expected = [97/35, -92/35]
+
+    f = convex_ops.ConvexFunctionQuadratic(a, b, c)
+    self.assertAllClose(expected, f.prox([4., -4.], scale=0.25))
+
+    f = convex_ops.ConvexFunctionQuadratic(a, b, c, scale=0.25)
+    self.assertAllClose(expected, f.prox([4., -4.]))
+
+    f = convex_ops.ConvexFunctionQuadratic(a, b, c, scale=0.5)
+    self.assertAllClose(expected, f.prox([4., -4.], scale=0.5))
+
+  def test_prox_kwargs(self):
+    """Tests `prox` method with additional kwargs."""
+    a = tf.linalg.LinearOperatorFullMatrix([[2., 1.], [1., 2.]])
+    b = tf.constant([2., -3.])
+    c = tf.constant(2.)
+    f = convex_ops.ConvexFunctionQuadratic(a, b, c, scale=1.0)
+
+    # Solution after a single CG iteration.
+    expected = [0.90909094, -0.45454547]
+
+    self.assertAllClose(
+        expected, f.prox([4., -4.], solver_kwargs={'max_iterations': 1}))
+
 
 @test_util.run_all_in_graph_and_eager_modes
 class ConvexFunctionTikhonovTest(test_util.TestCase):

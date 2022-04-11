@@ -494,6 +494,7 @@ def _get_admm_update_fn(function, operator, prox_kwargs=None):
     # TODO(jmontalt): add prox_kwargs here.
     # See ref. [1], section 4.2.
     def _update_fn(v, rho):  # pylint: disable=function-redefined
+      solver_kwargs = prox_kwargs.get('solver_kwargs', {})
       # Create operator Q + rho * A^T A, where Q is the quadratic coefficient
       # of the quadratic convex function.
       scaled_identity = tf.linalg.LinearOperatorScaledIdentity(
@@ -507,7 +508,7 @@ def _get_admm_update_fn(function, operator, prox_kwargs=None):
       rhs = (rho * tf.linalg.matvec(operator, v, adjoint_a=True) -
              function.linear_coefficient)
       # Solve the linear system using CG (see ref [1], section 4.3.4).
-      return linalg_ops.conjugate_gradient(ls_operator, rhs, **cg_kwargs).x  
+      return linalg_ops.conjugate_gradient(ls_operator, rhs, **solver_kwargs).x
 
     return _update_fn
 

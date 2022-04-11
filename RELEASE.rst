@@ -17,15 +17,16 @@ Major Features and Improvements
 
   * ``admm_minimize`` now supports batches of inputs.
 
-  * ``admm_minimize`` has a new argument ``cg_kwargs`` that allows passing
-    additional arguments to the internal conjugate gradient solver.
+  * ``admm_minimize`` has two new arguments ``f_prox_kwargs`` and
+    ``g_prox_kwargs`` that allow passing additional arguments to the proximal
+    operators of ``f`` and ``g``.
 
   * ``admm_minimize`` has a new argument ``name`` that allows specifying
     the name of the operation.
 
-  * ``ConvexFunctionQuadratic`` and ``ConvexFunctionLeastSquares`` have a new
-    argument ``cg_kwargs`` that allows passing additional arguments to the
-    internal conjugate gradient solver.
+  * Method ``_prox`` of ``ConvexFunctionQuadratic`` has a new argument
+    ``solver_kwargs`` that allows passing additional arguments to the
+    internal solver.
 
   * New properties ``shape`` and ``batch_shape`` for ``ConvexFunction`` and
     its subclasses. These allow retrieval of static shape information.
