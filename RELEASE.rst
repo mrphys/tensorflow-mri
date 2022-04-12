@@ -35,6 +35,10 @@ Major Features and Improvements
     for ``ConvexFunction`` and its subclasses. These allow retrieval of the
     dynamic shape information.
 
+* ``tfmri.linalg``:
+
+  * New argument ``bypass_gradient`` for ``conjugate_gradient``.
+
 * ``tfmri.recon``:
 
   * ``lstsq`` has a new argument ``return_optimizer_state`` which allows the

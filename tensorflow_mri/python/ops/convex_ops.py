@@ -717,8 +717,8 @@ class ConvexFunctionQuadratic(ConvexFunction):  # pylint: disable=abstract-metho
     combined_scale = self._scale
     if scale is not None:
       combined_scale *= tf.cast(scale, self.dtype.real_dtype)
+    one_over_scale = tf.cast(1.0 / combined_scale, self.dtype)
 
-    one_over_scale = 1.0 / combined_scale
     # Operator A^T A + 1 / \lambda * I.
     self._operator = linalg_ext.LinearOperatorAddition([
         self._quadratic_coefficient,
