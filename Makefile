@@ -1,4 +1,4 @@
-CXX := g++
+CXX := /dt7/usr/bin/g++
 PY_VERSION ?= 3.8
 PYTHON := python$(PY_VERSION)
 

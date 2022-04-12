@@ -404,8 +404,8 @@ class ReconstructTest(test_util.TestCase):
 
   @parameterized.product(optimizer=('admm', 'lbfgs'),
                          execution_mode=('eager', 'graph'))
-  def test_lstsq_grasp(self, optimizer, execution_mode):  # pylint: disable=missing-param-doc,missing-param-doc
-    """Test GRASP reconstruction."""  # pylint: disable=missing-param-doc
+  def test_lstsq_grasp(self, optimizer, execution_mode):  # pylint: disable=missing-param-doc
+    """Test GRASP reconstruction."""
     # Load data.
     data = io_util.read_hdf5(
         'tests/data/liver_dce_2d_multicoil_radial_kspace.h5')
@@ -415,7 +415,6 @@ class ReconstructTest(test_util.TestCase):
     sens = data['sens']
     expected = data[f'image/tv/{optimizer}/i4']
 
-    @tf.function
     def _reconstruct():
       regularizer = convex_ops.ConvexFunctionTotalVariation(
           scale=0.001, ndim=[28, 384, 384], axis=-3, dtype=tf.complex64)
