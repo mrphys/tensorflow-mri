@@ -492,6 +492,7 @@ def conjugate_gradient(operator,
                        x=None,
                        tol=1e-5,
                        max_iterations=20,
+                       bypass_gradient=False,
                        name=None):
   r"""Conjugate gradient solver.
 
@@ -520,11 +521,18 @@ def conjugate_gradient(operator,
       much lower than computing `A^{-1}` directly.
     x: A `tf.Tensor` of shape `[..., N]`. The initial guess for the solution.
     tol: A float scalar convergence tolerance.
-    max_iterations: An integer giving the maximum number of iterations.
+    max_iterations: An `int` giving the maximum number of iterations.
+    bypass_gradient: A `boolean`. If `True`, the gradient with respect to `rhs`
+      will be computed by applying the inverse of `operator` to the upstream
+      gradient with respect to `x` (through CG iteration), instead of relying
+      on TensorFlow's automatic differentiation. This may reduce memory usage
+      when training neural networks, but `operator` must not have any trainable
+      parameters. If `False`, gradients are computed normally. For more details,
+      see ref. [1].
     name: A name scope for the operation.
 
   Returns:
-    A namedtuple representing the final state with fields:
+    A `namedtuple` representing the final state with fields
 
     - i: A scalar `int32` `tf.Tensor`. Number of iterations executed.
     - x: A rank-1 `tf.Tensor` of shape `[..., N]` containing the computed
@@ -536,6 +544,57 @@ def conjugate_gradient(operator,
 
   Raises:
     ValueError: If `operator` is not self-adjoint and positive definite.
+
+  References:
+    .. [1] Aggarwal, H. K., Mani, M. P., & Jacob, M. (2018). MoDL: Model-based
+      deep learning architecture for inverse problems. IEEE transactions on
+      medical imaging, 38(2), 394-405.
+  """
+  if bypass_gradient:
+    if preconditioner is not None:
+      raise ValueError(
+          "preconditioner is not supported when bypass_gradient is True.")
+    if x is not None:
+      raise ValueError("x is not supported when bypass_gradient is True.")
+
+    def _conjugate_gradient_simple(rhs):
+      return _conjugate_gradient_internal(operator, rhs,
+                                          tol=tol,
+                                          max_iterations=max_iterations,
+                                          name=name)
+
+    @tf.custom_gradient
+    def _conjugate_gradient_internal_grad(rhs):
+      result = _conjugate_gradient_simple(rhs)
+
+      def grad(*upstream_grads):
+        # upstream_grads has the upstream gradient for each element of the
+        # output tuple (i, x, r, p, gamma).
+        _, dx, _, _, _ = upstream_grads
+        return _conjugate_gradient_simple(dx).x
+
+      return result, grad
+
+    return _conjugate_gradient_internal_grad(rhs)
+
+  return _conjugate_gradient_internal(operator, rhs,
+                                      preconditioner=preconditioner,
+                                      x=x,
+                                      tol=tol,
+                                      max_iterations=max_iterations,
+                                      name=name)
+
+
+def _conjugate_gradient_internal(operator,
+                                 rhs,
+                                 preconditioner=None,
+                                 x=None,
+                                 tol=1e-5,
+                                 max_iterations=20,
+                                 name=None):
+  """Implementation of `conjugate_gradient`.
+
+  For the parameters, see `conjugate_gradient`.
   """
   if isinstance(operator, linalg_imaging.LinalgImagingMixin):
     rhs = operator.flatten_domain_shape(rhs)

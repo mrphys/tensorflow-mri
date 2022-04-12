@@ -195,6 +195,7 @@ def view_as_complex(x, stacked=True):
   Returns:
     A complex-valued `Tensor`.
   """
+  x = tf.convert_to_tensor(x)
   if not stacked:
     x_shape = tf.shape(x)
     x_shape = tf.concat([x_shape[:-1], [x_shape[-1] // 2], [2]], 0)
@@ -229,9 +230,21 @@ def view_as_real(x, stacked=True):
   Returns:
     A real-valued `Tensor`.
   """
+  x = tf.convert_to_tensor(x)
+  static_shape = x.shape
+  dynamic_shape = tf.shape(x)
+
   x = tf.stack([tf.math.real(x), tf.math.imag(x)], axis=-1)
+
   if not stacked:
-    x = tf.reshape(x, tf.concat([tf.shape(x)[:-2], [-1]], 0))
+    dynamic_shape = tf.concat([dynamic_shape[:-1], 2 * dynamic_shape[-1:]], 0)
+    if static_shape[-1] is None:
+      static_shape = static_shape[:-1] + [None]
+    else:
+      static_shape = static_shape[:-1] + [2 * static_shape[-1]]
+    x = tf.reshape(x, dynamic_shape)
+    x = tf.ensure_shape(x, static_shape)
+
   return x
 
 

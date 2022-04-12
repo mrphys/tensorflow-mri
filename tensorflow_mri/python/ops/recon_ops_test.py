@@ -402,12 +402,10 @@ class ReconstructTest(test_util.TestCase):
                                         optimizer_kwargs={'max_iterations': 10})
     self.assertAllClose(expected_null, image)
 
-  @parameterized.parameters(
-      ('admm',),
-      ('lbfgs',)
-  )
-  def test_lstsq_grasp(self, optimizer):  # pylint: disable=missing-param-doc,missing-param-doc
-    """Test GRASP reconstruction."""  # pylint: disable=missing-param-doc
+  @parameterized.product(optimizer=('admm', 'lbfgs'),
+                         execution_mode=('eager', 'graph'))
+  def test_lstsq_grasp(self, optimizer, execution_mode):  # pylint: disable=missing-param-doc
+    """Test GRASP reconstruction."""
     # Load data.
     data = io_util.read_hdf5(
         'tests/data/liver_dce_2d_multicoil_radial_kspace.h5')
@@ -417,20 +415,64 @@ class ReconstructTest(test_util.TestCase):
     sens = data['sens']
     expected = data[f'image/tv/{optimizer}/i4']
 
-    regularizer = convex_ops.ConvexFunctionTotalVariation(
-        scale=0.001, ndim=[28, 384, 384], axis=-3, dtype=tf.complex64)
-    image = recon_ops.reconstruct_lstsq(
-        kspace,
-        image_shape=[384, 384],
-        extra_shape=[28],
-        trajectory=traj,
-        density=dens,
-        sensitivities=sens,
-        regularizer=regularizer,
-        optimizer=optimizer,
-        optimizer_kwargs=dict(max_iterations=4))
+    def _reconstruct():
+      regularizer = convex_ops.ConvexFunctionTotalVariation(
+          scale=0.001, ndim=[28, 384, 384], axis=-3, dtype=tf.complex64)
+      return recon_ops.reconstruct_lstsq(
+          kspace,
+          image_shape=[384, 384],
+          extra_shape=[28],
+          trajectory=traj,
+          density=dens,
+          sensitivities=sens,
+          regularizer=regularizer,
+          optimizer=optimizer,
+          optimizer_kwargs=dict(max_iterations=4))
+    if execution_mode == 'eager':
+      fn = _reconstruct
+    elif execution_mode == 'graph':
+      fn = tf.function(_reconstruct)
+    else:
+      raise ValueError(f"Invalid execution mode: {execution_mode}")
+    image = fn()
 
     self.assertAllClose(expected, image, rtol=1e-5, atol=1e-5)
+
+  @parameterized.product(optimizer=('cg', 'lbfgs'),
+                         execution_mode=('eager', 'graph'),
+                         return_optimizer_state=(True, False))
+  def test_lstsq_return_optimizer_state(self, optimizer, execution_mode,  # pylint: disable=missing-param-doc
+                                        return_optimizer_state):
+    """Test the return_optimizer_state argument of `lstsq`."""
+    kspace = tf.dtypes.complex(
+        tf.random.stateless_uniform([32, 32], [2, 3]),
+        tf.random.stateless_uniform([32, 32], [14, 8]))
+    mask = tf.cast(
+        tf.random.stateless_binomial([32, 32], [1, 1], 1, 0.5), tf.bool)
+    kspace *= tf.cast(mask, tf.complex64)
+
+    def _reconstruct():
+      return recon_ops.reconstruct_lstsq(
+          kspace,
+          image_shape=[32, 32],
+          mask=mask,
+          optimizer=optimizer,
+          optimizer_kwargs=dict(max_iterations=1),
+          return_optimizer_state=return_optimizer_state)
+    if execution_mode == 'eager':
+      fn = _reconstruct
+    elif execution_mode == 'graph':
+      fn = tf.function(_reconstruct)
+    else:
+      raise ValueError(f"Invalid execution mode: {execution_mode}")
+
+    results = fn()
+    if return_optimizer_state:
+      self.assertIsInstance(results, tuple)
+      self.assertEqual(len(results), 2)
+      self.assertIsInstance(results[0], tf.Tensor)
+    else:
+      self.assertIsInstance(results, tf.Tensor)
 
 
 class ReconstructPartialKSpaceTest(test_util.TestCase):

@@ -153,7 +153,8 @@ def reconstruct_lstsq(kspace,
                       regularizer=None,
                       optimizer=None,
                       optimizer_kwargs=None,
-                      filter_corners=False):
+                      filter_corners=False,
+                      return_optimizer_state=False):
   r"""Reconstructs an MR image using a least-squares formulation.
 
   This is an iterative reconstruction method which formulates the image
@@ -179,8 +180,9 @@ def reconstruct_lstsq(kspace,
     kspace: A `Tensor`. The *k*-space samples. Must have type `complex64` or
       `complex128`. `kspace` can be either Cartesian or non-Cartesian. A
       Cartesian `kspace` must have shape
-      `[..., num_coils, *image_shape]`, where `...` are batch dimensions. A
-      non-Cartesian `kspace` must have shape `[..., num_coils, num_samples]`.
+      `[..., *extra_shape, num_coils, *image_shape]`, where `...` are batch
+      dimensions. A non-Cartesian `kspace` must have shape
+      `[..., *extra_shape, num_coils, num_samples]`.
     image_shape: A `TensorShape` or a list of `ints`. Must have length 2 or 3.
       The shape of the reconstructed image[s].
     extra_shape: An optional `TensorShape` or list of `ints`. Additional
@@ -234,11 +236,16 @@ def reconstruct_lstsq(kspace,
     filter_corners: A `boolean`. Whether to filter out the *k*-space corners in
       reconstructed image. This may be done for trajectories with a circular
       *k*-space coverage. Defaults to `False`.
+    return_optimizer_state: A `boolean`. If `True`, returns the optimizer
+      state along with the reconstructed image.
 
   Returns:
     A `Tensor`. The reconstructed image. Has the same type as `kspace` and
     shape `[..., *extra_shape, *image_shape]`, where `...` is the broadcasted
     batch shape of all inputs.
+
+    If `return_optimizer_state` is `True`, returns a tuple containing the
+    reconstructed image and the optimizer state.
 
   Raises:
     ValueError: If passed incompatible inputs.
@@ -353,7 +360,7 @@ def reconstruct_lstsq(kspace,
     result = optimizer_ops.admm_minimize(function_f, function_g,
                                          operator_a=operator_a,
                                          **optimizer_kwargs)
-    image = operator.expand_domain_dimension(result.x)
+    image = operator.expand_domain_dimension(result.f_primal_variable)
 
   elif optimizer == 'lbfgs':
     # Flatten k-space and initial estimate.
@@ -370,10 +377,11 @@ def reconstruct_lstsq(kspace,
     def _objective(x):
       # Reinterpret real input as complex.
       x = math_ops.view_as_complex(x, stacked=False)
-      # Compute data consistency and regularization terms and add.
-      dc_term = tf.math.abs(tf.norm(y - operator.matvec(x), ord=2))
-      reg_term = regularizer(x)
-      return dc_term + reg_term
+      # Compute objective.
+      obj = tf.math.abs(tf.norm(y - operator.matvec(x), ord=2))
+      if regularizer is not None:
+        obj += regularizer(x)
+      return obj
 
     # Do minimization.
     result = optimizer_ops.lbfgs_minimize(_objective, initial_image,
@@ -412,6 +420,9 @@ def reconstruct_lstsq(kspace,
     kspace = signal_ops.filter_kspace(kspace, filter_fn='atanfilt',
                                       filter_rank=rank)
     image = fft_ops.ifftn(kspace, axes=fft_axes, norm='ortho', shift=True)
+
+  if return_optimizer_state:
+    return image, result
 
   return image
 

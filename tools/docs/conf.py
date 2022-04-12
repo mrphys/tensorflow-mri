@@ -194,6 +194,9 @@ COMMON_TYPES_LINKS = {
     'tuple': 'https://docs.python.org/3/library/stdtypes.html#tuples',
     'list': 'https://docs.python.org/3/library/stdtypes.html#lists',
     'dict': 'https://docs.python.org/3/library/stdtypes.html#mapping-types-dict',
+    'namedtuple': 'https://docs.python.org/3/library/collections.html#namedtuple-factory-function-for-tuples-with-named-fields',
+    'callable': 'https://docs.python.org/3/library/functions.html#callable',
+    'dataclass': 'https://docs.python.org/3/library/dataclasses.html',
     # Python constants.
     'False': 'https://docs.python.org/3/library/constants.html#False',
     'True': 'https://docs.python.org/3/library/constants.html#True',
@@ -205,11 +208,10 @@ COMMON_TYPES_LINKS = {
     # TensorFlow types.
     'tf.Tensor': 'https://www.tensorflow.org/api_docs/python/tf/Tensor',
     'tf.TensorShape': 'https://www.tensorflow.org/api_docs/python/tf/TensorShape',
-    'tf.dtypes.DType': 'https://www.tensorflow.org/api_docs/python/tf/dtypes/DType',
-    # TFMRI types.
-    'tfmri.linalg.LinearOperator': 'https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/linalg/LinearOperator.html',
-    'tfmri.convex.ConvexFunction': 'https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/convex/ConvexFunction.html'
+    'tf.dtypes.DType': 'https://www.tensorflow.org/api_docs/python/tf/dtypes/DType'
 }
+
+TFMRI_OBJECTS_PATTERN = re.compile(r"``(?P<name>tfmri.[a-zA-Z0-9_.]+)``")
 
 COMMON_TYPES_PATTERNS = {
     k: re.compile(rf"``{k}``")for k in COMMON_TYPES_LINKS}
@@ -235,9 +237,24 @@ def process_docstring(app, what, name, obj, options, lines):  # pylint: disable=
   # Add links to some common types.
   for k in COMMON_TYPES_LINKS:
     text = COMMON_TYPES_PATTERNS[k].sub(COMMON_TYPES_REPLACEMENTS[k], text)
+  # Add links to TFMRI objects.
+  for match in TFMRI_OBJECTS_PATTERN.finditer(text):
+    name = match.group('name')
+    url = get_doc_url(name)
+    pattern = rf"``{name}``"
+    repl = rf"`{name} <{url}>`_"
+    text = text.replace(pattern, repl)
+
   # Correct double quotes.
   text = LINK_PATTERN.sub(LINK_REPL, text)
   lines[:] = text.splitlines()
+
+
+def get_doc_url(name):
+  """Get doc URL for the given TFMRI name."""
+  url = 'https://mrphys.github.io/tensorflow-mri/api_docs/'
+  url += name.replace('.', '/') + '.html'
+  return url
 
 
 def setup(app):

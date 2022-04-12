@@ -23,11 +23,10 @@ includes:
 
 * A fast, native non-uniform fast Fourier transform (NUFFT) operator (see
   also `TensorFlow NUFFT <https://github.com/mrphys/tensorflow-nufft>`_).
-* A unified gateway for MR image reconstruction, which supports parallel
-  imaging, compressed sensing, machine learning and partial Fourier methods. 
+* MR image reconstruction functions, which support parallel imaging, compressed
+  sensing, machine learning and partial Fourier methods. 
 * Common linear and nonlinear operators, such as Fourier operators and
-  regularizers, to aid in the development of novel image reconstruction
-  techniques. 
+  regularizers, to aid in the development of image reconstruction techniques. 
 * Multicoil imaging operators, such as coil combination, coil compression and
   estimation of coil sensitivity maps. 
 * Calculation of non-Cartesian k-space trajectories and sampling density
@@ -79,6 +78,7 @@ versions of TensorFlow and TensorFlow MRI according to the table below.
 ======================  ========================  ============
 TensorFlow MRI Version  TensorFlow Compatibility  Release Date
 ======================  ========================  ============
+v0.16.0                 v2.8.x                    Apr 13, 2022
 v0.15.0                 v2.8.x                    Apr 1, 2022
 v0.14.0                 v2.8.x                    Mar 29, 2022
 v0.13.0                 v2.8.x                    Mar 15, 2022

@@ -419,7 +419,8 @@ def compress_coils(kspace,
 
   This function estimates a coil compression matrix and uses it to compress
   `kspace`. If you would like to reuse a coil compression matrix or need to
-  calibrate the compression using different data, use `tfmri.CoilCompressorSVD`.
+  calibrate the compression using different data, use
+  `tfmri.coils.CoilCompressorSVD`.
 
   This function supports the following coil compression methods:
 

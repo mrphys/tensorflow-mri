@@ -120,7 +120,7 @@ def random_sampling_mask(shape, density=1.0, seed=None, rng=None, name=None):
       be sampled. For example, if `density` is a scalar, then each point in the
       mask will be sampled with probability `density`. A non-scalar `density`
       may be used to create variable-density sampling masks.
-      `tfmri.density_grid` can be used to create density grids.
+      `tfmri.sampling.density_grid` can be used to create density grids.
     seed: A `Tensor` of shape `[2]`. The seed for the stateless RNG. `seed` and
       `rng` may not be specified at the same time.
     rng: A `tf.random.Generator`. The stateful RNG to use. `seed` and `rng` may
@@ -572,7 +572,7 @@ def estimate_radial_density(points, readout_os=2.0):
   does not take into account the relationships between different spokes or
   views. This function should work well as long as the spacing between radial
   spokes is reasonably uniform. If this is not the case, consider also
-  `tfmri.radial_density` or `tfmri.estimate_density`.
+  `tfmri.sampling.radial_density` or `tfmri.sampling.estimate_density`.
 
   This function supports 2D and 3D ("koosh-ball") radial trajectories.
 

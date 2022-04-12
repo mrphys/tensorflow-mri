@@ -331,5 +331,28 @@ class ProjectionOntoBallTest(test_util.TestCase):
         self.assertAllClose(expected, y)
 
 
+@test_util.run_all_in_graph_and_eager_modes
+class ViewTest(test_util.TestCase):
+  """Tests for `view_as_real` and `view_as_complex`."""
+  @parameterized.product(stacked=[True, False])
+  def test_view_functions(self, stacked):  # pylint: disable=missing-param-doc
+    """Tests for `view_as_real` and `view_as_complex`."""
+    rng = np.random.default_rng(3)
+    x = rng.normal(size=(3, 4)) + 1j * rng.normal(size=(3, 4))
+    y = math_ops.view_as_real(x, stacked=stacked)
+
+    expected = np.stack([x.real, x.imag], axis=-1)
+    if not stacked:
+      expected = expected.reshape((3, 8))
+
+    self.assertAllEqual(expected.shape, y.shape)
+    self.assertAllClose(expected, y)
+
+    y = math_ops.view_as_complex(y, stacked=stacked)
+
+    self.assertAllEqual(x.shape, y.shape)
+    self.assertAllClose(x, y)
+
+
 if __name__ == '__main__':
   tf.test.main()
