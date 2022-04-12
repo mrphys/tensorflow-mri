@@ -45,6 +45,12 @@ Major Features and Improvements
   * New function ``gradient_descent`` implementing the gradient descent method
     for minimization of differentiable functions.
 
+* ``tfmri.plot``:
+
+  * New argument ``dpi`` for functions ``image_sequence`` and
+    ``tiled_image_sequence``.
+  * New function ``close``, alias of ``matplotlib.pyplot.close``.
+
 
 Bug Fixes and Other Changes
 ---------------------------
@@ -59,3 +65,8 @@ Bug Fixes and Other Changes
 
   * Fixed a bug in internal linear algebra framework that would cause errors
     when running in graph mode.
+
+* ``tfmri.plot``:
+
+  * Removed lazy import mechanism which was causing problems when using
+    ``matplotlib`` outside TFMRI. For now we use regular imports.

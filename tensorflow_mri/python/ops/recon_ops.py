@@ -360,7 +360,7 @@ def reconstruct_lstsq(kspace,
     result = optimizer_ops.admm_minimize(function_f, function_g,
                                          operator_a=operator_a,
                                          **optimizer_kwargs)
-    image = operator.expand_domain_dimension(result.x)
+    image = operator.expand_domain_dimension(result.f_primal_variable)
 
   elif optimizer == 'lbfgs':
     # Flatten k-space and initial estimate.

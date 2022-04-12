@@ -14,18 +14,16 @@
 # ==============================================================================
 """Plotting utilities."""
 
+import matplotlib as mpl
+import matplotlib.animation as ani
+import matplotlib.pyplot as plt
+import matplotlib.tight_bbox as tight_bbox
 import numpy as np
+import plotly.graph_objects as go
+import plotly.subplots as ps
 import tensorflow as tf
 
 from tensorflow_mri.python.util import api_util
-from tensorflow_mri.python.util import import_util
-
-mpl = import_util.lazy_import("matplotlib")
-ani = import_util.lazy_import("matplotlib.animation")
-plt = import_util.lazy_import("matplotlib.pyplot")
-tight_bbox = import_util.lazy_import("matplotlib.tight_bbox")
-go = import_util.lazy_import("plotly.graph_objects")
-ps = import_util.lazy_import("plotly.subplots")
 
 
 @api_util.export("plot.image_sequence")
@@ -34,6 +32,7 @@ def plot_image_sequence(images,
                         cmap='gray',
                         fps=20.0,
                         fig_size=None,
+                        dpi=None,
                         bg_color='dimgray',
                         layout=None,
                         bbox_inches=None,
@@ -53,6 +52,7 @@ def plot_image_sequence(images,
       Defaults to `'gray'`.
     fps: A `float`. The number of frames per second. Defaults to 20.
     fig_size: A `tuple` of `float`s. Width and height of the figure in inches.
+    dpi: A `float`. The resolution of the figure in dots per inch.
     bg_color: A `color`_. The background color.
     layout: A `str`. One of `None`, `'tight'` (default) or `'constrained'`.
       The layout mechanism. See `matplotlib.figure.Figure`_ for details.
@@ -74,7 +74,7 @@ def plot_image_sequence(images,
   """
   images = _preprocess_image(images, part=part, expected_ndim=(3, 4))
 
-  fig = plt.figure(figsize=fig_size, facecolor=bg_color, layout=layout)
+  fig = plt.figure(figsize=fig_size, dpi=dpi, facecolor=bg_color, layout=layout)
 
   artists = []
   for image in images:
@@ -111,6 +111,7 @@ def plot_tiled_image_sequence(images,
                               cmap='gray',
                               fps=20.0,
                               fig_size=None,
+                              dpi=None,
                               bg_color='dimgray',
                               layout=None,
                               bbox_inches=None,
@@ -134,6 +135,7 @@ def plot_tiled_image_sequence(images,
       Defaults to `'gray'`.
     fps: A `float`. The number of frames per second. Defaults to 20.
     fig_size: A `tuple` of `float`s. Width and height of the figure in inches.
+    dpi: A `float`. The resolution of the figure in dots per inch.
     bg_color: A `color`_. The background color.
     layout: A `str`. One of `None`, `'tight'` (default) or `'constrained'`.
       The layout mechanism. See `matplotlib.figure.Figure`_ for details.
@@ -169,7 +171,8 @@ def plot_tiled_image_sequence(images,
         num_tiles, (image_rows, image_cols), aspect)
 
   fig, axs = plt.subplots(grid_rows, grid_cols, squeeze=False,
-                          figsize=fig_size, facecolor=bg_color, layout=layout)
+                          figsize=fig_size, dpi=dpi,
+                          facecolor=bg_color, layout=layout)
 
   artists = []
   for frame_idx in range(num_frames):  # For each frame.
@@ -225,6 +228,19 @@ def show(*args, **kwargs):
   .. _matplotlib.pyplot.show: https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.show.html
   """
   return plt.show(*args, **kwargs)
+
+
+@api_util.export("plot.close")
+def close(*args, **kwargs):
+  """Closes a figure window.
+
+  This function is an alias for `matplotlib.pyplot.close`_.
+
+  For the parameters, see `matplotlib.pyplot.close`_.
+
+  .. _matplotlib.pyplot.close: https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.close.html
+  """
+  return plt.close(*args, **kwargs)
 
 
 def _preprocess_image(image, part=None, expected_ndim=None):  # pylint: disable=missing-param-doc
