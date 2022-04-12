@@ -528,7 +528,7 @@ def lbfgs_minimize(*args, **kwargs):
   return tfp.optimizer.lbfgs_minimize(*args, **kwargs)
 
 
-def _check_convergence(current_position,  # pylint: missing-param-doc
+def _check_convergence(current_position,  # pylint: disable=missing-param-doc
                        next_position,
                        current_objective,
                        next_objective,

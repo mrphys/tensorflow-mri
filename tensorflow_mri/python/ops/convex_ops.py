@@ -345,7 +345,7 @@ class ConvexFunctionLinearOperatorComposition(  # pylint: disable=abstract-metho
 
 
 @api_util.export("convex.ConvexFunctionIndicatorBall")
-class ConvexFunctionIndicatorBall(ConvexFunction):
+class ConvexFunctionIndicatorBall(ConvexFunction):  # pylint: disable=abstract-method
   """A `ConvexFunction` representing the indicator function of an Lp ball.
 
   Args:
@@ -392,7 +392,7 @@ class ConvexFunctionIndicatorBall(ConvexFunction):
 
 
 @api_util.export("convex.ConvexFunctionIndicatorL1Ball")
-class ConvexFunctionIndicatorL1Ball(ConvexFunctionIndicatorBall):
+class ConvexFunctionIndicatorL1Ball(ConvexFunctionIndicatorBall):  # pylint: disable=abstract-method
   """A `ConvexFunction` representing the indicator function of an L1 ball.
 
   Args:
@@ -416,7 +416,7 @@ class ConvexFunctionIndicatorL1Ball(ConvexFunctionIndicatorBall):
 
 
 @api_util.export("convex.ConvexFunctionIndicatorL2Ball")
-class ConvexFunctionIndicatorL2Ball(ConvexFunctionIndicatorBall):
+class ConvexFunctionIndicatorL2Ball(ConvexFunctionIndicatorBall):  # pylint: disable=abstract-method
   """A `ConvexFunction` representing the indicator function of an L2 ball.
 
   Args:
@@ -440,7 +440,7 @@ class ConvexFunctionIndicatorL2Ball(ConvexFunctionIndicatorBall):
 
 
 @api_util.export("convex.ConvexFunctionNorm")
-class ConvexFunctionNorm(ConvexFunction):
+class ConvexFunctionNorm(ConvexFunction):  # pylint: disable=abstract-method
   """A `ConvexFunction` computing the [scaled] Lp-norm of a [batch of] inputs.
 
   Args:
@@ -493,7 +493,7 @@ class ConvexFunctionNorm(ConvexFunction):
 
 
 @api_util.export("convex.ConvexFunctionL1Norm")
-class ConvexFunctionL1Norm(ConvexFunctionNorm):
+class ConvexFunctionL1Norm(ConvexFunctionNorm):  # pylint: disable=abstract-method
   """A `ConvexFunction` computing the [scaled] L1-norm of a [batch of] inputs.
 
   Args:
@@ -517,7 +517,7 @@ class ConvexFunctionL1Norm(ConvexFunctionNorm):
 
 
 @api_util.export("convex.ConvexFunctionL2Norm")
-class ConvexFunctionL2Norm(ConvexFunctionNorm):
+class ConvexFunctionL2Norm(ConvexFunctionNorm):  # pylint: disable=abstract-method
   """A `ConvexFunction` computing the [scaled] L2-norm of a [batch of] inputs.
 
   Args:
