@@ -21,4 +21,5 @@ Functions
     :template: optimize/function.rst
     :nosignatures:
 
+    gradient_descent
     lbfgs_minimize

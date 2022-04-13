@@ -1,0 +1,8 @@
+﻿tfmri.losses.FocalTverskyLoss
+=============================
+
+.. currentmodule:: tensorflow_mri.losses
+
+.. autoclass:: FocalTverskyLoss
+    :members:
+    :show-inheritance:

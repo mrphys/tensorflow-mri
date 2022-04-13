@@ -1,0 +1,8 @@
+﻿tfmri.losses.F1Loss
+===================
+
+.. currentmodule:: tensorflow_mri.losses
+
+.. autoclass:: F1Loss
+    :members:
+    :show-inheritance:

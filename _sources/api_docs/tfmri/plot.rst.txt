@@ -21,6 +21,7 @@ Functions
     :template: plot/function.rst
     :nosignatures:
 
+    close
     image_sequence
     show
     tiled_image_sequence

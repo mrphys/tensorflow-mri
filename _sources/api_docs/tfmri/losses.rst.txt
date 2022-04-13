@@ -11,8 +11,13 @@ Classes
     :template: losses/class.rst
     :nosignatures:
 
+    ConfusionLoss
+    F1Loss
+    FocalTverskyLoss
+    IoULoss
     MultiscaleStructuralSimilarityLoss
     StructuralSimilarityLoss
+    TverskyLoss
 
 Functions
 ---------

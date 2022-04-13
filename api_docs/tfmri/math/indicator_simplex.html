@@ -247,8 +247,13 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../losses.html">tfmri.losses</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../losses/ConfusionLoss.html">ConfusionLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/F1Loss.html">F1Loss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/FocalTverskyLoss.html">FocalTverskyLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/IoULoss.html">IoULoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/MultiscaleStructuralSimilarityLoss.html">MultiscaleStructuralSimilarityLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/StructuralSimilarityLoss.html">StructuralSimilarityLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/TverskyLoss.html">TverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/ssim_loss.html">ssim_loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/ssim_multiscale_loss.html">ssim_multiscale_loss</a></li>
 </ul>
@@ -285,10 +290,12 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../optimize.html">tfmri.optimize</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../optimize/gradient_descent.html">gradient_descent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../optimize/lbfgs_minimize.html">lbfgs_minimize</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../plot.html">tfmri.plot</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../plot/close.html">close</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../plot/image_sequence.html">image_sequence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../plot/show.html">show</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../plot/tiled_image_sequence.html">tiled_image_sequence</a></li>
@@ -368,7 +375,7 @@
 <h1>tfmri.math.indicator_simplex<a class="headerlink" href="#tfmri-math-indicator-simplex" title="Permalink to this headline">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="tensorflow_mri.math.indicator_simplex">
-<span class="sig-name descname"><span class="pre">indicator_simplex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.15.0/tensorflow_mri/python/ops/math_ops.py#L362-L407"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.math.indicator_simplex" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">indicator_simplex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.16.0/tensorflow_mri/python/ops/math_ops.py#L375-L420"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.math.indicator_simplex" title="Permalink to this definition">#</a></dt>
 <dd><p>Indicator function of the simplex.</p>
 <p>Returns <code class="docutils literal notranslate"><span class="pre">0</span></code> if <code class="docutils literal notranslate"><span class="pre">x</span></code> is in the simplex, <code class="docutils literal notranslate"><span class="pre">inf</span></code> otherwise.</p>
 <p>The simplex of radius <span class="math notranslate nohighlight">\(r\)</span> is defined as the set of points of

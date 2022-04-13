@@ -247,8 +247,13 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../losses.html">tfmri.losses</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../losses/ConfusionLoss.html">ConfusionLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/F1Loss.html">F1Loss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/FocalTverskyLoss.html">FocalTverskyLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/IoULoss.html">IoULoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/MultiscaleStructuralSimilarityLoss.html">MultiscaleStructuralSimilarityLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/StructuralSimilarityLoss.html">StructuralSimilarityLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/TverskyLoss.html">TverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/ssim_loss.html">ssim_loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/ssim_multiscale_loss.html">ssim_multiscale_loss</a></li>
 </ul>
@@ -285,10 +290,12 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../optimize.html">tfmri.optimize</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../optimize/gradient_descent.html">gradient_descent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../optimize/lbfgs_minimize.html">lbfgs_minimize</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../plot.html">tfmri.plot</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../plot/close.html">close</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../plot/image_sequence.html">image_sequence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../plot/show.html">show</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../plot/tiled_image_sequence.html">tiled_image_sequence</a></li>
@@ -368,7 +375,7 @@
 <h1>tfmri.metrics.TruePositiveRate<a class="headerlink" href="#tfmri-metrics-truepositiverate" title="Permalink to this headline">#</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflow_mri.metrics.TruePositiveRate">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TruePositiveRate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.15.0/tensorflow_mri/python/metrics/confusion_metrics.py#L332-L366"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.metrics.TruePositiveRate" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TruePositiveRate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.16.0/tensorflow_mri/python/metrics/confusion_metrics.py#L331-L365"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.metrics.TruePositiveRate" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="ConfusionMetric.html#tensorflow_mri.metrics.ConfusionMetric" title="tensorflow_mri.python.metrics.confusion_metrics.ConfusionMetric"><code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflow_mri.python.metrics.confusion_metrics.ConfusionMetric</span></code></a></p>
 <p>Computes the true positive rate (TPR).</p>
 <p>The true positive rate (TPR), also called sensitivity or recall, is the

@@ -247,8 +247,13 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../losses.html">tfmri.losses</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../losses/ConfusionLoss.html">ConfusionLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/F1Loss.html">F1Loss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/FocalTverskyLoss.html">FocalTverskyLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/IoULoss.html">IoULoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/MultiscaleStructuralSimilarityLoss.html">MultiscaleStructuralSimilarityLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/StructuralSimilarityLoss.html">StructuralSimilarityLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/TverskyLoss.html">TverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/ssim_loss.html">ssim_loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/ssim_multiscale_loss.html">ssim_multiscale_loss</a></li>
 </ul>
@@ -285,10 +290,12 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../optimize.html">tfmri.optimize</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../optimize/gradient_descent.html">gradient_descent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../optimize/lbfgs_minimize.html">lbfgs_minimize</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../plot.html">tfmri.plot</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../plot/close.html">close</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../plot/image_sequence.html">image_sequence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../plot/show.html">show</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../plot/tiled_image_sequence.html">tiled_image_sequence</a></li>
@@ -368,7 +375,7 @@
 <h1>tfmri.metrics.ConfusionMetric<a class="headerlink" href="#tfmri-metrics-confusionmetric" title="Permalink to this headline">#</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorflow_mri.metrics.ConfusionMetric">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ConfusionMetric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.15.0/tensorflow_mri/python/metrics/confusion_metrics.py#L107-L293"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.metrics.ConfusionMetric" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ConfusionMetric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.16.0/tensorflow_mri/python/metrics/confusion_metrics.py#L107-L292"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.metrics.ConfusionMetric" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">keras.metrics.Metric</span></code></p>
 <p>Abstract base class for metrics derived from the confusion matrix.</p>
 <p>This class maintains a confusion matrix in its state and updates it with every
@@ -450,19 +457,19 @@ alters ‘macro’ to account for label imbalance.</p></li>
 </ul>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflow_mri.metrics.ConfusionMetric.get_config">
-<span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.15.0/tensorflow_mri/python/metrics/confusion_metrics.py#L278-L285"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.metrics.ConfusionMetric.get_config" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.16.0/tensorflow_mri/python/metrics/confusion_metrics.py#L277-L284"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.metrics.ConfusionMetric.get_config" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns the serializable config of the metric.</p>
 </dd></dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflow_mri.metrics.ConfusionMetric.reset_state">
-<span class="sig-name descname"><span class="pre">reset_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.15.0/tensorflow_mri/python/metrics/confusion_metrics.py#L287-L293"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.metrics.ConfusionMetric.reset_state" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">reset_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.16.0/tensorflow_mri/python/metrics/confusion_metrics.py#L286-L292"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.metrics.ConfusionMetric.reset_state" title="Permalink to this definition">#</a></dt>
 <dd><p>Resets all of the metric state variables.</p>
 <p>This function is called between epochs/steps,
 when a metric is evaluated during training.</p>
 </dd></dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflow_mri.metrics.ConfusionMetric.result">
-<span class="sig-name descname"><span class="pre">result</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.15.0/tensorflow_mri/python/metrics/confusion_metrics.py#L257-L268"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.metrics.ConfusionMetric.result" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">result</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.16.0/tensorflow_mri/python/metrics/confusion_metrics.py#L257-L267"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.metrics.ConfusionMetric.result" title="Permalink to this definition">#</a></dt>
 <dd><p>Computes and returns the scalar metric value tensor or a dict of scalars.</p>
 <p>Result computation is an idempotent operation that simply calculates the
 metric value using the state variables.</p>
@@ -474,7 +481,7 @@ metric value using the state variables.</p>
 </dd></dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorflow_mri.metrics.ConfusionMetric.update_state">
-<span class="sig-name descname"><span class="pre">update_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.15.0/tensorflow_mri/python/metrics/confusion_metrics.py#L201-L255"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.metrics.ConfusionMetric.update_state" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">update_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.16.0/tensorflow_mri/python/metrics/confusion_metrics.py#L201-L255"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.metrics.ConfusionMetric.update_state" title="Permalink to this definition">#</a></dt>
 <dd><p>Update confusion matrix entries.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

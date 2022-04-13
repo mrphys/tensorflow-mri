@@ -3,7 +3,7 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
-<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="tfmri.plot.image_sequence" href="plot/image_sequence.html" /><link rel="prev" title="tfmri.optimize.lbfgs_minimize" href="optimize/lbfgs_minimize.html" />
+<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="tfmri.plot.close" href="plot/close.html" /><link rel="prev" title="tfmri.optimize.lbfgs_minimize" href="optimize/lbfgs_minimize.html" />
 
     <link rel="shortcut icon" href="../../_static/tfmr_icon.svg"/><meta name="generator" content="sphinx-4.4.0, furo 2022.03.04"/>
         <title>tfmri.plot - TensorFlow MRI Documentation</title>
@@ -247,8 +247,13 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="losses.html">tfmri.losses</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="losses/ConfusionLoss.html">ConfusionLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="losses/F1Loss.html">F1Loss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="losses/FocalTverskyLoss.html">FocalTverskyLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="losses/IoULoss.html">IoULoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="losses/MultiscaleStructuralSimilarityLoss.html">MultiscaleStructuralSimilarityLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="losses/StructuralSimilarityLoss.html">StructuralSimilarityLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="losses/TverskyLoss.html">TverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="losses/ssim_loss.html">ssim_loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="losses/ssim_multiscale_loss.html">ssim_multiscale_loss</a></li>
 </ul>
@@ -285,10 +290,12 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="optimize.html">tfmri.optimize</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="optimize/gradient_descent.html">gradient_descent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="optimize/lbfgs_minimize.html">lbfgs_minimize</a></li>
 </ul>
 </li>
 <li class="toctree-l1 current has-children current-page"><a class="current reference internal" href="#">tfmri.plot</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="plot/close.html">close</a></li>
 <li class="toctree-l2"><a class="reference internal" href="plot/image_sequence.html">image_sequence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="plot/show.html">show</a></li>
 <li class="toctree-l2"><a class="reference internal" href="plot/tiled_image_sequence.html">tiled_image_sequence</a></li>
@@ -386,13 +393,16 @@
 <col style="width: 90%"/>
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="plot/image_sequence.html#tensorflow_mri.plot.image_sequence" title="tensorflow_mri.plot.image_sequence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">image_sequence</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="plot/close.html#tensorflow_mri.plot.close" title="tensorflow_mri.plot.close"><code class="xref py py-obj docutils literal notranslate"><span class="pre">close</span></code></a></p></td>
+<td><p>Closes a figure window.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="plot/image_sequence.html#tensorflow_mri.plot.image_sequence" title="tensorflow_mri.plot.image_sequence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">image_sequence</span></code></a></p></td>
 <td><p>Plots a sequence of images.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="plot/show.html#tensorflow_mri.plot.show" title="tensorflow_mri.plot.show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">show</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="plot/show.html#tensorflow_mri.plot.show" title="tensorflow_mri.plot.show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">show</span></code></a></p></td>
 <td><p>Displays all open figures.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="plot/tiled_image_sequence.html#tensorflow_mri.plot.tiled_image_sequence" title="tensorflow_mri.plot.tiled_image_sequence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tiled_image_sequence</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="plot/tiled_image_sequence.html#tensorflow_mri.plot.tiled_image_sequence" title="tensorflow_mri.plot.tiled_image_sequence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tiled_image_sequence</span></code></a></p></td>
 <td><p>Plots one or more image sequences in a grid.</p></td>
 </tr>
 </tbody>
@@ -405,12 +415,12 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="plot/image_sequence.html">
+          <a class="next-page" href="plot/close.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">tfmri.plot.image_sequence</div>
+                <div class="title">tfmri.plot.close</div>
               </div>
               <svg><use href="#svg-arrow-right"></use></svg>
             </a>

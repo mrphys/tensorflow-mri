@@ -247,8 +247,13 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../losses.html">tfmri.losses</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../losses/ConfusionLoss.html">ConfusionLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/F1Loss.html">F1Loss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/FocalTverskyLoss.html">FocalTverskyLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/IoULoss.html">IoULoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/MultiscaleStructuralSimilarityLoss.html">MultiscaleStructuralSimilarityLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/StructuralSimilarityLoss.html">StructuralSimilarityLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/TverskyLoss.html">TverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/ssim_loss.html">ssim_loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/ssim_multiscale_loss.html">ssim_multiscale_loss</a></li>
 </ul>
@@ -285,10 +290,12 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../optimize.html">tfmri.optimize</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../optimize/gradient_descent.html">gradient_descent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../optimize/lbfgs_minimize.html">lbfgs_minimize</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../plot.html">tfmri.plot</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../plot/close.html">close</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../plot/image_sequence.html">image_sequence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../plot/show.html">show</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../plot/tiled_image_sequence.html">tiled_image_sequence</a></li>
@@ -368,7 +375,7 @@
 <h1>tfmri.linalg.conjugate_gradient<a class="headerlink" href="#tfmri-linalg-conjugate-gradient" title="Permalink to this headline">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="tensorflow_mri.linalg.conjugate_gradient">
-<span class="sig-name descname"><span class="pre">conjugate_gradient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">operator</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preconditioner</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.15.0/tensorflow_mri/python/ops/linalg_ops.py#L488-L622"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.linalg.conjugate_gradient" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">conjugate_gradient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">operator</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preconditioner</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bypass_gradient</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.16.0/tensorflow_mri/python/ops/linalg_ops.py#L488-L585"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.linalg.conjugate_gradient" title="Permalink to this definition">#</a></dt>
 <dd><p>Conjugate gradient solver.</p>
 <p>Solves a linear system of equations <span class="math notranslate nohighlight">\(Ax = b\)</span> for self-adjoint, positive
 definite matrix <span class="math notranslate nohighlight">\(A\)</span> and right-hand side vector <span class="math notranslate nohighlight">\(b\)</span>, using an
@@ -398,12 +405,20 @@ much lower than computing <code class="docutils literal notranslate"><span class
 <li><p><strong>x</strong> – <p>A <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor">tf.Tensor</a> of shape <code class="docutils literal notranslate"><span class="pre">[...,</span> <span class="pre">N]</span></code>. The initial guess for the solution.</p>
 </p></li>
 <li><p><strong>tol</strong> – A float scalar convergence tolerance.</p></li>
-<li><p><strong>max_iterations</strong> – An integer giving the maximum number of iterations.</p></li>
+<li><p><strong>max_iterations</strong> – An <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex">int</a> giving the maximum number of iterations.</p></li>
+<li><p><strong>bypass_gradient</strong> – A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#boolean-values">boolean</a>. If <a class="reference external" href="https://docs.python.org/3/library/constants.html#True">True</a>, the gradient with respect to <code class="docutils literal notranslate"><span class="pre">rhs</span></code>
+will be computed by applying the inverse of <code class="docutils literal notranslate"><span class="pre">operator</span></code> to the upstream
+gradient with respect to <code class="docutils literal notranslate"><span class="pre">x</span></code> (through CG iteration), instead of relying
+on TensorFlow’s automatic differentiation. This may reduce memory usage
+when training neural networks, but <code class="docutils literal notranslate"><span class="pre">operator</span></code> must not have any trainable
+parameters. If <a class="reference external" href="https://docs.python.org/3/library/constants.html#False">False</a>, gradients are computed normally. For more details,
+see ref. [1].</p></li>
 <li><p><strong>name</strong> – A name scope for the operation.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p><ul class="simple">
+<dd class="field-even"><p><p>A <a class="reference external" href="https://docs.python.org/3/library/collections.html#namedtuple-factory-function-for-tuples-with-named-fields">namedtuple</a> representing the final state with fields</p>
+<ul class="simple">
 <li><p>i: A scalar <code class="docutils literal notranslate"><span class="pre">int32</span></code> <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor">tf.Tensor</a>. Number of iterations executed.</p></li>
 <li><dl class="simple">
 <dt>x: A rank-1 <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor">tf.Tensor</a> of shape <code class="docutils literal notranslate"><span class="pre">[...,</span> <span class="pre">N]</span></code> containing the computed</dt><dd><p>solution.</p>
@@ -417,11 +432,16 @@ much lower than computing <code class="docutils literal notranslate"><span class
 </ul>
 </p>
 </dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>A namedtuple representing the final state with fields</p>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">operator</span></code> is not self-adjoint and positive definite.</p>
 </dd>
-<dt class="field-even">Raises</dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">operator</span></code> is not self-adjoint and positive definite.</p>
+</dl>
+<p class="rubric">References</p>
+<dl class="footnote brackets">
+<dt class="label" id="id6"><span class="brackets">1</span></dt>
+<dd><p>Aggarwal, H. K., Mani, M. P., &amp; Jacob, M. (2018). MoDL: Model-based
+deep learning architecture for inverse problems. IEEE transactions on
+medical imaging, 38(2), 394-405.</p>
 </dd>
 </dl>
 </dd></dl>

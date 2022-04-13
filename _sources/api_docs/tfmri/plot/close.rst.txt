@@ -1,0 +1,6 @@
+﻿tfmri.plot.close
+================
+
+.. currentmodule:: tensorflow_mri.plot
+
+.. autofunction:: close

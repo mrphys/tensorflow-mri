@@ -247,8 +247,13 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../losses.html">tfmri.losses</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../losses/ConfusionLoss.html">ConfusionLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/F1Loss.html">F1Loss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/FocalTverskyLoss.html">FocalTverskyLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/IoULoss.html">IoULoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/MultiscaleStructuralSimilarityLoss.html">MultiscaleStructuralSimilarityLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/StructuralSimilarityLoss.html">StructuralSimilarityLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/TverskyLoss.html">TverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/ssim_loss.html">ssim_loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/ssim_multiscale_loss.html">ssim_multiscale_loss</a></li>
 </ul>
@@ -285,10 +290,12 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../optimize.html">tfmri.optimize</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../optimize/gradient_descent.html">gradient_descent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../optimize/lbfgs_minimize.html">lbfgs_minimize</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../plot.html">tfmri.plot</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../plot/close.html">close</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../plot/image_sequence.html">image_sequence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../plot/show.html">show</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../plot/tiled_image_sequence.html">tiled_image_sequence</a></li>
@@ -368,7 +375,7 @@
 <h1>tfmri.convex.admm_minimize<a class="headerlink" href="#tfmri-convex-admm-minimize" title="Permalink to this headline">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="tensorflow_mri.convex.admm_minimize">
-<span class="sig-name descname"><span class="pre">admm_minimize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">function_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">function_g</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">operator_a</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">operator_b</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constant_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">penalty_rho</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linearized</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.15.0/tensorflow_mri/python/ops/optimizer_ops.py#L54-L270"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.convex.admm_minimize" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">admm_minimize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">function_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">function_g</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">operator_a</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">operator_b</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constant_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">penalty</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absolute_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relative_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linearized</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_prox_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g_prox_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.16.0/tensorflow_mri/python/ops/optimizer_ops.py#L178-L448"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.convex.admm_minimize" title="Permalink to this definition">#</a></dt>
 <dd><p>Applies the ADMM algorithm to minimize a separable convex function.</p>
 <p>Minimizes <span class="math notranslate nohighlight">\(f(x) + g(z)\)</span>, subject to <span class="math notranslate nohighlight">\(Ax + Bz = c\)</span>.</p>
 <p>If <span class="math notranslate nohighlight">\(A\)</span>, <span class="math notranslate nohighlight">\(B\)</span> and <span class="math notranslate nohighlight">\(c\)</span> are not provided, the constraint
@@ -377,46 +384,75 @@ minimizing <span class="math notranslate nohighlight">\(f(x) + g(x)\)</span>.</p
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>function_f</strong> – A <code class="docutils literal notranslate"><span class="pre">ConvexFunction</span></code>.</p></li>
-<li><p><strong>function_g</strong> – A <code class="docutils literal notranslate"><span class="pre">ConvexFunction</span></code>.</p></li>
-<li><p><strong>operator_a</strong> – A <code class="docutils literal notranslate"><span class="pre">LinearOperator</span></code>. Defaults to the identity operator.</p></li>
-<li><p><strong>operator_b</strong> – A <code class="docutils literal notranslate"><span class="pre">LinearOperator</span></code>. Defaults to the negative identity operator.</p></li>
-<li><p><strong>constant_c</strong> – A scalar <code class="docutils literal notranslate"><span class="pre">Tensor</span></code>. Defaults to 0.0.</p></li>
-<li><p><strong>penalty_rho</strong> – A scalar <code class="docutils literal notranslate"><span class="pre">Tensor</span></code>. The penalty parameter of the augmented
+<li><p><strong>function_f</strong> – A <a class="reference external" href="https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/convex/ConvexFunction.html">tfmri.convex.ConvexFunction</a> of shape <code class="docutils literal notranslate"><span class="pre">[...,</span> <span class="pre">n]</span></code> and real or
+complex dtype.</p></li>
+<li><p><strong>function_g</strong> – <p>A <a class="reference external" href="https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/convex/ConvexFunction.html">tfmri.convex.ConvexFunction</a> of shape <code class="docutils literal notranslate"><span class="pre">[...,</span> <span class="pre">m]</span></code> and real or
+complex dtype.</p>
+</p></li>
+<li><p><strong>operator_a</strong> – A <code class="docutils literal notranslate"><span class="pre">tf.linalg.LinearOperator</span></code> of shape <code class="docutils literal notranslate"><span class="pre">[...,</span> <span class="pre">p,</span> <span class="pre">n]</span></code> and real or
+complex dtype. Defaults to the identity operator.</p></li>
+<li><p><strong>operator_b</strong> – A <code class="docutils literal notranslate"><span class="pre">tf.linalg.LinearOperator</span></code> of shape <code class="docutils literal notranslate"><span class="pre">[...,</span> <span class="pre">p,</span> <span class="pre">m]</span></code> and real or
+complex dtype. Defaults to the negated identity operator.</p></li>
+<li><p><strong>constant_c</strong> – A <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor">tf.Tensor</a> of shape <code class="docutils literal notranslate"><span class="pre">[...,</span> <span class="pre">p]</span></code>. Defaults to 0.0.</p></li>
+<li><p><strong>penalty</strong> – <p>A scalar <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor">tf.Tensor</a>. The penalty parameter of the augmented
 Lagrangian. Also corresponds to the step size of the dual variable update
-in the scaled form of ADMM.</p></li>
-<li><p><strong>atol</strong> – A scalar <code class="docutils literal notranslate"><span class="pre">Tensor</span></code>. The absolute tolerance. Defaults to 1e-5.</p></li>
-<li><p><strong>rtol</strong> – A scalar <code class="docutils literal notranslate"><span class="pre">Tensor</span></code>. The relative tolerance. Defaults to 1e-5.</p></li>
-<li><p><strong>max_iterations</strong> – A scalar <code class="docutils literal notranslate"><span class="pre">Tensor</span></code>. The maximum number of iterations for ADMM
-updates.</p></li>
+in the scaled form of ADMM.</p>
+</p></li>
+<li><p><strong>absolute_tolerance</strong> – <p>A scalar <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor">tf.Tensor</a> of real dtype. The absolute
+tolerance. Defaults to 1e-8.</p>
+</p></li>
+<li><p><strong>relative_tolerance</strong> – <p>A scalar <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor">tf.Tensor</a> of real dtype. The relative
+tolerance. Defaults to 1e-8.</p>
+</p></li>
+<li><p><strong>max_iterations</strong> – <p>A scalar <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor">tf.Tensor</a> of integer dtype. The maximum number
+of iterations of the ADMM update.</p>
+</p></li>
 <li><p><strong>linearized</strong> – A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#boolean-values">boolean</a>. If <a class="reference external" href="https://docs.python.org/3/library/constants.html#True">True</a>, use linearized variant of the ADMM
 algorithm. Linearized ADMM solves problems of the form
 <span class="math notranslate nohighlight">\(f(x) + g(Ax)\)</span> and only requires evaluation of the proximal operator
 of <code class="docutils literal notranslate"><span class="pre">g(x)</span></code>. This is useful when the proximal operator of <code class="docutils literal notranslate"><span class="pre">g(Ax)</span></code> cannot be
 easily evaluated, but the proximal operator of <code class="docutils literal notranslate"><span class="pre">g(x)</span></code> can. Defaults to
 <a class="reference external" href="https://docs.python.org/3/library/constants.html#False">False</a>.</p></li>
+<li><p><strong>f_prox_kwargs</strong> – A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#mapping-types-dict">dict</a>. Keyword arguments to pass to the proximal operator
+of <code class="docutils literal notranslate"><span class="pre">function_f</span></code> during the x-minimization step.</p></li>
+<li><p><strong>g_prox_kwargs</strong> – <p>A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#mapping-types-dict">dict</a>. Keyword arguments to pass to the proximal operator
+of <code class="docutils literal notranslate"><span class="pre">function_g</span></code> during the z-minimization step.</p>
+</p></li>
+<li><p><strong>name</strong> – A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#text-sequence-type-str">str</a>. The name of this operation. Defaults to <code class="docutils literal notranslate"><span class="pre">'admm_minimize'</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">i</span></code>: The number of iterations of the ADMM update.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">x</span></code>: The first primal variable.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">z</span></code>: The second primal variable.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">u</span></code>: The scaled dual variable.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">r</span></code>: The primal residual.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">s</span></code>: The dual residual.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ptol</span></code>: The primal tolerance.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">dtol</span></code>: The dual tolerance.</p></li>
+<dd class="field-even"><p><p>A <a class="reference external" href="https://docs.python.org/3/library/collections.html#namedtuple-factory-function-for-tuples-with-named-fields">namedtuple</a> containing the following fields</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">converged</span></code>: A boolean <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor">tf.Tensor</a> of shape <code class="docutils literal notranslate"><span class="pre">[...]</span></code> indicating whether the
+minimum was found within tolerance for each batch member.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dual_residual</span></code>: A real <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor">tf.Tensor</a> of shape <code class="docutils literal notranslate"><span class="pre">[...]</span></code> containing the
+last tolerance used to evaluate the primal feasibility condition.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dual_tolerance</span></code>: The dual tolerance.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">f_primal_variable</span></code>: A real or complex <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor">tf.Tensor</a> of shape <code class="docutils literal notranslate"><span class="pre">[...,</span> <span class="pre">n]</span></code>
+containing the last argument value of <code class="docutils literal notranslate"><span class="pre">f</span></code> found during the search for
+each batch member. If the search converged, then this value is the argmin
+of the objective function, subject to the specified constraint.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">g_primal_variable</span></code>: A real or complex <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor">tf.Tensor</a> of shape <code class="docutils literal notranslate"><span class="pre">[...,</span> <span class="pre">m]</span></code>
+containing the last argument value of <code class="docutils literal notranslate"><span class="pre">g</span></code> found during the search for
+each batch member. If the search converged, then this value is the argmin
+of the objective function, subject to the specified constraint.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">num_iterations</span></code>: A scalar integer <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor">tf.Tensor</a> containing the number of
+iterations of the ADMM update.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">primal_residual</span></code>: A real or complex <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor">tf.Tensor</a> of shape <code class="docutils literal notranslate"><span class="pre">[...,</span> <span class="pre">p]</span></code>
+containing the last primal residual for each batch member.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">primal_tolerance</span></code>: A real <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor">tf.Tensor</a> of shape <code class="docutils literal notranslate"><span class="pre">[...]</span></code> containing the
+last tolerance used to evaluate the primal feasibility condition.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">scaled_dual_variable</span></code>: A <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor">tf.Tensor</a> of shape <code class="docutils literal notranslate"><span class="pre">[...,</span> <span class="pre">p]</span></code> and real or
+complex dtype containing the last value of the scaled dual variable found
+during the search.</p></li>
 </ul>
 </p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>A namedtuple containing the following fields</p>
 </dd>
 </dl>
 <p class="rubric">References</p>
 <dl class="footnote brackets">
-<dt class="label" id="id1"><span class="brackets">1</span></dt>
+<dt class="label" id="id15"><span class="brackets">1</span></dt>
 <dd><p>Boyd, S., Parikh, N., &amp; Chu, E. (2011). Distributed optimization and
 statistical learning via the alternating direction method of multipliers.
 Now Publishers Inc.</p>

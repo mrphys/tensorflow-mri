@@ -1,0 +1,8 @@
+﻿tfmri.losses.ConfusionLoss
+==========================
+
+.. currentmodule:: tensorflow_mri.losses
+
+.. autoclass:: ConfusionLoss
+    :members:
+    :show-inheritance:

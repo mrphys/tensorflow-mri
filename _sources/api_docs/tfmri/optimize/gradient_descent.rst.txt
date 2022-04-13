@@ -1,0 +1,6 @@
+﻿tfmri.optimize.gradient\_descent
+================================
+
+.. currentmodule:: tensorflow_mri.optimize
+
+.. autofunction:: gradient_descent

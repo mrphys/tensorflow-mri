@@ -3,7 +3,7 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
-<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="tfmri.losses.MultiscaleStructuralSimilarityLoss" href="losses/MultiscaleStructuralSimilarityLoss.html" /><link rel="prev" title="tfmri.linalg.conjugate_gradient" href="linalg/conjugate_gradient.html" />
+<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="tfmri.losses.ConfusionLoss" href="losses/ConfusionLoss.html" /><link rel="prev" title="tfmri.linalg.conjugate_gradient" href="linalg/conjugate_gradient.html" />
 
     <link rel="shortcut icon" href="../../_static/tfmr_icon.svg"/><meta name="generator" content="sphinx-4.4.0, furo 2022.03.04"/>
         <title>tfmri.losses - TensorFlow MRI Documentation</title>
@@ -247,8 +247,13 @@
 </ul>
 </li>
 <li class="toctree-l1 current has-children current-page"><a class="current reference internal" href="#">tfmri.losses</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="losses/ConfusionLoss.html">ConfusionLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="losses/F1Loss.html">F1Loss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="losses/FocalTverskyLoss.html">FocalTverskyLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="losses/IoULoss.html">IoULoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="losses/MultiscaleStructuralSimilarityLoss.html">MultiscaleStructuralSimilarityLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="losses/StructuralSimilarityLoss.html">StructuralSimilarityLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="losses/TverskyLoss.html">TverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="losses/ssim_loss.html">ssim_loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="losses/ssim_multiscale_loss.html">ssim_multiscale_loss</a></li>
 </ul>
@@ -285,10 +290,12 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="optimize.html">tfmri.optimize</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="optimize/gradient_descent.html">gradient_descent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="optimize/lbfgs_minimize.html">lbfgs_minimize</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="plot.html">tfmri.plot</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="plot/close.html">close</a></li>
 <li class="toctree-l2"><a class="reference internal" href="plot/image_sequence.html">image_sequence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="plot/show.html">show</a></li>
 <li class="toctree-l2"><a class="reference internal" href="plot/tiled_image_sequence.html">tiled_image_sequence</a></li>
@@ -375,11 +382,26 @@
 <col style="width: 90%"/>
 </colgroup>
 <tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="losses/ConfusionLoss.html#tensorflow_mri.losses.ConfusionLoss" title="tensorflow_mri.losses.ConfusionLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConfusionLoss</span></code></a></p></td>
+<td><p>Abstract base class for losses derived from the confusion matrix.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="losses/F1Loss.html#tensorflow_mri.losses.F1Loss" title="tensorflow_mri.losses.F1Loss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">F1Loss</span></code></a></p></td>
+<td><p>F1 loss function (aka Dice loss).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="losses/FocalTverskyLoss.html#tensorflow_mri.losses.FocalTverskyLoss" title="tensorflow_mri.losses.FocalTverskyLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FocalTverskyLoss</span></code></a></p></td>
+<td><p>Focal Tversky loss function.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="losses/IoULoss.html#tensorflow_mri.losses.IoULoss" title="tensorflow_mri.losses.IoULoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IoULoss</span></code></a></p></td>
+<td><p>IoU loss function (aka Jaccard loss).</p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="losses/MultiscaleStructuralSimilarityLoss.html#tensorflow_mri.losses.MultiscaleStructuralSimilarityLoss" title="tensorflow_mri.losses.MultiscaleStructuralSimilarityLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MultiscaleStructuralSimilarityLoss</span></code></a></p></td>
 <td><p>Computes the multiscale structural similarity (MS-SSIM) loss.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="losses/StructuralSimilarityLoss.html#tensorflow_mri.losses.StructuralSimilarityLoss" title="tensorflow_mri.losses.StructuralSimilarityLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StructuralSimilarityLoss</span></code></a></p></td>
 <td><p>Computes the structural similarity (SSIM) loss.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="losses/TverskyLoss.html#tensorflow_mri.losses.TverskyLoss" title="tensorflow_mri.losses.TverskyLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TverskyLoss</span></code></a></p></td>
+<td><p>Tversky loss function.</p></td>
 </tr>
 </tbody>
 </table></div>
@@ -408,12 +430,12 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="losses/MultiscaleStructuralSimilarityLoss.html">
+          <a class="next-page" href="losses/ConfusionLoss.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">tfmri.losses.MultiscaleStructuralSimilarityLoss</div>
+                <div class="title">tfmri.losses.ConfusionLoss</div>
               </div>
               <svg><use href="#svg-arrow-right"></use></svg>
             </a>

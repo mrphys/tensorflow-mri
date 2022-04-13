@@ -247,8 +247,13 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../losses.html">tfmri.losses</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../losses/ConfusionLoss.html">ConfusionLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/F1Loss.html">F1Loss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/FocalTverskyLoss.html">FocalTverskyLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/IoULoss.html">IoULoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/MultiscaleStructuralSimilarityLoss.html">MultiscaleStructuralSimilarityLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/StructuralSimilarityLoss.html">StructuralSimilarityLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/TverskyLoss.html">TverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/ssim_loss.html">ssim_loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/ssim_multiscale_loss.html">ssim_multiscale_loss</a></li>
 </ul>
@@ -285,10 +290,12 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../optimize.html">tfmri.optimize</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../optimize/gradient_descent.html">gradient_descent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../optimize/lbfgs_minimize.html">lbfgs_minimize</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../plot.html">tfmri.plot</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../plot/close.html">close</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../plot/image_sequence.html">image_sequence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../plot/show.html">show</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../plot/tiled_image_sequence.html">tiled_image_sequence</a></li>
@@ -368,7 +375,7 @@
 <h1>tfmri.recon.lstsq<a class="headerlink" href="#tfmri-recon-lstsq" title="Permalink to this headline">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="tensorflow_mri.recon.lstsq">
-<span class="sig-name descname"><span class="pre">lstsq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kspace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trajectory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensitivities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sens_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dynamic_domain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regularizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_corners</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.15.0/tensorflow_mri/python/ops/recon_ops.py#L142-L416"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.recon.lstsq" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">lstsq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kspace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trajectory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sensitivities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sens_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dynamic_domain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regularizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_corners</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_optimizer_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.16.0/tensorflow_mri/python/ops/recon_ops.py#L142-L427"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.recon.lstsq" title="Permalink to this definition">#</a></dt>
 <dd><p>Reconstructs an MR image using a least-squares formulation.</p>
 <p>This is an iterative reconstruction method which formulates the image
 reconstruction problem as follows:</p>
@@ -389,8 +396,9 @@ broadcastable with each other.</p>
 <li><p><strong>kspace</strong> – A <code class="docutils literal notranslate"><span class="pre">Tensor</span></code>. The <em>k</em>-space samples. Must have type <code class="docutils literal notranslate"><span class="pre">complex64</span></code> or
 <code class="docutils literal notranslate"><span class="pre">complex128</span></code>. <code class="docutils literal notranslate"><span class="pre">kspace</span></code> can be either Cartesian or non-Cartesian. A
 Cartesian <code class="docutils literal notranslate"><span class="pre">kspace</span></code> must have shape
-<code class="docutils literal notranslate"><span class="pre">[...,</span> <span class="pre">num_coils,</span> <span class="pre">*image_shape]</span></code>, where <code class="docutils literal notranslate"><span class="pre">...</span></code> are batch dimensions. A
-non-Cartesian <code class="docutils literal notranslate"><span class="pre">kspace</span></code> must have shape <code class="docutils literal notranslate"><span class="pre">[...,</span> <span class="pre">num_coils,</span> <span class="pre">num_samples]</span></code>.</p></li>
+<code class="docutils literal notranslate"><span class="pre">[...,</span> <span class="pre">*extra_shape,</span> <span class="pre">num_coils,</span> <span class="pre">*image_shape]</span></code>, where <code class="docutils literal notranslate"><span class="pre">...</span></code> are batch
+dimensions. A non-Cartesian <code class="docutils literal notranslate"><span class="pre">kspace</span></code> must have shape
+<code class="docutils literal notranslate"><span class="pre">[...,</span> <span class="pre">*extra_shape,</span> <span class="pre">num_coils,</span> <span class="pre">num_samples]</span></code>.</p></li>
 <li><p><strong>image_shape</strong> – A <code class="docutils literal notranslate"><span class="pre">TensorShape</span></code> or a list of <code class="docutils literal notranslate"><span class="pre">ints</span></code>. Must have length 2 or 3.
 The shape of the reconstructed image[s].</p></li>
 <li><p><strong>extra_shape</strong> – An optional <code class="docutils literal notranslate"><span class="pre">TensorShape</span></code> or list of <code class="docutils literal notranslate"><span class="pre">ints</span></code>. Additional
@@ -447,12 +455,18 @@ optimizer.</p></li>
 reconstructed image. This may be done for trajectories with a circular
 <em>k</em>-space coverage. Defaults to <a class="reference external" href="https://docs.python.org/3/library/constants.html#False">False</a>.</p>
 </p></li>
+<li><p><strong>return_optimizer_state</strong> – <p>A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#boolean-values">boolean</a>. If <a class="reference external" href="https://docs.python.org/3/library/constants.html#True">True</a>, returns the optimizer
+state along with the reconstructed image.</p>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A <code class="docutils literal notranslate"><span class="pre">Tensor</span></code>. The reconstructed image. Has the same type as <code class="docutils literal notranslate"><span class="pre">kspace</span></code> and
+<dd class="field-even"><p><p>A <code class="docutils literal notranslate"><span class="pre">Tensor</span></code>. The reconstructed image. Has the same type as <code class="docutils literal notranslate"><span class="pre">kspace</span></code> and
 shape <code class="docutils literal notranslate"><span class="pre">[...,</span> <span class="pre">*extra_shape,</span> <span class="pre">*image_shape]</span></code>, where <code class="docutils literal notranslate"><span class="pre">...</span></code> is the broadcasted
 batch shape of all inputs.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">return_optimizer_state</span></code> is <a class="reference external" href="https://docs.python.org/3/library/constants.html#True">True</a>, returns a tuple containing the
+reconstructed image and the optimizer state.</p>
+</p>
 </dd>
 <dt class="field-odd">Raises</dt>
 <dd class="field-odd"><p><strong>ValueError</strong> – If passed incompatible inputs.</p>
@@ -469,25 +483,25 @@ high-quality images even from highly undersampled <em>k</em>-space data. However
 it may be time-consuming, depending on the characteristics of the problem.</p>
 <p class="rubric">References</p>
 <dl class="footnote brackets">
-<dt class="label" id="id6"><span class="brackets">1</span></dt>
+<dt class="label" id="id9"><span class="brackets">1</span></dt>
 <dd><p>Pruessmann, K.P., Weiger, M., Börnert, P. and Boesiger, P. (2001),
 Advances in sensitivity encoding with arbitrary k-space trajectories.
 Magn. Reson. Med., 46: 638-651. <a class="reference external" href="https://doi.org/10.1002/mrm.1241">https://doi.org/10.1002/mrm.1241</a></p>
 </dd>
-<dt class="label" id="id7"><span class="brackets">2</span></dt>
+<dt class="label" id="id10"><span class="brackets">2</span></dt>
 <dd><p>Block, K.T., Uecker, M. and Frahm, J. (2007), Undersampled radial MRI
 with multiple coils. Iterative image reconstruction using a total
 variation constraint. Magn. Reson. Med., 57: 1086-1098.
 <a class="reference external" href="https://doi.org/10.1002/mrm.21236">https://doi.org/10.1002/mrm.21236</a></p>
 </dd>
-<dt class="label" id="id8"><span class="brackets">3</span></dt>
+<dt class="label" id="id11"><span class="brackets">3</span></dt>
 <dd><p>Feng, L., Grimm, R., Block, K.T., Chandarana, H., Kim, S., Xu, J.,
 Axel, L., Sodickson, D.K. and Otazo, R. (2014), Golden-angle radial sparse
 parallel MRI: Combination of compressed sensing, parallel imaging, and
 golden-angle radial sampling for fast and flexible dynamic volumetric MRI.
 Magn. Reson. Med., 72: 707-717. <a class="reference external" href="https://doi.org/10.1002/mrm.24980">https://doi.org/10.1002/mrm.24980</a></p>
 </dd>
-<dt class="label" id="id9"><span class="brackets">4</span></dt>
+<dt class="label" id="id12"><span class="brackets">4</span></dt>
 <dd><p>Tsao, J., Boesiger, P., &amp; Pruessmann, K. P. (2003). k-t BLAST and
 k-t SENSE: dynamic MRI with high frame rate exploiting spatiotemporal
 correlations. Magnetic Resonance in Medicine: An Official Journal of the

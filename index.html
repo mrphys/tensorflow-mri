@@ -248,8 +248,13 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="api_docs/tfmri/losses.html">tfmri.losses</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="api_docs/tfmri/losses/ConfusionLoss.html">ConfusionLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api_docs/tfmri/losses/F1Loss.html">F1Loss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api_docs/tfmri/losses/FocalTverskyLoss.html">FocalTverskyLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api_docs/tfmri/losses/IoULoss.html">IoULoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="api_docs/tfmri/losses/MultiscaleStructuralSimilarityLoss.html">MultiscaleStructuralSimilarityLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="api_docs/tfmri/losses/StructuralSimilarityLoss.html">StructuralSimilarityLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api_docs/tfmri/losses/TverskyLoss.html">TverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="api_docs/tfmri/losses/ssim_loss.html">ssim_loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="api_docs/tfmri/losses/ssim_multiscale_loss.html">ssim_multiscale_loss</a></li>
 </ul>
@@ -286,10 +291,12 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="api_docs/tfmri/optimize.html">tfmri.optimize</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="api_docs/tfmri/optimize/gradient_descent.html">gradient_descent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="api_docs/tfmri/optimize/lbfgs_minimize.html">lbfgs_minimize</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="api_docs/tfmri/plot.html">tfmri.plot</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="api_docs/tfmri/plot/close.html">close</a></li>
 <li class="toctree-l2"><a class="reference internal" href="api_docs/tfmri/plot/image_sequence.html">image_sequence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="api_docs/tfmri/plot/show.html">show</a></li>
 <li class="toctree-l2"><a class="reference internal" href="api_docs/tfmri/plot/tiled_image_sequence.html">tiled_image_sequence</a></li>
@@ -366,7 +373,7 @@
         </div>
         <article role="main">
           <section id="tensorflow-mri-release">
-<h1>TensorFlow MRI 0.15.0<a class="headerlink" href="#tensorflow-mri-release" title="Permalink to this headline">#</a></h1>
+<h1>TensorFlow MRI 0.16.0<a class="headerlink" href="#tensorflow-mri-release" title="Permalink to this headline">#</a></h1>
 <a class="reference external image-reference" href="https://github.com/mrphys/tensorflow-mri"><img alt="View on GitHub" height="52" src="_images/view_on_github.svg" width="168"/></a>
 <div class="line-block">
 <div class="line"><br/></div>
@@ -376,11 +383,10 @@ includes:</p>
 <ul class="simple">
 <li><p>A fast, native non-uniform fast Fourier transform (NUFFT) operator (see
 also <a class="reference external" href="https://github.com/mrphys/tensorflow-nufft">TensorFlow NUFFT</a>).</p></li>
-<li><p>A unified gateway for MR image reconstruction, which supports parallel
-imaging, compressed sensing, machine learning and partial Fourier methods.</p></li>
+<li><p>MR image reconstruction functions, which support parallel imaging, compressed
+sensing, machine learning and partial Fourier methods.</p></li>
 <li><p>Common linear and nonlinear operators, such as Fourier operators and
-regularizers, to aid in the development of novel image reconstruction
-techniques.</p></li>
+regularizers, to aid in the development of image reconstruction techniques.</p></li>
 <li><p>Multicoil imaging operators, such as coil combination, coil compression and
 estimation of coil sensitivity maps.</p></li>
 <li><p>Calculation of non-Cartesian k-space trajectories and sampling density
@@ -429,59 +435,63 @@ versions of TensorFlow and TensorFlow MRI according to the table below.</p>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>v0.15.0</p></td>
+<tr class="row-even"><td><p>v0.16.0</p></td>
+<td><p>v2.8.x</p></td>
+<td><p>Apr 13, 2022</p></td>
+</tr>
+<tr class="row-odd"><td><p>v0.15.0</p></td>
 <td><p>v2.8.x</p></td>
 <td><p>Apr 1, 2022</p></td>
 </tr>
-<tr class="row-odd"><td><p>v0.14.0</p></td>
+<tr class="row-even"><td><p>v0.14.0</p></td>
 <td><p>v2.8.x</p></td>
 <td><p>Mar 29, 2022</p></td>
 </tr>
-<tr class="row-even"><td><p>v0.13.0</p></td>
+<tr class="row-odd"><td><p>v0.13.0</p></td>
 <td><p>v2.8.x</p></td>
 <td><p>Mar 15, 2022</p></td>
 </tr>
-<tr class="row-odd"><td><p>v0.12.0</p></td>
+<tr class="row-even"><td><p>v0.12.0</p></td>
 <td><p>v2.8.x</p></td>
 <td><p>Mar 14, 2022</p></td>
 </tr>
-<tr class="row-even"><td><p>v0.11.0</p></td>
+<tr class="row-odd"><td><p>v0.11.0</p></td>
 <td><p>v2.8.x</p></td>
 <td><p>Mar 10, 2022</p></td>
 </tr>
-<tr class="row-odd"><td><p>v0.10.0</p></td>
+<tr class="row-even"><td><p>v0.10.0</p></td>
 <td><p>v2.8.x</p></td>
 <td><p>Mar 3, 2022</p></td>
 </tr>
-<tr class="row-even"><td><p>v0.9.0</p></td>
+<tr class="row-odd"><td><p>v0.9.0</p></td>
 <td><p>v2.7.x</p></td>
 <td><p>Dec 3, 2021</p></td>
 </tr>
-<tr class="row-odd"><td><p>v0.8.0</p></td>
+<tr class="row-even"><td><p>v0.8.0</p></td>
 <td><p>v2.7.x</p></td>
 <td><p>Nov 11, 2021</p></td>
 </tr>
-<tr class="row-even"><td><p>v0.7.0</p></td>
+<tr class="row-odd"><td><p>v0.7.0</p></td>
 <td><p>v2.6.x</p></td>
 <td><p>Nov 3, 2021</p></td>
 </tr>
-<tr class="row-odd"><td><p>v0.6.2</p></td>
+<tr class="row-even"><td><p>v0.6.2</p></td>
 <td><p>v2.6.x</p></td>
 <td><p>Oct 13, 2021</p></td>
 </tr>
-<tr class="row-even"><td><p>v0.6.1</p></td>
+<tr class="row-odd"><td><p>v0.6.1</p></td>
 <td><p>v2.6.x</p></td>
 <td><p>Sep 30, 2021</p></td>
 </tr>
-<tr class="row-odd"><td><p>v0.6.0</p></td>
+<tr class="row-even"><td><p>v0.6.0</p></td>
 <td><p>v2.6.x</p></td>
 <td><p>Sep 28, 2021</p></td>
 </tr>
-<tr class="row-even"><td><p>v0.5.0</p></td>
+<tr class="row-odd"><td><p>v0.5.0</p></td>
 <td><p>v2.6.x</p></td>
 <td><p>Aug 29, 2021</p></td>
 </tr>
-<tr class="row-odd"><td><p>v0.4.0</p></td>
+<tr class="row-even"><td><p>v0.4.0</p></td>
 <td><p>v2.6.x</p></td>
 <td><p>Aug 18, 2021</p></td>
 </tr>
@@ -553,7 +563,7 @@ Debian/Ubuntu:</p>
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">TensorFlow MRI 0.15.0</a><ul>
+<li><a class="reference internal" href="#">TensorFlow MRI 0.16.0</a><ul>
 <li><a class="reference internal" href="#installation">Installation</a><ul>
 <li><a class="reference internal" href="#tensorflow-compatibility">TensorFlow Compatibility</a></li>
 </ul>

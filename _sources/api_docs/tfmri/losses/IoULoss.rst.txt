@@ -1,0 +1,8 @@
+﻿tfmri.losses.IoULoss
+====================
+
+.. currentmodule:: tensorflow_mri.losses
+
+.. autoclass:: IoULoss
+    :members:
+    :show-inheritance:
