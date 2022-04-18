@@ -33,7 +33,6 @@ wheel: $(TARGET)
 docs: $(TARGET)
 	rm -rf tools/docs/_build
 	rm -rf tools/docs/_templates
-	rm -rf tools/docs/tfmri
 	rm -rf tools/docs/api_docs
 	$(PYTHON) tools/docs/generate_templates.py
 	$(PYTHON) tools/docs/generate_documents.py

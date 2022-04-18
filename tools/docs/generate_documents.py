@@ -23,6 +23,7 @@ import typing
 
 DOCS_PATH = os.path.dirname(os.path.realpath(__file__))
 ROOT_PATH = os.path.join(DOCS_PATH, '..', '..')
+TEMPLATES_PATH = os.path.join(DOCS_PATH, 'templates')
 API_DOCS_PATH = os.path.join(DOCS_PATH, 'api_docs')
 
 sys.path.insert(0, ROOT_PATH)
@@ -32,46 +33,9 @@ from tensorflow_mri.python.util import api_util
 # Create API docs directory.
 os.makedirs(os.path.join(API_DOCS_PATH, 'tfmri'), exist_ok=True)
 
-INDEX_TEMPLATE = string.Template(
-"""TensorFlow MRI |release|
-========================
-
-.. image:: ../assets/view_on_github.svg
-   :target: https://github.com/mrphys/tensorflow-mri
-   :scale: 70%
-   :alt: View on GitHub
-
-|
-
-.. include:: ../../README.rst
-   :start-after: start-intro
-   :end-before: end-intro
-
-Installation
-------------
-
-.. include:: ../../README.rst
-   :start-after: start-install
-   :end-before: end-install
-
-FAQ
----
-
-.. include:: ../../README.rst
-   :start-after: start-faq
-   :end-before: end-faq
-
-.. toctree::
-   :maxdepth: 3
-   :caption: API Documentation
-   :hidden:
-
-   api_docs/tfmri
-   ${namespaces}
-
-.. meta::
-   :google-site-verification: 8PySedj6KJ0kc5qC1CbO6_9blFB9Nho3SgXvbRzyVOU
-""")
+# Read the index template.
+with open(os.path.join(TEMPLATES_PATH, 'index.rst'), 'r') as f:
+  INDEX_TEMPLATE = string.Template(f.read())
 
 TFMRI_DOC_TEMPLATE = string.Template(
 """tfmri

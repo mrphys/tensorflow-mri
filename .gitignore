@@ -2,9 +2,11 @@
 *.pyc
 *.so
 
+.ipynb_checkpoints/
 __pycache__/
 artifacts/
 third_party/spiral_waveform
 tools/docs/_build
 tools/docs/_templates
 tools/docs/api_docs
+tools/docs/index.rst
