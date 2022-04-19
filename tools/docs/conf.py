@@ -85,7 +85,7 @@ add_module_names = False
 
 html_title = 'TensorFlow MRI Documentation'
 
-html_favicon = '../assets/tfmr_icon.svg'
+html_favicon = '../assets/tfmri_icon.svg'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
@@ -100,8 +100,8 @@ html_static_path = ['../assets']
 
 html_theme_options = {
   'sidebar_hide_name': True,
-  'light_logo': 'tfmr_logo.svg',
-  'dark_logo': 'tmfr_logo_dark.svg',
+  'light_logo': 'tfmri_logo.svg',
+  'dark_logo': 'tmfri_logo_dark.svg',
   'light_css_variables': {
     'color-brand-primary': '#128091',
     'color-brand-content': '#128091'

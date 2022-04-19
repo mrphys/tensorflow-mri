@@ -1,12 +1,9 @@
 TensorFlow MRI |release|
 ========================
 
-.. image:: ../assets/view_on_github.svg
+.. image:: https://img.shields.io/badge/-View%20on%20GitHub-128091?logo=github&labelColor=grey
    :target: https://github.com/mrphys/tensorflow-mri
-   :scale: 70%
    :alt: View on GitHub
-
-|
 
 .. include:: ../../README.rst
    :start-after: start-intro
