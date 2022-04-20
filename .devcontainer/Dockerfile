@@ -8,6 +8,9 @@ ARG PYBIN=/usr/local/bin/python
 ARG PYVERSIONS="3.7 3.8 3.9 3.10"
 RUN for PYVER in ${PYVERSIONS}; do ${PYBIN}${PYVER} -m pip install pycairo PyGObject; done
 
+# For Jupyter notebooks.
+RUN for PYVER in ${PYVERSIONS}; do ${PYBIN}${PYVER} -m pip install ipykernel; done
+
 # Install TFMRI dependencies.
 COPY requirements.txt /tmp/requirements.txt
 RUN for PYVER in ${PYVERSIONS}; do ${PYBIN}${PYVER} -m pip install -r /tmp/requirements.txt; done
