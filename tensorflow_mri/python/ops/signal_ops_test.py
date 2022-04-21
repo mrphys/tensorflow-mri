@@ -69,13 +69,13 @@ class KSpaceFilterTest(test_util.TestCase):
     kspace = [1. + 2.j, 2. + 2.j, 3. - 4.j]
     traj = [[0.4, 1.0], [3.0, 2.0], [0, 0.5]]
 
-    res_kspace, res_traj = signal_ops.crop_kspace(kspace, traj=traj,
+    res_kspace, res_traj = signal_ops.crop_kspace(kspace, trajectory=traj,
                                                   cutoff=np.pi / 2,
                                                   mode='low_pass')
     self.assertAllClose(res_kspace, [1. + 2.j, 3. - 4.j])
     self.assertAllClose(res_traj, [[0.4, 1.0], [0, 0.5]])
 
-    res_kspace, res_traj = signal_ops.crop_kspace(kspace, traj=traj,
+    res_kspace, res_traj = signal_ops.crop_kspace(kspace, trajectory=traj,
                                                   cutoff=np.pi / 2,
                                                   mode='high_pass')
     self.assertAllClose(res_kspace, [2. + 2.j])
@@ -97,7 +97,7 @@ class KSpaceFilterTest(test_util.TestCase):
 
     expected = kspace * tf.cast(filt_fn[filter_fn](radius), tf.complex64)
     result = signal_ops.filter_kspace(
-        kspace, traj=traj, filter_fn=filter_fn)
+        kspace, trajectory=traj, filter_fn=filter_fn)
     self.assertAllClose(expected, result)
 
   def test_filter_cart(self):
@@ -140,7 +140,7 @@ class KSpaceFilterTest(test_util.TestCase):
     expected = [2. + 4.j, 4. + 4.j, 0. + 0.j]
 
     result = signal_ops.filter_kspace(
-        kspace, traj=traj, filter_fn=filter_fn)
+        kspace, trajectory=traj, filter_fn=filter_fn)
     self.assertAllClose(expected, result)
 
 if __name__ == '__main__':
