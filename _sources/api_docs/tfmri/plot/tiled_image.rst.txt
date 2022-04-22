@@ -1,0 +1,6 @@
+﻿tfmri.plot.tiled\_image
+=======================
+
+.. currentmodule:: tensorflow_mri.plot
+
+.. autofunction:: tiled_image

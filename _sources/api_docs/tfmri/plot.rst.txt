@@ -24,4 +24,5 @@ Functions
     close
     image_sequence
     show
+    tiled_image
     tiled_image_sequence
