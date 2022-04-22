@@ -127,7 +127,8 @@ def filter_kspace(kspace,
   """
   kspace = tf.convert_to_tensor(kspace)
   if trajectory is not None:
-    kspace, trajectory = check_util.verify_compatible_trajectory(kspace, trajectory)
+    kspace, trajectory = check_util.verify_compatible_trajectory(
+        kspace, trajectory)
 
   # Make a "trajectory" for Cartesian k-spaces.
   is_cartesian = trajectory is None
