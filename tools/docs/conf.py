@@ -65,6 +65,7 @@ extensions = [
   'sphinx.ext.napoleon',
   'sphinx.ext.autosummary',
   'sphinx.ext.linkcode',
+  'sphinx.ext.autosectionlabel',
   'nbsphinx',
   'sphinx_sitemap'
 ]
@@ -253,7 +254,7 @@ def process_docstring(app, what, name, obj, options, lines):  # pylint: disable=
 def get_doc_url(name):
   """Get doc URL for the given TFMRI name."""
   url = 'https://mrphys.github.io/tensorflow-mri/api_docs/'
-  url += name.replace('.', '/') + '.html'
+  url += name.replace('.', '/')
   return url
 
 

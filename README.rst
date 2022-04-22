@@ -18,24 +18,7 @@
 
 .. start-intro
 
-TensorFlow MRI is a library of TensorFlow operators for computational MRI which
-includes: 
-
-* A fast, native non-uniform fast Fourier transform (NUFFT) operator (see
-  also `TensorFlow NUFFT <https://github.com/mrphys/tensorflow-nufft>`_).
-* MR image reconstruction functions, which support parallel imaging, compressed
-  sensing, machine learning and partial Fourier methods. 
-* Common linear and nonlinear operators, such as Fourier operators and
-  regularizers, to aid in the development of image reconstruction techniques. 
-* Multicoil imaging operators, such as coil combination, coil compression and
-  estimation of coil sensitivity maps. 
-* Calculation of non-Cartesian k-space trajectories and sampling density
-  estimation. 
-* A collection of Keras objects including models, layers, metrics, loss
-  functions and callbacks for rapid development of neural networks. 
-* Many other differentiable operators for common tasks such as array
-  manipulation and image/signal processing. 
-
+TensorFlow MRI is a library of TensorFlow operators for computational MRI.
 The library has a Python interface and is mostly written in Python. However,
 computations are efficiently performed by the TensorFlow backend (implemented in
 C++/CUDA), which brings together the ease of use and fast prototyping of Python
@@ -51,7 +34,49 @@ Whether an application involves ML or not, TensorFlow MRI operators can take
 full advantage of the TensorFlow framework, with capabilities including
 automatic differentiation, multi-device support (CPUs and GPUs), automatic
 device placement and copying of tensor data, and conversion to fast,
-serializable graphs. 
+serializable graphs.
+
+TensorFlow MRI contains operators for: 
+
+* Multicoil arrays
+  (`tfmri.coils <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/coils>`_):
+  coil combination, coil compression and estimation of coil sensitivity
+  maps.
+* Convex optimization
+  (`tfmri.convex <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/convex>`_):
+  convex functions (quadratic, L1, L2, Tikhonov, total variation, etc.) and
+  optimizers (ADMM).
+* Keras layers
+  (`tfmri.layers <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/layers>`_):
+  layers and building blocks for neural networks.
+* Linear algebra
+  (`tfmri.linalg <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/linalg>`_):
+  linear operators specialized for image processing and MRI.
+* Loss functions
+  (`tfmri.losses <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/losses>`_):
+  for classification, segmentation and image restoration.
+* Metrics
+  (`tfmri.metrics <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/metrics>`_):
+  for classification, segmentation and image restoration.
+* Image processing
+  (`tfmri.image <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/image>`_):
+  filtering, gradients, phantoms, image quality assessment, etc.
+* Image reconstruction
+  (`tfmri.recon <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/recon>`_):
+  Cartesian/non-Cartesian, 2D/3D, parallel imaging, compressed sensing.
+* *k*-space sampling
+  (`tfmri.sampling <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/sampling>`_):
+  Cartesian masks, non-Cartesian trajectories, sampling density compensation,
+  etc.
+* Signal processing
+  (`tfmri.signal <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/signal>`_):
+  N-dimensional FFT, non-uniform FFT
+  (see also `TensorFlow NUFFT <https://github.com/mrphys/tensorflow-nufft>`_),
+  *k*-space filtering, etc.
+* Unconstrained optimization
+  (`tfmri.optimize <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/optimize>`_):
+  gradient descent, L-BFGS.
+* Supporting array manipulation and math tasks. 
 
 .. end-intro
 
@@ -75,9 +100,12 @@ Each TensorFlow MRI release is compiled against a specific version of
 TensorFlow. To ensure compatibility, it is recommended to install matching
 versions of TensorFlow and TensorFlow MRI according to the table below.
 
+.. start-compatibility-table
+
 ======================  ========================  ============
 TensorFlow MRI Version  TensorFlow Compatibility  Release Date
 ======================  ========================  ============
+v0.17.0                 v2.8.x                    Apr 22, 2022
 v0.16.0                 v2.8.x                    Apr 13, 2022
 v0.15.0                 v2.8.x                    Apr 1, 2022
 v0.14.0                 v2.8.x                    Mar 29, 2022
@@ -94,6 +122,8 @@ v0.6.0                  v2.6.x                    Sep 28, 2021
 v0.5.0                  v2.6.x                    Aug 29, 2021
 v0.4.0                  v2.6.x                    Aug 18, 2021
 ======================  ========================  ============
+
+.. end-compatibility-table
 
 .. end-install
 
@@ -118,23 +148,3 @@ Citation
 
 If you find this software useful in your work, please
 `cite us <https://doi.org/10.5281/zenodo.5151590>`_.
-
-FAQ
----
-
-.. start-faq
-
-**When trying to install TensorFlow MRI, I get an error about OpenEXR which
-includes:
-``OpenEXR.cpp:36:10: fatal error: ImathBox.h: No such file or directory``. What
-do I do?**
-
-OpenEXR is needed by TensorFlow Graphics, which is a dependency of TensorFlow
-MRI. This issue can be fixed by installing the OpenEXR library. On
-Debian/Ubuntu:
-
-.. code-block:: console
-
-    $ apt install libopenexr-dev
-
-.. end-faq
