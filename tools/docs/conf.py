@@ -65,6 +65,7 @@ extensions = [
   'sphinx.ext.napoleon',
   'sphinx.ext.autosummary',
   'sphinx.ext.linkcode',
+  'sphinx.ext.autosectionlabel',
   'nbsphinx',
   'sphinx_sitemap'
 ]
@@ -85,7 +86,7 @@ add_module_names = False
 
 html_title = 'TensorFlow MRI Documentation'
 
-html_favicon = '../assets/tfmr_icon.svg'
+html_favicon = '../assets/tfmri_icon.svg'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
@@ -100,8 +101,8 @@ html_static_path = ['../assets']
 
 html_theme_options = {
   'sidebar_hide_name': True,
-  'light_logo': 'tfmr_logo.svg',
-  'dark_logo': 'tmfr_logo_dark.svg',
+  'light_logo': 'tfmri_logo.svg',
+  'dark_logo': 'tmfri_logo_dark.svg',
   'light_css_variables': {
     'color-brand-primary': '#128091',
     'color-brand-content': '#128091'
@@ -253,7 +254,7 @@ def process_docstring(app, what, name, obj, options, lines):  # pylint: disable=
 def get_doc_url(name):
   """Get doc URL for the given TFMRI name."""
   url = 'https://mrphys.github.io/tensorflow-mri/api_docs/'
-  url += name.replace('.', '/') + '.html'
+  url += name.replace('.', '/')
   return url
 
 

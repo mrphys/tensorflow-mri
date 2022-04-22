@@ -101,7 +101,7 @@ def atanfilt(arg, cutoff=np.pi, beta=100.0, name=None):
 
 @api_util.export("signal.filter_kspace")
 def filter_kspace(kspace,
-                  traj=None,
+                  trajectory=None,
                   filter_fn='hamming',
                   filter_rank=None,
                   filter_kwargs=None):
@@ -111,8 +111,9 @@ def filter_kspace(kspace,
 
   Args:
     kspace: A `Tensor` of any shape. The input *k*-space.
-    traj: A `Tensor` of shape `kspace.shape + [N]`, where `N` is the number of
-      spatial dimensions. If `None`, `kspace` is assumed to be Cartesian.
+    trajectory: A `Tensor` of shape `kspace.shape + [N]`, where `N` is the
+      number of spatial dimensions. If `None`, `kspace` is assumed to be
+      Cartesian.
     filter_fn: A `str` (one of `'hamming'`, `'hann'` or `'atanfilt'`) or a
       callable that accepts a coordinate array and returns corresponding filter
       values.
@@ -125,16 +126,17 @@ def filter_kspace(kspace,
     A `Tensor` of shape `kspace.shape`. The filtered *k*-space.
   """
   kspace = tf.convert_to_tensor(kspace)
-  if traj is not None:
-    kspace, traj = check_util.verify_compatible_trajectory(kspace, traj)
+  if trajectory is not None:
+    kspace, trajectory = check_util.verify_compatible_trajectory(
+        kspace, trajectory)
 
   # Make a "trajectory" for Cartesian k-spaces.
-  is_cartesian = traj is None
+  is_cartesian = trajectory is None
   if is_cartesian:
     filter_rank = filter_rank or kspace.shape.rank
     vecs = [tf.linspace(-np.pi, np.pi - (2.0 * np.pi / s), s)
             for s in kspace.shape[-filter_rank:]]  # pylint: disable=invalid-unary-operand-type
-    traj = array_ops.meshgrid(*vecs)
+    trajectory = array_ops.meshgrid(*vecs)
 
   if not callable(filter_fn):
     # filter_fn not a callable, so should be an enum value. Get the
@@ -149,20 +151,20 @@ def filter_kspace(kspace,
     }[filter_fn]
   filter_kwargs = filter_kwargs or {}
 
-  traj_norm = tf.norm(traj, axis=-1)
+  traj_norm = tf.norm(trajectory, axis=-1)
   return kspace * tf.cast(filter_fn(traj_norm, **filter_kwargs), kspace.dtype)
 
 
 @api_util.export("signal.crop_kspace")
-def crop_kspace(kspace, traj=None, cutoff=None, mode='low_pass'):  # pylint: disable=missing-raises-doc
+def crop_kspace(kspace, trajectory=None, cutoff=None, mode='low_pass'):  # pylint: disable=missing-raises-doc
   """Crop *k*-space.
 
   Crops all frequencies above or below the specified frequency.
 
   Args:
     kspace: A `Tensor` of any shape. The input *k*-space.
-    traj: A `Tensor` of shape `kspace.shape + [N]`, where `N` is the number of
-      spatial dimensions.
+    trajectory: A `Tensor` of shape `kspace.shape + [N]`, where `N` is the
+      number of spatial dimensions.
     cutoff: A `float` between `-pi` and `pi`. The cutoff frequency.
     mode: A `str`. Must be one of `low_pass` or `high_pass`.
 
@@ -170,16 +172,16 @@ def crop_kspace(kspace, traj=None, cutoff=None, mode='low_pass'):  # pylint: dis
     A `Tensor`. The cropped *k*-space.
   """
   # TODO: add support for Cartesian *k*-space.
-  if traj is None:
-    raise ValueError('`traj` must be specified.')
+  if trajectory is None:
+    raise ValueError('`trajectory` must be specified.')
   mode = check_util.validate_enum(mode, {'low_pass', 'high_pass'}, 'mode')
   if cutoff is None:
     cutoff = 0.0 if mode == 'high_pass' else np.pi
-  traj_norm = tf.norm(traj, axis=-1)
+  traj_norm = tf.norm(trajectory, axis=-1)
   if mode == 'low_pass':
     mask = traj_norm < cutoff
   elif mode == 'high_pass':
     mask = traj_norm > cutoff
   filt_kspace = tf.gather_nd(kspace, tf.where(mask))
-  filt_traj = tf.gather_nd(traj, tf.where(mask))
+  filt_traj = tf.gather_nd(trajectory, tf.where(mask))
   return filt_kspace, filt_traj

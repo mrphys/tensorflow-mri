@@ -217,6 +217,107 @@ def plot_tiled_image_sequence(images,
   return animation
 
 
+@api_util.export("plot.tiled_image")
+def plot_tiled_image(images,
+                     part=None,
+                     cmap='gray',
+                     fig_size=None,
+                     dpi=None,
+                     bg_color='dimgray',
+                     layout=None,
+                     bbox_inches=None,
+                     pad_inches=0.1,
+                     aspect=1.77,  # 16:9
+                     grid_shape=None,
+                     fig_title=None,
+                     subplot_titles=None):
+  r"""Plots one or more images in a grid.
+
+  Args:
+    images: A 3D `np.ndarray` of shape `[batch, height, width]` (scalar
+      values, mapped to colors using `cmap`) or a 4D `np.ndarray` of shape
+      `[batch, height, width, 3]` (RGB) or `[batch, height, width, 4]` (RGBA).
+    part: An optional `str`. The part to display for complex numbers. One of
+      `'abs'`, `'angle'`, `'real'` or `'imag'`. Must be specified if `images`
+      has complex dtype.
+    cmap: A `str` or `matplotlib.colors.Colormap`_. The colormap used to map
+      scalar values to colors. This parameter is ignored for RGB(A) data.
+      Defaults to `'gray'`.
+    fig_size: A `tuple` of `float`s. Width and height of the figure in inches.
+    dpi: A `float`. The resolution of the figure in dots per inch.
+    bg_color: A `color`_. The background color.
+    layout: A `str`. One of `None`, `'tight'` (default) or `'constrained'`.
+      The layout mechanism. See `matplotlib.figure.Figure`_ for details.
+    bbox_inches: A `str` or `matplotlib.transforms.Bbox`_. Bounding box in
+      inches: only the given portion of the figure is displayed. If `'tight'`,
+      try to figure out the tight bbox of the figure.
+    pad_inches: A `float`. Amount of padding around the figure when bbox_inches
+      is `'tight'`. Defaults to 0.1.
+    aspect: A `float`. The desired aspect ratio of the overall figure. Ignored
+      if `grid_shape` is specified.
+    grid_shape: A `tuple` of `float`s. The number of rows and columns in the
+      grid. If `None`, the grid shape is computed from `aspect`.
+    fig_title: A `str`. The title of the figure.
+    subplot_titles: A `list` of `str`s. The titles of the subplots.
+
+  Returns:
+    A `list` of `matplotlib.image.AxesImage`_ objects.
+
+  .. _color: https://matplotlib.org/stable/tutorials/colors/colors.html
+  .. _matplotlib.colors.Colormap: https://matplotlib.org/stable/api/_as_gen/matplotlib.colors.Colormap.html
+  .. _matplotlib.transforms.Bbox: https://matplotlib.org/stable/api/transformations.html#matplotlib.transforms.Bbox
+  .. _matplotlib.figure.Figure: https://matplotlib.org/stable/api/figure_api.html#matplotlib.figure.Figure
+  .. _matplotlib.image.AxesImage: https://matplotlib.org/stable/api/image_api.html#matplotlib.image.AxesImage
+  """
+  images = _preprocess_image(images, part=part, expected_ndim=(3, 4))
+  num_tiles, image_rows, image_cols = images.shape[:3]
+
+  # Compute the number of rows and cols for tile.
+  if grid_shape is not None:
+    grid_rows, grid_cols = grid_shape
+  else:
+    grid_rows, grid_cols = _compute_grid_shape(
+        num_tiles, (image_rows, image_cols), aspect)
+
+  fig, axs = plt.subplots(grid_rows, grid_cols, squeeze=False,
+                          figsize=fig_size, dpi=dpi,
+                          facecolor=bg_color, layout=layout)
+
+  artists = []
+  for row, col in np.ndindex(grid_rows, grid_cols):  # For each tile.
+    tile_idx = row * grid_cols + col  # Index of current tile.
+    ax = axs[row, col]  # Current axes.
+    # Set axis properties. This is always done, regardless of whether there's
+    # actually anything to display on this tile.
+    ax.axis('off')
+    if tile_idx >= num_tiles:
+      # This tile is empty.
+      continue
+    # Set the title.
+    if subplot_titles is not None:
+      ax.set_title(subplot_titles[tile_idx])
+    # Get image for this tile and frame.
+    image = images[tile_idx, :, :]
+    # Render image.
+    artist = ax.imshow(image,
+                       cmap=cmap,
+                       animated=True)
+    artists.append(artist)
+  artists.append(artists)
+
+  if fig_title is not None:
+    fig.suptitle(fig_title)
+
+  if bbox_inches is not None:
+    if bbox_inches == 'tight':
+      bbox_inches = fig.get_tightbbox(fig.canvas.get_renderer())
+      bbox_inches = bbox_inches.padded(pad_inches)
+    tight_bbox.adjust_bbox(fig, bbox_inches)
+    fig.set_size_inches(bbox_inches.width, bbox_inches.height)
+
+  return artists
+
+
 @api_util.export("plot.show")
 def show(*args, **kwargs):
   """Displays all open figures.
