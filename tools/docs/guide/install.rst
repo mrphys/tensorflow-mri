@@ -21,6 +21,13 @@ TensorFlow. To ensure compatibility, it is recommended to install matching
 versions of TensorFlow and TensorFlow MRI according to the
 :ref:`TensorFlow compatibility table`.
 
+.. warning::
+
+    Each TensorFlow MRI version aims to target and support the latest TensorFlow
+    version only. A new version of TensorFlow MRI will be released shortly after
+    each TensorFlow release. TensorFlow MRI versions that target older versions
+    of TensorFlow will not generally receive any updates.
+
 
 Set up your system
 ------------------
