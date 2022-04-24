@@ -1,9 +1,9 @@
 {
     "title": "TensorFlow MRI",
 
-    "description": "TensorFlow MRI is a collection of TensorFlow add-ons for computational MRI.",
+    "description": "A library of TensorFlow operators for computational MRI.",
 
-    "keywords": ["TensorFlow", "MRI", "Magnetic Resonance Imaging", "Machine Learning", "ML", "Python"],
+    "keywords": ["TensorFlow", "MRI", "Magnetic Resonance Imaging", "Machine Learning", "ML", "Artificial Intelligence", "AI", "Deep Learning", "Python", "C++"],
 
     "upload_type": "software",
     
