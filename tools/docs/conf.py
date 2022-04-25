@@ -105,13 +105,19 @@ html_theme_options = {
   'dark_logo': 'tmfri_logo_dark.svg',
   'light_css_variables': {
     'color-brand-primary': '#128091',
-    'color-brand-content': '#128091'
+    'color-brand-content': '#128091',
+    'font-stack': 'Roboto, sans-serif',
+    "font-stack--monospace": "Roboto Mono, monospace"
   },
   'dark_css_variables': {
     'color-brand-primary': '#18A8BE',
     'color-brand-content': '#18A8BE'
   }
 }
+
+html_css_files = [
+    'https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono',
+]
 
 # Additional files to copy to output directory.
 html_extra_path = ['robots.txt']

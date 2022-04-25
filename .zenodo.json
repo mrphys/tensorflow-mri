@@ -1,7 +1,7 @@
 {
     "title": "TensorFlow MRI",
 
-    "description": "A library of TensorFlow operators for computational MRI.",
+    "description": "A library of TensorFlow operators for computational magnetic resonance imaging.",
 
     "keywords": ["TensorFlow", "MRI", "Magnetic Resonance Imaging", "Machine Learning", "ML", "Artificial Intelligence", "AI", "Deep Learning", "Python", "C++"],
 
