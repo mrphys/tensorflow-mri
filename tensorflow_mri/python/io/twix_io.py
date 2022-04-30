@@ -556,7 +556,7 @@ class ParamMap():
       if param is None:
         raise ValueError(
             f"Could not parse next parameter in string:\n "
-            f"{_summarize_string(string)}...")
+            f"{_head_string(string)}...")
 
       type_, name, value = param
       if name is not None:
@@ -810,13 +810,13 @@ def _parse_protocol_buffer(string):
   if property_ is None:
     raise ValueError(
         f"Failed while parsing protocol buffer:\n "
-        f"{_summarize_string(original)}")
+        f"{_head_string(original)}")
 
   name, value = property_
   if name != 'XProtocol':
     raise ValueError(
         f"Failed while parsing protocol buffer:\n "
-        f"{_summarize_string(original)}")
+        f"{_head_string(original)}")
 
   return ProtocolBuffer.parse(value)
 
@@ -1028,13 +1028,14 @@ def _get_properties(string):
   return string, properties
 
 
-def _summarize_string(string, lines=10):
-  """Returns a summary of string.
+def _head_string(string, n=10):
+  """Returns the first n lines of a string.
 
   Args:
-    string: The string to summarize.
+    string: A `str`.
+    n: The number of lines to return.
 
   Returns:
-    A string summary of string.
+    A `str` containing the first `n` lines of `string`.
   """
-  return '\n'.join(string.splitlines()[:lines])
+  return '\n'.join(string.splitlines()[:n])
