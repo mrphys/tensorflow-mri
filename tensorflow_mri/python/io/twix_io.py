@@ -37,12 +37,31 @@ def parse_twix(contents):
   .. warning::
     This function does not support graph execution.
 
+  Example:
+    >>> # Read bytes from file.
+    >>> contents = tf.io.read_file("/path/to/file.dat")
+    >>> # Parse the contents.
+    >>> twix = tfmri.io.parse_twix(contents)
+    >>> # Access the first measurement.
+    >>> meas = twix.measurements[0]
+    >>> # Get the protocol...
+    >>> protocol = meas.protocol
+    >>> # ... and the scans.
+    >>> scans = meas.scans
+    >>> # Each scan has a header and the channel data.
+    >>> scan_header = scans[0].header
+    >>> channels = scans[0].channels
+    >>> # Each channel also has its own header as well as the data.
+    >>> channel_header = channels[0].header
+    >>> data = channels[0].data
+
   Args:
     contents: A scalar `tf.Tensor` of type `string`. The encoded contents of a
       TWIX RAID file.
 
   Returns:
-    A `TwixRaidFile` object.
+    A `TwixRaidFile` object containing the measurements, including protocol
+    buffers, scan headers and scan data.
 
   Raises:
     RuntimeError: If called with eager execution disabled.
