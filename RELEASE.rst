@@ -1,18 +1,16 @@
-Release 0.17.0
+Release 0.18.0
 ==============
-
-Breaking Changes
-----------------
-
-* ``tfmri.signal``:
-
-    * Renamed keyword argument ``traj`` of ``filter_kspace`` and ``crop_kspace``
-      to ``trajectory``.
-
 
 Major Features and Improvements
 -------------------------------
 
-* ``tfmri.plot``:
+* ``tfmri.io``:
 
-    * New utility ``tiled_image``.
+    * New function ``parse_twix``.
+
+
+Bug Fixes and Other Changes
+---------------------------
+
+* Using a new API import system, which should address some issues with
+  autocomplete functionality in some IDEs.

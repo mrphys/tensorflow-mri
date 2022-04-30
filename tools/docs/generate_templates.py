@@ -44,7 +44,7 @@ FUNCTION_TEMPLATE = string.Template(
 .. auto{{ objtype }}:: {{ objname }}
 """)
 
-NAMESPACES = api_util.get_namespaces()
+NAMESPACES = api_util.get_submodule_names()
 NAMESPACES += [
     'callbacks',
     'io',
