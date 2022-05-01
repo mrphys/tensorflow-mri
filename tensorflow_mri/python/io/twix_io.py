@@ -94,7 +94,8 @@ def parse_twix(contents):
   return twix
 
 
-class ChannelHeader(tf.experimental.ExtensionType):  # pylint: disable=abstract-method
+@dataclasses.dataclass
+class ChannelHeader():
   """Data structure for channel header."""
   # `type` and `channel_length` are unpacked from ulTypeAndChannelLength.
   # type_and_channel_length: int  # uint32
@@ -121,7 +122,8 @@ class ChannelHeader(tf.experimental.ExtensionType):  # pylint: disable=abstract-
 CHANNEL_HEADER_SIZE = 32
 
 
-class ChannelData(tf.experimental.ExtensionType):  # pylint: disable=abstract-method
+@dataclasses.dataclass
+class ChannelData():
   """Data structure for channel data."""
   header: ChannelHeader
   data: tf.Tensor
@@ -135,7 +137,8 @@ class ChannelData(tf.experimental.ExtensionType):  # pylint: disable=abstract-me
                   header.channel_length - CHANNEL_HEADER_SIZE))
 
 
-class SlicePosVec(tf.experimental.ExtensionType):  # pylint: disable=abstract-method
+@dataclasses.dataclass
+class SlicePosVec():
   """Data structure for slice position vector."""
   sag: float  # float32
   cor: float  # float32
@@ -146,7 +149,8 @@ class SlicePosVec(tf.experimental.ExtensionType):  # pylint: disable=abstract-me
     return cls(*_read_float32(stream, 3))
 
 
-class SliceData(tf.experimental.ExtensionType):  # pylint: disable=abstract-method
+@dataclasses.dataclass
+class SliceData():
   """Data structure for slice data."""
   slice_pos_vec: SlicePosVec
   quaternion: typing.Tuple[float, float, float, float]  # float32 * 4
@@ -157,7 +161,8 @@ class SliceData(tf.experimental.ExtensionType):  # pylint: disable=abstract-meth
                quaternion=struct.unpack('<4f', stream.read(16)))
 
 
-class CutOffData(tf.experimental.ExtensionType):  # pylint: disable=abstract-method
+@dataclasses.dataclass
+class CutOffData():
   """Data structure for cut-off data."""
   pre: int    # uint16
   post: int   # uint16
@@ -167,7 +172,8 @@ class CutOffData(tf.experimental.ExtensionType):  # pylint: disable=abstract-met
     return cls(*_read_uint16(stream, 2))
 
 
-class LoopCounters(tf.experimental.ExtensionType):  # pylint: disable=abstract-method
+@dataclasses.dataclass
+class LoopCounters():
   """Data structure for loop counters."""
   line: int  # uint16 (same for all counters)
   acquisition: int
@@ -189,81 +195,85 @@ class LoopCounters(tf.experimental.ExtensionType):  # pylint: disable=abstract-m
     return cls(*_read_uint16(stream, 14))
 
 
-class EvalInfoMask(tf.experimental.ExtensionType):  # pylint: disable=abstract-method
+@dataclasses.dataclass
+class EvalInfoMask():
   """Data structure for evaluation info mask."""
-  ACQEND: bool
-  RTFEEDBACK: bool
-  HPFEEDBACK: bool
-  ONLINE: bool
-  OFFLINE: bool
-  SYNCDATA: bool
+  # pylint: disable=invalid-name
+  ACQEND: bool  # 0: Last scan.
+  RTFEEDBACK: bool  # 1: Realtime feedback scan.
+  HPFEEDBACK: bool  # 2: High performance feedback scan.
+  ONLINE: bool  # 3: Processing should be done online.
+  OFFLINE: bool  # 4: Processing should be done offline.
+  SYNCDATA: bool  # 5: Readout contains synchronous data.
   noname6: bool
   noname7: bool
-  LASTSCANINCONCAT: bool
+  LASTSCANINCONCAT: bool  # 8: Last scan in concatenation.
   noname9: bool
-  RAWDATACORRECTION: bool
-  LASTSCANINMEAS: bool
-  SCANSCALEFACTOR: bool
-  _2NDHADAMARPULSE: bool  # pylint: disable=invalid-name
-  REFPHASESTABSCAN: bool
-  PHASESTABSCAN: bool
-  D3FFT: bool
-  SIGNREV: bool
-  PHASEFFT: bool
-  SWAPPED: bool
-  POSTSHAREDLINE: bool
-  PHASCOR: bool
-  PATREFSCAN: bool
-  PATREFANDIMASCAN: bool
-  REFLECT: bool
-  NOISEADJSCAN: bool
-  SHARENOW: bool
-  LASTMEASUREDLINE: bool
-  FIRSTSCANINSLICE: bool
-  LASTSCANINSLICE: bool
-  TREFFECTIVEBEGIN: bool
-  TREFFECTIVEEND: bool
-  REF_POSITION: bool
-  SLC_AVERAGED: bool
-  TAGFLAG1: bool
-  CT_NORMALIZE: bool
-  SCAN_FIRST: bool
-  SCAN_LAST: bool
-  SLICE_ACCEL_REFSCAN: bool
-  SLICE_ACCEL_PHASCOR: bool
-  FIRST_SCAN_IN_BLADE: bool
-  LAST_SCAN_IN_BLADE: bool
-  LAST_BLADE_IN_TR: bool
-  PACE: bool
-  RETRO_LASTPHASE: bool
-  RETRO_ENDOFMEAS: bool
-  RETRO_REPEATTHISHEARTBEAT: bool
-  RETRO_REPEATPREVHEARTBEAT: bool
-  RETRO_ABORTSCANNOW: bool
-  RETRO_LASTHEARTBEAT: bool
-  RETRO_DUMMYSCAN: bool
-  RETRO_ARRDETDISABLED: bool
-  B1_CONTROLLOOP: bool
-  SKIP_ONLINE_PHASCOR: bool
-  SKIP_REGRIDDING: bool
-  MDH_VOP: bool
+  RAWDATACORRECTION: bool  # 10: Raw data correction scan.
+  LASTSCANINMEAS: bool  # 11: Last scan in measurement.
+  SCANSCALEFACTOR: bool  # 12: Scan-specific additional scale factor.
+  _2NDHADAMARPULSE: bool  # 13: 2nd RF excitation of HADAMAR
+  REFPHASESTABSCAN: bool  # 14: Reference phase stabilization scan.
+  PHASESTABSCAN: bool  # 15: Phase stabilization scan.
+  D3FFT: bool  # 16: Execute 3D FFT.
+  SIGNREV: bool  # 17: Sign reversal.
+  PHASEFFT: bool  # 18: Execute phase FFT.
+  SWAPPED: bool  # 19: Swapped phase/readout direction.
+  POSTSHAREDLINE: bool  # 20: Shared line.
+  PHASCOR: bool  # 21: Phase correction data.
+  PATREFSCAN: bool  # 22: Additional scan for PAT reference line/partition.
+  PATREFANDIMASCAN: bool  # 23: PAT reference and image scan.
+  REFLECT: bool   # 24: Reflect line.
+  NOISEADJSCAN: bool  # 25: Noise adjustment scan.
+  SHARENOW: bool  # 26: All lines acquired from the actual and previous.
+  LASTMEASUREDLINE: bool  # 27: Current line is the last measured line.
+  FIRSTSCANINSLICE: bool  # 28: First scan in slice (needed for time stamps).
+  LASTSCANINSLICE: bool  # 29: Last scan in slice (needed for time stamps).
+  TREFFECTIVEBEGIN: bool  # 30: Begin time stamp for TReff (triggered meas).
+  TREFFECTIVEEND: bool  # 31: End time stamp for TReff (triggered meas).
+  REF_POSITION: bool  # 32: Reference position for move during scan images.
+  SLC_AVERAGED: bool  # 33: Averaged slice for slice partial averaging scheme.
+  TAGFLAG1: bool  # 34: Adjust scan.
+  CT_NORMALIZE: bool  # 35: Scan for correction maps for TimCT-Prescan norm.
+  SCAN_FIRST: bool  # 36: First scan of a particular map.
+  SCAN_LAST: bool  # 37: Last scan of a particular map.
+  SLICE_ACCEL_REFSCAN: bool  # 38: Single-band refscan slice acc multiband acq.
+  SLICE_ACCEL_PHASCOR: bool  # 39: Additional phase corr for slice acc.
+  FIRST_SCAN_IN_BLADE: bool  # 40: First scan in blade.
+  LAST_SCAN_IN_BLADE: bool  # 41: Last scan in blade.
+  LAST_BLADE_IN_TR: bool  # 42: Last blade in TR interval.
+  noname43: bool
+  PACE: bool  # 44: PACE scan.
+  RETRO_LASTPHASE: bool  # 45: Last phase in heartbeat.
+  RETRO_ENDOFMEAS: bool  # 46: ADC at end of measurement.
+  RETRO_REPEATTHISHEARTBEAT: bool  # 47: Triggers repeat of current heartbeat.
+  RETRO_REPEATPREVHEARTBEAT: bool  # 48: Triggers repeat of previous heartbeat.
+  RETRO_ABORTSCANNOW: bool  # 49: Just abort everything.
+  RETRO_LASTHEARTBEAT: bool  # 50: This ADC is from last heart beat (dummy).
+  RETRO_DUMMYSCAN: bool  # 51: Just a dummy scan, throw away.
+  RETRO_ARRDETDISABLED: bool  # 52: Disables arrhythmia detection.
+  B1_CONTROLLOOP: bool  # 53: Readout to be used for B1 control loop.
+  SKIP_ONLINE_PHASCOR: bool  # 54: Skip online phase correction even if on.
+  SKIP_REGRIDDING: bool  # 55: Skip regridding even if on.
+  noname56: bool
   noname57: bool
   noname58: bool
   noname59: bool
   noname60: bool
-  WIP_1: bool
-  WIP_2: bool
-  WIP_3: bool
+  WIP_1: bool  # 61: Scan for WIP application "type 1".
+  WIP_2: bool  # 62: Scan for WIP application "type 2".
+  WIP_3: bool  # 63: Scan for WIP application "type 3".
 
   @classmethod
   def parse(cls, stream):
     mask = _read_uint64(stream)
-    num_flags = 63
+    num_flags = 64
     bit_list = [bool((mask >> shift) & 1) for shift in range(num_flags)]
     return cls(*bit_list)
 
 
-class ScanHeader(tf.experimental.ExtensionType):  # pylint: disable=abstract-method
+@dataclasses.dataclass
+class ScanHeader():
   """Data structure for scan header."""
   dma_length: int  # uint25
   pack_bit: bool  # bool
@@ -333,7 +343,8 @@ class ScanHeader(tf.experimental.ExtensionType):  # pylint: disable=abstract-met
 SCAN_HEADER_SIZE = 192
 
 
-class ScanData(tf.experimental.ExtensionType):  # pylint: disable=abstract-method
+@dataclasses.dataclass
+class ScanData():
   """Data structure for scan data.
 
   Attributes:
@@ -702,7 +713,8 @@ class MeasurementData():
     return cls(protocol=protocol, scans=scans)
 
 
-class MeasurementHeader(tf.experimental.ExtensionType):  # pylint: disable=abstract-method
+@dataclasses.dataclass
+class MeasurementHeader():
   """Data structure for a measurement header.
 
   Attributes:
@@ -746,7 +758,8 @@ MAX_RAID_FILE_MEASUREMENTS = 64
 RAID_FILE_HEADER_SIZE = 152
 
 
-class TwixRaidFileHeader(tf.experimental.ExtensionType):  # pylint: disable=abstract-method
+@dataclasses.dataclass
+class TwixRaidFileHeader():
   """Data structure for a TWIX raid file header.
 
   Attributes:
