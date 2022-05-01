@@ -46,12 +46,20 @@ def parse_twix(contents):
     >>> meas = twix.measurements[0]
     >>> # Get the protocol...
     >>> protocol = meas.protocol
-    >>> # ... and the scans.
+    >>> # You can index the protocol to access any of the protocol buffers,
+    >>> # e.g., the measurement protocol.
+    >>> meas_prot = protocol['Meas']
+    >>> # Protocol buffers are nested structures accessible with "dot notation"
+    >>> # or "bracket notation". The following are equivalent:
+    >>> base_res = meas_prot.MEAS.sKSpace.lBaseResolution.value
+    >>> base_res = meas_prot['MEAS']['sKSpace']['lBaseResolution'].value
+    >>> # The measurement object also contains the scan data.
     >>> scans = meas.scans
-    >>> # Each scan has a header and the channel data.
+    >>> # Each scan has a header and the a list of channels.
     >>> scan_header = scans[0].header
     >>> channels = scans[0].channels
-    >>> # Each channel also has its own header as well as the data.
+    >>> # Each channel also has its own header as well as the raw measurement
+    >>> # data.
     >>> channel_header = channels[0].header
     >>> data = channels[0].data
 
