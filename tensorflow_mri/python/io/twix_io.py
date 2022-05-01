@@ -55,7 +55,7 @@ def parse_twix(contents):
     >>> base_res = meas_prot['MEAS']['sKSpace']['lBaseResolution'].value
     >>> # The measurement object also contains the scan data.
     >>> scans = meas.scans
-    >>> # Each scan has a header and the a list of channels.
+    >>> # Each scan has a header and the list of channels.
     >>> scan_header = scans[0].header
     >>> channels = scans[0].channels
     >>> # Each channel also has its own header as well as the raw measurement
