@@ -350,9 +350,12 @@ class ScanData():
   Attributes:
     header: A `ScanHeader`.
     channels: A `tuple` of `ChannelData` instances.
+    sync_data: A `bytes` instance containing synchronization data. Only
+      set for SYNCDATA scans.
   """
   header: ScanHeader
   channels: typing.Tuple[ChannelData, ...]
+  sync_data: bytes
 
   @classmethod
   def parse(cls, stream):
@@ -368,14 +371,18 @@ class ScanData():
     header = ScanHeader.parse(stream)
 
     channels = []
-    if header.eval_info_mask.ACQEND or header.eval_info_mask.SYNCDATA:
-      # No data to read, move to end.
+    sync_data = None
+    if header.eval_info_mask.ACQEND:
+      # Nothing to read, move to end.
       stream.seek(header.dma_length - SCAN_HEADER_SIZE, os.SEEK_CUR)
+    elif header.eval_info_mask.SYNCDATA:
+      # Read the sync data.
+      sync_data = stream.read(header.dma_length - SCAN_HEADER_SIZE)
     else:
       for _ in range(header.used_channels):
         channels.append(ChannelData.parse(stream))
 
-    return cls(header=header, channels=channels)
+    return cls(header=header, channels=channels, sync_data=sync_data)
 
 
 @dataclasses.dataclass
