@@ -169,16 +169,22 @@ def linkcode_resolve(domain, info):
   index = file.index('tensorflow_mri/python')
   file = file[index:]
 
-  # Get first and last line numbers.
-  lines, start = inspect.getsourcelines(obj)
-  stop = start + len(lines) - 1
-
   # Base URL.
   url = 'https://github.com/mrphys/tensorflow-mri'
   # Add version blob.
   url += '/blob/v' + release
   # Add file.
   url += '/' + file
+
+  # Try to add line numbers. This will not work when the class is defined
+  # dynamically. In that case we point to the file, but no line number.
+  try:
+    lines, start = inspect.getsourcelines(obj)
+    stop = start + len(lines) - 1
+  except OSError:
+    # Could not get source lines.
+    return url
+
   # Add line numbers.
   url += '#L' + str(start) + '-L' + str(stop)
 
