@@ -15,10 +15,13 @@
 """I/O operations with TWIX RAID files (Siemens raw data)."""
 
 import dataclasses
+import inspect
 import io
 import os
 import re
+import reprlib
 import struct
+import sys
 import typing
 import warnings
 
@@ -664,13 +667,56 @@ class ProtocolBuffer(ParamMap):
 
 
 @dataclasses.dataclass
+class MeasurementHeader():
+  """Data structure for a measurement header.
+
+  Attributes:
+    meas_id: The measurement ID.
+    file_id: The file ID.
+    offset: The start offset of the corresponding measurement, in bytes.
+    length: The length of the corresponding measurement, in bytes.
+    pat_name: The name of the patient.
+    prot_name: The name of the protocol.
+  """
+  meas_id: int  # uint32
+  file_id: int  # uint32
+  offset: int  # uint64
+  length: int  # uint64
+  pat_name: str  # string (64 bytes)
+  prot_name: str  # string (64 bytes)
+
+  @classmethod
+  def parse(cls, stream):
+    """Parses a `MeasurementHeader` from a stream.
+
+    Args:
+      stream: A file-like object. The stream position must be at the beginning
+        of the object to be parsed.
+
+    Returns:
+      A `MeasurementHeader` object.
+    """
+    meas_id = _read_uint32(stream)
+    file_id = _read_uint32(stream)
+    offset = _read_uint64(stream)
+    length = _read_uint64(stream)
+    pat_name = _read_string(stream, 64)
+    prot_name = _read_string(stream, 64)
+
+    return cls(meas_id=meas_id, file_id=file_id, offset=offset, length=length,
+               pat_name=pat_name, prot_name=prot_name)
+
+
+@dataclasses.dataclass
 class MeasurementData():
   """Data structure for a measurement.
 
   Attributes:
+    header: A `MeasurementHeader`.
     protocol: A `dict` of `ProtocolBuffer` objects.
     scans: A `tuple` of `ScanData` objects.
   """
+  header: MeasurementHeader
   protocol: typing.Mapping[str, ProtocolBuffer]
   scans: typing.Tuple[ScanData, ...]
 
@@ -717,48 +763,7 @@ class MeasurementData():
       if scans[-1].header.eval_info_mask.ACQEND:
         break
 
-    return cls(protocol=protocol, scans=scans)
-
-
-@dataclasses.dataclass
-class MeasurementHeader():
-  """Data structure for a measurement header.
-
-  Attributes:
-    meas_id: The measurement ID.
-    file_id: The file ID.
-    offset: The start offset of the corresponding measurement, in bytes.
-    length: The length of the corresponding measurement, in bytes.
-    pat_name: The name of the patient.
-    prot_name: The name of the protocol.
-  """
-  meas_id: int  # uint32
-  file_id: int  # uint32
-  offset: int  # uint64
-  length: int  # uint64
-  pat_name: str  # string (64 bytes)
-  prot_name: str  # string (64 bytes)
-
-  @classmethod
-  def parse(cls, stream):
-    """Parses a `MeasurementHeader` from a stream.
-
-    Args:
-      stream: A file-like object. The stream position must be at the beginning
-        of the object to be parsed.
-
-    Returns:
-      A `MeasurementHeader` object.
-    """
-    meas_id = _read_uint32(stream)
-    file_id = _read_uint32(stream)
-    offset = _read_uint64(stream)
-    length = _read_uint64(stream)
-    pat_name = _read_string(stream, 64)
-    prot_name = _read_string(stream, 64)
-
-    return cls(meas_id=meas_id, file_id=file_id, offset=offset, length=length,
-               pat_name=pat_name, prot_name=prot_name)
+    return cls(header=header, protocol=protocol, scans=scans)
 
 
 MAX_RAID_FILE_MEASUREMENTS = 64
@@ -1086,3 +1091,26 @@ def _head_string(string, n=10):
     A `str` containing the first `n` lines of `string`.
   """
   return '\n'.join(string.splitlines()[:n])
+
+
+# Some of the objects in this module are deeply nested dataclasses which can
+# potentially return absurdly long string representations when printed.
+# To prevent this, we customise the string representations to limit the size
+# of the reprs for each field.
+REPR = reprlib.Repr()
+
+def __repr__(self):
+  """Returns a string representation of the object.
+
+  This repr is used for all dataclasses in this module. It is very similar to
+  the default repr, except that it limits the size of the reprs for the
+  field values.
+  """
+  fields = dataclasses.fields(self)
+  return (self.__class__.__qualname__ +
+          f"({', '.join(f'{f.name}={REPR.repr(getattr(self, f.name))}' for f in fields)})")
+
+# Set the compressed repr for all dataclasses in this module.
+for name, class_ in inspect.getmembers(sys.modules[__name__],
+                                       dataclasses.is_dataclass):
+  class_.__repr__ = __repr__
