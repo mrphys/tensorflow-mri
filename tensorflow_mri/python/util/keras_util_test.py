@@ -13,7 +13,3 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for `keras_util` module."""
-
-import tensorflow as tf
-
-from tensorflow_mri.python.util import keras_util

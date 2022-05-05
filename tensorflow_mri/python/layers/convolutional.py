@@ -52,6 +52,9 @@ def complex_conv(base):
 
   Returns:
     A subclass of `base` that supports complex-valued convolutions.
+
+  Raises:
+    ValueError: If `base` is not one of the supported base classes.
   """
   if not issubclass(base, (tf.keras.layers.Conv1D,
                            tf.keras.layers.Conv2D,
@@ -60,7 +63,7 @@ def complex_conv(base):
         f'Expected base class to be a subclass of '
         f'`tf.keras.layers.ConvND`, but got {base}.')
 
-  def __init__(self, *args, **kwargs):
+  def __init__(self, *args, **kwargs):  # pylint: disable=invalid-name
     # If the requested initializer is one of those provided by TFMRI, prefer
     # the TFMRI version.
     kernel_initializer = kwargs.get('kernel_initializer', 'glorot_uniform')

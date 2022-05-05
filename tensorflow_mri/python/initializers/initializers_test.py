@@ -29,16 +29,14 @@
 # ==============================================================================
 """Tests for Keras initializers."""
 
-import tensorflow as tf
-import tensorflow_mri as tfmri
-
-import numpy as np
-
 from keras import backend
 from keras import combinations
 from keras import models
 from keras.engine import input_layer
 from keras.layers import core
+import numpy as np
+import tensorflow as tf
+import tensorflow_mri as tfmri
 
 
 def _compute_fans(shape):
@@ -68,9 +66,9 @@ def _compute_fans(shape):
 
 @combinations.generate(combinations.combine(mode=['graph', 'eager']))
 class KerasInitializersTest(tf.test.TestCase):
-
-  def _runner(self, init, shape, target_mean=None, target_std=None,
-              target_max=None, target_min=None, dtype=None):
+  """Tests for Keras initializers."""
+  def _runner(self, init, shape, target_mean=None, target_std=None,  # pylint: disable=missing-function-docstring,unused-argument
+              target_max=None, target_min=None, dtype=None):  # pylint: disable=unused-argument
     # The global seed is set so that we can get the same random streams between
     # eager and graph mode when stateful op is used.
     tf.random.set_seed(1337)
@@ -230,7 +228,8 @@ class KerasInitializersTest(tf.test.TestCase):
   def test_tfmri_initializer_saving(self):
 
     inputs = input_layer.Input((10,))
-    outputs = core.Dense(1, kernel_initializer=tfmri.initializers.GlorotUniform())(inputs)
+    outputs = core.Dense(
+        1, kernel_initializer=tfmri.initializers.GlorotUniform())(inputs)
     model = models.Model(inputs, outputs)
     model2 = model.from_config(model.get_config())
     self.assertIsInstance(model2.layers[1].kernel_initializer,

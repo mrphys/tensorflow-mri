@@ -25,6 +25,7 @@ from tensorflow_mri._api import callbacks
 from tensorflow_mri._api import coils
 from tensorflow_mri._api import convex
 from tensorflow_mri._api import image
+from tensorflow_mri._api import initializers
 from tensorflow_mri._api import io
 from tensorflow_mri._api import math
 from tensorflow_mri._api import layers

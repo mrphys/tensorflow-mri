@@ -28,17 +28,17 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for convolutional layers."""
+# pylint: disable=missing-class-docstring,missing-function-docstring
 
+# Using some private functions. This works as of TF/Keras 2.8.0.
 from absl.testing import parameterized
-import numpy as np
-import tensorflow as tf
-import tensorflow_mri as tfmri
-
-# Using some private functions. This works as of TF 2.8.0.
 import keras
-from tensorflow.python.framework import test_util
 from keras import keras_parameterized
 from keras import testing_utils
+import numpy as np
+import tensorflow as tf
+from tensorflow.python.framework import test_util
+import tensorflow_mri as tfmri
 
 
 @keras_parameterized.run_all_keras_modes
