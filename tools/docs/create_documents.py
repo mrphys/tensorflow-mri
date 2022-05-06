@@ -144,7 +144,7 @@ filename = os.path.join(API_DOCS_PATH, 'tfmri.rst')
 with open(filename, 'w') as f:
   namespaces = api_util.get_submodule_names()
   f.write(TFMRI_DOC_TEMPLATE.substitute(
-      namespaces='\n   '.join(sorted(namespaces))))
+      namespaces='\n    '.join(sorted(namespaces))))
 
 # Write index.rst.
 filename = os.path.join(DOCS_PATH, 'index.rst')

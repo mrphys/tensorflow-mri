@@ -45,15 +45,6 @@ FUNCTION_TEMPLATE = string.Template(
 """)
 
 NAMESPACES = api_util.get_submodule_names()
-NAMESPACES += [
-    'callbacks',
-    'io',
-    'layers',
-    'linalg',
-    'losses',
-    'metrics',
-    'ops'
-]
 
 TEMPLATE_PATH = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), '_templates')
