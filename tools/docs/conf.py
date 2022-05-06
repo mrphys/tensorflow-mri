@@ -164,6 +164,13 @@ def linkcode_resolve(domain, info):
   # If no file, we're done. This happens for C++ ops.
   if file is None:
     return None
+  # When using TF's deprecation decorators, `getsourcefile` returns the
+  # `deprecation.py` file where the decorators are defined instead of the
+  # file where the object is defined. This should probably be fixed on the
+  # decorators themselves. For now, we just don't add the link for deprecated
+  # objects.
+  if 'deprecation' in file:
+    return None
   # Crop anything before `tensorflow_mri\python`. This path is system
   # dependent and we don't care about it.
   index = file.index('tensorflow_mri/python')

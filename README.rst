@@ -46,7 +46,10 @@ TensorFlow MRI contains operators for:
   (`tfmri.convex <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/convex>`_):
   convex functions (quadratic, L1, L2, Tikhonov, total variation, etc.) and
   optimizers (ADMM).
-* I/O (`tfmri.io <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/io>`):
+* Keras initializers
+  (`tfmri.initializers <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/initializers>`_):
+  neural network initializers, including support for complex-valued weights.
+* I/O (`tfmri.io <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/io>`_):
   additional I/O functions potentially useful when working with MRI data.
 * Keras layers
   (`tfmri.layers <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/layers>`_):
