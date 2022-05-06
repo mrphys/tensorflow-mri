@@ -149,7 +149,7 @@ Credits
 
 If you like this software, star the repository! |stars|
 
-.. |build| image:: https://img.shields.io/github/stars/mrphys/tensorflow-mri?style=social
+.. |stars| image:: https://img.shields.io/github/stars/mrphys/tensorflow-mri?style=social
     :target: https://github.com/mrphys/tensorflow-mri/stargazers
 
 If you find this software useful in your research, you can cite TensorFlow MRI
