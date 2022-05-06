@@ -21,6 +21,7 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import array_ops
+from tensorflow_mri.python.util import deprecation
 from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.ops import math_ops
 from tensorflow_mri.python.util import api_util
@@ -41,16 +42,40 @@ class ConvexFunction():
   Subclasses should implement the `_call` and `_prox` methods to define the
   forward pass and the proximal mapping, respectively. Gradients are
   provided by TensorFlow's automatic differentiation feature.
+
+  This class exposes three properties to get static shape information:
+
+  * `shape`: The static shape. Calls `_shape`.
+  * `domain_dimension`: The static domain dimension, equal to `shape[-1]`.
+  * `batch_shape`: The static batch shape, equal to `shape[:-1]`.
+
+  Additionally there are three equivalent methods to get dynamic shape
+  information:
+
+  * `shape_tensor`: The dynamic shape. Calls `_shape_tensor`.
+  * `domain_dimension_tensor`: The dynamic domain dimension, equal to
+    `shape_tensor()[-1]`.
+  * `batch_shape_tensor`: The dynamic batch shape, equal to
+    `shape_tensor()[:-1]`.
+
+  Subclasses may implement the methods `_shape` and `_shape_tensor` to provide
+  custom static and dynamic shape information, respectively.
   """
+  @deprecation.deprecated_args(
+      '2022-08-07', 'Use argument `domain_dimension` instead.', ('ndim', None))
   def __init__(self,
                scale=None,
+               domain_dimension=None,
                ndim=None,
                dtype=None,
                name=None):
     """Initialize this `ConvexFunction`."""
-    if isinstance(ndim, tf.compat.v1.Dimension):
-      ndim = ndim.value
-    self._ndim = check_util.validate_rank(ndim, 'ndim', accept_none=True)
+    domain_dimension = deprecation.deprecated_argument_lookup(
+        'domain_dimension', domain_dimension, 'ndim', ndim)
+    if isinstance(domain_dimension, tf.compat.v1.Dimension):
+      domain_dimension = domain_dimension.value
+    self._domain_dimension = check_util.validate_rank(
+        domain_dimension, 'domain_dimension', accept_none=True)
     self._dtype = tf.dtypes.as_dtype(dtype or tf.dtypes.float32)
     self._name = name or type(self).__name__
     if scale is None:
@@ -106,21 +131,6 @@ class ConvexFunction():
     with self._name_scope(name or "conj"):
       return self._conj()
 
-  def ndim_tensor(self, name=None):
-    """Returns the number of dimensions of this `ConvexFunction`.
-
-    Args:
-      name: A name for this operation (optional).
-
-    Returns:
-      A scalar integer `tf.Tensor`.
-    """
-    with self._name_scope(name or "ndim_tensor"):
-      # Prefer to use statically defined ndim if available.
-      if isinstance(self.ndim, int):
-        return tf.constant(self.ndim, dtype=tf.int32)
-      return self._ndim_tensor()
-
   def shape_tensor(self, name=None):
     """Returns the dynamic shape of this `ConvexFunction`.
 
@@ -137,8 +147,40 @@ class ConvexFunction():
             self.shape.as_list(), name="shape")
       return self._shape_tensor()
 
+  def domain_dimension_tensor(self, name=None):
+    """Returns the dynamic domain dimension of this `ConvexFunction`.
+
+    Subclasses get this for free once they implement `_shape_tensor`.
+
+    Args:
+      name: A name for this operation (optional).
+
+    Returns:
+      A scalar integer `tf.Tensor`.
+    """
+    with self._name_scope(name or "domain_dimension_tensor"):
+      # Prefer to use statically defined domain_dimension if available.
+      if isinstance(self.domain_dimension, int):
+        return tf.constant(self.domain_dimension, dtype=tf.int32)
+      return self.shape_tensor()[-1]
+
+  @deprecation.deprecated(
+      '2022-08-07', 'Use `ConvexFunction.domain_dimension_tensor` instead.')
+  def ndim_tensor(self, name=None):  # pylint: disable=unused-argument
+    """Returns the dynamic domain dimension of this `ConvexFunction`.
+
+    Args:
+      name: A name for this operation (optional).
+
+    Returns:
+      A scalar integer `tf.Tensor`.
+    """
+    return self.domain_dimension_tensor()
+
   def batch_shape_tensor(self, name=None):
     """Returns the dynamic batch shape of this `ConvexFunction`.
+
+    Subclasses get this for free once they implement `_shape_tensor`.
 
     Args:
       name: A name for this operation (optional).
@@ -147,7 +189,11 @@ class ConvexFunction():
       A 1D integer `tf.Tensor`.
     """
     with self._name_scope(name or "batch_shape_tensor"):
-      return self._batch_shape_tensor()
+      # Prefer to use statically defined shape if available.
+      if self.batch_shape.is_fully_defined():
+        return tensor_util.convert_shape_to_tensor(
+            self.batch_shape.as_list(), name="shape")
+      return self.shape_tensor()[:-1]
 
   @abc.abstractmethod
   def _call(self, x):
@@ -165,21 +211,12 @@ class ConvexFunction():
   def _shape(self):
     """Returns the static shape of this `ConvexFunction`.
 
-    Defaults to `[ndim]`. Subclasses should override this method if they
-    have any batch dimensions.
+    Has a default implementation based on the domain dimension.
 
     Returns:
       A `tf.TensorShape`.
     """
-    return tf.TensorShape([self.ndim])
-
-  def _ndim_tensor(self):
-    """Returns the dynamic number of dimensions of this `ConvexFunction`.
-
-    Returns:
-      A scalar integer `tf.Tensor`.
-    """
-    raise NotImplementedError("`_ndim_tensor` is not implemented.")
+    return tf.TensorShape([self._domain_dimension])
 
   def _shape_tensor(self):
     """Returns the dynamic shape of this `ConvexFunction`.
@@ -189,31 +226,27 @@ class ConvexFunction():
     """
     raise NotImplementedError("`_shape_tensor` is not implemented.")
 
-  def _batch_shape_tensor(self):
-    """Returns the dynamic batch shape of this `ConvexFunction`.
-
-    Returns:
-      A 1D integer `tf.Tensor`.
-    """
-    if self.batch_shape.is_fully_defined():
-      return tensor_util.convert_shape_to_tensor(
-          self.batch_shape.as_list(), name="batch_shape")
-    return self.shape_tensor()[:-1]
-
   @property
   def scale(self):
     """The scaling factor."""
     return self._scale
 
   @property
-  def ndim(self):
-    """The number of dimensions of this `ConvexFunction`."""
-    return self._ndim
-
-  @property
   def shape(self):
     """The static shape of this `ConvexFunction`."""
     return self._shape()
+
+  @property
+  def domain_dimension(self):
+    """The static domain dimension of this `ConvexFunction`."""
+    return self.shape[-1]
+
+  @property
+  @deprecation.deprecated(
+      '2022-08-07', 'Use `ConvexFunction.domain_dimension` instead.')
+  def ndim(self):
+    """The number of dimensions of this `ConvexFunction`."""
+    return self.domain_dimension
 
   @property
   def batch_shape(self):
@@ -240,26 +273,26 @@ class ConvexFunction():
       yield scope
 
   def _check_input_shape(self, arg):  # pylint: disable=missing-param-doc
-    """Check that arg.shape[-1] is compatible with self.ndim."""
+    """Check that arg.shape[-1] is compatible with self.domain_dimension."""
     if arg.shape.rank is None:
       raise ValueError(
-          "Expected argument to have known rank, but found: %s in tensor %s" %
-          (arg.shape.rank, arg))
+          "Expected argument to have known rank, but found: {} "
+          "in tensor {}".format(arg.shape.rank, arg))
     if arg.shape.rank < 1:
       raise ValueError(
-          "Expected argument to have rank >= 1, but found: %s in tensor %s" %
-          (arg.shape.rank, arg))
-    if not arg.shape[-1:].is_compatible_with([self.ndim]):
+          "Expected argument to have rank >= 1, but found: {} "
+          "in tensor {}".format(arg.shape.rank, arg))
+    if not arg.shape[-1:].is_compatible_with([self.domain_dimension]):
       raise ValueError(
-          "Expected argument to have last dimension %d, but found: %d in "
-          "tensor %s" % (self.ndim, arg.shape[-1], arg))
+          "Expected argument to have last dimension {}, but found: {} in "
+          "tensor {}".format(self.domain_dimension, arg.shape[-1], arg))
 
   def _check_input_dtype(self, arg):
     """Check that arg.dtype == self.dtype."""
     if arg.dtype.base_dtype != self.dtype:
       raise TypeError(
-          "Expected argument to have dtype %s, but found: %s in tensor %s" %
-          (self.dtype, arg.dtype, arg))
+          "Expected argument to have dtype {}, but found: {} "
+          "in tensor {}".format(self.dtype, arg.dtype, arg))
 
 
 @api_util.export("convex.ConvexFunctionAffineMappingComposition")
@@ -282,9 +315,10 @@ class ConvexFunctionAffineMappingComposition(ConvexFunction):
                constant=None,
                scale=None,
                name=None):
-    ndim = operator.domain_dimension if operator is not None else function.ndim
+    domain_dimension = (operator.domain_dimension if operator is not None
+                        else function.domain_dimension)
     super().__init__(scale=scale,
-                     ndim=ndim,
+                     domain_dimension=domain_dimension,
                      dtype=function.dtype,
                      name=name)
     self._function = function
@@ -352,19 +386,23 @@ class ConvexFunctionIndicatorBall(ConvexFunction):  # pylint: disable=abstract-m
     order: A `float`. The order of the norm. Supported values are `1`, `2`,
       `np.inf`.
     scale: A `float`. A scaling factor. Defaults to 1.0.
-    ndim: An `int`. The dimensionality of the domain of this `ConvexFunction`.
-      Defaults to `None`.
+    domain_dimension: An `int`. The dimension of the domain. Defaults to `None`.
+    ndim: An `int`. The dimension of the domain. Defaults to `None`.
     dtype: A `tf.dtypes.DType`. The type of this `ConvexFunction`. Defaults to
       `tf.dtypes.float32`.
     name: A name for this `ConvexFunction`.
   """
+  @deprecation.deprecated_args(
+      '2022-08-07', 'Use argument `domain_dimension` instead.', ('ndim', None))
   def __init__(self,
                order=2,
                scale=None,
+               domain_dimension=None,
                ndim=None,
                dtype=None,
                name=None):
     super().__init__(scale=scale,
+                     domain_dimension=domain_dimension,
                      ndim=ndim,
                      dtype=dtype,
                      name=name)
@@ -386,7 +424,7 @@ class ConvexFunctionIndicatorBall(ConvexFunction):  # pylint: disable=abstract-m
     return ConvexFunctionNorm(
         order=_conjugate_exponent(self._order),
         scale=self._scale,
-        ndim=self.ndim,
+        domain_dimension=self.domain_dimension,
         dtype=self.dtype,
         name=f"{self.name}_conj")
 
@@ -397,8 +435,8 @@ class ConvexFunctionIndicatorL1Ball(ConvexFunctionIndicatorBall):  # pylint: dis
 
   Args:
     scale: A `float`. A scaling factor. Defaults to 1.0.
-    ndim: An `int`. The dimensionality of the domain of this `ConvexFunction`.
-      Defaults to `None`.
+    domain_dimension: An `int`. The dimension of the domain. Defaults to `None`.
+    ndim: An `int`. The dimension of the domain. Defaults to `None`.
     dtype: A `tf.dtypes.DType`. The type of this `ConvexFunction`. Defaults to
       `tf.dtypes.float32`.
     name: A name for this `ConvexFunction`.
@@ -407,12 +445,16 @@ class ConvexFunctionIndicatorL1Ball(ConvexFunctionIndicatorBall):  # pylint: dis
     .. [1] Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
       Trends in optimization, 1(3), 127-239.
   """
+  @deprecation.deprecated_args(
+      '2022-08-07', 'Use argument `domain_dimension` instead.', ('ndim', None))
   def __init__(self,
                scale=None,
+               domain_dimension=None,
                ndim=None,
                dtype=None,
                name=None):
-    super().__init__(order=1, scale=scale, ndim=ndim, dtype=dtype, name=name)
+    super().__init__(order=1, scale=scale, domain_dimension=domain_dimension,
+                     ndim=ndim, dtype=dtype, name=name)
 
 
 @api_util.export("convex.ConvexFunctionIndicatorL2Ball")
@@ -421,8 +463,8 @@ class ConvexFunctionIndicatorL2Ball(ConvexFunctionIndicatorBall):  # pylint: dis
 
   Args:
     scale: A `float`. A scaling factor. Defaults to 1.0.
-    ndim: An `int`. The dimensionality of the domain of this `ConvexFunction`.
-      Defaults to `None`.
+    domain_dimension: An `int`. The dimension of the domain. Defaults to `None`.
+    ndim: An `int`. The dimension of the domain. Defaults to `None`.
     dtype: A `tf.dtypes.DType`. The type of this `ConvexFunction`. Defaults to
       `tf.dtypes.float32`.
     name: A name for this `ConvexFunction`.
@@ -431,12 +473,16 @@ class ConvexFunctionIndicatorL2Ball(ConvexFunctionIndicatorBall):  # pylint: dis
     .. [1] Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
       Trends in optimization, 1(3), 127-239.
   """
+  @deprecation.deprecated_args(
+      '2022-08-07', 'Use argument `domain_dimension` instead.', ('ndim', None))
   def __init__(self,
                scale=None,
+               domain_dimension=None,
                ndim=None,
                dtype=None,
                name=None):
-    super().__init__(order=2, scale=scale, ndim=ndim, dtype=dtype, name=name)
+    super().__init__(order=2, scale=scale, domain_dimension=domain_dimension,
+                     ndim=ndim, dtype=dtype, name=name)
 
 
 @api_util.export("convex.ConvexFunctionNorm")
@@ -447,8 +493,8 @@ class ConvexFunctionNorm(ConvexFunction):  # pylint: disable=abstract-method
     order: A `float`. The order of the norm. Supported values are `1`, `2`,
       `np.inf`.
     scale: A `float`. A scaling factor. Defaults to 1.0.
-    ndim: An `int`. The dimensionality of the domain of this `ConvexFunction`.
-      Defaults to `None`.
+    domain_dimension: An `int`. The dimension of the domain. Defaults to `None`.
+    ndim: An `int`. The dimension of the domain. Defaults to `None`.
     dtype: A `tf.dtypes.DType`. The type of this `ConvexFunction`. Defaults to
       `tf.dtypes.float32`.
     name: A name for this `ConvexFunction`.
@@ -457,13 +503,17 @@ class ConvexFunctionNorm(ConvexFunction):  # pylint: disable=abstract-method
     .. [1] Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
       Trends in optimization, 1(3), 127-239.
   """
+  @deprecation.deprecated_args(
+      '2022-08-07', 'Use argument `domain_dimension` instead.', ('ndim', None))
   def __init__(self,
                order,
                scale=None,
+               domain_dimension=None,
                ndim=None,
                dtype=None,
                name=None):
-    super().__init__(scale=scale, ndim=ndim, dtype=dtype, name=name)
+    super().__init__(scale=scale, domain_dimension=domain_dimension,
+                     ndim=ndim, dtype=dtype, name=name)
     self._order = check_util.validate_enum(order, [1, 2, np.inf], name='order')
 
   def _call(self, x):
@@ -487,7 +537,7 @@ class ConvexFunctionNorm(ConvexFunction):  # pylint: disable=abstract-method
     return ConvexFunctionIndicatorBall(
         order=_conjugate_exponent(self._order),
         scale=self._scale,
-        ndim=self.ndim,
+        domain_dimension=self.domain_dimension,
         dtype=self.dtype,
         name=f"{self.name}_conj")
 
@@ -498,8 +548,8 @@ class ConvexFunctionL1Norm(ConvexFunctionNorm):  # pylint: disable=abstract-meth
 
   Args:
     scale: A `float`. A scaling factor. Defaults to 1.0.
-    ndim: An `int`. The dimensionality of the domain of this `ConvexFunction`.
-      Defaults to `None`.
+    domain_dimension: An `int`. The dimension of the domain. Defaults to `None`.
+    ndim: An `int`. The dimension of the domain. Defaults to `None`.
     dtype: A `tf.dtypes.DType`. The type of this `ConvexFunction`. Defaults to
       `tf.dtypes.float32`.
     name: A name for this `ConvexFunction`.
@@ -508,12 +558,16 @@ class ConvexFunctionL1Norm(ConvexFunctionNorm):  # pylint: disable=abstract-meth
     .. [1] Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
       Trends in optimization, 1(3), 127-239.
   """
+  @deprecation.deprecated_args(
+      '2022-08-07', 'Use argument `domain_dimension` instead.', ('ndim', None))
   def __init__(self,
                scale=None,
+               domain_dimension=None,
                ndim=None,
                dtype=None,
                name=None):
-    super().__init__(order=1, scale=scale, ndim=ndim, dtype=dtype, name=name)
+    super().__init__(order=1, scale=scale, domain_dimension=domain_dimension,
+                     ndim=ndim, dtype=dtype, name=name)
 
 
 @api_util.export("convex.ConvexFunctionL2Norm")
@@ -522,8 +576,8 @@ class ConvexFunctionL2Norm(ConvexFunctionNorm):  # pylint: disable=abstract-meth
 
   Args:
     scale: A `float`. A scaling factor. Defaults to 1.0.
-    ndim: An `int`. The dimensionality of the domain of this `ConvexFunction`.
-      Defaults to `None`.
+    domain_dimension: An `int`. The dimension of the domain. Defaults to `None`.
+    ndim: An `int`. The dimension of the domain. Defaults to `None`.
     dtype: A `string` or `DType`. The type of this `ConvexFunction`. Defaults to
       `tf.dtypes.float32`.
     name: A name for this `ConvexFunction`.
@@ -532,12 +586,16 @@ class ConvexFunctionL2Norm(ConvexFunctionNorm):  # pylint: disable=abstract-meth
     .. [1] Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
       Trends in optimization, 1(3), 127-239.
   """
+  @deprecation.deprecated_args(
+      '2022-08-07', 'Use argument `domain_dimension` instead.', ('ndim', None))
   def __init__(self,
                scale=None,
+               domain_dimension=None,
                ndim=None,
                dtype=None,
                name=None):
-    super().__init__(order=2, scale=scale, ndim=ndim, dtype=dtype, name=name)
+    super().__init__(order=2, scale=scale, domain_dimension=domain_dimension,
+                     ndim=ndim, dtype=dtype, name=name)
 
 
 @api_util.export("convex.ConvexFunctionL2NormSquared")
@@ -546,8 +604,8 @@ class ConvexFunctionL2NormSquared(ConvexFunction):  # pylint: disable=abstract-m
 
   Args:
     scale: A `float`. A scaling factor. Defaults to 1.0.
-    ndim: An `int`. The dimensionality of the domain of this `ConvexFunction`.
-      Defaults to `None`.
+    domain_dimension: An `int`. The dimension of the domain. Defaults to `None`.
+    ndim: An `int`. The dimension of the domain. Defaults to `None`.
     dtype: A `string` or `DType`. The type of this `ConvexFunction`. Defaults to
       `tf.dtypes.float32`.
     name: A name for this `ConvexFunction`.
@@ -556,12 +614,16 @@ class ConvexFunctionL2NormSquared(ConvexFunction):  # pylint: disable=abstract-m
     .. [1] Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
       Trends in optimization, 1(3), 127-239.
   """
+  @deprecation.deprecated_args(
+      '2022-08-07', 'Use argument `domain_dimension` instead.', ('ndim', None))
   def __init__(self,
                scale=None,
+               domain_dimension=None,
                ndim=None,
                dtype=None,
                name=None):
-    super().__init__(ndim=ndim, dtype=dtype, name=name)
+    super().__init__(domain_dimension=domain_dimension, ndim=ndim,
+                     dtype=dtype, name=name)
     self._scale = scale
 
   def _call(self, x):
@@ -589,22 +651,27 @@ class ConvexFunctionTikhonov(ConvexFunctionAffineMappingComposition):  # pylint:
       Defaults to the identity operator.
     prior: A `tf.Tensor`. The prior estimate :math:`x_0`. Defaults to 0.
     scale: A `float`. The scaling factor.
-    ndim: An `int`. The dimensionality of the domain of this `ConvexFunction`.
-      Defaults to `None`.
+    domain_dimension: An `int`. The dimension of the domain. Defaults to `None`.
+    ndim: An `int`. The dimension of the domain. Defaults to `None`.
     dtype: A `tf.DType`. The dtype of the inputs. Defaults to `float32`.
     name: A name for this `ConvexFunction`.
   """
+  @deprecation.deprecated_args(
+      '2022-08-07', 'Use argument `domain_dimension` instead.', ('ndim', None))
   def __init__(self,
                transform=None,
                prior=None,
                scale=None,
+               domain_dimension=None,
                ndim=None,
                dtype=tf.float32,
                name=None):
-    if ndim is None and transform is not None:
-      ndim = transform.range_dimension
+    domain_dimension = deprecation.deprecated_argument_lookup(
+        'domain_dimension', domain_dimension, 'ndim', ndim)
+    if domain_dimension is None and transform is not None:
+      domain_dimension = transform.range_dimension
     function = ConvexFunctionL2NormSquared(scale=scale,
-                                           ndim=ndim,
+                                           domain_dimension=domain_dimension,
                                            dtype=dtype)
     # Stored only for external access. Not actually used for computation.
     self._transform = transform
@@ -640,20 +707,27 @@ class ConvexFunctionTotalVariation(ConvexFunctionLinearOperatorComposition):  # 
 
   Args:
     scale: A `float`. A scaling factor.
-    ndim: An `int`, or a list of `ints`. The dimensionality of the domain.
-      The domain may have multiple axes.
+    domain_shape: A `tf.TensorShape`. The shape of the domain. Defaults to
+      `None`. The domain of this `ConvexFunction` may have multiple axes.
+    ndim: A `tf.TensorShape`. The shape of the domain. Defaults to
+      `None`. The domain of this `ConvexFunction` may have multiple axes.
     axis: An `int` or a list of `ints`. The axes along which to compute the
       total variation. Defaults to -1.
     dtype: A `tf.DType`. The dtype of the inputs.
     name: A name for this `ConvexFunction`.
   """
+  @deprecation.deprecated_args(
+      '2022-08-07', 'Use argument `domain_shape` instead.', ('ndim', None))
   def __init__(self,
                scale=None,
+               domain_shape=None,
                ndim=None,
                axis=-1,
                dtype=tf.float32,
                name=None):
-    domain_shape = tf.TensorShape(ndim)
+    domain_shape = deprecation.deprecated_argument_lookup(
+        'domain_shape', domain_shape, 'ndim', ndim)
+    domain_shape = tf.TensorShape(domain_shape)
     axis = check_util.validate_axis(axis, domain_shape.rank,
                                     max_length=domain_shape.rank,
                                     canonicalize="negative")
@@ -661,7 +735,7 @@ class ConvexFunctionTotalVariation(ConvexFunctionLinearOperatorComposition):  # 
         domain_shape, axis=ax, dtype=dtype) for ax in axis]
     operator = linalg_ext.LinearOperatorVerticalStack(operators)
     function = ConvexFunctionL1Norm(scale=scale,
-                                    ndim=operator.range_dimension,
+                                    domain_dimension=operator.range_dimension,
                                     dtype=dtype)
     super().__init__(function,
                      operator=operator,
@@ -692,7 +766,7 @@ class ConvexFunctionQuadratic(ConvexFunction):  # pylint: disable=abstract-metho
                scale=None,
                name=None):
     super().__init__(scale=scale,
-                     ndim=quadratic_coefficient.shape[-1],
+                     domain_dimension=quadratic_coefficient.shape[-1],
                      dtype=quadratic_coefficient.dtype,
                      name=name)
     self._quadratic_coefficient = quadratic_coefficient
@@ -747,10 +821,10 @@ class ConvexFunctionQuadratic(ConvexFunction):  # pylint: disable=abstract-metho
       raise ValueError(
           "Expected linear coefficient to have rank >= 1, but found: %s in "
           "tensor %s" % (coef.shape.rank, coef))
-    if not coef.shape[-1:].is_compatible_with([self.ndim]):
+    if not coef.shape[-1:].is_compatible_with([self._domain_dimension]):
       raise ValueError(
           "Expected linear coefficient to have last dimension %d, but found: "
-          "%d in tensor %s" % (self.ndim, coef.shape[-1], coef))
+          "%d in tensor %s" % (self._domain_dimension, coef.shape[-1], coef))
     if coef.dtype != self.dtype:
       raise ValueError(
           "Expected linear coefficient to have dtype %s, but found: %s in "
@@ -771,7 +845,7 @@ class ConvexFunctionQuadratic(ConvexFunction):  # pylint: disable=abstract-metho
         self._quadratic_coefficient.shape[:-2],
         self._linear_coefficient.shape[:-1],
         self._constant_coefficient.shape)
-    return batch_shape.concatenate(tf.TensorShape([self.ndim]))
+    return batch_shape.concatenate(tf.TensorShape([self._domain_dimension]))
 
   def _shape_tensor(self):
     """Returns the dynamic shape of this `ConvexFunction`."""
@@ -779,7 +853,7 @@ class ConvexFunctionQuadratic(ConvexFunction):  # pylint: disable=abstract-metho
         tensor_util.object_shape(self._quadratic_coefficient)[:-2],
         tf.shape(self._linear_coefficient)[:-1],
         tf.shape(self._constant_coefficient))
-    return tf.concat([batch_shape_tensor, [self.ndim_tensor()]], 0)
+    return tf.concat([batch_shape_tensor, [self._domain_dimension]], 0)
 
   @property
   def quadratic_coefficient(self):

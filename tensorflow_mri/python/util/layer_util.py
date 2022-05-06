@@ -16,6 +16,8 @@
 
 import tensorflow as tf
 
+from tensorflow_mri.python.layers import convolutional
+
 
 def get_nd_layer(name, rank):
   """Get an N-D layer object.
@@ -41,9 +43,9 @@ _ND_LAYERS = {
     ('AveragePooling', 1): tf.keras.layers.AveragePooling1D,
     ('AveragePooling', 2): tf.keras.layers.AveragePooling2D,
     ('AveragePooling', 3): tf.keras.layers.AveragePooling3D,
-    ('Conv', 1): tf.keras.layers.Conv1D,
-    ('Conv', 2): tf.keras.layers.Conv2D,
-    ('Conv', 3): tf.keras.layers.Conv3D,
+    ('Conv', 1): convolutional.Conv1D,
+    ('Conv', 2): convolutional.Conv2D,
+    ('Conv', 3): convolutional.Conv3D,
     ('ConvLSTM', 1): tf.keras.layers.ConvLSTM1D,
     ('ConvLSTM', 2): tf.keras.layers.ConvLSTM2D,
     ('ConvLSTM', 3): tf.keras.layers.ConvLSTM3D,

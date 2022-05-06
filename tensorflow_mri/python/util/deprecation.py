@@ -16,4 +16,9 @@
 
 from tensorflow.python.util import deprecation
 
+deprecated_alias = deprecation.deprecated_alias
 deprecated = deprecation.deprecated
+deprecated_endpoints = deprecation.deprecated_endpoints
+deprecated_args = deprecation.deprecated_args
+deprecated_arg_values = deprecation.deprecated_arg_values
+deprecated_argument_lookup = deprecation.deprecated_argument_lookup

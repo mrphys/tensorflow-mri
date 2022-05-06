@@ -97,7 +97,8 @@ class ADMMTest(test_util.TestCase):
     max_iterations = 100
 
     function_f = convex_ops.ConvexFunctionLeastSquares(operator, rhs)
-    function_g = convex_ops.ConvexFunctionL1Norm(scale=lambda_, ndim=4)
+    function_g = convex_ops.ConvexFunctionL1Norm(
+        scale=lambda_, domain_dimension=4)
 
     result = optimizer_ops.admm_minimize(function_f, function_g,
                                          absolute_tolerance=absolute_tolerance,
@@ -123,7 +124,8 @@ class ADMMTest(test_util.TestCase):
     max_iterations = 100
 
     function_f = convex_ops.ConvexFunctionLeastSquares(operator, rhs)
-    function_g = convex_ops.ConvexFunctionL1Norm(scale=lambda_, ndim=3)
+    function_g = convex_ops.ConvexFunctionL1Norm(
+        scale=lambda_, domain_dimension=3)
 
     operator_a = linalg_ext.LinearOperatorFiniteDifference(4)
 
@@ -153,7 +155,8 @@ class ADMMTest(test_util.TestCase):
     max_iterations = 100
 
     function_f = convex_ops.ConvexFunctionLeastSquares(operator, rhs)
-    function_g = convex_ops.ConvexFunctionL1Norm(scale=lambda_, ndim=3)
+    function_g = convex_ops.ConvexFunctionL1Norm(
+        scale=lambda_, domain_dimension=3)
 
     operator_a = linalg_ext.LinearOperatorFiniteDifference(4)
 
@@ -188,7 +191,8 @@ class ADMMTest(test_util.TestCase):
     max_iterations = 100
 
     function_f = convex_ops.ConvexFunctionLeastSquares(operator, rhs)
-    function_g = convex_ops.ConvexFunctionL1Norm(scale=lambda_, ndim=4)
+    function_g = convex_ops.ConvexFunctionL1Norm(
+        scale=lambda_, domain_dimension=4)
 
     result = optimizer_ops.admm_minimize(function_f, function_g,
                                          absolute_tolerance=absolute_tolerance,

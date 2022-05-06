@@ -417,7 +417,8 @@ class ReconstructTest(test_util.TestCase):
 
     def _reconstruct():
       regularizer = convex_ops.ConvexFunctionTotalVariation(
-          scale=0.001, ndim=[28, 384, 384], axis=-3, dtype=tf.complex64)
+          scale=0.001, domain_shape=[28, 384, 384],
+          axis=-3, dtype=tf.complex64)
       return recon_ops.reconstruct_lstsq(
           kspace,
           image_shape=[384, 384],

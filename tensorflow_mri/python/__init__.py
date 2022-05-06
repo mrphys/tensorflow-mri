@@ -15,6 +15,7 @@
 "TFMRI Python code."
 
 from tensorflow_mri.python import callbacks
+from tensorflow_mri.python import initializers
 from tensorflow_mri.python import io
 from tensorflow_mri.python import layers
 from tensorflow_mri.python import losses

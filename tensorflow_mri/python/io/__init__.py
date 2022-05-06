@@ -15,3 +15,4 @@
 """Input/output."""
 
 from tensorflow_mri.python.io import image_io
+from tensorflow_mri.python.io import twix_io

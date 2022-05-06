@@ -22,11 +22,12 @@ _API_SYMBOLS = dict()
 
 _API_ATTR = '_api_names'
 
-_NAMESPACES = [
+_SUBMODULE_NAMES = [
     'callbacks',
     'coils',
     'convex',
     'image',
+    'initializers',
     'io',
     'math',
     'layers',
@@ -41,11 +42,12 @@ _NAMESPACES = [
     'summary'
 ]
 
-_NAMESPACE_DOCSTRINGS = {
+_SUBMODULE_DOCSTRINGS = {
     'callbacks': "Keras callbacks.",
     'coils': "Parallel imaging operations.",
     'convex': "Convex optimization operations.",
     'image': "Image processing operations.",
+    'initializers': "Keras initializers.",
     'io': "Input/output operations.",
     'layers': "Keras layers.",
     'linalg': "Linear algebra operations.",
@@ -66,9 +68,9 @@ def get_api_symbols():
   return _API_SYMBOLS
 
 
-def get_namespaces():
-  """Returns a list of TFMRI namespaces."""
-  return _NAMESPACES
+def get_submodule_names():
+  """Returns a list of TFMRI submodule names."""
+  return _SUBMODULE_NAMES
 
 
 def get_symbol_from_name(name):
@@ -81,6 +83,34 @@ def get_symbol_from_name(name):
     API symbol.
   """
   return _API_SYMBOLS.get(name)
+
+
+def get_symbols_in_submodule(name):
+  """Returns the symbols in the given submodule.
+
+  Args:
+    name: Name of the submodule.
+
+  Returns:
+    A dict containing the API symbols in the submodule.
+  """
+  symbols = {}
+  for k, v in _API_SYMBOLS.items():
+    if k.startswith(name):
+      symbols[k] = v
+  return symbols
+
+
+def get_docstring_for_submodule(name):
+  """Returns the docstring for the given submodule.
+
+  Args:
+    name: Name of the submodule.
+
+  Returns:
+    The docstring for the submodule.
+  """
+  return _SUBMODULE_DOCSTRINGS[name]
 
 
 def get_canonical_name_for_symbol(symbol):
@@ -131,7 +161,7 @@ def export(*names):
         raise ValueError(f"Invalid API name: {name}")
       # API namespace must be one of the supported ones.
       namespace, _ = name.split('.')
-      if namespace not in _NAMESPACES:
+      if namespace not in _SUBMODULE_NAMES:
         raise ValueError(f"Invalid API namespace: {namespace}")
       # API name must be unique.
       if name in _API_SYMBOLS:
@@ -179,5 +209,5 @@ def import_namespace(namespace):
   module = importlib.util.module_from_spec(spec)
   sys.modules[spec.name] = module
   spec.loader.exec_module(module)
-  module.__doc__ = _NAMESPACE_DOCSTRINGS[namespace]
+  module.__doc__ = _SUBMODULE_DOCSTRINGS[namespace]
   return module

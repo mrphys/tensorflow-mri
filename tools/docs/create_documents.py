@@ -115,7 +115,7 @@ class Module:
   classes: typing.List[str] = dataclasses.field(default_factory=list)
   functions: typing.List[str] = dataclasses.field(default_factory=list)
 
-modules = {namespace: Module() for namespace in api_util.get_namespaces()}
+modules = {namespace: Module() for namespace in api_util.get_submodule_names()}
 
 for name, symbol in api_util.get_api_symbols().items():
   name = api_util.get_canonical_name_for_symbol(symbol)
@@ -142,14 +142,14 @@ for name, module in modules.items():
 # Write top-level API doc tfmri.rst.
 filename = os.path.join(API_DOCS_PATH, 'tfmri.rst')
 with open(filename, 'w') as f:
-  namespaces = api_util.get_namespaces()
+  namespaces = api_util.get_submodule_names()
   f.write(TFMRI_DOC_TEMPLATE.substitute(
-      namespaces='\n   '.join(sorted(namespaces))))
+      namespaces='\n    '.join(sorted(namespaces))))
 
 # Write index.rst.
 filename = os.path.join(DOCS_PATH, 'index.rst')
 with open(filename, 'w') as f:
-  namespaces = api_util.get_namespaces()
+  namespaces = api_util.get_submodule_names()
   namespaces = ['api_docs/tfmri/' + namespace for namespace in namespaces]
   f.write(INDEX_TEMPLATE.substitute(
       namespaces='\n   '.join(sorted(namespaces))))

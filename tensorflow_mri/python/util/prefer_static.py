@@ -50,30 +50,33 @@ def batch_shape(operator):
   return operator.batch_shape_tensor()
 
 
-def ndim(operator):
-  """Returns the dimensionality of an operator.
-
-  Returns the static dimensionality of the operator if known, otherwise
-  returns the dynamic dimensionality.
+def domain_dimension(operator):
+  """Retrieves the domain dimension of an operator.
 
   Args:
-    operator: A `tfmri.convex.ConvexFunction`.
+    operator: A `tf.linalg.LinearOperator` or a `tfmri.convex.ConvexFunction`.
 
   Returns:
-    An int or scalar integer `tf.Tensor` representing the dimensionality of the
+    An int or scalar integer `tf.Tensor` representing the range dimension of the
     operator.
 
   Raises:
-    ValueError: If `operator` is not a `tfmri.convex.ConvexFunction`.
+    ValueError: If `operator` is not a `tf.linalg.LinearOperator` or a
+    `tfmri.convex.ConvexFunction`.
   """
-  if not isinstance(operator, convex_ops.ConvexFunction):
-    raise ValueError(f"Input must be a `tfmri.convex.ConvexFunction`, "
+  if not isinstance(operator, (tf.linalg.LinearOperator,
+                               convex_ops.ConvexFunction)):
+    raise ValueError(f"Input must be a `tf.linalg.LinearOperator` or a "
+                     f"`tfmri.convex.ConvexFunction`, "
                      f"but got: {type(operator)}")
 
-  if operator.ndim is not None:
-    return operator.ndim
+  dimension = operator.domain_dimension
+  if isinstance(dimension, tf.compat.v1.Dimension):
+    dimension = dimension.value
+  if dimension is not None:
+    return dimension
 
-  return operator.ndim_tensor()
+  return operator.domain_dimension_tensor()
 
 
 def range_dimension(operator):

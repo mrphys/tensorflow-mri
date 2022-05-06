@@ -200,7 +200,10 @@ class ConvexFunctionQuadraticTest(test_util.TestCase):
     self.assertIsInstance(f.shape_tensor(), tf.Tensor)
     self.assertIsInstance(f.batch_shape_tensor(), tf.Tensor)
     self.assertAllEqual([], f.batch_shape_tensor())
-    self.assertEqual(2, f.ndim)
+    self.assertIsInstance(f.domain_dimension, int)
+    self.assertAllEqual(2, f.domain_dimension)
+    self.assertIsInstance(f.domain_dimension_tensor(), tf.Tensor)
+    self.assertAllEqual(2, f.domain_dimension_tensor())
 
   def test_quadratic_batch(self):
     """Tests `ConvexFunctionQuadratic` with batch arguments."""
@@ -222,7 +225,10 @@ class ConvexFunctionQuadraticTest(test_util.TestCase):
     self.assertIsInstance(f.shape_tensor(), tf.Tensor)
     self.assertIsInstance(f.batch_shape_tensor(), tf.Tensor)
     self.assertAllEqual([2], f.batch_shape_tensor())
-    self.assertEqual(2, f.ndim)
+    self.assertIsInstance(f.domain_dimension, int)
+    self.assertAllEqual(2, f.domain_dimension)
+    self.assertIsInstance(f.domain_dimension_tensor(), tf.Tensor)
+    self.assertAllEqual(2, f.domain_dimension_tensor())
 
   def test_prox(self):
     """Tests `prox` method."""
@@ -296,21 +302,21 @@ class ConvexFunctionTotalVariationTest(test_util.TestCase):
          [4., 5., 6.]]
     x_flat = tf.reshape(x, [-1])
     reg1 = convex_ops.ConvexFunctionTotalVariation(scale=0.1,
-                                                   ndim=[2, 3],
+                                                   domain_shape=[2, 3],
                                                    axis=[0, 1])
     ref1 = 1.3
     res1 = reg1(x_flat)
     self.assertAllClose(res1, ref1)
 
     reg2 = convex_ops.ConvexFunctionTotalVariation(scale=0.1,
-                                                   ndim=[2, 3],
+                                                   domain_shape=[2, 3],
                                                    axis=1)
     res2 = reg2(x_flat)
     ref2 = 0.4
     self.assertAllClose(res2, ref2)
 
     reg3 = convex_ops.ConvexFunctionTotalVariation(scale=0.5,
-                                                   ndim=[3],
+                                                   domain_shape=[3],
                                                    axis=-1)
     res3 = reg3(x)
     ref3 = [1.0, 1.0]

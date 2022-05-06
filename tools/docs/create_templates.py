@@ -44,16 +44,7 @@ FUNCTION_TEMPLATE = string.Template(
 .. auto{{ objtype }}:: {{ objname }}
 """)
 
-NAMESPACES = api_util.get_namespaces()
-NAMESPACES += [
-    'callbacks',
-    'io',
-    'layers',
-    'linalg',
-    'losses',
-    'metrics',
-    'ops'
-]
+NAMESPACES = api_util.get_submodule_names()
 
 TEMPLATE_PATH = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), '_templates')
