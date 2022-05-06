@@ -56,7 +56,7 @@ class ConvexFunction():
   * `domain_dimension_tensor`: The dynamic domain dimension, equal to
     `shape_tensor()[-1]`.
   * `batch_shape_tensor`: The dynamic batch shape, equal to
-  * `shape_tensor()[:-1]`.
+    `shape_tensor()[:-1]`.
 
   Subclasses may implement the methods `_shape` and `_shape_tensor` to provide
   custom static and dynamic shape information, respectively.

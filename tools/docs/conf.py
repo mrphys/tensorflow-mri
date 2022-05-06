@@ -248,10 +248,47 @@ LINK_REPL = r"`\g<link_text>`_"
 
 def process_docstring(app, what, name, obj, options, lines):  # pylint: disable=missing-param-doc,unused-argument
   """Process autodoc docstrings."""
+  # Replace Note: and Warning: by RST equivalents.
+  rst_lines = []
+  admonition_lines = None
+  for line in lines:
+    if admonition_lines is None:
+      # We are not in an admonition right now. Check if this line will start
+      # one.
+      if (line.strip().startswith('Warning:') or
+          line.strip().startswith('Note:')):
+        # This line starts an admonition.
+        label_position = line.index(':')
+        admonition_type = line[:label_position].strip().lower()
+        admonition_content = line[label_position + 1:].strip()
+        leading_whitespace = ' ' * (len(line) - len(line.lstrip()))
+        extra_indentation = '  '
+        admonition_lines = [f"{leading_whitespace}.. {admonition_type}::"]
+        admonition_lines.append(
+            leading_whitespace + extra_indentation + admonition_content)
+      else:
+        # This line does not start an admonition. It's just a regular line.
+        # Add it to the new lines.
+        rst_lines.append(line)
+    else:
+      # Check if this is the end of the admonition.
+      if line.strip() == '':
+        # Line is empty, so the end of the admonition. Add admonition and
+        # finish.
+        rst_lines.extend(admonition_lines)
+        admonition_lines = None
+      else:
+        # This is an admonition line. Add to list of admonition lines.
+        admonition_lines.append(extra_indentation + line)
+  # If we reached the end and we are still in an admonition, add it.
+  if admonition_lines is not None:
+    rst_lines.extend(admonition_lines)
+
   # Replace markdown literal markers (`) by ReST literal markers (``).
-  myst = '\n'.join(lines)
+  myst = '\n'.join(rst_lines)
   text = myst.replace('`', '``')
   text = text.replace(':math:``', ':math:`')
+
   # Correct inline code followed by word characters.
   text = CODE_LETTER_PATTERN.sub(CODE_LETTER_REPL, text)
   # Add links to some common types.
