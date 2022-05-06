@@ -1,0 +1,8 @@
+﻿tfmri.initializers.HeNormal
+===========================
+
+.. currentmodule:: tensorflow_mri.initializers
+
+.. autoclass:: HeNormal
+    :members:
+    :show-inheritance:

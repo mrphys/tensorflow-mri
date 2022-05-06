@@ -1,5 +1,5 @@
-﻿tfmri.cartesian\_product
-========================
+﻿tensorflow\_mri.cartesian\_product
+==================================
 
 .. currentmodule:: tensorflow_mri
 

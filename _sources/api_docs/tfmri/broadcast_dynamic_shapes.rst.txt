@@ -1,5 +1,5 @@
-﻿tfmri.broadcast\_dynamic\_shapes
-================================
+﻿tensorflow\_mri.broadcast\_dynamic\_shapes
+==========================================
 
 .. currentmodule:: tensorflow_mri
 

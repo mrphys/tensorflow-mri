@@ -1,0 +1,8 @@
+﻿tfmri.initializers.LecunUniform
+===============================
+
+.. currentmodule:: tensorflow_mri.initializers
+
+.. autoclass:: LecunUniform
+    :members:
+    :show-inheritance:

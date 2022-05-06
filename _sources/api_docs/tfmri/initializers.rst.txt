@@ -1,0 +1,30 @@
+tfmri.initializers
+==================
+
+.. automodule:: tensorflow_mri.initializers
+
+Classes
+-------
+
+.. autosummary::
+    :toctree: initializers
+    :template: initializers/class.rst
+    :nosignatures:
+
+    GlorotNormal
+    GlorotUniform
+    HeNormal
+    HeUniform
+    LecunNormal
+    LecunUniform
+    VarianceScaling
+
+Functions
+---------
+
+.. autosummary::
+    :toctree: initializers
+    :template: initializers/function.rst
+    :nosignatures:
+
+    

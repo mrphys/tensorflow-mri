@@ -1,0 +1,8 @@
+﻿tfmri.initializers.HeUniform
+============================
+
+.. currentmodule:: tensorflow_mri.initializers
+
+.. autoclass:: HeUniform
+    :members:
+    :show-inheritance:

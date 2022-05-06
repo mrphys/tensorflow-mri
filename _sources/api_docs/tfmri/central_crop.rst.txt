@@ -1,5 +1,5 @@
-﻿tfmri.central\_crop
-===================
+﻿tensorflow\_mri.central\_crop
+=============================
 
 .. currentmodule:: tensorflow_mri
 

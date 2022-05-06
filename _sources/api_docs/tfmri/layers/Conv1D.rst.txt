@@ -1,0 +1,8 @@
+﻿tfmri.layers.Conv1D
+===================
+
+.. currentmodule:: tensorflow_mri.layers
+
+.. autoclass:: Conv1D
+    :members:
+    :show-inheritance:

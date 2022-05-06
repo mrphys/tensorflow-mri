@@ -22,3 +22,4 @@ Functions
     :nosignatures:
 
     encode_gif
+    parse_twix

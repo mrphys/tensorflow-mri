@@ -11,6 +11,9 @@ Classes
     :template: layers/class.rst
     :nosignatures:
 
+    Conv1D
+    Conv2D
+    Conv3D
     ConvBlock
     UNet
 

@@ -10,21 +10,22 @@ Modules
     :nosignatures:
 
     callbacks
-   coils
-   convex
-   image
-   io
-   layers
-   linalg
-   losses
-   math
-   metrics
-   optimize
-   plot
-   recon
-   sampling
-   signal
-   summary
+    coils
+    convex
+    image
+    initializers
+    io
+    layers
+    linalg
+    losses
+    math
+    metrics
+    optimize
+    plot
+    recon
+    sampling
+    signal
+    summary
 
 
 Classes

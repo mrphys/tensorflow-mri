@@ -1,0 +1,8 @@
+﻿tfmri.initializers.GlorotUniform
+================================
+
+.. currentmodule:: tensorflow_mri.initializers
+
+.. autoclass:: GlorotUniform
+    :members:
+    :show-inheritance:

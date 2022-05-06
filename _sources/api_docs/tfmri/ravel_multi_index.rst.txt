@@ -1,5 +1,5 @@
-﻿tfmri.ravel\_multi\_index
-=========================
+﻿tensorflow\_mri.ravel\_multi\_index
+===================================
 
 .. currentmodule:: tensorflow_mri
 

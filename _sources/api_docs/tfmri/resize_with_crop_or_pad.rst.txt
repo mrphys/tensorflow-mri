@@ -1,5 +1,5 @@
-﻿tfmri.resize\_with\_crop\_or\_pad
-=================================
+﻿tensorflow\_mri.resize\_with\_crop\_or\_pad
+===========================================
 
 .. currentmodule:: tensorflow_mri
 

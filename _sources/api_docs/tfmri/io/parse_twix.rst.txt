@@ -1,0 +1,6 @@
+﻿tfmri.io.parse\_twix
+====================
+
+.. currentmodule:: tensorflow_mri.io
+
+.. autofunction:: parse_twix

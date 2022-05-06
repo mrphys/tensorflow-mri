@@ -1,0 +1,8 @@
+﻿tfmri.initializers.LecunNormal
+==============================
+
+.. currentmodule:: tensorflow_mri.initializers
+
+.. autoclass:: LecunNormal
+    :members:
+    :show-inheritance:

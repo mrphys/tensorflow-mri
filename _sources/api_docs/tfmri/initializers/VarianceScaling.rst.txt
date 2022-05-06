@@ -1,0 +1,8 @@
+﻿tfmri.initializers.VarianceScaling
+==================================
+
+.. currentmodule:: tensorflow_mri.initializers
+
+.. autoclass:: VarianceScaling
+    :members:
+    :show-inheritance:

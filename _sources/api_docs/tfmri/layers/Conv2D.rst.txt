@@ -1,0 +1,8 @@
+﻿tfmri.layers.Conv2D
+===================
+
+.. currentmodule:: tensorflow_mri.layers
+
+.. autoclass:: Conv2D
+    :members:
+    :show-inheritance:

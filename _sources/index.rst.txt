@@ -37,6 +37,7 @@ TensorFlow MRI |release|
    api_docs/tfmri/coils
    api_docs/tfmri/convex
    api_docs/tfmri/image
+   api_docs/tfmri/initializers
    api_docs/tfmri/io
    api_docs/tfmri/layers
    api_docs/tfmri/linalg

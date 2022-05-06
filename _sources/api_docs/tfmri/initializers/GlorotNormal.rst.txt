@@ -1,0 +1,8 @@
+﻿tfmri.initializers.GlorotNormal
+===============================
+
+.. currentmodule:: tensorflow_mri.initializers
+
+.. autoclass:: GlorotNormal
+    :members:
+    :show-inheritance:

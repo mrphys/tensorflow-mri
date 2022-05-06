@@ -1,5 +1,5 @@
-﻿tfmri.broadcast\_static\_shapes
-===============================
+﻿tensorflow\_mri.broadcast\_static\_shapes
+=========================================
 
 .. currentmodule:: tensorflow_mri
 

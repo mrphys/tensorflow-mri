@@ -1,5 +1,5 @@
-﻿tfmri.unravel\_index
-====================
+﻿tensorflow\_mri.unravel\_index
+==============================
 
 .. currentmodule:: tensorflow_mri
 

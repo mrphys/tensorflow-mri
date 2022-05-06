@@ -10,6 +10,7 @@
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?digest=935aa2abcc5c1da4283d1dc201fb1f0add16d23a" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo-extensions.css?digest=25ceb02ed1c46dc30f2321ff83e92799f69dfdb9" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono" />
     
     
 
@@ -20,6 +21,8 @@
   --color-code-foreground: black;
   --color-brand-primary: #128091;
   --color-brand-content: #128091;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Roboto Mono, monospace;
   
   }
   @media not print {
@@ -239,16 +242,30 @@
 <li class="toctree-l2"><a class="reference internal" href="../../image/total_variation/">total_variation</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../io/">tfmri.io</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../io/encode_gif/">encode_gif</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../initializers/">tfmri.initializers</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../initializers/GlorotNormal/">GlorotNormal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../initializers/GlorotUniform/">GlorotUniform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../initializers/HeNormal/">HeNormal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../initializers/HeUniform/">HeUniform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../initializers/LecunNormal/">LecunNormal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../initializers/LecunUniform/">LecunUniform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../initializers/VarianceScaling/">VarianceScaling</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../layers/">tfmri.layers</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../io/">tfmri.io</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../io/encode_gif/">encode_gif</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../io/parse_twix/">parse_twix</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../layers/">tfmri.layers</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../layers/Conv1D/">Conv1D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../layers/Conv2D/">Conv2D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../layers/Conv3D/">Conv3D</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../layers/ConvBlock/">ConvBlock</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../layers/UNet/">UNet</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../linalg/">tfmri.linalg</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../linalg/">tfmri.linalg</a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../linalg/LinearOperator/">LinearOperator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../linalg/LinearOperatorAddition/">LinearOperatorAddition</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../linalg/LinearOperatorAdjoint/">LinearOperatorAdjoint</a></li>
@@ -261,7 +278,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../linalg/conjugate_gradient/">conjugate_gradient</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../losses/">tfmri.losses</a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../losses/">tfmri.losses</a><input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../losses/ConfusionLoss/">ConfusionLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../losses/F1Loss/">F1Loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../losses/FocalTverskyLoss/">FocalTverskyLoss</a></li>
@@ -273,7 +290,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../losses/ssim_multiscale_loss/">ssim_multiscale_loss</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../math/">tfmri.math</a><input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../math/">tfmri.math</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../math/block_soft_threshold/">block_soft_threshold</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../math/extract_from_complex/">extract_from_complex</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../math/indicator_ball/">indicator_ball</a></li>
@@ -288,7 +305,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../math/soft_threshold/">soft_threshold</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../metrics/">tfmri.metrics</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../metrics/">tfmri.metrics</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../metrics/Accuracy/">Accuracy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../metrics/ConfusionMetric/">ConfusionMetric</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../metrics/F1Score/">F1Score</a></li>
@@ -304,12 +321,12 @@
 <li class="toctree-l2"><a class="reference internal" href="../../metrics/TverskyIndex/">TverskyIndex</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../optimize/">tfmri.optimize</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../optimize/">tfmri.optimize</a><input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../optimize/gradient_descent/">gradient_descent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../optimize/lbfgs_minimize/">lbfgs_minimize</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current has-children"><a class="reference internal" href="../">tfmri.plot</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../">tfmri.plot</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../close/">close</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../image_sequence/">image_sequence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../show/">show</a></li>
@@ -317,7 +334,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../tiled_image_sequence/">tiled_image_sequence</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../recon/">tfmri.recon</a><input class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../recon/">tfmri.recon</a><input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../recon/adj/">adj</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../recon/grappa/">grappa</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../recon/lstsq/">lstsq</a></li>
@@ -325,7 +342,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../recon/sense/">sense</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../sampling/">tfmri.sampling</a><input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../sampling/">tfmri.sampling</a><input class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../sampling/density_grid/">density_grid</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../sampling/estimate_density/">estimate_density</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../sampling/estimate_radial_density/">estimate_radial_density</a></li>
@@ -340,7 +357,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../sampling/spiral_trajectory/">spiral_trajectory</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../signal/">tfmri.signal</a><input class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../signal/">tfmri.signal</a><input class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/atanfilt/">atanfilt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/crop_kspace/">crop_kspace</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/fft/">fft</a></li>
@@ -351,7 +368,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../signal/nufft/">nufft</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../summary/">tfmri.summary</a><input class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../summary/">tfmri.summary</a><input class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" role="switch" type="checkbox"/><label for="toctree-checkbox-19"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../summary/gif/">gif</a></li>
 </ul>
 </li>
@@ -391,7 +408,7 @@
 <h1>tfmri.plot.tiled_image<a class="headerlink" href="#tfmri-plot-tiled-image" title="Permalink to this headline">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="tensorflow_mri.plot.tiled_image">
-<span class="sig-name descname"><span class="pre">tiled_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">images</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">part</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bg_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dimgray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bbox_inches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad_inches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aspect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.77</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subplot_titles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.17.0/tensorflow_mri/python/util/plot_util.py#L220-L318"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.plot.tiled_image" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">tiled_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">images</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">part</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bg_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dimgray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bbox_inches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad_inches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aspect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.77</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subplot_titles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.18.0/tensorflow_mri/python/util/plot_util.py#L220-L318"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.plot.tiled_image" title="Permalink to this definition">#</a></dt>
 <dd><p>Plots one or more images in a grid.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
