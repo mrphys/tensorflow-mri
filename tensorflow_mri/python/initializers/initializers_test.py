@@ -28,6 +28,7 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for Keras initializers."""
+# pylint: disable=missing-function-docstring
 
 from keras import backend
 from keras import combinations

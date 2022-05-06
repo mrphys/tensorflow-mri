@@ -44,7 +44,7 @@ class ConvexFunction():
   provided by TensorFlow's automatic differentiation feature.
 
   This class exposes three properties to get static shape information:
-  
+
   * `shape`: The static shape. Calls `_shape`.
   * `domain_dimension`: The static domain dimension, equal to `shape[-1]`.
   * `batch_shape`: The static batch shape, equal to `shape[:-1]`.
@@ -276,23 +276,23 @@ class ConvexFunction():
     """Check that arg.shape[-1] is compatible with self.domain_dimension."""
     if arg.shape.rank is None:
       raise ValueError(
-          "Expected argument to have known rank, but found: %s in tensor %s" %
-          (arg.shape.rank, arg))
+          "Expected argument to have known rank, but found: {} "
+          "in tensor {}".format(arg.shape.rank, arg))
     if arg.shape.rank < 1:
       raise ValueError(
-          "Expected argument to have rank >= 1, but found: %s in tensor %s" %
-          (arg.shape.rank, arg))
+          "Expected argument to have rank >= 1, but found: {} "
+          "in tensor {}".format(arg.shape.rank, arg))
     if not arg.shape[-1:].is_compatible_with([self.domain_dimension]):
       raise ValueError(
-          "Expected argument to have last dimension %d, but found: %d in "
-          "tensor %s" % (self.domain_dimension, arg.shape[-1], arg))
+          "Expected argument to have last dimension {}, but found: {} in "
+          "tensor {}".format(self.domain_dimension, arg.shape[-1], arg))
 
   def _check_input_dtype(self, arg):
     """Check that arg.dtype == self.dtype."""
     if arg.dtype.base_dtype != self.dtype:
       raise TypeError(
-          "Expected argument to have dtype %s, but found: %s in tensor %s" %
-          (self.dtype, arg.dtype, arg))
+          "Expected argument to have dtype {}, but found: {} "
+          "in tensor {}".format(self.dtype, arg.dtype, arg))
 
 
 @api_util.export("convex.ConvexFunctionAffineMappingComposition")

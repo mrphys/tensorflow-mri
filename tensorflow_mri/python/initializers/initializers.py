@@ -50,6 +50,10 @@ def complex_variance_scaling(base):
 
   Returns:
     A subclass of `base` that supports complex-valued initialization.
+
+  Raises:
+    ValueError: if `base` is not a subclass of
+    `tf.keras.initializers.VarianceScaling`.
   """
   if not issubclass(base, tf.keras.initializers.VarianceScaling):
     raise ValueError(
@@ -71,12 +75,12 @@ def complex_variance_scaling(base):
     Returns:
       A tensor object initialized as specified by the initializer.
     """
-    # pylint: disable=protected-access
+    # pylint: disable=protected-access,no-else-return
     _validate_kwargs(self.__class__.__name__, kwargs)
     dtype = _assert_float_or_complex_dtype(dtype)
     scale = self.scale
     fan_in, fan_out = _compute_fans(shape)
-    if _PARTITION_SHAPE in kwargs:
+    if _PARTITION_SHAPE in kwargs:  # pylint: disable=consider-using-get
       shape = kwargs[_PARTITION_SHAPE]
     # Compute required variance (in `scale`).
     if self.mode == 'fan_in':
@@ -171,6 +175,14 @@ def _complex_uniform(rng, shape, dtype):
   """Samples random values from a disk on the complex plane.
 
   The sampled uniform distribution has zero mean and unit variance.
+
+  Args:
+    rng: A `keras.backend.RandomGenerator`.
+    shape: The shape of the output tensor.
+    dtype: The dtype of the output tensor. Must be complex.
+
+  Returns:
+    A tensor of shape `shape` and dtype `dtype`.
   """
   radius = tf.math.sqrt(rng.random_uniform(shape, 0.0, 2.0, dtype.real_dtype))
   theta = rng.random_uniform(shape, 0.0, 2 * np.pi, dtype.real_dtype)
@@ -181,6 +193,14 @@ def _complex_normal(rng, shape, dtype):
   """Samples random values from normal distribution on the complex plane.
 
   The sampled distribution has zero mean and unit variance.
+
+  Args:
+    rng: A `keras.backend.RandomGenerator`.
+    shape: The shape of the output tensor.
+    dtype: The dtype of the output tensor. Must be complex.
+
+  Returns:
+    A tensor of shape `shape` and dtype `dtype`.
   """
   sqrt2 = tf.math.sqrt(tf.constant(2.0, dtype=dtype.real_dtype))
   real = rng.random_normal(shape, 0.0, 1.0, dtype=dtype.real_dtype) / sqrt2
@@ -193,6 +213,15 @@ def _complex_truncated_normal(rng, shape, upper, dtype):
 
   The modulus is truncated to `upper`. The distribution has zero mean and unit
   variance prior to the truncation.
+
+  Args:
+    rng: A `keras.backend.RandomGenerator`.
+    shape: The shape of the output tensor.
+    upper: The upper bound on the modulus (truncation).
+    dtype: The dtype of the output tensor. Must be complex.
+
+  Returns:
+    A tensor of shape `shape` and dtype `dtype`.
   """
   t = ((1 - tf.math.exp(tf.constant(-(upper ** 2), dtype.real_dtype))) *
        rng.random_uniform(shape, dtype=dtype.real_dtype))
@@ -252,7 +281,7 @@ def _compute_fans(shape):
 
 def _validate_kwargs(cls_name, kwargs, support_partition=True):
   for kwarg in kwargs:
-    if kwarg not in _ALLOWED_INITIALIZER_KWARGS:
+    if kwarg not in _ALLOWED_INITIALIZER_KWARGS:  # pylint: disable=no-else-raise
       raise TypeError(f'Unknown keyword arguments: {kwarg}. Allowed keyword '
                       f'arguments: {_ALLOWED_INITIALIZER_KWARGS}.')
     elif not support_partition:

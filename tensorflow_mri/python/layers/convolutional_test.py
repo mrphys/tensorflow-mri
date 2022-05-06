@@ -757,6 +757,7 @@ class GroupedConvTest(keras_parameterized.TestCase):
       ('Conv3D', tfmri.layers.Conv3D, (32, 12, 12, 12, 32)),
   )
   def test_group_conv(self, layer_cls, input_shape):
+    # pylint: disable=no-value-for-parameter,redundant-keyword-arg,unexpected-keyword-arg
     if tf.test.is_gpu_available(cuda_only=True):
       with testing_utils.use_gpu():
         inputs = tf.random.uniform(shape=input_shape)
@@ -775,6 +776,7 @@ class GroupedConvTest(keras_parameterized.TestCase):
             layer(inputs), expected_outputs, rtol=3e-5, atol=3e-5)
 
   def test_group_conv_depthwise(self):
+    # pylint: disable=no-value-for-parameter,redundant-keyword-arg
     if tf.test.is_gpu_available(cuda_only=True):
       with testing_utils.use_gpu():
         inputs = tf.random.uniform(shape=(3, 27, 27, 32))

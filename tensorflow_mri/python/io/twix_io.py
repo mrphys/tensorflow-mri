@@ -1099,7 +1099,7 @@ def _head_string(string, n=10):
 # of the reprs for each field.
 REPR = reprlib.Repr()
 
-def __repr__(self):
+def __repr__(self):  # pylint: disable=invalid-name
   """Returns a string representation of the object.
 
   This repr is used for all dataclasses in this module. It is very similar to
@@ -1108,9 +1108,9 @@ def __repr__(self):
   """
   fields = dataclasses.fields(self)
   return (self.__class__.__qualname__ +
-          f"({', '.join(f'{f.name}={REPR.repr(getattr(self, f.name))}' for f in fields)})")
+          f"({', '.join(f'{f.name}={REPR.repr(getattr(self, f.name))}' for f in fields)})")  # pylint: disable=line-too-long
 
 # Set the compressed repr for all dataclasses in this module.
-for name, class_ in inspect.getmembers(sys.modules[__name__],
-                                       dataclasses.is_dataclass):
+for _, class_ in inspect.getmembers(sys.modules[__name__],
+                                    dataclasses.is_dataclass):
   class_.__repr__ = __repr__
