@@ -288,10 +288,10 @@ def admm_minimize(function_f,
 
     # Infer the dimensionality of the primal variables x, z from the
     # dimensionality of the domains of f and g.
-    x_ndim_static = function_f.ndim
-    z_ndim_static = function_g.ndim
-    x_ndim = prefer_static.ndim(function_f)
-    z_ndim = prefer_static.ndim(function_g)
+    x_ndim_static = function_f.domain_dimension
+    z_ndim_static = function_g.domain_dimension
+    x_ndim = prefer_static.domain_dimension(function_f)
+    z_ndim = prefer_static.domain_dimension(function_g)
 
     # Provide default values for A and B.
     if operator_a is None:
