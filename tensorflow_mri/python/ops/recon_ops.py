@@ -911,6 +911,7 @@ def reconstruct_pf(kspace,
                    factors,
                    return_complex=False,
                    return_kspace=False,
+                   preserve_phase=False,
                    method='zerofill',
                    **kwargs):
   """Reconstructs an MR image using partial Fourier methods.
@@ -930,6 +931,11 @@ def reconstruct_pf(kspace,
       contexts.
     return_kspace: A `boolean`. If `True`, returns the filled *k*-space instead
       of the reconstructed images. This is always complex-valued.
+    preserve_phase: A `boolean`. If `True`, keeps the phase information in the
+      reconstructed images. Although it is not possible to reconstruct from
+      high-frequency phase details from an incomplete k-space, a low resolution
+      phase map can still be recovered. If `True`, the output is complex-valued
+      regardless of the value of `return_complex`.
     method: A `string`. The partial Fourier reconstruction algorithm. Must be
       one of `"zerofill"`, `"homodyne"` (homodyne detection method) or `"pocs"`
       (projection onto convex sets method).
@@ -984,6 +990,7 @@ def reconstruct_pf(kspace,
   return func[method](kspace, factors,
                       return_complex=return_complex,
                       return_kspace=return_kspace,
+                      preserve_phase=preserve_phase,
                       **kwargs)
 
 
@@ -1009,44 +1016,62 @@ def _pf_homodyne(kspace,
                  factors,
                  return_complex=False,
                  return_kspace=False,
+                 preserve_phase=False,
                  weighting_fn='ramp'):
   """Partial Fourier reconstruction using homodyne detection.
 
   For the parameters, see `reconstruct_pf`.
   """
-  # Rank of this operation.
+  # Data type of this operation.
+  input_shape = tf.shape(kspace)
   dtype = kspace.dtype
 
   # Create zero-filled k-space.
   full_kspace = _pf_zerofill(kspace, factors, return_kspace=True)
   full_shape = tf.shape(full_kspace)
 
-  # Shape of the symmetric region.
-  shape_sym = _scale_shape(full_shape, 2.0 * (factors - 0.5))
-
   # Compute weighting function. Weighting function is:
   # - 2.0 for the asymmetric part of the measured k-space.
   # - A ramp from 2.0 to 0.0 for the symmetric part of the measured k-space.
   # - 0.0 for the part of k-space that was not measured.
   weights = tf.constant(1.0, dtype=kspace.dtype)
-  for i in range(len(factors)): #reverse_axis, factor in enumerate(tf.reverse(factors, [0])):
-    dim_sym = shape_sym[-i-1]
-    dim_asym = (full_shape[-i-1] - dim_sym) // 2
-    # Weighting for symmetric part of k-space.
-    if weighting_fn == 'step':
-      weights_sym = tf.ones([dim_sym], dtype=dtype)
-    elif weighting_fn == 'ramp':
-      weights_sym = tf.cast(tf.linspace(2.0, 0.0, dim_sym), dtype)
+  for index in range(factors.shape[0]):
+    axis = -(index + 1)
+    dim_full = full_shape[axis]
+    dim_input = input_shape[axis]
+    dim_right = dim_full - dim_input
+    if dim_right == 0:
+      weights_1d = tf.ones([dim_full], dtype=dtype)
     else:
-      raise ValueError(f"Unknown `weighting_fn`: {weighting_fn}")
-    weights *= tf.reshape(tf.concat(
-        [2.0 * tf.ones([dim_asym], dtype=dtype),
-         weights_sym,
-         tf.zeros([dim_asym], dtype=dtype)], 0), [-1] + [1] * i)
+      # dim_left is equal to dim_right if full shape is odd, otherwise it is
+      # equal to dim_right + 1.
+      dim_left = dim_right + tf.math.mod(full_shape[axis] + 1, 2)
+      dim_centre = full_shape[axis] - dim_left - dim_right
+
+      # Weighting for symmetric part of k-space.
+      if weighting_fn == 'step':
+        weights_centre = tf.ones([dim_centre], dtype=dtype)
+      elif weighting_fn == 'ramp':
+        if factors[-index-1] == 1.0:
+          weights_centre = tf.ones([dim_centre], dtype=dtype)
+        else:
+          weights_centre = tf.cast(
+              tf.linspace(2.0, 0.0, dim_centre + 2)[1:-1], dtype)
+      else:
+        raise ValueError(f"Unknown `weighting_fn`: {weighting_fn}")
+      # Weighting for asymmetric part of k-space.
+      weights_left = 2.0 * tf.ones([dim_left], dtype=dtype)
+      weights_right = tf.zeros([dim_right], dtype=dtype)
+      # Combine weights.
+      weights_1d = tf.concat([weights_left, weights_centre, weights_right], 0)
+
+    weights *= tf.reshape(weights_1d, [-1] + [1] * index)
+    print("weights", weights)
 
   # Phase correction. Estimate a phase modulator from low resolution image using
   # symmetric part of k-space.
   phase_modulator = _estimate_phase_modulator(full_kspace, factors)
+  print("phase_modulator", phase_modulator)
 
   # Compute image with following steps.
   # 1. Apply weighting function.
@@ -1055,6 +1080,12 @@ def _pf_homodyne(kspace,
   full_kspace *= weights
   image = _ifftn(full_kspace, tf.size(factors))
   image *= tf.math.conj(phase_modulator)
+
+  if preserve_phase:
+    image = tf.cast(tf.math.abs(image), dtype) * phase_modulator
+    if return_kspace:
+      return _fftn(image, tf.size(factors))
+    return image
 
   if return_kspace:
     return _fftn(image, tf.size(factors))
@@ -1129,12 +1160,17 @@ def _pf_pocs(kspace,
 
 def _estimate_phase_modulator(full_kspace, factors): # pylint: disable=missing-param-doc
   """Estimate a phase modulator from central region of k-space."""
+  # print("in _estimate_phase_modulator")
   shape_sym = _scale_shape(tf.shape(full_kspace), 2.0 * (factors - 0.5))
   paddings = tf.expand_dims((tf.shape(full_kspace) - shape_sym) // 2, -1)
   paddings = tf.tile(paddings, [1, 2])
+  print("shape_sym", shape_sym)
+  print("paddings", paddings)
   symmetric_mask = tf.pad(tf.ones(shape_sym, dtype=full_kspace.dtype), paddings) # pylint: disable=no-value-for-parameter
   symmetric_kspace = full_kspace * symmetric_mask
+  print("symmetric_kspace", symmetric_kspace)
   ref_image = _ifftn(symmetric_kspace, tf.size(factors))
+  print("ref_image", ref_image)
   phase_modulator = tf.math.exp(tf.dtypes.complex(
       tf.constant(0.0, dtype=ref_image.dtype.real_dtype),
       tf.math.angle(ref_image)))
