@@ -516,6 +516,14 @@ class ReconstructPartialKSpaceTest(test_util.TestCase):
         ref = tf.math.maximum(0.0, tf.math.real(ref))
     self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
 
+  def test_pf_zerofill(self):
+    """Test PF reconstruction with zero-filling."""
+    kspace = tf.constant([[1, 1, 1, 1]] * 6, tf.complex64)
+    factors = [0.75, 1.0]
+    result = recon_ops.reconstruct_pf(kspace, factors, method='zerofill',
+                                      return_kspace=True)
+    print(result)
+
   def test_pf_homodyne_weighting(self):
     """Test PF reconstruction with homodyne weighting."""
     kspace = tf.constant([[1, 1, 1, 1]] * 6, tf.complex64)

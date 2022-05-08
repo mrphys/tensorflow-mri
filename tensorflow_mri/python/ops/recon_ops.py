@@ -994,22 +994,36 @@ def reconstruct_pf(kspace,
                       **kwargs)
 
 
-def _pf_zerofill(kspace, factors, return_complex=False, return_kspace=False):
+def _pf_zerofill(kspace, factors,
+                 return_complex=False,
+                 return_kspace=False,
+                 preserve_phase=False):
   """Partial Fourier reconstruction using zero-filling.
 
   For the parameters, see `reconstruct_pf`.
   """
-  output_shape = _scale_shape(tf.shape(kspace), 1.0 / factors)
-  paddings = tf.expand_dims(output_shape - tf.shape(kspace), -1)
-  paddings = tf.pad(paddings, [[0, 0], [1, 0]]) # pylint: disable=no-value-for-parameter
-  full_kspace = tf.pad(kspace, paddings) # pylint: disable=no-value-for-parameter
+  rank = tf.size(factors)
+  _, (_, _, right_dims) = _compute_dimensions(
+      tf.shape(kspace), factors)
+
+  # Pad right part of k-space with zeros.
+  paddings = tf.stack([tf.zeros_like(right_dims), right_dims], axis=-1)
+  full_kspace = tf.pad(kspace, paddings)  # pylint: disable=no-value-for-parameter
 
   if return_kspace:
+    # If `return_kspace` is `True`, just return the zero-filled k-space.
     return full_kspace
-  image = _ifftn(full_kspace, tf.size(factors))
-  if return_complex:
-    return image
-  return tf.math.abs(image)
+
+  # Otherwise, reconstruct the image and take its magnitude.
+  image = _ifftn(full_kspace, rank)
+  image = tf.math.abs(image)
+
+  if preserve_phase:
+    # If `preserve_phase` is `True`, estimate phase and put it back in image.
+    phase_modulator = _estimate_phase_modulator_v2(kspace, factors)
+    image = tf.cast(image, kspace.dtype) * phase_modulator
+
+  return image
 
 
 def _pf_homodyne(kspace,
@@ -1156,6 +1170,62 @@ def _pf_pocs(kspace,
   if return_complex:
     return image
   return _real_non_negative(image)
+
+
+def _compute_dimensions(input_shape, factors):
+  """Returns the sizes of the left, centre and right k-space parts.
+
+  * The right part is the unobserved part of k-space.
+  * The left part is the observed part of k-space without symmetric lines and
+    thus without phase data.
+  * The centre part is the observed part of k-space with symmetric lines and
+    thus with phase data.
+
+  Note that, for `factor = 1.0`, the centre part is equal to `input_shape - 1`,
+  the left part is equal to 1 (as the left-most element does not have a
+  symmetric counterpart) and the right part is 0.
+
+  Args:
+    input_shape: A tensor containing the shape of the input tensor.
+    factors: A tensor containing the partial Fourier factors.
+
+  Returns:
+    A tuple of:
+
+    * output shape tensor
+    * a tuple of three tensors containing the dimensions of the left, centre
+      and right k-space parts along each dimension.
+  """
+  # Pad factors with one to have the same size as input shape.
+  factors = tf.pad(factors, [[tf.size(input_shape) - tf.size(factors), 0]],
+                   constant_values=1.0)
+  # Compute output shape.
+  output_shape = tf.cast(tf.cast(input_shape, tf.float32) / factors + 0.5,
+                         tf.int32)
+  right_dims = output_shape - input_shape
+  left_dims = right_dims + tf.math.mod(output_shape + 1, 2)
+  centre_dims = output_shape - (left_dims + right_dims)
+
+  return output_shape, (left_dims, centre_dims, right_dims)
+
+
+def _estimate_phase_modulator_v2(kspace, factors):  # pylint: disable=missing-param-doc
+  """Estimate a phase modulator from central region of k-space."""
+  _, (left_dims, centre_dims, right_dims) = _compute_dimensions(
+      tf.shape(kspace), factors)
+
+  # Central part of k-space.
+  centre_kspace = tf.slice(kspace, begin=left_dims, size=centre_dims)
+  # Pad to left and right.
+  paddings = tf.stack([left_dims, right_dims], axis=-1)
+  lowres_kspace = tf.pad(centre_kspace, paddings)  # pylint: disable=no-value-for-parameter
+  lowres_image = _ifftn(lowres_kspace, tf.size(factors))
+
+  # Compute the phase modulator.
+  phase_modulator = tf.math.exp(tf.dtypes.complex(
+      tf.constant(0.0, dtype=lowres_image.dtype.real_dtype),
+      tf.math.angle(lowres_image)))
+  return phase_modulator
 
 
 def _estimate_phase_modulator(full_kspace, factors): # pylint: disable=missing-param-doc
