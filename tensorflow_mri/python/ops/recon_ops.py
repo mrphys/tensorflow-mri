@@ -33,6 +33,7 @@ from tensorflow_mri.python.ops import optimizer_ops
 from tensorflow_mri.python.ops import signal_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
+from tensorflow_mri.python.util import deprecation
 from tensorflow_mri.python.util import linalg_imaging
 
 
@@ -907,11 +908,15 @@ def _flatten_last_dimensions(x):
 
 
 @api_util.export("recon.pf")
+@deprecation.deprecated_args(
+    deprecation.REMOVAL_DATE['0.19.0'],
+    'Use argument `preserve_phase` instead.',
+    ('return_complex', None))
 def reconstruct_pf(kspace,
                    factors,
-                   return_complex=False,
+                   return_complex=None,
+                   preserve_phase=None,
                    return_kspace=False,
-                   preserve_phase=False,
                    method='zerofill',
                    **kwargs):
   """Reconstructs an MR image using partial Fourier methods.
@@ -932,10 +937,9 @@ def reconstruct_pf(kspace,
     return_kspace: A `boolean`. If `True`, returns the filled *k*-space instead
       of the reconstructed images. This is always complex-valued.
     preserve_phase: A `boolean`. If `True`, keeps the phase information in the
-      reconstructed images. Although it is not possible to reconstruct from
+      reconstructed images. Although it is not possible to reconstruct
       high-frequency phase details from an incomplete k-space, a low resolution
-      phase map can still be recovered. If `True`, the output is complex-valued
-      regardless of the value of `return_complex`.
+      phase map can still be recovered.
     method: A `string`. The partial Fourier reconstruction algorithm. Must be
       one of `"zerofill"`, `"homodyne"` (homodyne detection method) or `"pocs"`
       (projection onto convex sets method).
@@ -944,7 +948,7 @@ def reconstruct_pf(kspace,
 
   Returns:
     A `Tensor` with shape `[..., *S]` where `S = K / factors`. Has type
-    `kspace.dtype` if either `return_complex` or `return_kspace` is `True`, and
+    `kspace.dtype` if either `preserve_phase` or `return_kspace` is `True`, and
     type `kspace.dtype.real_dtype` otherwise.
 
   Notes:
@@ -982,26 +986,29 @@ def reconstruct_pf(kspace,
     f"`factors` must be greater than or equal to 0.5, but got: {factors}"))
   tf.debugging.assert_less_equal(factors, 1.0, message=(
     f"`factors` must be less than or equal to 1.0, but got: {factors}"))
+  preserve_phase = deprecation.deprecated_argument_lookup(
+      'preserve_phase', preserve_phase, 'return_complex', return_complex)
+  if preserve_phase is None:
+    preserve_phase = False
 
   func = {'zerofill': _pf_zerofill,
           'homodyne': _pf_homodyne,
           'pocs': _pf_pocs}
 
   return func[method](kspace, factors,
-                      return_complex=return_complex,
-                      return_kspace=return_kspace,
                       preserve_phase=preserve_phase,
+                      return_kspace=return_kspace,
                       **kwargs)
 
 
 def _pf_zerofill(kspace, factors,
-                 return_complex=False,
-                 return_kspace=False,
-                 preserve_phase=False):
+                 preserve_phase=False,
+                 return_kspace=False):
   """Partial Fourier reconstruction using zero-filling.
 
   For the parameters, see `reconstruct_pf`.
   """
+  dtype = kspace.dtype
   rank = tf.size(factors)
   _, (_, _, right_dims) = _compute_dimensions(
       tf.shape(kspace), factors)
@@ -1010,27 +1017,25 @@ def _pf_zerofill(kspace, factors,
   paddings = tf.stack([tf.zeros_like(right_dims), right_dims], axis=-1)
   full_kspace = tf.pad(kspace, paddings)  # pylint: disable=no-value-for-parameter
 
-  if return_kspace:
-    # If `return_kspace` is `True`, just return the zero-filled k-space.
-    return full_kspace
-
-  # Otherwise, reconstruct the image and take its magnitude.
+  # Reconstruct the image and take its magnitude.
   image = _ifftn(full_kspace, rank)
   image = tf.math.abs(image)
 
+  # If `preserve_phase` is `True`, estimate phase and put it back in image.
   if preserve_phase:
-    # If `preserve_phase` is `True`, estimate phase and put it back in image.
-    phase_modulator = _estimate_phase_modulator_v2(kspace, factors)
-    image = tf.cast(image, kspace.dtype) * phase_modulator
+    phase_modulator = _estimate_phase_modulator(kspace, factors)
+    image = tf.cast(image, dtype) * phase_modulator
+
+  if return_kspace:
+    return _fftn(tf.cast(image, dtype), rank)
 
   return image
 
 
 def _pf_homodyne(kspace,
                  factors,
-                 return_complex=False,
-                 return_kspace=False,
                  preserve_phase=False,
+                 return_kspace=False,
                  weighting_fn='ramp'):
   """Partial Fourier reconstruction using homodyne detection.
 
@@ -1039,10 +1044,14 @@ def _pf_homodyne(kspace,
   # Data type of this operation.
   input_shape = tf.shape(kspace)
   dtype = kspace.dtype
+  rank = tf.size(factors)
+
+  output_shape, (left_dims, centre_dims, right_dims) = _compute_dimensions(
+      tf.shape(kspace), factors)
 
   # Create zero-filled k-space.
-  full_kspace = _pf_zerofill(kspace, factors, return_kspace=True)
-  full_shape = tf.shape(full_kspace)
+  paddings = tf.stack([tf.zeros_like(right_dims), right_dims], axis=-1)
+  full_kspace = tf.pad(kspace, paddings)
 
   # Compute weighting function. Weighting function is:
   # - 2.0 for the asymmetric part of the measured k-space.
@@ -1051,66 +1060,54 @@ def _pf_homodyne(kspace,
   weights = tf.constant(1.0, dtype=kspace.dtype)
   for index in range(factors.shape[0]):
     axis = -(index + 1)
-    dim_full = full_shape[axis]
-    dim_input = input_shape[axis]
-    dim_right = dim_full - dim_input
-    if dim_right == 0:
-      weights_1d = tf.ones([dim_full], dtype=dtype)
-    else:
-      # dim_left is equal to dim_right if full shape is odd, otherwise it is
-      # equal to dim_right + 1.
-      dim_left = dim_right + tf.math.mod(full_shape[axis] + 1, 2)
-      dim_centre = full_shape[axis] - dim_left - dim_right
 
-      # Weighting for symmetric part of k-space.
-      if weighting_fn == 'step':
-        weights_centre = tf.ones([dim_centre], dtype=dtype)
-      elif weighting_fn == 'ramp':
-        if factors[-index-1] == 1.0:
-          weights_centre = tf.ones([dim_centre], dtype=dtype)
-        else:
-          weights_centre = tf.cast(
-              tf.linspace(2.0, 0.0, dim_centre + 2)[1:-1], dtype)
+    # Weighting for symmetric part of k-space.
+    if weighting_fn == 'step':
+      weights_centre = tf.ones([centre_dims[axis]], dtype=dtype)
+    elif weighting_fn == 'ramp':
+      if factors[-index-1] == 1.0:
+        weights_centre = tf.ones([centre_dims[axis]], dtype=dtype)
       else:
-        raise ValueError(f"Unknown `weighting_fn`: {weighting_fn}")
-      # Weighting for asymmetric part of k-space.
-      weights_left = 2.0 * tf.ones([dim_left], dtype=dtype)
-      weights_right = tf.zeros([dim_right], dtype=dtype)
-      # Combine weights.
-      weights_1d = tf.concat([weights_left, weights_centre, weights_right], 0)
-
+        weights_centre = tf.cast(
+            tf.linspace(2.0, 0.0, centre_dims[axis] + 2)[1:-1], dtype)
+    else:
+      raise ValueError(f"Unknown `weighting_fn`: {weighting_fn}")
+    # Weighting for asymmetric part of k-space.
+    weights_left = 2.0 * tf.ones([left_dims[axis]], dtype=dtype)
+    weights_left = tf.cond(tf.math.greater(left_dims[axis], right_dims[axis]),
+                           lambda: tf.concat([[1], weights_left[1:]], 0),
+                           lambda: weights_left)
+    weights_right = tf.zeros([right_dims[axis]], dtype=dtype)
+    # Combine weights.
+    weights_1d = tf.concat([weights_left, weights_centre, weights_right], 0)
     weights *= tf.reshape(weights_1d, [-1] + [1] * index)
-    print("weights", weights)
 
   # Phase correction. Estimate a phase modulator from low resolution image using
   # symmetric part of k-space.
-  phase_modulator = _estimate_phase_modulator(full_kspace, factors)
-  print("phase_modulator", phase_modulator)
+  phase_modulator = _estimate_phase_modulator(kspace, factors)
 
   # Compute image with following steps.
   # 1. Apply weighting function.
   # 2. Convert to image domain.
   # 3. Apply phase correction.
+  # 4. Keep real part.
   full_kspace *= weights
   image = _ifftn(full_kspace, tf.size(factors))
   image *= tf.math.conj(phase_modulator)
+  image = _real_non_negative(image)
 
   if preserve_phase:
-    image = tf.cast(tf.math.abs(image), dtype) * phase_modulator
-    if return_kspace:
-      return _fftn(image, tf.size(factors))
-    return image
+    image = tf.cast(image, dtype) * phase_modulator
 
   if return_kspace:
-    return _fftn(image, tf.size(factors))
-  if return_complex:
-    return image
-  return _real_non_negative(image)
+    return _fftn(tf.cast(image, dtype), rank)
+
+  return image
 
 
 def _pf_pocs(kspace,
              factors,
-             return_complex=False,
+             preserve_phase=False,
              return_kspace=False,
              max_iter=10,
              tol=1e-5):
@@ -1203,13 +1200,15 @@ def _compute_dimensions(input_shape, factors):
   output_shape = tf.cast(tf.cast(input_shape, tf.float32) / factors + 0.5,
                          tf.int32)
   right_dims = output_shape - input_shape
-  left_dims = right_dims + tf.math.mod(output_shape + 1, 2)
+  left_dims = tf.where(tf.math.equal(right_dims, 0),
+                       0,
+                       right_dims + tf.math.mod(output_shape + 1, 2))
   centre_dims = output_shape - (left_dims + right_dims)
 
   return output_shape, (left_dims, centre_dims, right_dims)
 
 
-def _estimate_phase_modulator_v2(kspace, factors):  # pylint: disable=missing-param-doc
+def _estimate_phase_modulator(kspace, factors):  # pylint: disable=missing-param-doc
   """Estimate a phase modulator from central region of k-space."""
   _, (left_dims, centre_dims, right_dims) = _compute_dimensions(
       tf.shape(kspace), factors)
@@ -1225,25 +1224,6 @@ def _estimate_phase_modulator_v2(kspace, factors):  # pylint: disable=missing-pa
   phase_modulator = tf.math.exp(tf.dtypes.complex(
       tf.constant(0.0, dtype=lowres_image.dtype.real_dtype),
       tf.math.angle(lowres_image)))
-  return phase_modulator
-
-
-def _estimate_phase_modulator(full_kspace, factors): # pylint: disable=missing-param-doc
-  """Estimate a phase modulator from central region of k-space."""
-  # print("in _estimate_phase_modulator")
-  shape_sym = _scale_shape(tf.shape(full_kspace), 2.0 * (factors - 0.5))
-  paddings = tf.expand_dims((tf.shape(full_kspace) - shape_sym) // 2, -1)
-  paddings = tf.tile(paddings, [1, 2])
-  print("shape_sym", shape_sym)
-  print("paddings", paddings)
-  symmetric_mask = tf.pad(tf.ones(shape_sym, dtype=full_kspace.dtype), paddings) # pylint: disable=no-value-for-parameter
-  symmetric_kspace = full_kspace * symmetric_mask
-  print("symmetric_kspace", symmetric_kspace)
-  ref_image = _ifftn(symmetric_kspace, tf.size(factors))
-  print("ref_image", ref_image)
-  phase_modulator = tf.math.exp(tf.dtypes.complex(
-      tf.constant(0.0, dtype=ref_image.dtype.real_dtype),
-      tf.math.angle(ref_image)))
   return phase_modulator
 
 

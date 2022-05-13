@@ -15,6 +15,7 @@
 """Tests for module `recon_ops`."""
 
 from absl.testing import parameterized
+import numpy as np
 import tensorflow as tf
 import tensorflow_nufft as tfft
 
@@ -486,50 +487,194 @@ class ReconstructPartialKSpaceTest(test_util.TestCase):
     cls.data = io_util.read_hdf5('tests/data/recon_ops_data.h5')
     cls.data.update(io_util.read_hdf5('tests/data/recon_ops_data_2.h5'))
 
-  @parameterized.product(method=['zerofill', 'homodyne', 'pocs'],
-                         return_complex=[True, False],
-                         return_kspace=[True, False])
-  def test_pf(self, method, return_complex, return_kspace): # pylint:disable=missing-param-doc
-    """Test PF reconstruction."""
-    data = io_util.read_hdf5('tests/data/brain_2d_multicoil_kspace.h5')
-    full_kspace = data['kspace']
-    full_kspace = tf.transpose(full_kspace, [2, 0, 1]) # [coils, x, y]
+  # @parameterized.product(method=['zerofill', 'homodyne', 'pocs'],
+  #                        return_complex=[True, False],
+  #                        return_kspace=[True, False])
+  # def test_pf(self, method, return_complex, return_kspace): # pylint:disable=missing-param-doc
+  #   """Test PF reconstruction."""
+  #   data = io_util.read_hdf5('tests/data/brain_2d_multicoil_kspace.h5')
+  #   full_kspace = data['kspace']
+  #   full_kspace = tf.transpose(full_kspace, [2, 0, 1]) # [coils, x, y]
 
-    # PF subsampling with PF factor = 9/16.
-    factors = [1.0, 9 / 16]
-    kspace = full_kspace[:, :, :(192 * 9 // 16)]
+  #   # PF subsampling with PF factor = 9/16.
+  #   factors = [1.0, 9 / 16]
+  #   kspace = full_kspace[:, :, :(192 * 9 // 16)]
 
-    result = recon_ops.reconstruct_pf(kspace,
-                                                  factors,
-                                                  return_complex=return_complex,
-                                                  return_kspace=return_kspace,
-                                                  method=method)
+  #   result = recon_ops.reconstruct_pf(kspace,
+  #                                                 factors,
+  #                                                 return_complex=return_complex,
+  #                                                 return_kspace=return_kspace,
+  #                                                 method=method)
 
-    ref = self.data['pf/' + method + '/result']
+  #   ref = self.data['pf/' + method + '/result']
 
-    if return_kspace:
-      ref = fft_ops.fftn(ref, axes=[-2, -1], shift=True)
-    elif not return_complex:
-      if method == 'zerofill':
-        ref = tf.math.abs(ref)
-      else:
-        ref = tf.math.maximum(0.0, tf.math.real(ref))
-    self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
-
+  #   if return_kspace:
+  #     ref = fft_ops.fftn(ref, axes=[-2, -1], shift=True)
+  #   elif not return_complex:
+  #     if method == 'zerofill':
+  #       ref = tf.math.abs(ref)
+  #     else:
+  #       ref = tf.math.maximum(0.0, tf.math.real(ref))
+  #   self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
   def test_pf_zerofill(self):
-    """Test PF reconstruction with zero-filling."""
+    kspace = tf.constant([[1, 1, 1, 1]] * 6, tf.complex64)
+    factors = [0.75, 1.0]
+    result = recon_ops.reconstruct_pf(kspace, factors, method='zerofill')
+    expected = [[0.        , 0.        , 0.        , 0.        ],
+                [0.        , 0.        , 0.09567086, 0.        ],
+                [0.        , 0.        , 0.17677669, 0.        ],
+                [0.        , 0.        , 0.23096989, 0.        ],
+                [0.        , 0.        , 0.75      , 0.        ],
+                [0.        , 0.        , 0.23096989, 0.        ],
+                [0.        , 0.        , 0.17677669, 0.        ],
+                [0.        , 0.        , 0.09567086, 0.        ]]
+    self.assertAllClose(expected, result)
+
+  def test_pf_zerofill_return_kspace(self):
     kspace = tf.constant([[1, 1, 1, 1]] * 6, tf.complex64)
     factors = [0.75, 1.0]
     result = recon_ops.reconstruct_pf(kspace, factors, method='zerofill',
                                       return_kspace=True)
-    print(result)
+    expected = [[0.4502719 +0.0000000e+00j, 0.4502719 +0.0000000e+00j,
+                 0.4502719 +0.0000000e+00j, 0.4502719 +0.0000000e+00j],
+                [0.5586583 +1.2828956e-09j, 0.5586583 +1.2828956e-09j,
+                 0.5586583 +1.2828956e-09j, 0.5586583 +1.2828956e-09j],
+                [0.39644662+0.0000000e+00j, 0.39644662+0.0000000e+00j,
+                 0.39644662+0.0000000e+00j, 0.39644662+0.0000000e+00j],
+                [0.9413417 +1.2828956e-09j, 0.9413417 +1.2828956e-09j,
+                 0.9413417 +1.2828956e-09j, 0.9413417 +1.2828956e-09j],
+                [1.756835  +0.0000000e+00j, 1.756835  +0.0000000e+00j,
+                 1.756835  +0.0000000e+00j, 1.756835  +0.0000000e+00j],
+                [0.9413417 -1.2828956e-09j, 0.9413417 -1.2828956e-09j,
+                 0.9413417 -1.2828956e-09j, 0.9413417 -1.2828956e-09j],
+                [0.39644662+0.0000000e+00j, 0.39644662+0.0000000e+00j,
+                 0.39644662+0.0000000e+00j, 0.39644662+0.0000000e+00j],
+                [0.5586583 -1.2828956e-09j, 0.5586583 -1.2828956e-09j,
+                 0.5586583 -1.2828956e-09j, 0.5586583 -1.2828956e-09j]]
+    self.assertAllClose(expected, result)
 
-  def test_pf_homodyne_weighting(self):
-    """Test PF reconstruction with homodyne weighting."""
+  def test_pf_zerofill_with_phase(self):
+    kspace = tf.dtypes.complex(
+        tf.constant([[1, 1, 1, 1]] * 6, tf.float32),
+        tf.constant([[1, 1, 1, 1]] * 6, tf.float32))
+    factors = [0.75, 1.0]
+    result = recon_ops.reconstruct_pf(kspace, factors, method='zerofill')
+    expected = [[0.        , 0.        , 0.        , 0.        ],
+                [0.        , 0.        , 0.13529903, 0.        ],
+                [0.        , 0.        , 0.25      , 0.        ],
+                [0.        , 0.        , 0.32664075, 0.        ],
+                [0.        , 0.        , 1.0606601 , 0.        ],
+                [0.        , 0.        , 0.32664075, 0.        ],
+                [0.        , 0.        , 0.25      , 0.        ],
+                [0.        , 0.        , 0.13529903, 0.        ]]
+    self.assertAllClose(expected, result)
+
+  def test_pf_zerofill_preserve_phase(self):
+    kspace = tf.dtypes.complex(
+        tf.constant([[1, 1, 1, 1]] * 6, tf.float32),
+        tf.constant([[1, 1, 1, 1]] * 6, tf.float32))
+    factors = [0.75, 1.0]
+    result = recon_ops.reconstruct_pf(kspace, factors, method='zerofill',
+                                      preserve_phase=True)
+    expected = [[ 0.        +0.j        ,  0.        -0.j        ,
+                  0.        -0.j        ,  0.        -0.j        ],
+                [ 0.        +0.j        ,  0.        -0.j        ,
+                 -0.09567086-0.09567086j,  0.        -0.j        ],
+                [ 0.        -0.j        ,  0.        +0.j        ,
+                  0.17677669+0.1767767j ,  0.        +0.j        ],
+                [ 0.        -0.j        ,  0.        +0.j        ,
+                  0.23096989+0.2309699j ,  0.        +0.j        ],
+                [ 0.        -0.j        ,  0.        +0.j        ,
+                  0.74999994+0.75j      ,  0.        +0.j        ],
+                [ 0.        -0.j        ,  0.        +0.j        ,
+                  0.23096989+0.2309699j ,  0.        +0.j        ],
+                [ 0.        -0.j        ,  0.        +0.j        ,
+                  0.17677669+0.1767767j ,  0.        +0.j        ],
+                [ 0.        +0.j        ,  0.        -0.j        ,
+                 -0.09567086-0.09567086j,  0.        -0.j        ]]
+    self.assertAllClose(expected, result)
+
+  def test_pf_zerofill_preserve_phase_return_kspace(self):
+    kspace = tf.dtypes.complex(
+        tf.constant([[1, 1, 1, 1]] * 6, tf.float32),
+        tf.constant([[1, 1, 1, 1]] * 6, tf.float32))
+    factors = [0.75, 1.0]
+    result = recon_ops.reconstruct_pf(kspace, factors, method='zerofill',
+                                      preserve_phase=True, return_kspace=True)
+    expected = [[0.83295524+0.83295536j, 0.83295524+0.83295536j,
+                 0.83295524+0.83295536j, 0.83295524+0.83295536j],
+                [0.28806016+0.28806016j, 0.28806016+0.28806016j,
+                 0.28806016+0.28806016j, 0.28806016+0.28806016j],
+                [0.39644656+0.3964466j , 0.39644656+0.3964466j ,
+                 0.39644656+0.3964466j , 0.39644656+0.3964466j ],
+                [1.2119398 +1.2119398j , 1.2119398 +1.2119398j ,
+                 1.2119398 +1.2119398j , 1.2119398 +1.2119398j ],
+                [1.3741513 +1.3741515j , 1.3741513 +1.3741515j ,
+                 1.3741513 +1.3741515j , 1.3741513 +1.3741515j ],
+                [1.2119397 +1.2119398j , 1.2119397 +1.2119398j ,
+                 1.2119397 +1.2119398j , 1.2119397 +1.2119398j ],
+                [0.39644656+0.3964466j , 0.39644656+0.3964466j ,
+                 0.39644656+0.3964466j , 0.39644656+0.3964466j ],
+                [0.28806013+0.28806016j, 0.28806013+0.28806016j,
+                 0.28806013+0.28806016j, 0.28806013+0.28806016j]]
+    self.assertAllClose(expected, result)
+
+  def test_pf_homodyne(self):
     kspace = tf.constant([[1, 1, 1, 1]] * 6, tf.complex64)
     factors = [0.75, 1.0]
-    result = recon_ops.reconstruct_pf(kspace, factors, method='homodyne', return_kspace=True)
-    print(result)
+    result = recon_ops.reconstruct_pf(kspace, factors, method='homodyne')
+    expected = np.zeros((8, 4), dtype=np.float32)
+    expected[4, 2] = 1.0
+    self.assertAllClose(expected, result)
+
+  def test_pf_homodyne_step_weighting(self):
+    kspace = tf.constant([[1, 1, 1, 1]] * 6, tf.complex64)
+    factors = [0.75, 1.0]
+    result = recon_ops.reconstruct_pf(kspace, factors, method='homodyne',
+                                      weighting_fn='step')
+    expected = np.zeros((8, 4), dtype=np.float32)
+    expected[4, 2] = 1.0
+    self.assertAllClose(expected, result)
+
+  def test_pf_homodyne_return_kspace(self):
+    kspace = tf.constant([[1, 1, 1, 1]] * 6, tf.complex64)
+    factors = [0.75, 1.0]
+    result = recon_ops.reconstruct_pf(kspace, factors, method='homodyne',
+                                      return_kspace=True)
+    expected = np.ones((8, 4), dtype=np.complex64)
+    self.assertAllClose(expected, result)
+
+  def test_pf_homodyne_with_phase(self):
+    kspace = tf.dtypes.complex(
+        tf.constant([[1, 1, 1, 1]] * 6, tf.float32),
+        tf.constant([[1, 1, 1, 1]] * 6, tf.float32))
+    factors = [0.75, 1.0]
+    result = recon_ops.reconstruct_pf(kspace, factors, method='homodyne')
+    expected = np.zeros((8, 4), dtype=np.float32)
+    expected[4, 2] = np.sqrt(2)
+    self.assertAllClose(expected, result)
+
+  def test_pf_homodyne_preserve_phase(self):
+    kspace = tf.dtypes.complex(
+        tf.constant([[1, 1, 1, 1]] * 6, tf.float32),
+        tf.constant([[1, 1, 1, 1]] * 6, tf.float32))
+    factors = [0.75, 1.0]
+    result = recon_ops.reconstruct_pf(kspace, factors, method='homodyne',
+                                      preserve_phase=True)
+    expected = np.zeros((8, 4), dtype=np.complex64)
+    expected[4, 2] = 1.0 + 1.0j
+    self.assertAllClose(expected, result)
+
+  def test_pf_homodyne_preserve_phase_return_kspace(self):
+    kspace = tf.dtypes.complex(
+        tf.constant([[1, 1, 1, 1]] * 6, tf.float32),
+        tf.constant([[1, 1, 1, 1]] * 6, tf.float32))
+    factors = [0.75, 1.0]
+    result = recon_ops.reconstruct_pf(kspace, factors, method='homodyne',
+                                      preserve_phase=True, return_kspace=True)
+    expected = np.ones((8, 4)) + 1j * np.ones((8, 4))
+    self.assertAllClose(expected, result)
+
 
 if __name__ == '__main__':
   tf.test.main()
