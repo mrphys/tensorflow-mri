@@ -10,6 +10,9 @@ Major Features and Improvements
     the user to recover the phase as well as the magnitude during partial
     Fourier reconstruction. Argument ``return_complex`` has the same behaviour
     and is now deprecated.
+  * Added new aliases ``adjoint`` (for ``adj``), ``least_squares``
+    (for ``lstsq``) and ``partial_fourier`` (for ``pf``). These are now the
+    canonical aliases, but the old ones will still be supported.
 
 
 Bug Fixes and Other Changes

@@ -37,7 +37,7 @@ from tensorflow_mri.python.util import deprecation
 from tensorflow_mri.python.util import linalg_imaging
 
 
-@api_util.export("recon.adj")
+@api_util.export("recon.adjoint", "recon.adj")
 def reconstruct_adj(kspace,
                     image_shape,
                     mask=None,
@@ -140,7 +140,7 @@ def reconstruct_adj(kspace,
   return image
 
 
-@api_util.export("recon.lstsq")
+@api_util.export("recon.least_squares", "recon.lstsq")
 def reconstruct_lstsq(kspace,
                       image_shape,
                       extra_shape=None,
@@ -907,7 +907,7 @@ def _flatten_last_dimensions(x):
   return tf.reshape(x, tf.concat([tf.shape(x)[:-2], [-1]], 0))
 
 
-@api_util.export("recon.pf")
+@api_util.export("recon.partial_fourier", "recon.pf")
 @deprecation.deprecated_args(
     deprecation.REMOVAL_DATE['0.19.0'],
     'Use argument `preserve_phase` instead.',
