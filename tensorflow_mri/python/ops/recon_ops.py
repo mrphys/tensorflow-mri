@@ -914,9 +914,9 @@ def _flatten_last_dimensions(x):
     ('return_complex', None))
 def reconstruct_pf(kspace,
                    factors,
-                   return_complex=None,
                    preserve_phase=None,
                    return_kspace=False,
+                   return_complex=None,
                    method='zerofill',
                    **kwargs):
   """Reconstructs an MR image using partial Fourier methods.
@@ -930,16 +930,15 @@ def reconstruct_pf(kspace,
       factor for each spatial frequency dimension. Each factor must be between
       0.5 and 1.0 and indicates the proportion of observed *k*-space values
       along the specified dimensions.
-    return_complex: A `boolean`. If `True`, returns complex instead of
-      real-valued images. Note that partial Fourier reconstruction assumes that
-      images are real, and the returned complex values may not be valid in all
-      contexts.
-    return_kspace: A `boolean`. If `True`, returns the filled *k*-space instead
-      of the reconstructed images. This is always complex-valued.
     preserve_phase: A `boolean`. If `True`, keeps the phase information in the
       reconstructed images. Although it is not possible to reconstruct
       high-frequency phase details from an incomplete k-space, a low resolution
-      phase map can still be recovered.
+      phase map can still be recovered. If `True`, the output images will
+      be complex-valued.
+    return_kspace: A `boolean`. If `True`, returns the filled *k*-space instead
+      of the reconstructed images. This is always complex-valued.
+    return_complex: A `boolean`. If `True`, returns complex instead of
+      real-valued images.
     method: A `string`. The partial Fourier reconstruction algorithm. Must be
       one of `"zerofill"`, `"homodyne"` (homodyne detection method) or `"pocs"`
       (projection onto convex sets method).
@@ -1046,12 +1045,12 @@ def _pf_homodyne(kspace,
   dtype = kspace.dtype
   rank = tf.size(factors)
 
-  output_shape, (left_dims, centre_dims, right_dims) = _compute_dimensions(
-      tf.shape(kspace), factors)
+  _, (left_dims, centre_dims, right_dims) = _compute_dimensions(
+      input_shape, factors)
 
   # Create zero-filled k-space.
   paddings = tf.stack([tf.zeros_like(right_dims), right_dims], axis=-1)
-  full_kspace = tf.pad(kspace, paddings)
+  full_kspace = tf.pad(kspace, paddings)  # pylint: disable=no-value-for-parameter
 
   # Compute weighting function. Weighting function is:
   # - 2.0 for the asymmetric part of the measured k-space.
@@ -1075,8 +1074,8 @@ def _pf_homodyne(kspace,
     # Weighting for asymmetric part of k-space.
     weights_left = 2.0 * tf.ones([left_dims[axis]], dtype=dtype)
     weights_left = tf.cond(tf.math.greater(left_dims[axis], right_dims[axis]),
-                           lambda: tf.concat([[1], weights_left[1:]], 0),
-                           lambda: weights_left)
+                           lambda: tf.concat([[1], weights_left[1:]], 0),  # pylint: disable=cell-var-from-loop
+                           lambda: weights_left)  # pylint: disable=cell-var-from-loop
     weights_right = tf.zeros([right_dims[axis]], dtype=dtype)
     # Combine weights.
     weights_1d = tf.concat([weights_left, weights_centre, weights_right], 0)
@@ -1115,8 +1114,17 @@ def _pf_pocs(kspace,
 
   For the parameters, see `reconstruct_pf`.
   """
-  # Zero-filled k-space.
-  full_kspace = _pf_zerofill(kspace, factors, return_kspace=True)
+  # Data type of this operation.
+  input_shape = tf.shape(kspace)
+  dtype = kspace.dtype
+  rank = tf.size(factors)
+
+  _, (_, _, right_dims) = _compute_dimensions(
+      input_shape, factors)
+
+  # Create zero-filled k-space.
+  paddings = tf.stack([tf.zeros_like(right_dims), right_dims], axis=-1)
+  full_kspace = tf.pad(kspace, paddings)  # pylint: disable=no-value-for-parameter
 
   # Generate a k-space mask which is True for measured samples, False otherwise.
   kspace_mask = tf.constant(True)
@@ -1130,7 +1138,7 @@ def _pf_pocs(kspace,
             tf.concat([[-1], tf.repeat([1], [i])], 0)))
 
   # Estimate the phase modulator from central symmetric region of k-space.
-  phase_modulator = _estimate_phase_modulator(full_kspace, factors)
+  phase_modulator = _estimate_phase_modulator(kspace, factors)
 
   # Initial estimate of the solution.
   image = tf.zeros_like(full_kspace)
@@ -1139,15 +1147,16 @@ def _pf_pocs(kspace,
   pocs_state = collections.namedtuple('pocs_state', ['i', 'x', 'r'])
 
   def stopping_criterion(i, state):
-    return tf.math.logical_and(i < max_iter,
-                               state.r > tol)
+    return tf.math.logical_and(i < max_iter, state.r > tol)
 
   def pocs_step(i, state):
     prev = state.x
+    # Project onto real non-negative set.
+    image = _real_non_negative(prev)
     # Set the estimated phase.
-    image = tf.cast(tf.math.abs(prev), prev.dtype) * phase_modulator
-    # Data consistency. Replace estimated k-space values by measured ones if
-    # available.
+    image = tf.cast(image, prev.dtype) * phase_modulator
+    # Project onto data consistency set by replacing estimated k-space values
+    # by measured ones.
     kspace = _fftn(image, tf.size(factors))
     kspace = tf.where(kspace_mask, full_kspace, kspace)
     image = _ifftn(kspace, tf.size(factors))
@@ -1161,12 +1170,18 @@ def _pf_pocs(kspace,
   state = pocs_state(i=0, x=image, r=1.0)
   _, state = tf.while_loop(stopping_criterion, pocs_step, [i, state])
 
-  image = state.x
+  # Get real part.
+  image = _real_non_negative(state.x)
+
+  # Add phase, if requested.
+  if preserve_phase:
+    image = tf.cast(image, dtype) * phase_modulator
+
+  # Convert to k-space, if requested.
   if return_kspace:
-    return _fftn(image, tf.size(factors))
-  if return_complex:
-    return image
-  return _real_non_negative(image)
+    return _fftn(tf.cast(image, dtype), rank)
+
+  return image
 
 
 def _compute_dimensions(input_shape, factors):

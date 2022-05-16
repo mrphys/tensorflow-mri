@@ -479,43 +479,7 @@ class ReconstructTest(test_util.TestCase):
 
 class ReconstructPartialKSpaceTest(test_util.TestCase):
   """Tests for `reconstruct_pf` operation."""
-
-  @classmethod
-  def setUpClass(cls):
-    """Prepare tests."""
-    super().setUpClass()
-    cls.data = io_util.read_hdf5('tests/data/recon_ops_data.h5')
-    cls.data.update(io_util.read_hdf5('tests/data/recon_ops_data_2.h5'))
-
-  # @parameterized.product(method=['zerofill', 'homodyne', 'pocs'],
-  #                        return_complex=[True, False],
-  #                        return_kspace=[True, False])
-  # def test_pf(self, method, return_complex, return_kspace): # pylint:disable=missing-param-doc
-  #   """Test PF reconstruction."""
-  #   data = io_util.read_hdf5('tests/data/brain_2d_multicoil_kspace.h5')
-  #   full_kspace = data['kspace']
-  #   full_kspace = tf.transpose(full_kspace, [2, 0, 1]) # [coils, x, y]
-
-  #   # PF subsampling with PF factor = 9/16.
-  #   factors = [1.0, 9 / 16]
-  #   kspace = full_kspace[:, :, :(192 * 9 // 16)]
-
-  #   result = recon_ops.reconstruct_pf(kspace,
-  #                                                 factors,
-  #                                                 return_complex=return_complex,
-  #                                                 return_kspace=return_kspace,
-  #                                                 method=method)
-
-  #   ref = self.data['pf/' + method + '/result']
-
-  #   if return_kspace:
-  #     ref = fft_ops.fftn(ref, axes=[-2, -1], shift=True)
-  #   elif not return_complex:
-  #     if method == 'zerofill':
-  #       ref = tf.math.abs(ref)
-  #     else:
-  #       ref = tf.math.maximum(0.0, tf.math.real(ref))
-  #   self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
+  # pylint: disable=missing-function-docstring
   def test_pf_zerofill(self):
     kspace = tf.constant([[1, 1, 1, 1]] * 6, tf.complex64)
     factors = [0.75, 1.0]
@@ -674,6 +638,53 @@ class ReconstructPartialKSpaceTest(test_util.TestCase):
                                       preserve_phase=True, return_kspace=True)
     expected = np.ones((8, 4)) + 1j * np.ones((8, 4))
     self.assertAllClose(expected, result)
+
+  def test_pf_pocs(self):
+    kspace = tf.constant([[1, 1, 1, 1]] * 6, tf.complex64)
+    factors = [0.75, 1.0]
+    result = recon_ops.reconstruct_pf(kspace, factors, method='pocs')
+    expected = np.zeros((8, 4), dtype=np.float32)
+    expected[4, 2] = 1.0
+    self.assertAllClose(expected, result, rtol=1e-3, atol=1e-3)
+
+  def test_pf_pocs_return_kspace(self):
+    kspace = tf.constant([[1, 1, 1, 1]] * 6, tf.complex64)
+    factors = [0.75, 1.0]
+    result = recon_ops.reconstruct_pf(kspace, factors, method='pocs',
+                                      return_kspace=True)
+    expected = np.ones((8, 4), dtype=np.complex64)
+    self.assertAllClose(expected, result, rtol=1e-3, atol=1e-3)
+
+  def test_pf_pocs_with_phase(self):
+    kspace = tf.dtypes.complex(
+        tf.constant([[1, 1, 1, 1]] * 6, tf.float32),
+        tf.constant([[1, 1, 1, 1]] * 6, tf.float32))
+    factors = [0.75, 1.0]
+    result = recon_ops.reconstruct_pf(kspace, factors, method='pocs')
+    expected = np.zeros((8, 4), dtype=np.float32)
+    expected[4, 2] = np.sqrt(2)
+    self.assertAllClose(expected, result, rtol=1e-3, atol=1e-3)
+
+  def test_pf_pocs_preserve_phase(self):
+    kspace = tf.dtypes.complex(
+        tf.constant([[1, 1, 1, 1]] * 6, tf.float32),
+        tf.constant([[1, 1, 1, 1]] * 6, tf.float32))
+    factors = [0.75, 1.0]
+    result = recon_ops.reconstruct_pf(kspace, factors, method='pocs',
+                                      preserve_phase=True)
+    expected = np.zeros((8, 4), dtype=np.complex64)
+    expected[4, 2] = 1.0 + 1.0j
+    self.assertAllClose(expected, result, rtol=1e-3, atol=1e-3)
+
+  def test_pf_pocs_preserve_phase_return_kspace(self):
+    kspace = tf.dtypes.complex(
+        tf.constant([[1, 1, 1, 1]] * 6, tf.float32),
+        tf.constant([[1, 1, 1, 1]] * 6, tf.float32))
+    factors = [0.75, 1.0]
+    result = recon_ops.reconstruct_pf(kspace, factors, method='pocs',
+                                      preserve_phase=True, return_kspace=True)
+    expected = np.ones((8, 4)) + 1j * np.ones((8, 4))
+    self.assertAllClose(expected, result, rtol=1e-3, atol=1e-3)
 
 
 if __name__ == '__main__':
