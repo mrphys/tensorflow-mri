@@ -14,9 +14,11 @@
 # ==============================================================================
 """I/O operations with TWIX RAID files (Siemens raw data)."""
 
+import copy
 import dataclasses
 import inspect
 import io
+import itertools
 import os
 import re
 import reprlib
@@ -389,6 +391,72 @@ class ScanData():
 
 
 @dataclasses.dataclass
+class ParamArray():
+  """A parameter holding an array value.
+
+  Attributes:
+    values: The array values.
+    properties: A dictionary of properties.
+  """
+  values: typing.Tuple[typing.Any]
+  properties: typing.Mapping[str, typing.Any]
+
+  @classmethod
+  def parse(cls, string):
+    """Parses an array parameter.
+
+    Args:
+      string: The `str` to parse.
+
+    Returns:
+      A `ParamArray` instance.
+
+    Raises:
+      ValueError: If the string is not a valid bool.
+    """
+    string = string.strip()
+    # Get properties.
+    string, properties = _get_properties(string)
+    # Get the raw array values.
+    values = _get_array_values(string) or []
+
+    def _set_values_in_default_map(values, default):
+      output = copy.deepcopy(default)
+      for k, t, v in zip(default.values.keys(),
+                         default.values.values(),
+                         values or itertools.repeat(None)):
+        if isinstance(t, ParamMap):
+          output[k] = _set_values_in_default_map(v, t)
+        elif isinstance(t, ParamBool):
+          output[k] = ParamBool.parse(v or '')
+        elif isinstance(t, ParamChoice):
+          output[k] = ParamChoice.parse(v or '')
+        elif isinstance(t, ParamDouble):
+          output[k] = ParamDouble.parse(v or '')
+        elif isinstance(t, ParamLong):
+          output[k] = ParamLong.parse(v or '')
+        elif isinstance(t, ParamString):
+          output[k] = ParamString.parse(v or '')
+        else:
+          output[k] = v
+      return output
+
+    # Set the values in the default map.
+    default = properties['Default']
+    if values and isinstance(default, ParamMap):
+      for index, value in enumerate(values):
+        values[index] = _set_values_in_default_map(value, default)
+
+    return cls(values=values, properties=properties)
+
+  def __getitem__(self, index):
+    return self.values[index]
+
+  def __setitem__(self, index, value):
+    self.values[index] = value
+
+
+@dataclasses.dataclass
 class ParamBool():
   """A parameter holding a boolean value.
 
@@ -572,15 +640,15 @@ class ParamString():
 class ParamMap():
   """A parameter map.
 
-  Entries in the `params` dictionary can be directly accessed via item
+  Entries in the `values` dictionary can be directly accessed via item
   or attr getters, i.e., both `param_map['key']` and `param_map.key` are
-  supported and equivalent to `param_map.params['key']`.
+  supported and equivalent to `param_map.values['key']`.
 
   Attributes:
-    params: A `dict` of parameters.
+    values: A `dict` of parameters.
     properties: A `dict` of properties.
   """
-  params: typing.Mapping[str, typing.Any]
+  values: typing.Mapping[str, typing.Any]
   properties: typing.Mapping[str, typing.Any]
 
   @classmethod
@@ -596,7 +664,7 @@ class ParamMap():
     Raises:
       ValueError: If the string is invalid.
     """
-    params = {}
+    values = {}
     string, properties = _get_properties(string)
 
     while string.strip():
@@ -608,30 +676,37 @@ class ParamMap():
 
       type_, name, value = param
       if name is not None:
-        if type_ == 'ParamBool':
-          params[name] = ParamBool.parse(value)
+        if type_ == 'ParamArray':
+          values[name] = ParamArray.parse(value)
+        elif type_ == 'ParamBool':
+          values[name] = ParamBool.parse(value)
         elif type_ == 'ParamChoice':
-          params[name] = ParamChoice.parse(value)
+          values[name] = ParamChoice.parse(value)
         elif type_ == 'ParamDouble':
-          params[name] = ParamDouble.parse(value)
+          values[name] = ParamDouble.parse(value)
         elif type_ == 'ParamLong':
-          params[name] = ParamLong.parse(value)
+          values[name] = ParamLong.parse(value)
         elif type_ == 'ParamMap':
-          params[name] = ParamMap.parse(value)
+          values[name] = ParamMap.parse(value)
         elif type_ == 'ParamString':
-          params[name] = ParamString.parse(value)
+          values[name] = ParamString.parse(value)
         else:
           warnings.warn(f'Unknown param type {type_} will not be parsed.')
-          params[name] = value
-    return cls(params, properties)
+          values[name] = value
+    return cls(values, properties)
 
   def __getitem__(self, name):
-    return self.params[name]
+    return self.values[name]
+
+  def __setitem__(self, name, value):
+    self.values[name] = value
 
   def __getattr__(self, name):
-    if name not in self.params:
+    if name in ('values', 'properties'):
+      return super().__getattr__(name)
+    if name not in self.values:
       raise AttributeError(f'Parameter `{name}` does not exist.')
-    return self.params[name]
+    return self.values[name]
 
 
 class ProtocolBuffer(ParamMap):
@@ -663,7 +738,7 @@ class ProtocolBuffer(ParamMap):
       raise ValueError(f'Invalid ProtocolBuffer string: {original}')
     param_map = ParamMap.parse(value)
 
-    return cls(param_map.params, properties)
+    return cls(param_map.values, properties)
 
 
 @dataclasses.dataclass
@@ -856,7 +931,7 @@ def _parse_protocol_buffer(string):
   # ProtocolBuffer.
   string = string.strip()
   if not string:
-    return ProtocolBuffer(params={}, properties={})
+    return ProtocolBuffer(values={}, properties={})
 
   string, property_ = _get_next_property(string)
   if property_ is None:
@@ -951,7 +1026,6 @@ RE_NON_WHITESPACE = re.compile(r'\S')
 # Matches a newline.
 RE_NEWLINE = re.compile(r'\n')
 
-
 def _get_next_element(string, re_tag):
   """Returns the next element tagged with `re_tag`.
 
@@ -1014,6 +1088,12 @@ def _get_next_element(string, re_tag):
       if c == '"':
         break
     value = string[:end].strip()
+  elif c == '<' and name == 'Default':
+    # Special case for a ParamMap that defines a default value.
+    string, (param_type, _, value) = _get_next_param(string)
+    end = -1  # string has already been updated.
+    if param_type == 'ParamMap':
+      value = ParamMap.parse(value)
   else:
     # Continue until next whitespace or until the end of the string.
     m = RE_WHITESPACE.search(string)
@@ -1072,12 +1152,49 @@ def _get_properties(string):
     if property_ is None:
       break
     name, value = property_
-    if name == 'Precision':
+    if name in ('Precision', 'MinSize', 'MaxSize'):
       value = int(value.strip())
-    else:
+    elif isinstance(value, str):
       value = value.strip()
     properties[name] = value
   return string, properties
+
+
+def _get_array_values(string):
+  """Retrieves raw array values.
+
+  Args:
+    string: The string to parse.
+
+  Returns:
+    A (nested) list of values, or `None` if input string is empty.
+  """
+  values = []
+  while True:
+    string = string.strip()
+    if not string:
+      # Job is done if string is empty. Return the values, or None if no
+      # values were found.
+      return values or None
+    # Find the first opening brace.
+    start = string.find('{')
+    if start < 0:
+      # No braces found. Return value as is.
+      return string
+    # Find the corresponding closing brace.
+    level = 0
+    stop = None
+    for stop, c in enumerate(string):
+      if c == '{':
+        level += 1
+      elif c == '}':
+        level -= 1
+        if level == 0:
+          break
+    value = _get_array_values(string[(start + 1):stop])
+    values.append(value)
+    # Update string.
+    string = string[(stop + 1):]
 
 
 def _head_string(string, n=10):

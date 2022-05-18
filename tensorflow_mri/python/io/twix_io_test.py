@@ -82,6 +82,8 @@ class ParseTwixTest(test_util.TestCase):
     # Check protocol.
     meas_prot = twix.measurements[0].protocol['Meas']
     self.assertAllEqual(160, meas_prot.MEAS.sKSpace.lBaseResolution.value)
+    self.assertAllEqual(
+        200.0, meas_prot.MEAS.sSliceArray.asSlice[0].dReadoutFOV.value)
 
 
 if __name__ == '__main__':
