@@ -1242,13 +1242,6 @@ def _estimate_phase_modulator(kspace, factors):  # pylint: disable=missing-param
   return phase_modulator
 
 
-def _scale_shape(shape, factors):
-  """Scale the last dimensions of `shape` by `factors`."""
-  factors = tf.pad(factors, [[tf.size(shape) - tf.size(factors), 0]],
-                   constant_values=1.0)
-  return tf.cast(tf.cast(shape, tf.float32) * factors + 0.5, tf.int32)
-
-
 _real_non_negative = lambda x: tf.math.maximum(0.0, tf.math.real(x))
 
 

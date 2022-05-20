@@ -1,6 +1,8 @@
 Release 0.19.0
 ==============
 
+This release bumps the supported TensorFlow version to 2.9.
+
 Major Features and Improvements
 -------------------------------
 
