@@ -838,53 +838,78 @@ def _fspecial_gauss_3d(size, sigma): # pylint: disable=missing-param-doc
 
 
 @api_util.export("image.image_gradients")
-def image_gradients(image, method='sobel', norm=False, name=None):
+def image_gradients(image, method='sobel', norm=False,
+                    batch_dims=None, image_dims=None, name=None):
   """Computes image gradients.
 
   Supports 2D and 3D inputs.
 
   Args:
-    image: A `Tensor` of shape `[batch_size] + spatial_dims + [channels]`.
+    image: A `tf.Tensor` of shape `batch_shape + image_shape + [channels]`. The
+      number of dimensions in `batch_shape` and `image_shape` can be specified
+      using the arguments `batch_dims` and `image_dims` respectively. By
+      default, if neither `batch_dims` nor `image_dims` are specified, it is
+      assumed that there is one batch dimension, i.e. that `image` has shape
+      `[batch_size] + image_shape + [channels]`.
     method: A `str`. The operator to use for gradient computation. Must be one
       of `'prewitt'`, `'sobel'` or `'scharr'`. Defaults to `'sobel'`.
     norm: A `boolean`. If `True`, returns normalized gradients.
+    batch_dims: An `int`. The number of batch dimensions in `image`. If `None`,
+      it is inferred from `image` and `image_dims` as
+      `image.shape.rank - image_dims - 1`. If `image_dims` is also `None`,
+      then `batch_dims` defaults to 1.
+    image_dims: An `int`. The number of spatial dimensions in `image`. If
+      `None`, it is inferred from `image` and `batch_dims` as
+      `image.shape.rank - batch_dims - 1`. Defaults to `None`.
     name: A name for the operation (optional).
 
   Returns:
-    A `Tensor` of shape `image.shape + [len(spatial_dims)]` holding the image
+    A `tf.Tensor` of shape `image.shape + [len(spatial_dims)]` holding the image
     gradients along each spatial dimension.
-
-  Raises:
-    ValueError: If `image` has unknown static rank.
   """
   with tf.name_scope(name or 'image_gradients'):
-    if image.shape.rank is None:
-      raise ValueError('Rank of input image must be known statically.')
-    rank = image.shape.rank - 2
+    image = tf.convert_to_tensor(image)
+    batch_dims, image_dims = _resolve_batch_and_image_dims(
+        image, batch_dims, image_dims)
+
     kernels = _gradient_operators(
-        method, norm=norm, rank=rank, dtype=image.dtype)
+        method, norm=norm, rank=image_dims, dtype=image.dtype)
     return _filter_image(image, kernels)
 
 
 @api_util.export("image.gradient_magnitude")
-def gradient_magnitude(image, method='sobel', norm=False, name=None):
+def gradient_magnitude(image, method='sobel', norm=False,
+                       batch_dims=None, image_dims=None, name=None):
   """Computes the gradient magnitude (GM) of an image.
 
   Supports 2D and 3D inputs.
 
   Args:
-    image: A `Tensor` of shape `[batch_size] + spatial_dims + [channels]`.
+    image: A `tf.Tensor` of shape `batch_shape + image_shape + [channels]`. The
+      number of dimensions in `batch_shape` and `image_shape` can be specified
+      using the arguments `batch_dims` and `image_dims` respectively. By
+      default, if neither `batch_dims` nor `image_dims` are specified, it is
+      assumed that there is one batch dimension, i.e. that `image` has shape
+      `[batch_size] + image_shape + [channels]`.
     method: The gradient operator to use. Can be `'prewitt'`, `'sobel'` or
       `'scharr'`. Defaults to `'sobel'`.
     norm: A `boolean`. If `True`, returns the normalized gradient magnitude.
+    batch_dims: An `int`. The number of batch dimensions in `image`. If `None`,
+      it is inferred from `image` and `image_dims` as
+      `image.shape.rank - image_dims - 1`. If `image_dims` is also `None`,
+      then `batch_dims` defaults to 1.
+    image_dims: An `int`. The number of spatial dimensions in `image`. If
+      `None`, it is inferred from `image` and `batch_dims` as
+      `image.shape.rank - batch_dims - 1`. Defaults to `None`.
     name: A name for the operation (optional).
 
   Returns:
-    A `Tensor` of the same shape and type as `image` holding the gradient
+    A `tf.Tensor` of the same shape and type as `image` holding the gradient
     magnitude of the input image.
   """
   with tf.name_scope(name or 'gradient_magnitude'):
-    gradients = image_gradients(image, method=method, norm=norm)
+    gradients = image_gradients(image, method=method, norm=norm,
+                                batch_dims=batch_dims, image_dims=image_dims)
     return tf.norm(gradients, axis=-1)
 
 
@@ -938,7 +963,7 @@ def _filter_image(image, kernels):
   """Filters an image using the specified kernels.
 
   Arguments:
-    image: A `Tensor` with shape `[batch_size] + spatial_dims + [channels]`.
+    image: A `Tensor` of shape `batch_shape + image_shape + [channels]`.
     kernels: A `Tensor` of kernels with shape `[num_kernels] + kernel_shape`.
 
   Returns:
@@ -948,43 +973,64 @@ def _filter_image(image, kernels):
   Raises:
     ValueError: If `image` or `kernels` have invalid or incompatible ranks.
   """
-  if image.shape.rank not in (4, 5):
-    raise ValueError(
-        f"Expected `image` to have rank 4 or 5, got {image.shape.rank}")
-  rank = image.shape.rank - 2
+  image = tf.convert_to_tensor(image)
+  kernels = tf.convert_to_tensor(kernels, dtype=image.dtype)  # [num_kernels, 3, 3, [3,]]
 
-  if kernels.shape.rank - 1 != rank:
-    raise ValueError(
-        f"Expected rank {rank + 1} for kernels, got {kernels.shape.rank}")
+  image_dims = kernels.shape.rank - 1
+  batch_dims = image.shape.rank - image_dims - 1
 
-  if rank == 2:
+  if image_dims not in (2, 3):
+    raise ValueError(
+        f"Only 2D and 3D kernels are supported, but got kernel of shape "
+        f"{kernels.shape[1:]}.")
+
+  if batch_dims < 0:
+    raise ValueError(
+        f"Rank of input image must be at least {image_dims + 1} for a "
+        f"{image_dims}D kernel, but got shape {image.shape}.")
+
+  if image_dims == 2:
     depthwise_conv = tf.nn.depthwise_conv2d
-  elif rank == 3:
+  elif image_dims == 3:
     depthwise_conv = _depthwise_conv3d
 
-  # Define vertical and horizontal Sobel filters.
-  static_image_shape = image.shape
-  image_shape = tf.shape(image)
-  kernels = tf.convert_to_tensor(kernels, dtype=image.dtype)  # [num_kernels, 3, 3, [3,]]
-  kernels = tf.transpose(kernels, list(range(1, rank+1)) + [0])  # [3, 3, [3,] num_kernels]
+  # Get static and dynamic shapes.
+  batch_shape = tf.shape(image)[:batch_dims]
+  image_shape = tf.shape(image)[batch_dims:-1]
+  num_channels = tf.shape(image)[-1]
+  num_kernels = tf.shape(kernels)[0]
+
+  static_batch_shape = image.shape[:batch_dims]
+  static_image_shape = image.shape[batch_dims:-1]
+  static_num_channels = image.shape[-1]
+  static_num_kernels = kernels.shape[0]
+
+  # Flatten image batch shape into single batch dimension.
+  image = tf.reshape(image, tf.concat([[-1], image_shape, [num_channels]], 0))
+
+  # Define vertical and horizontal filters.
+  kernels = tf.transpose(kernels, list(range(1, image_dims + 1)) + [0])  # [3, 3, [3,] num_kernels]
   kernels = tf.expand_dims(kernels, -2)  # [3, 3, [3,] 1, num_kernels]
-  num_kernels = tf.shape(kernels)[-1]
-  static_num_kernels = kernels.shape[-1]
-  kernels = tf.tile(kernels, [1] * rank + [image_shape[-1], 1])  # [3, 3, [3,] channels, num_kernels]
+  kernels = tf.tile(kernels, [1] * image_dims + [num_channels, 1])  # [3, 3, [3,] num_channels, num_kernels]
 
   # Use depth-wise convolution to calculate edge maps per channel.
-  pad_sizes = [[0, 0]] + [[1, 1]] * rank + [[0, 0]]
+  pad_sizes = [[0, 0]] + [[1, 1]] * image_dims + [[0, 0]]
   padded = tf.pad(image, pad_sizes, mode='REFLECT')  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
 
   # Output tensor has shape
-  # [batch_size] + spatial_dims + [channels * num_kernels].
-  strides = [1] * (rank + 2)
+  # [batch_size] + image_shape + [num_channels * num_kernels].
+  strides = [1] * (image_dims + 2)
   output = depthwise_conv(padded, kernels, strides, 'VALID')
 
-  # Reshape to [batch_size] + spatial_dims + [channels, num_kernels].
-  output = tf.reshape(output, tf.concat([image_shape, [num_kernels]], 0))
-  output = tf.ensure_shape(
-      output, static_image_shape.concatenate([static_num_kernels]))
+  # Reshape to batch_shape + image_shape + [num_channels, num_kernels].
+  output = tf.reshape(output, tf.concat(
+      [batch_shape, image_shape, [num_channels], [num_kernels]], 0))
+
+  # Set static shape.
+  output = tf.ensure_shape(output, static_batch_shape.concatenate(
+      static_image_shape.concatenate(
+          [static_num_channels, static_num_kernels])))
+
   return output
 
 
@@ -1759,3 +1805,44 @@ def extract_and_scale_complex_part(value, part, max_val):
   else:
     raise ValueError('Invalid complex part: {}'.format(part))
   return value
+
+
+def _resolve_batch_and_image_dims(image, batch_dims, image_dims):
+  """Resolves `batch_dims` and `image_dims` for a given `image`.
+
+  Args:
+    image: A `Tensor` of shape `batch_shape + image_shape + [channels]`.
+    batch_dims: An `int`. The number of batch dimensions in `image`.
+    image_dims: An `int`. The number of spatial dimensions in `image`.
+
+  Returns:
+    Validated `batch_dims` and `image_dims`.
+
+  Raises:
+    ValueError: If `image` has unknown rank.
+    ValueError: If `batch_dims` or `image_dims` are inconsistent.
+  """
+  rank = image.shape.rank
+  if rank is None:
+    raise ValueError('Rank of input image must be known statically.')
+
+  if image_dims is None and batch_dims is None:
+    batch_dims = 1
+
+  if image_dims is None:
+    image_dims = rank - batch_dims - 1
+
+  if batch_dims is None:
+    batch_dims = rank - image_dims - 1
+
+  # This may happen if both `image_dims` and `batch_dims` were provided.
+  if rank != image_dims + batch_dims + 1:
+    raise ValueError(
+        f"Inconsistent arguments: rank of input image = {rank} must be equal "
+        f"to `batch_dims + image_dims + 1`, but got "
+        f"batch_dims = {batch_dims} and image_dims = {image_dims}. Note that "
+        f"providing both `batch_dims` and `image_dims` is unnecessary, you "
+        f"might you might want to try using `batch_dims=None` or "
+        f"`image_dims=None`.")
+
+  return batch_dims, image_dims

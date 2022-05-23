@@ -6,6 +6,11 @@ This release bumps the supported TensorFlow version to 2.9.
 Major Features and Improvements
 -------------------------------
 
+* ``tfmri.image``:
+
+  * Added new arguments ``batch_dims`` and ``image_dims`` to ``image_gradients``
+    and ``gradient_magnitude``.
+
 * ``tfmri.recon``:
 
   * Added new argument ``preserve_phase`` to ``tfmri.recon.pf``. This allows

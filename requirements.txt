@@ -3,6 +3,7 @@ ismrmrd
 matplotlib
 numpy
 plotly
+scipy
 tensorboard
 tensorflow>=2.8.0,<2.9.0
 tensorflow-graphics
