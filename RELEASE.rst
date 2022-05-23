@@ -27,4 +27,4 @@ Bug Fixes and Other Changes
 ---------------------------
 
 * Fixed a bug with *k*-space weighting in homodyne detection method of
-  ``tfmri.recon.pf``. 
+  ``tfmri.recon.partial_fourier``. 
