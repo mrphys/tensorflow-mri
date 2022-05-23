@@ -10,6 +10,7 @@ Major Features and Improvements
 
   * Added new arguments ``batch_dims`` and ``image_dims`` to ``image_gradients``
     and ``gradient_magnitude``.
+  * ``image_gradients`` and ``gradient_magnitude`` now support complex inputs.
 
 * ``tfmri.recon``:
 

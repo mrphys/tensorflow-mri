@@ -21,6 +21,7 @@ This module contains functions for N-dimensional image processing.
 # tensorflow/python/ops/image_ops_impl.py to support 2D and 3D processing.
 
 import collections
+import functools
 
 import numpy as np
 import tensorflow as tf
@@ -873,7 +874,7 @@ def image_gradients(image, method='sobel', norm=False,
         image, batch_dims, image_dims)
 
     kernels = _gradient_operators(
-        method, norm=norm, rank=image_dims, dtype=image.dtype)
+        method, norm=norm, rank=image_dims, dtype=image.dtype.real_dtype)
     return _filter_image(image, kernels)
 
 
@@ -974,7 +975,7 @@ def _filter_image(image, kernels):
     ValueError: If `image` or `kernels` have invalid or incompatible ranks.
   """
   image = tf.convert_to_tensor(image)
-  kernels = tf.convert_to_tensor(kernels, dtype=image.dtype)  # [num_kernels, 3, 3, [3,]]
+  kernels = tf.convert_to_tensor(kernels)  # [num_kernels, 3, 3, [3,]]
 
   image_dims = kernels.shape.rank - 1
   batch_dims = image.shape.rank - image_dims - 1
@@ -990,7 +991,7 @@ def _filter_image(image, kernels):
         f"{image_dims}D kernel, but got shape {image.shape}.")
 
   if image_dims == 2:
-    depthwise_conv = tf.nn.depthwise_conv2d
+    depthwise_conv = _depthwise_conv2d
   elif image_dims == 3:
     depthwise_conv = _depthwise_conv3d
 
@@ -1259,6 +1260,74 @@ def _validate_iqa_inputs(img1, img2, max_val, rank):
   return img1, img2, max_val, rank, image_axes, batch_shape, static_batch_shape
 
 
+def supports_complex_conv(func):
+  """Decorator to add complex support to a convolution function.
+
+  The input `func` must have the following signature:
+
+  ```
+  def conv(inputs, filters, *args, **kwargs)
+  ```
+
+  Args:
+    func: The function to decorate.
+
+  Returns:
+    A function with the same signature as `func` which can accept complex
+    inputs.
+  """
+  @functools.wraps(func)
+  def wrapper(inputs, filters, *args, **kwargs):
+    if inputs.dtype.is_complex and filters.dtype.is_complex:
+      # Both inputs and filters are complex.
+      outputs_real = (
+          func(tf.math.real(inputs), tf.math.real(filters), *args, **kwargs) - 
+          func(tf.math.imag(inputs), tf.math.imag(filters), *args, **kwargs))
+      outputs_imag = (
+          func(tf.math.real(inputs), tf.math.imag(filters), *args, **kwargs) +
+          func(tf.math.imag(inputs), tf.math.real(filters), *args, **kwargs))
+      return tf.dtypes.complex(outputs_real, outputs_imag)
+
+    if inputs.dtype.is_complex and not filters.dtype.is_complex:
+      # Inputs are complex, filters are real.
+      outputs_real = func(tf.math.real(inputs), filters, *args, **kwargs)
+      outputs_imag = func(tf.math.imag(inputs), filters, *args, **kwargs)
+      return tf.dtypes.complex(outputs_real, outputs_imag)
+
+    if not inputs.dtype.is_complex and filters.dtype.is_complex:
+      # Inputs are real, filters are complex.
+      outputs_real = func(inputs, tf.math.real(filters), *args, **kwargs)
+      outputs_imag = func(inputs, tf.math.imag(filters), *args, **kwargs)
+      return tf.dtypes.complex(outputs_real, outputs_imag)
+
+    # Both inputs and filters are real.
+    return func(inputs, filters, *args, **kwargs)
+
+  return wrapper
+
+
+@supports_complex_conv
+def _depthwise_conv2d(inputs, filters, strides, padding):
+  """Depthwise 2-D convolution.
+
+  Args:
+    inputs: 5D `Tensor` with shape `[batch, in_height, in_width, in_channels]`.
+    filters: 5D `Tensor` with shape `[filter_height, filter_width,
+      in_channels, channel_multiplier]`.
+    strides: 1-D `Tensor` of size 4. The stride of the sliding window for each
+      dimension of `inputs`.
+    padding: Controls how to pad the image before applying the convolution. Can
+      be the string `"SAME"` or `"VALID"`.
+
+  Returns:
+    A 4-D `Tensor` of shape `[batch, out_height, out_width,
+      in_channels * channel_multiplier]`.
+  """
+  return tf.nn.depthwise_conv2d(inputs, filters,
+                                strides=strides, padding=padding)
+
+
+@supports_complex_conv
 def _depthwise_conv3d(inputs, filters, strides, padding):
   """Depthwise 3-D convolution.
 
