@@ -22,6 +22,11 @@ Major Features and Improvements
     (for ``lstsq``) and ``partial_fourier`` (for ``pf``). These are now the
     canonical aliases, but the old ones will still be supported.
 
+* ``tfmri.plot``:
+
+  * Added new argument ``norm`` to ``image_sequence``, ``tiled_image`` and
+    ``tiled_image_sequence``. This allows the user to specify the scaling
+    to be applied before the colormap.
 
 Bug Fixes and Other Changes
 ---------------------------

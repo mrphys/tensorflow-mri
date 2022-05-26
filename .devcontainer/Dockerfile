@@ -1,5 +1,13 @@
 FROM ghcr.io/mrphys/tensorflow-manylinux:1.10.0
 
+RUN apt-get install wget
+
+# https://developer.nvidia.com/blog/updating-the-cuda-linux-gpg-repository-key/
+RUN apt-key del 7fa2af80 && \
+    wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb && \
+    dpkg -i cuda-keyring_1.0-1_all.deb && \
+    rm /etc/apt/sources.list.d/cuda*.list
+
 # To enable plotting.
 RUN apt-get update && \
     apt-get install -y libcairo2-dev libgirepository1.0-dev libgtk-3-dev
