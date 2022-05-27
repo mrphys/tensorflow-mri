@@ -58,10 +58,6 @@ class _MeanMetricWrapperIQA(tf.keras.metrics.MeanMetricWrapper):
 
     Returns:
       Update op.
-
-    Raises:
-      ValueError: If `y_true` or `y_pred` are complex and `complex_part` was not
-        specified.
     """
     # Add a singleton channel dimension if multichannel is disabled.
     if not self._multichannel:
@@ -73,9 +69,6 @@ class _MeanMetricWrapperIQA(tf.keras.metrics.MeanMetricWrapper):
           y_true, self._complex_part, self._max_val)
       y_pred = image_ops.extract_and_scale_complex_part(
           y_pred, self._complex_part, self._max_val)
-    else: # self._complex_part is None
-      if y_true.dtype.is_complex or y_pred.dtype.is_complex:
-        raise ValueError('complex_part must be specified for complex inputs.')
     return super().update_state(y_true, y_pred, sample_weight)
 
   def get_config(self):
