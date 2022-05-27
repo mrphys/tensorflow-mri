@@ -30,10 +30,21 @@ from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import geom_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
+from tensorflow_mri.python.util import deprecation
 
 
 @api_util.export("image.psnr")
-def psnr(img1, img2, max_val=None, rank=None, name='psnr'):
+@deprecation.deprecated_args(
+    deprecation.REMOVAL_DATE['0.19.0'],
+    'Use argument `image_dims` instead.',
+    ('rank', None))
+def psnr(img1,
+         img2,
+         max_val=None,
+         batch_dims=None,
+         image_dims=None,
+         rank=None,
+         name='psnr'):
   """Computes the peak signal-to-noise ratio (PSNR) between two N-D images.
 
   This function operates on batches of multi-channel inputs and returns a PSNR
@@ -54,6 +65,16 @@ def psnr(img1, img2, max_val=None, rank=None, name='psnr'):
       the maximum and the minimum allowed values). Defaults to 1 for floating
       point input images and `MAX` for integer input images, where `MAX` is the
       largest positive representable number for the data type.
+    batch_dims: An `int`. The number of batch dimensions in `image`. If `None`,
+      it is inferred from `image` and `image_dims` as
+      `image.shape.rank - image_dims - 1`. If `image_dims` is also `None`,
+      then `batch_dims` defaults to 1. `batch_dims` can always be inferred if
+      `image_dims` was specified, so you only need to provide one of the two.
+    image_dims: An `int`. The number of spatial dimensions in `image`. If
+      `None`, it is inferred from `image` and `batch_dims` as
+      `image.shape.rank - batch_dims - 1`. Defaults to `None`. `image_dims` can
+      always be inferred if `image_dims` was specified, so you only need to
+      provide one of the two.
     rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
       to `tf.rank(img1) - 2`. In other words, if rank is not explicitly set,
       `img1` and `img2` should have shape `[batch, height, width, channels]`
@@ -66,6 +87,9 @@ def psnr(img1, img2, max_val=None, rank=None, name='psnr'):
     `tf.float32` and shape `batch_shape`.
   """
   with tf.name_scope(name):
+    image_dims = deprecation.deprecated_argument_lookup(
+        'image_dims', image_dims, 'rank', rank)
+
     img1 = tf.convert_to_tensor(img1)
     img2 = tf.convert_to_tensor(img2)
     # Default `max_val` to maximum dynamic range for the input dtype.
@@ -78,20 +102,19 @@ def psnr(img1, img2, max_val=None, rank=None, name='psnr'):
     img1 = tf.image.convert_image_dtype(img1, tf.float32)
     img2 = tf.image.convert_image_dtype(img2, tf.float32)
 
-    # Infer the number of spatial dimensions if not specified by the user, then
-    # check that the value is valid.
-    if rank is None:
-      rank = img1.shape.rank - 2 # Rank must be defined statically.
+    # Resolve batch and image dimensions.
+    batch_dims, image_dims = _resolve_batch_and_image_dims(
+        img1, batch_dims, image_dims)
 
     mse = tf.math.reduce_mean(
-        tf.math.squared_difference(img1, img2), tf.range(-rank-1, 0)) # pylint: disable=invalid-unary-operand-type
+        tf.math.squared_difference(img1, img2), tf.range(-image_dims-1, 0)) # pylint: disable=invalid-unary-operand-type
 
     psnr_val = tf.math.subtract(
         20 * tf.math.log(max_val) / tf.math.log(10.0),
         np.float32(10 / np.log(10)) * tf.math.log(mse),
         name='psnr')
 
-    _, _, checks = _verify_compatible_image_shapes(img1, img2, rank)
+    _, _, checks = _verify_compatible_image_shapes(img1, img2, image_dims)
     with tf.control_dependencies(checks):
       return tf.identity(psnr_val)
 
@@ -120,7 +143,7 @@ def psnr2d(img1, img2, max_val=None, name='psnr2d'):
     The scalar PSNR between `img1` and `img2`. The returned tensor has type
     `tf.float32` and shape `batch_shape`.
   """
-  return psnr(img1, img2, max_val=max_val, rank=2, name=name)
+  return psnr(img1, img2, max_val=max_val, image_dims=2, name=name)
 
 
 @api_util.export("image.psnr3d")
@@ -147,10 +170,14 @@ def psnr3d(img1, img2, max_val, name='psnr3d'):
     The scalar PSNR between `img1` and `img2`. The returned tensor has type
     `tf.float32` and shape `batch_shape`.
   """
-  return psnr(img1, img2, max_val=max_val, rank=3, name=name)
+  return psnr(img1, img2, max_val=max_val, image_dims=3, name=name)
 
 
 @api_util.export("image.ssim")
+@deprecation.deprecated_args(
+    deprecation.REMOVAL_DATE['0.19.0'],
+    'Use argument `image_dims` instead.',
+    ('rank', None))
 def ssim(img1,
          img2,
          max_val=None,
@@ -158,6 +185,8 @@ def ssim(img1,
          filter_sigma=1.5,
          k1=0.01,
          k2=0.03,
+         batch_dims=None,
+         image_dims=None,
          rank=None,
          name='ssim'):
   """Computes the structural similarity index (SSIM) between two N-D images.
@@ -189,6 +218,16 @@ def ssim(img1,
       term, as `C1 = (k1 * max_val) ** 2`. Defaults to 0.01.
     k2: Factor used to calculate the regularization constant for the contrast
       term, as `C2 = (k2 * max_val) ** 2`. Defaults to 0.03.
+    batch_dims: An `int`. The number of batch dimensions in `image`. If `None`,
+      it is inferred from `image` and `image_dims` as
+      `image.shape.rank - image_dims - 1`. If `image_dims` is also `None`,
+      then `batch_dims` defaults to 1. `batch_dims` can always be inferred if
+      `image_dims` was specified, so you only need to provide one of the two.
+    image_dims: An `int`. The number of spatial dimensions in `image`. If
+      `None`, it is inferred from `image` and `batch_dims` as
+      `image.shape.rank - batch_dims - 1`. Defaults to `None`. `image_dims` can
+      always be inferred if `image_dims` was specified, so you only need to
+      provide one of the two.
     rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
       to `tf.rank(img1) - 2`. In other words, if rank is not explicitly set,
       `img1` and `img2` should have shape `[batch, height, width, channels]`
@@ -207,6 +246,9 @@ def ssim(img1,
       2004, doi: 10.1109/TIP.2003.819861.
   """
   with tf.name_scope(name):
+    image_dims = deprecation.deprecated_argument_lookup(
+        'image_dims', image_dims, 'rank', rank)
+
     img1 = tf.convert_to_tensor(img1)
     img2 = tf.convert_to_tensor(img2)
     # Default `max_val` to maximum dynamic range for the input dtype.
@@ -219,18 +261,17 @@ def ssim(img1,
     img1 = tf.image.convert_image_dtype(img1, tf.float32)
     img2 = tf.image.convert_image_dtype(img2, tf.float32)
 
-    # Infer the number of spatial dimensions if not specified by the user, then
-    # check that the value is valid.
-    if rank is None:
-      rank = img1.shape.rank - 2 # Rank must be defined statically.
+    # Resolve batch and image dimensions.
+    batch_dims, image_dims = _resolve_batch_and_image_dims(
+        img1, batch_dims, image_dims)
 
     # Check shapes.
-    _, _, checks = _verify_compatible_image_shapes(img1, img2, rank)
+    _, _, checks = _verify_compatible_image_shapes(img1, img2, image_dims)
     with tf.control_dependencies(checks):
       img1 = tf.identity(img1)
 
     ssim_per_channel, _ = _ssim_per_channel(
-      img1, img2, max_val, filter_size, filter_sigma, k1, k2, rank)
+      img1, img2, max_val, filter_size, filter_sigma, k1, k2, image_dims)
 
     # Compute average over color channels.
     return tf.math.reduce_mean(ssim_per_channel, [-1])
@@ -289,7 +330,7 @@ def ssim2d(img1,
               filter_sigma=filter_sigma,
               k1=k1,
               k2=k2,
-              rank=2,
+              image_dims=2,
               name=name)
 
 
@@ -346,7 +387,7 @@ def ssim3d(img1,
               filter_sigma=filter_sigma,
               k1=k1,
               k2=k2,
-              rank=3,
+              image_dims=3,
               name=name)
 
 
@@ -355,6 +396,10 @@ _MSSSIM_WEIGHTS = (0.0448, 0.2856, 0.3001, 0.2363, 0.1333)
 
 
 @api_util.export("image.ssim_multiscale")
+@deprecation.deprecated_args(
+    deprecation.REMOVAL_DATE['0.19.0'],
+    'Use argument `image_dims` instead.',
+    ('rank', None))
 def ssim_multiscale(img1,
                     img2,
                     max_val=None,
@@ -363,6 +408,8 @@ def ssim_multiscale(img1,
                     filter_sigma=1.5,
                     k1=0.01,
                     k2=0.03,
+                    batch_dims=None,
+                    image_dims=None,
                     rank=None,
                     name='ssim_multiscale'):
   """Computes the multiscale SSIM (MS-SSIM) between two N-D images.
@@ -401,6 +448,16 @@ def ssim_multiscale(img1,
       term, as `C1 = (k1 * max_val) ** 2`. Defaults to 0.01.
     k2: Factor used to calculate the regularization constant for the contrast
       term, as `C2 = (k2 * max_val) ** 2`. Defaults to 0.03.
+    batch_dims: An `int`. The number of batch dimensions in `image`. If `None`,
+      it is inferred from `image` and `image_dims` as
+      `image.shape.rank - image_dims - 1`. If `image_dims` is also `None`,
+      then `batch_dims` defaults to 1. `batch_dims` can always be inferred if
+      `image_dims` was specified, so you only need to provide one of the two.
+    image_dims: An `int`. The number of spatial dimensions in `image`. If
+      `None`, it is inferred from `image` and `batch_dims` as
+      `image.shape.rank - batch_dims - 1`. Defaults to `None`. `image_dims` can
+      always be inferred if `image_dims` was specified, so you only need to
+      provide one of the two.
     rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
       to `tf.rank(img1) - 2`. In other words, if rank is not explicitly set,
       `img1` and `img2` should have shape `[batch, height, width, channels]`
@@ -419,6 +476,9 @@ def ssim_multiscale(img1,
       Vol.2, doi: 10.1109/ACSSC.2003.1292216.
   """
   with tf.name_scope(name):
+    image_dims = deprecation.deprecated_argument_lookup(
+        'image_dims', image_dims, 'rank', rank)
+
     # Convert to tensor if needed.
     img1 = tf.convert_to_tensor(img1, name='img1')
     img2 = tf.convert_to_tensor(img2, name='img2')
@@ -432,22 +492,22 @@ def ssim_multiscale(img1,
     img1 = tf.image.convert_image_dtype(img1, tf.dtypes.float32)
     img2 = tf.image.convert_image_dtype(img2, tf.dtypes.float32)
 
-    # Infer the number of spatial dimensions if not specified by the user, then
-    # check that the value is valid.
-    if rank is None:
-      rank = img1.shape.rank - 2
+    # Resolve batch and image dimensions.
+    batch_dims, image_dims = _resolve_batch_and_image_dims(
+        img1, batch_dims, image_dims)
 
     # Shape checking.
-    shape1, shape2, checks = _verify_compatible_image_shapes(img1, img2, rank)
+    shape1, shape2, checks = _verify_compatible_image_shapes(
+        img1, img2, image_dims)
 
     # Check that spatial dimensions are big enough.
     min_dim_size = (filter_size - 1) * 2 ** (len(power_factors) - 1) + 1
     checks.append(tf.debugging.assert_greater_equal(
-        shape1[-rank-1:-1], min_dim_size, # pylint: disable=invalid-unary-operand-type
+        shape1[-image_dims-1:-1], min_dim_size, # pylint: disable=invalid-unary-operand-type
         message=(
-          f"All spatial dimensions must have size of at least {min_dim_size}, " # pylint: disable=invalid-unary-operand-type
-          f"but got shape: {shape1[-rank-1:-1]}. Try upsampling the image, " # pylint: disable=invalid-unary-operand-type
-          f"using a smaller `filter_size` or a smaller number of "
+          f"All spatial dimensions must have size of at least {min_dim_size}, "  # pylint: disable=invalid-unary-operand-type
+          f"but got shape: {shape1[-image_dims-1:-1]}. Try upsampling the "  # pylint: disable=invalid-unary-operand-type
+          f"image, using a smaller `filter_size` or a smaller number of "
           f"`power_factors`.")))
 
     with tf.control_dependencies(checks):
@@ -459,10 +519,10 @@ def ssim_multiscale(img1,
     # img1 and img2 are assumed to be a (multi-dimensional) batch of
     # N-dimensional images. `heads` contain the batch dimensions, and
     # `tails` contain the image dimensions.
-    heads = [s[:-(rank+1)] for s in shapes]
-    tails = [s[-(rank+1):] for s in shapes]
+    heads = [s[:-(image_dims + 1)] for s in shapes]
+    tails = [s[-(image_dims + 1):] for s in shapes]
 
-    divisor = [1] + [2] * rank + [1]
+    divisor = [1] + [2] * image_dims + [1]
     divisor_tensor = tf.constant(divisor[1:], dtype=tf.dtypes.int32)
 
     def do_pad(images, remainder):
@@ -476,33 +536,33 @@ def ssim_multiscale(img1,
         if k > 0:
           # Avg pool takes rank 4 tensors. Flatten leading dimensions.
           flat_imgs = [
-            tf.reshape(x, tf.concat([[-1], t], 0))
-            for x, t in zip(imgs, tails)
+              tf.reshape(x, tf.concat([[-1], t], 0))
+              for x, t in zip(imgs, tails)
           ]
 
           # Pad uneven spatial dimensions.
           remainder = tails[0] % divisor_tensor
           need_padding = tf.math.reduce_any(
-            tf.math.not_equal(remainder, 0))
+              tf.math.not_equal(remainder, 0))
           # pylint: disable=cell-var-from-loop
           padded = tf.cond(
-            need_padding,
-            lambda: do_pad(flat_imgs, remainder),
-            lambda: flat_imgs)
+              need_padding,
+              lambda: do_pad(flat_imgs, remainder),
+              lambda: flat_imgs)
           # pylint: enable=cell-var-from-loop
 
           # Downscale.
           downscaled = [
-            tf.nn.avg_pool(
-              x, ksize=divisor, strides=divisor, padding='VALID')
-            for x in padded
+              tf.nn.avg_pool(
+                  x, ksize=divisor, strides=divisor, padding='VALID')
+              for x in padded
           ]
 
           # Restore unflattened batch shape.
           tails = [x[1:] for x in tf.shape_n(downscaled)]
           imgs = [
-            tf.reshape(x, tf.concat([h, t], 0))
-            for x, h, t in zip(downscaled, heads, tails)
+              tf.reshape(x, tf.concat([h, t], 0))
+              for x, h, t in zip(downscaled, heads, tails)
           ]
 
         # Overwrite previous ssim value since we only need the last one.
@@ -512,17 +572,17 @@ def ssim_multiscale(img1,
                                                  filter_sigma,
                                                  k1,
                                                  k2,
-                                                 rank)
+                                                 image_dims)
         mcs.append(tf.nn.relu(cs))
 
     # Remove the cs score for the last scale. In the MS-SSIM calculation,
     # we use the l(p) at the highest scale. l(p) * cs(p) is ssim(p).
     mcs.pop()  # Remove the cs score for the last scale.
     mcs_and_ssim = tf.stack(
-      mcs + [tf.nn.relu(ssim_per_channel)], axis=-1)
+        mcs + [tf.nn.relu(ssim_per_channel)], axis=-1)
     # Take weighted geometric mean across the scale axis.
     ms_ssim = tf.math.reduce_prod(
-      tf.math.pow(mcs_and_ssim, power_factors), [-1])
+        tf.math.pow(mcs_and_ssim, power_factors), [-1])
 
     return tf.math.reduce_mean(ms_ssim, [-1])  # Avg over color channels.
 
@@ -589,7 +649,7 @@ def ssim2d_multiscale(img1,
                          filter_sigma=filter_sigma,
                          k1=k1,
                          k2=k2,
-                         rank=2,
+                         image_dims=2,
                          name=name)
 
 
@@ -655,7 +715,7 @@ def ssim3d_multiscale(img1,
                          filter_sigma=filter_sigma,
                          k1=k1,
                          k2=k2,
-                         rank=3,
+                         image_dims=3,
                          name=name)
 
 
@@ -858,10 +918,13 @@ def image_gradients(image, method='sobel', norm=False,
     batch_dims: An `int`. The number of batch dimensions in `image`. If `None`,
       it is inferred from `image` and `image_dims` as
       `image.shape.rank - image_dims - 1`. If `image_dims` is also `None`,
-      then `batch_dims` defaults to 1.
+      then `batch_dims` defaults to 1. `batch_dims` can always be inferred if
+      `image_dims` was specified, so you only need to provide one of the two.
     image_dims: An `int`. The number of spatial dimensions in `image`. If
       `None`, it is inferred from `image` and `batch_dims` as
-      `image.shape.rank - batch_dims - 1`. Defaults to `None`.
+      `image.shape.rank - batch_dims - 1`. Defaults to `None`. `image_dims` can
+      always be inferred if `image_dims` was specified, so you only need to
+      provide one of the two.
     name: A name for the operation (optional).
 
   Returns:
@@ -898,10 +961,13 @@ def gradient_magnitude(image, method='sobel', norm=False,
     batch_dims: An `int`. The number of batch dimensions in `image`. If `None`,
       it is inferred from `image` and `image_dims` as
       `image.shape.rank - image_dims - 1`. If `image_dims` is also `None`,
-      then `batch_dims` defaults to 1.
+      then `batch_dims` defaults to 1. `batch_dims` can always be inferred if
+      `image_dims` was specified, so you only need to provide one of the two.
     image_dims: An `int`. The number of spatial dimensions in `image`. If
       `None`, it is inferred from `image` and `batch_dims` as
-      `image.shape.rank - batch_dims - 1`. Defaults to `None`.
+      `image.shape.rank - batch_dims - 1`. Defaults to `None`. `image_dims` can
+      always be inferred if `image_dims` was specified, so you only need to
+      provide one of the two.
     name: A name for the operation (optional).
 
   Returns:
@@ -1036,7 +1102,17 @@ def _filter_image(image, kernels):
 
 
 @api_util.export("image.gmsd")
-def gmsd(img1, img2, max_val=1.0, rank=None, name=None):
+@deprecation.deprecated_args(
+    deprecation.REMOVAL_DATE['0.19.0'],
+    'Use argument `image_dims` instead.',
+    ('rank', None))
+def gmsd(img1,
+         img2,
+         max_val=1.0,
+         batch_dims=None,
+         image_dims=None,
+         rank=None,
+         name=None):
   """Computes the gradient magnitude similarity deviation (GMSD).
 
   Args:
@@ -1054,6 +1130,16 @@ def gmsd(img1, img2, max_val=1.0, rank=None, name=None):
       the maximum and the minimum allowed values). Defaults to 1 for floating
       point input images and `MAX` for integer input images, where `MAX` is the
       largest positive representable number for the data type.
+    batch_dims: An `int`. The number of batch dimensions in `image`. If `None`,
+      it is inferred from `image` and `image_dims` as
+      `image.shape.rank - image_dims - 1`. If `image_dims` is also `None`,
+      then `batch_dims` defaults to 1. `batch_dims` can always be inferred if
+      `image_dims` was specified, so you only need to provide one of the two.
+    image_dims: An `int`. The number of spatial dimensions in `image`. If
+      `None`, it is inferred from `image` and `batch_dims` as
+      `image.shape.rank - batch_dims - 1`. Defaults to `None`. `image_dims` can
+      always be inferred if `image_dims` was specified, so you only need to
+      provide one of the two.
     rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
       to `tf.rank(img1) - 2`. In other words, if rank is not explicitly set,
       `img1` and `img2` should have shape `[batch, height, width, channels]`
@@ -1073,14 +1159,16 @@ def gmsd(img1, img2, max_val=1.0, rank=None, name=None):
   """
   with tf.name_scope(name or 'gmsd'):
     # Check and prepare inputs.
-    (img1, img2, max_val, rank,
-     image_axes, batch_shape, static_batch_shape) = _validate_iqa_inputs(
-        img1, img2, max_val, rank)
+    image_dims = deprecation.deprecated_argument_lookup(
+        'image_dims', image_dims, 'rank', rank)
+    iqa_inputs = _validate_iqa_inputs(
+        img1, img2, max_val, batch_dims, image_dims)
+    img1, img2 = iqa_inputs.img1, iqa_inputs.img2
 
-    if rank == 2:
+    if iqa_inputs.image_dims == 2:
       avg_pool = tf.nn.avg_pool2d
       pool_size = [1, 2, 2, 1]
-    elif rank == 3:
+    elif iqa_inputs.image_dims == 3:
       avg_pool = tf.nn.avg_pool3d
       pool_size = [1, 2, 2, 2, 1]
 
@@ -1100,19 +1188,18 @@ def gmsd(img1, img2, max_val=1.0, rank=None, name=None):
     c = 170.0
 
     # Compute the gradient magnitude similarity.
-    gm_sim = tf.math.divide(2.0 * gm1 * gm2 + c,
-                            gm1 ** 2 + gm2 ** 2 + c)
+    gm_sim = tf.math.divide(2.0 * gm1 * gm2 + c, gm1 ** 2 + gm2 ** 2 + c)
 
     # Compute the gradient magnitude similarity deviation, or GMSD, for each
     # channel.
-    gmsd_values = tf.math.reduce_std(gm_sim, image_axes)
+    gmsd_values = tf.math.reduce_std(gm_sim, iqa_inputs.image_axes)
 
     # Compute average along channel dimension.
     gmsd_values = tf.math.reduce_mean(gmsd_values, -1)
 
     # Recover batch shape.
-    gmsd_values = tf.reshape(gmsd_values, batch_shape)
-    gmsd_values = tf.ensure_shape(gmsd_values, static_batch_shape)
+    gmsd_values = tf.reshape(gmsd_values, iqa_inputs.batch_shape)
+    gmsd_values = tf.ensure_shape(gmsd_values, iqa_inputs.static_batch_shape)
     return gmsd_values
 
 
@@ -1176,7 +1263,7 @@ def gmsd3d(img1, img2, max_val=1.0, name=None):
   return gmsd(img1, img2, max_val=max_val, rank=3, name=(name or 'gmsd3d'))
 
 
-def _validate_iqa_inputs(img1, img2, max_val, rank):
+def _validate_iqa_inputs(img1, img2, max_val, batch_dims, image_dims):
   """Validates the inputs to the IQA functions.
 
   Args:
@@ -1194,27 +1281,33 @@ def _validate_iqa_inputs(img1, img2, max_val, rank):
       the maximum and the minimum allowed values). Defaults to 1 for floating
       point input images and `MAX` for integer input images, where `MAX` is the
       largest positive representable number for the data type.
-    rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
-      to `tf.rank(img1) - 2`. In other words, if rank is not explicitly set,
-      `img1` and `img2` should have shape `[batch, height, width, channels]`
-      if processing 2D images or `[batch, depth, height, width, channels]` if
-      processing 3D images.
+    batch_dims: An `int`. The number of batch dimensions in `image`. If `None`,
+      it is inferred from `image` and `image_dims` as
+      `image.shape.rank - image_dims - 1`. If `image_dims` is also `None`,
+      then `batch_dims` defaults to 1. `batch_dims` can always be inferred if
+      `image_dims` was specified, so you only need to provide one of the two.
+    image_dims: An `int`. The number of spatial dimensions in `image`. If
+      `None`, it is inferred from `image` and `batch_dims` as
+      `image.shape.rank - batch_dims - 1`. Defaults to `None`. `image_dims` can
+      always be inferred if `image_dims` was specified, so you only need to
+      provide one of the two.
 
   Returns:
-    A tuple of:
-      - First image reshaped to `[batch_size] + spatial_dims + [channels]`,
-        i.e. with one and only one batch dimension.
-      - Second image reshaped to `[batch_size] + spatial_dims + [channels]`,
-        i.e. with one and only one batch dimension.
-      - Maximum value as a `Tensor`, converted to `float32` image dtype.
-      - Rank of the images, as specified by user or inferred from images.
-      - Image or spatial axes as a list of `int`s.
-      - The broadcast batch shape of both input images shape as a `Tensor`.
-      - The static broadcast batch shape of both input images shape as a
-        `TensorShape`.
+    A `namedtuple` containing the following fields:
 
-  Raises:
-    ValueError: If rank is not 2 or 3.
+    - `img1`: First image reshaped to `[batch_size] + image_dims + [channels]`,
+      i.e. with one and only one batch dimension.
+    - `img2`: Second image reshaped to `[batch_size] + image_dims + [channels]`,
+      i.e. with one and only one batch dimension.
+    - `max_val`: Maximum value as a `Tensor`, converted to `float32` image
+      dtype.
+    - `batch_dims`: Number of batch dimensions.
+    - `image_dims`: Number of image dimensions.
+    - `image_axes`: The axes of the image dimensions.
+    - `batch_shape`: The broadcast batch shape of both input images as a
+      `tf.Tensor`.
+    - `static_batch_shape`: The static broadcast batch shape of both input
+      images as a `tf.TensorShape`.
   """
   # Prepare the inputs.
   img1 = tf.convert_to_tensor(img1)
@@ -1228,36 +1321,41 @@ def _validate_iqa_inputs(img1, img2, max_val, rank):
   img1 = tf.image.convert_image_dtype(img1, tf.float32)
   img2 = tf.image.convert_image_dtype(img2, tf.float32)
 
-  # Infer the number of spatial dimensions if not specified by the user, then
-  # check that the value is valid.
-  if rank is None:
-    rank = img1.shape.rank - 2  # Rank must be defined statically.
-  if rank not in (2, 3):
-    raise ValueError(f"rank must be 2 or 3, but got: {rank}")
+  # Resolve batch and image dimensions.
+  batch_dims, image_dims = _resolve_batch_and_image_dims(
+      img1, batch_dims, image_dims)
 
   # Check that the image shapes are compatible.
-  _, _, checks = _verify_compatible_image_shapes(img1, img2, rank)
+  _, _, checks = _verify_compatible_image_shapes(img1, img2, image_dims)
   with tf.control_dependencies(checks):
     img1 = tf.identity(img1)
 
   # Broadcast batch shapes.
-  static_batch_shape = tf.broadcast_static_shape(img1.shape[:-(rank + 1)],
-                                                 img2.shape[:-(rank + 1)])
-  batch_shape = tf.broadcast_dynamic_shape(tf.shape(img1)[:-(rank + 1)],
-                                           tf.shape(img2)[:-(rank + 1)])
+  static_batch_shape = tf.broadcast_static_shape(img1.shape[:-(image_dims + 1)],
+                                                 img2.shape[:-(image_dims + 1)])
+  batch_shape = tf.broadcast_dynamic_shape(tf.shape(img1)[:-(image_dims + 1)],
+                                           tf.shape(img2)[:-(image_dims + 1)])
   img1 = tf.broadcast_to(
-      img1, tf.concat([batch_shape, tf.shape(img1)[-(rank + 1):]], 0))
+      img1, tf.concat([batch_shape, tf.shape(img1)[-(image_dims + 1):]], 0))
   img2 = tf.broadcast_to(
-      img2, tf.concat([batch_shape, tf.shape(img2)[-(rank + 1):]], 0))
+      img2, tf.concat([batch_shape, tf.shape(img2)[-(image_dims + 1):]], 0))
 
   # Flatten images to single batch dimension.
-  img1 = tf.reshape(img1, tf.concat([[-1], tf.shape(img1)[-(rank + 1):]], 0))
-  img2 = tf.reshape(img2, tf.concat([[-1], tf.shape(img2)[-(rank + 1):]], 0))
+  img1 = tf.reshape(
+      img1, tf.concat([[-1], tf.shape(img1)[-(image_dims + 1):]], 0))
+  img2 = tf.reshape(
+      img2, tf.concat([[-1], tf.shape(img2)[-(image_dims + 1):]], 0))
 
   # The spatial axes.
-  image_axes = list(range(-(rank + 1), -1))
+  image_axes = list(range(-(image_dims + 1), -1))
 
-  return img1, img2, max_val, rank, image_axes, batch_shape, static_batch_shape
+  IqaInputs = collections.namedtuple(
+      'IqaInputs', ['img1', 'img2', 'max_val', 'batch_dims', 'image_dims',
+                    'image_axes', 'batch_shape', 'static_batch_shape'])
+  return IqaInputs(
+      img1=img1, img2=img2, max_val=max_val, batch_dims=batch_dims,
+      image_dims=image_dims, image_axes=image_axes,
+      batch_shape=batch_shape, static_batch_shape=static_batch_shape)
 
 
 def supports_complex_conv(func):

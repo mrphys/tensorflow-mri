@@ -6,17 +6,20 @@ This release bumps the supported TensorFlow version to 2.9.
 Major Features and Improvements
 -------------------------------
 
+* ``tfmri.image``:
+
+  * Added new arguments ``batch_dims`` and ``image_dims`` to
+    ``image_gradients``, ``gradient_magnitude``, ``psnr``, ``ssim`` and
+    ``ssim_multiscale``.
+  * Argument ``rank`` of ``psnr``, ``ssim`` and ``ssim_multiscale`` is now
+    deprecated. To update, use ``image_dims`` instead.
+  * ``image_gradients`` and ``gradient_magnitude`` now support complex inputs.
+
 * ``tfmri.metrics``:
 
   * Image quality metrics can now accept complex inputs without also specifying
     ``complex_part``, in which case the unmodified complex values will be passed
     to the downstream function. This may not be supported for all metrics.
-
-* ``tfmri.image``:
-
-  * Added new arguments ``batch_dims`` and ``image_dims`` to ``image_gradients``
-    and ``gradient_magnitude``.
-  * ``image_gradients`` and ``gradient_magnitude`` now support complex inputs.
 
 * ``tfmri.recon``:
 

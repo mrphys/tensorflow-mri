@@ -872,20 +872,6 @@ class BaseTestCases():
       self.assertAllClose(result, self.expected[test_name],
                           rtol=1e-5, atol=1e-5)
 
-    def test_invalid_rank(self):
-      """Test invalid rank."""
-      img1 = self.data['psnr/2d/img1']
-      img2 = self.data['psnr/2d/img2']
-
-      with self.assertRaisesRegex(ValueError, "rank must be 2 or 3"):
-        self.test_fn(img1, img2, 255)
-
-      img1 = tf.expand_dims(img1, -1)
-      img2 = tf.expand_dims(img2, -1)
-
-      with self.assertRaisesRegex(ValueError, "rank must be 2 or 3"):
-        self.test_fn(img1, img2, 255)
-
 
 class GMSDTest(BaseTestCases.IQATest):
 
