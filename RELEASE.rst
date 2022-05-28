@@ -15,11 +15,18 @@ Major Features and Improvements
     deprecated. To update, use ``image_dims`` instead.
   * ``image_gradients`` and ``gradient_magnitude`` now support complex inputs.
 
+* ``tfmri.losses``:
+
+  * Added new arguments ``batch_dims`` and ``image_dims`` to all image quality
+    losses. Argument ``rank`` is now deprecated (use ``image_dims`` instead).
+
 * ``tfmri.metrics``:
 
   * Image quality metrics can now accept complex inputs without also specifying
     ``complex_part``, in which case the unmodified complex values will be passed
     to the downstream function. This may not be supported for all metrics.
+  * Added new arguments ``batch_dims`` and ``image_dims`` to all image quality
+    metrics. Argument ``rank`` is now deprecated (use ``image_dims`` instead).
 
 * ``tfmri.recon``:
 
