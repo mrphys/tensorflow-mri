@@ -210,191 +210,6 @@ class PeakSignalToNoiseRatioTest(test_util.TestCase):
       image_ops.psnr(img1, img2, 255)
 
 
-class StructuralSimilarityTest(test_util.TestCase):
-  """Tests for SSIM op."""
-
-  @classmethod
-  def setUpClass(cls):
-    """Prepare tests."""
-    super().setUpClass()
-    cls.data = io_util.read_hdf5('tests/data/image_ops_data.h5')
-
-  @test_util.run_in_graph_and_eager_modes
-  def test_ssim_2d_scalar(self):
-    """Test 2D SSIM with scalar batch."""
-    img1 = self.data['psnr/2d/img1']
-    img2 = self.data['psnr/2d/img2']
-
-    img1 = tf.expand_dims(img1, -1)
-    img2 = tf.expand_dims(img2, -1)
-
-    result = image_ops.ssim(img1, img2, max_val=255, rank=2)
-
-    self.assertAllClose(result, 0.5250339, rtol=1e-5, atol=1e-5)
-
-  @test_util.run_in_graph_and_eager_modes
-  def test_ssim_2d_trivial_batch(self):
-    """Test 2D SSIM with trivial batch of size 1."""
-    img1 = self.data['psnr/2d/img1']
-    img2 = self.data['psnr/2d/img2']
-
-    img1 = tf.expand_dims(img1, -1)
-    img2 = tf.expand_dims(img2, -1)
-    img1 = tf.expand_dims(img1, 0)
-    img2 = tf.expand_dims(img2, 0)
-
-    result = image_ops.ssim(img1, img2, max_val=255, rank=2)
-    self.assertAllClose(result, [0.5250339], rtol=1e-5, atol=1e-5)
-
-  @test_util.run_in_graph_and_eager_modes
-  def test_ssim_2d_batch_multichannel(self):
-    """Test 2D SSIM with multichannel batch of images."""
-    img1 = self.data['psnr/2d/batch/img1']
-    img2 = self.data['psnr/2d/batch/img2']
-    ref = [0.250783,
-           0.293936,
-           0.33806 ,
-           0.366984,
-           0.38121 ,
-           0.366342]
-
-    result = image_ops.ssim(img1, img2, max_val=255)
-    self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
-
-    # Test without specifying dynamic range, which should default to 255 for
-    # `tf.uint8`.
-    result = image_ops.ssim(img1, img2)
-    self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
-
-  @test_util.run_in_graph_and_eager_modes
-  def test_ssim_2d_nd_batch(self):
-    """Test 2D SSIM with N-D batch of images."""
-    img1 = self.data['psnr/2d/batch/img1']
-    img2 = self.data['psnr/2d/batch/img2']
-    img1 = tf.reshape(img1, (3, 2) + img1.shape[1:])
-    img2 = tf.reshape(img2, (3, 2) + img2.shape[1:])
-    ref = [[0.250783, 0.293936],
-           [0.33806 , 0.366984],
-           [0.38121 , 0.366342]]
-
-    result = image_ops.ssim(img1, img2, max_val=255, rank=2)
-    self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
-
-  @test_util.run_in_graph_and_eager_modes
-  def test_ssim_2d_batch_multichannel_float(self):
-    """Test 2D SSIM with multichannel batch of floating point images."""
-    img1 = self.data['psnr/2d/batch/img1']
-    img2 = self.data['psnr/2d/batch/img2']
-    ref = [0.250783,
-           0.293936,
-           0.33806 ,
-           0.366984,
-           0.38121 ,
-           0.366342]
-
-    img1 = tf.cast(img1, tf.float32) / 255.0
-    img2 = tf.cast(img2, tf.float32) / 255.0
-
-    result = image_ops.ssim(img1, img2, max_val=1)
-    self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
-
-    # Test without specifying dynamic range, which should default to 1 for
-    # `tf.float32`.
-    result = image_ops.ssim(img1, img2)
-    self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
-
-  @test_util.run_in_graph_and_eager_modes
-  def test_ssim_3d_scalar(self):
-    """Test 3D SSIM with scalar batch."""
-    img1 = self.data['psnr/3d/img1']
-    img2 = self.data['psnr/3d/img2']
-
-    img1 = img1[0, ...]
-    img2 = img2[0, ...]
-
-    img1 = tf.expand_dims(img1, -1)
-    img2 = tf.expand_dims(img2, -1)
-
-    result = image_ops.ssim(img1, img2, rank=3)
-    self.assertAllClose(result, 0.93111473)
-
-  @test_util.run_in_graph_and_eager_modes
-  def test_ssim_3d_batch(self):
-    """Test 3D SSIM with batch."""
-    img1 = self.data['psnr/3d/img1']
-    img2 = self.data['psnr/3d/img2']
-
-    ref = [0.93111473,
-           0.90337730]
-
-    img1 = img1[:2, ...]
-    img2 = img2[:2, ...]
-
-    img1 = tf.expand_dims(img1, -1)
-    img2 = tf.expand_dims(img2, -1)
-
-    result = image_ops.ssim(img1, img2, max_val=255)
-    self.assertAllClose(result, ref, rtol=1e-5, atol=1e-5)
-
-  @test_util.run_in_graph_and_eager_modes
-  def test_ssim_3d_mdbatch(self):
-    """Test 3D SSIM with multidimensional batch."""
-    img1 = self.data['psnr/3d/img1']
-    img2 = self.data['psnr/3d/img2']
-
-    ref = [[0.93111473, 0.90337730],
-           [0.90820014, 0.92448730]]
-
-    img1 = img1[:4, ...]
-    img2 = img2[:4, ...]
-
-    img1 = tf.expand_dims(img1, -1)
-    img2 = tf.expand_dims(img2, -1)
-
-    img1 = tf.reshape(img1, (2, 2) + img1.shape[1:])
-    img2 = tf.reshape(img2, (2, 2) + img2.shape[1:])
-
-    result = image_ops.ssim(img1, img2, max_val=255, rank=3)
-    self.assertAllClose(result, ref)
-
-  @test_util.run_in_graph_and_eager_modes
-  def test_ssim_3d_multichannel(self):
-    """Test 3D SSIM with multichannel inputs."""
-    # Does not work on CPU currently - GPU only.
-
-    # img1 = self.data['psnr/3d/img1']
-    # img2 = self.data['psnr/3d/img2']
-
-    # ref = [[0.93111473, 0.90337730],
-    #        [0.90820014, 0.92448730],
-    #        [0.90630510, 0.92143655]]
-
-    # img1 = tf.reshape(img1, (3, 2) + img1.shape[1:])
-    # img2 = tf.reshape(img2, (3, 2) + img2.shape[1:])
-
-    # img1 = tf.transpose(img1, [0, 2, 3, 4, 1])
-    # img2 = tf.transpose(img2, [0, 2, 3, 4, 1])
-
-    # result = image_ops.ssim(img1, img2, max_val=255, rank=3)
-    # self.assertAllClose(result, tf.math.reduce_mean(ref, axis=1))
-
-  def test_ssim_invalid_rank(self):
-    """Test SSIM with an invalid rank."""
-    img1 = self.data['psnr/2d/img1']
-    img2 = self.data['psnr/2d/img2']
-
-    with self.assertRaisesRegex(tf.errors.InvalidArgumentError,
-                                "`rank` must be >= 2"):
-      image_ops.ssim(img1, img2, 255)
-
-    img1 = tf.expand_dims(img1, -1)
-    img2 = tf.expand_dims(img2, -1)
-
-    with self.assertRaisesRegex(tf.errors.InvalidArgumentError,
-                                "`rank` must be >= 2"):
-      image_ops.ssim(img1, img2, 255)
-
-
 class MultiscaleStructuralSimilarityTest(test_util.TestCase):
   """Tests for MS-SSIM op."""
 
@@ -768,6 +583,14 @@ class BaseTestCases():
       self.assertAllClose(result, self.expected[test_name],
                           rtol=1e-5, atol=1e-5)
 
+      result = self.test_fn(img1, img2, max_val=255, image_dims=2)
+      self.assertAllClose(result, self.expected[test_name],
+                          rtol=1e-5, atol=1e-5)
+
+      result = self.test_fn(img1, img2, max_val=255, batch_dims=0)
+      self.assertAllClose(result, self.expected[test_name],
+                          rtol=1e-5, atol=1e-5)
+
     @test_util.run_in_graph_and_eager_modes
     def test_2d_trivial_batch(self):
       """Test 2D function with trivial batch of size 1."""
@@ -782,6 +605,18 @@ class BaseTestCases():
       img2 = tf.expand_dims(img2, 0)
 
       result = self.test_fn(img1, img2, max_val=255, rank=2)
+      self.assertAllClose(result, self.expected[test_name],
+                          rtol=1e-5, atol=1e-5)
+
+      result = self.test_fn(img1, img2, max_val=255, image_dims=2)
+      self.assertAllClose(result, self.expected[test_name],
+                          rtol=1e-5, atol=1e-5)
+
+      result = self.test_fn(img1, img2, max_val=255, batch_dims=1)
+      self.assertAllClose(result, self.expected[test_name],
+                          rtol=1e-5, atol=1e-5)
+
+      result = self.test_fn(img1, img2, max_val=255)
       self.assertAllClose(result, self.expected[test_name],
                           rtol=1e-5, atol=1e-5)
 
@@ -871,6 +706,25 @@ class BaseTestCases():
       result = self.test_fn(img1, img2, max_val=255)
       self.assertAllClose(result, self.expected[test_name],
                           rtol=1e-5, atol=1e-5)
+
+
+class SSIMTest(BaseTestCases.IQATest):
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.test_fn = image_ops.ssim
+    self.expected = {
+        '2d_scalar_batch': 0.5250339,
+        '2d_trivial_batch': [0.5250339],
+        '2d_multichannel_batch': [0.250783, 0.293936, 0.33806 ,
+                                  0.366984, 0.38121 , 0.366342],
+        '2d_nd_batch': [[0.250783, 0.293936],
+                        [0.33806 , 0.366984],
+                        [0.38121 , 0.366342]],
+        '2d_batch_float': [0.250783, 0.293936, 0.33806 ,
+                           0.366984, 0.38121 , 0.366342],
+        '3d_scalar_batch': 0.93111473,
+        '3d_batch': [0.93111473, 0.90337730]
+    }
 
 
 class GMSDTest(BaseTestCases.IQATest):

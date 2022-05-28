@@ -21,6 +21,7 @@ import tensorflow as tf
 
 from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.util import api_util
+from tensorflow_mri.python.util import deprecation
 from tensorflow_mri.python.util import keras_util
 
 
@@ -47,6 +48,16 @@ class StructuralSimilarityLoss(keras_util.LossFunctionWrapper):
       term, as `C1 = (k1 * max_val) ** 2`. Defaults to 0.01.
     k2: Factor used to calculate the regularization constant for the contrast
       term, as `C2 = (k2 * max_val) ** 2`. Defaults to 0.03.
+    batch_dims: An `int`. The number of batch dimensions in input images. If
+      `None`, it is inferred from inputs and `image_dims` as
+      `(rank of inputs) - image_dims - 1`. If `image_dims` is also `None`,
+      then `batch_dims` defaults to 1. `batch_dims` can always be inferred if
+      `image_dims` was specified, so you only need to provide one of the two.
+    image_dims: An `int`. The number of spatial dimensions in input images. If
+      `None`, it is inferred from inputs and `batch_dims` as
+      `(rank of inputs) - batch_dims - 1`. Defaults to `None`. `image_dims` can
+      always be inferred if `batch_dims` was specified, so you only need to
+      provide one of the two.
     rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
       to `tf.rank(y_true) - 2`. In other words, if rank is not explicitly set,
       `y_true` and `y_pred` should have shape `[batch, height, width, channels]`
@@ -61,18 +72,25 @@ class StructuralSimilarityLoss(keras_util.LossFunctionWrapper):
       for image restoration with neural networks. IEEE Transactions on
       computational imaging, 3(1), 47-57.
   """
+  @deprecation.deprecated_args(
+      deprecation.REMOVAL_DATE['0.19.0'],
+      'Use argument `image_dims` instead.',
+      ('rank', None))
   def __init__(self,
                max_val=None,
                filter_size=11,
                filter_sigma=1.5,
                k1=0.01,
                k2=0.03,
+               batch_dims=None,
+               image_dims=None,
                rank=None,
                reduction=tf.keras.losses.Reduction.AUTO,
                name='ssim_loss'):
     super().__init__(ssim_loss, reduction=reduction, name=name, max_val=max_val,
                      filter_size=filter_size, filter_sigma=filter_sigma,
-                     k1=k1, k2=k2, rank=rank)
+                     k1=k1, k2=k2, batch_dims=batch_dims, image_dims=image_dims,
+                     rank=rank)
 
 
 @api_util.export("losses.MultiscaleStructuralSimilarityLoss")
@@ -103,6 +121,16 @@ class MultiscaleStructuralSimilarityLoss(keras_util.LossFunctionWrapper):
       term, as `C1 = (k1 * max_val) ** 2`. Defaults to 0.01.
     k2: Factor used to calculate the regularization constant for the contrast
       term, as `C2 = (k2 * max_val) ** 2`. Defaults to 0.03.
+    batch_dims: An `int`. The number of batch dimensions in input images. If
+      `None`, it is inferred from inputs and `image_dims` as
+      `(rank of inputs) - image_dims - 1`. If `image_dims` is also `None`,
+      then `batch_dims` defaults to 1. `batch_dims` can always be inferred if
+      `image_dims` was specified, so you only need to provide one of the two.
+    image_dims: An `int`. The number of spatial dimensions in input images. If
+      `None`, it is inferred from inputs and `batch_dims` as
+      `(rank of inputs) - batch_dims - 1`. Defaults to `None`. `image_dims` can
+      always be inferred if `batch_dims` was specified, so you only need to
+      provide one of the two.
     rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
       to `tf.rank(y_true) - 2`. In other words, if rank is not explicitly set,
       `y_true` and `y_pred` should have shape `[batch, height, width, channels]`
@@ -117,6 +145,10 @@ class MultiscaleStructuralSimilarityLoss(keras_util.LossFunctionWrapper):
       for image restoration with neural networks. IEEE Transactions on
       computational imaging, 3(1), 47-57.
   """
+  @deprecation.deprecated_args(
+      deprecation.REMOVAL_DATE['0.19.0'],
+      'Use argument `image_dims` instead.',
+      ('rank', None))
   def __init__(self,
                max_val=None,
                power_factors=image_ops._MSSSIM_WEIGHTS,
@@ -124,20 +156,27 @@ class MultiscaleStructuralSimilarityLoss(keras_util.LossFunctionWrapper):
                filter_sigma=1.5,
                k1=0.01,
                k2=0.03,
+               batch_dims=None,
+               image_dims=None,
                rank=None,
                reduction=tf.keras.losses.Reduction.AUTO,
                name='ssim_multiscale_loss'):
     super().__init__(ssim_multiscale_loss, reduction=reduction, name=name,
                      max_val=max_val, power_factors=power_factors,
                      filter_size=filter_size, filter_sigma=filter_sigma,
-                     k1=k1, k2=k2, rank=rank)
+                     k1=k1, k2=k2, batch_dims=batch_dims, image_dims=image_dims,
+                     rank=rank)
 
 
 @api_util.export("losses.ssim_loss")
+@deprecation.deprecated_args(
+      deprecation.REMOVAL_DATE['0.19.0'],
+      'Use argument `image_dims` instead.',
+      ('rank', None))
 @tf.keras.utils.register_keras_serializable(package="MRI")
 def ssim_loss(y_true, y_pred, max_val=None,
               filter_size=11, filter_sigma=1.5,
-              k1=0.01, k2=0.03, rank=None):
+              k1=0.01, k2=0.03, batch_dims=None, image_dims=None, rank=None):
   r"""Computes the structural similarity (SSIM) loss.
 
   The SSIM loss is equal to :math:`1.0 - \textrm{SSIM}`.
@@ -170,6 +209,16 @@ def ssim_loss(y_true, y_pred, max_val=None,
       term, as `C1 = (k1 * max_val) ** 2`. Defaults to 0.01.
     k2: Factor used to calculate the regularization constant for the contrast
       term, as `C2 = (k2 * max_val) ** 2`. Defaults to 0.03.
+    batch_dims: An `int`. The number of batch dimensions in input images. If
+      `None`, it is inferred from inputs and `image_dims` as
+      `(rank of inputs) - image_dims - 1`. If `image_dims` is also `None`,
+      then `batch_dims` defaults to 1. `batch_dims` can always be inferred if
+      `image_dims` was specified, so you only need to provide one of the two.
+    image_dims: An `int`. The number of spatial dimensions in input images. If
+      `None`, it is inferred from inputs and `batch_dims` as
+      `(rank of inputs) - batch_dims - 1`. Defaults to `None`. `image_dims` can
+      always be inferred if `batch_dims` was specified, so you only need to
+      provide one of the two.
     rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
       to `tf.rank(y_true) - 2`. In other words, if rank is not explicitly set,
       `y_true` and `y_pred` should have shape `[batch, height, width, channels]`
@@ -191,15 +240,22 @@ def ssim_loss(y_true, y_pred, max_val=None,
                               filter_sigma=filter_sigma,
                               k1=k1,
                               k2=k2,
+                              batch_dims=batch_dims,
+                              image_dims=image_dims,
                               rank=rank)
 
 
 @api_util.export("losses.ssim_multiscale_loss")
+@deprecation.deprecated_args(
+      deprecation.REMOVAL_DATE['0.19.0'],
+      'Use argument `image_dims` instead.',
+      ('rank', None))
 @tf.keras.utils.register_keras_serializable(package="MRI")
 def ssim_multiscale_loss(y_true, y_pred, max_val=None,
                          power_factors=image_ops._MSSSIM_WEIGHTS, # pylint: disable=protected-access
                          filter_size=11, filter_sigma=1.5,
-                         k1=0.01, k2=0.03, rank=None):
+                         k1=0.01, k2=0.03,
+                         batch_dims=None, image_dims=None, rank=None):
   r"""Computes the multiscale structural similarity (MS-SSIM) loss.
 
   The MS-SSIM loss is equal to :math:`1.0 - \textrm{MS-SSIM}`.
@@ -239,6 +295,16 @@ def ssim_multiscale_loss(y_true, y_pred, max_val=None,
       term, as `C1 = (k1 * max_val) ** 2`. Defaults to 0.01.
     k2: Factor used to calculate the regularization constant for the contrast
       term, as `C2 = (k2 * max_val) ** 2`. Defaults to 0.03.
+    batch_dims: An `int`. The number of batch dimensions in input images. If
+      `None`, it is inferred from inputs and `image_dims` as
+      `(rank of inputs) - image_dims - 1`. If `image_dims` is also `None`,
+      then `batch_dims` defaults to 1. `batch_dims` can always be inferred if
+      `image_dims` was specified, so you only need to provide one of the two.
+    image_dims: An `int`. The number of spatial dimensions in input images. If
+      `None`, it is inferred from inputs and `batch_dims` as
+      `(rank of inputs) - batch_dims - 1`. Defaults to `None`. `image_dims` can
+      always be inferred if `batch_dims` was specified, so you only need to
+      provide one of the two.
     rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
       to `tf.rank(y_true) - 2`. In other words, if rank is not explicitly set,
       `y_true` and `y_pred` should have shape `[batch, height, width, channels]`
@@ -261,4 +327,6 @@ def ssim_multiscale_loss(y_true, y_pred, max_val=None,
                                          filter_sigma=filter_sigma,
                                          k1=k1,
                                          k2=k2,
+                                         batch_dims=batch_dims,
+                                         image_dims=image_dims,
                                          rank=rank)

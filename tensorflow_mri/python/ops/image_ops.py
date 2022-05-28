@@ -65,15 +65,15 @@ def psnr(img1,
       the maximum and the minimum allowed values). Defaults to 1 for floating
       point input images and `MAX` for integer input images, where `MAX` is the
       largest positive representable number for the data type.
-    batch_dims: An `int`. The number of batch dimensions in `image`. If `None`,
-      it is inferred from `image` and `image_dims` as
-      `image.shape.rank - image_dims - 1`. If `image_dims` is also `None`,
+    batch_dims: An `int`. The number of batch dimensions in input images. If
+      `None`, it is inferred from inputs and `image_dims` as
+      `(rank of inputs) - image_dims - 1`. If `image_dims` is also `None`,
       then `batch_dims` defaults to 1. `batch_dims` can always be inferred if
       `image_dims` was specified, so you only need to provide one of the two.
-    image_dims: An `int`. The number of spatial dimensions in `image`. If
-      `None`, it is inferred from `image` and `batch_dims` as
-      `image.shape.rank - batch_dims - 1`. Defaults to `None`. `image_dims` can
-      always be inferred if `image_dims` was specified, so you only need to
+    image_dims: An `int`. The number of spatial dimensions in input images. If
+      `None`, it is inferred from inputs and `batch_dims` as
+      `(rank of inputs) - batch_dims - 1`. Defaults to `None`. `image_dims` can
+      always be inferred if `batch_dims` was specified, so you only need to
       provide one of the two.
     rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
       to `tf.rank(img1) - 2`. In other words, if rank is not explicitly set,
@@ -218,15 +218,15 @@ def ssim(img1,
       term, as `C1 = (k1 * max_val) ** 2`. Defaults to 0.01.
     k2: Factor used to calculate the regularization constant for the contrast
       term, as `C2 = (k2 * max_val) ** 2`. Defaults to 0.03.
-    batch_dims: An `int`. The number of batch dimensions in `image`. If `None`,
-      it is inferred from `image` and `image_dims` as
-      `image.shape.rank - image_dims - 1`. If `image_dims` is also `None`,
+    batch_dims: An `int`. The number of batch dimensions in input images. If
+      `None`, it is inferred from inputs and `image_dims` as
+      `(rank of inputs) - image_dims - 1`. If `image_dims` is also `None`,
       then `batch_dims` defaults to 1. `batch_dims` can always be inferred if
       `image_dims` was specified, so you only need to provide one of the two.
-    image_dims: An `int`. The number of spatial dimensions in `image`. If
-      `None`, it is inferred from `image` and `batch_dims` as
-      `image.shape.rank - batch_dims - 1`. Defaults to `None`. `image_dims` can
-      always be inferred if `image_dims` was specified, so you only need to
+    image_dims: An `int`. The number of spatial dimensions in input images. If
+      `None`, it is inferred from inputs and `batch_dims` as
+      `(rank of inputs) - batch_dims - 1`. Defaults to `None`. `image_dims` can
+      always be inferred if `batch_dims` was specified, so you only need to
       provide one of the two.
     rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
       to `tf.rank(img1) - 2`. In other words, if rank is not explicitly set,
@@ -448,15 +448,15 @@ def ssim_multiscale(img1,
       term, as `C1 = (k1 * max_val) ** 2`. Defaults to 0.01.
     k2: Factor used to calculate the regularization constant for the contrast
       term, as `C2 = (k2 * max_val) ** 2`. Defaults to 0.03.
-    batch_dims: An `int`. The number of batch dimensions in `image`. If `None`,
-      it is inferred from `image` and `image_dims` as
-      `image.shape.rank - image_dims - 1`. If `image_dims` is also `None`,
+    batch_dims: An `int`. The number of batch dimensions in input images. If
+      `None`, it is inferred from inputs and `image_dims` as
+      `(rank of inputs) - image_dims - 1`. If `image_dims` is also `None`,
       then `batch_dims` defaults to 1. `batch_dims` can always be inferred if
       `image_dims` was specified, so you only need to provide one of the two.
-    image_dims: An `int`. The number of spatial dimensions in `image`. If
-      `None`, it is inferred from `image` and `batch_dims` as
-      `image.shape.rank - batch_dims - 1`. Defaults to `None`. `image_dims` can
-      always be inferred if `image_dims` was specified, so you only need to
+    image_dims: An `int`. The number of spatial dimensions in input images. If
+      `None`, it is inferred from inputs and `batch_dims` as
+      `(rank of inputs) - batch_dims - 1`. Defaults to `None`. `image_dims` can
+      always be inferred if `batch_dims` was specified, so you only need to
       provide one of the two.
     rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
       to `tf.rank(img1) - 2`. In other words, if rank is not explicitly set,
@@ -923,7 +923,7 @@ def image_gradients(image, method='sobel', norm=False,
     image_dims: An `int`. The number of spatial dimensions in `image`. If
       `None`, it is inferred from `image` and `batch_dims` as
       `image.shape.rank - batch_dims - 1`. Defaults to `None`. `image_dims` can
-      always be inferred if `image_dims` was specified, so you only need to
+      always be inferred if `batch_dims` was specified, so you only need to
       provide one of the two.
     name: A name for the operation (optional).
 
@@ -966,7 +966,7 @@ def gradient_magnitude(image, method='sobel', norm=False,
     image_dims: An `int`. The number of spatial dimensions in `image`. If
       `None`, it is inferred from `image` and `batch_dims` as
       `image.shape.rank - batch_dims - 1`. Defaults to `None`. `image_dims` can
-      always be inferred if `image_dims` was specified, so you only need to
+      always be inferred if `batch_dims` was specified, so you only need to
       provide one of the two.
     name: A name for the operation (optional).
 
@@ -1138,7 +1138,7 @@ def gmsd(img1,
     image_dims: An `int`. The number of spatial dimensions in `image`. If
       `None`, it is inferred from `image` and `batch_dims` as
       `image.shape.rank - batch_dims - 1`. Defaults to `None`. `image_dims` can
-      always be inferred if `image_dims` was specified, so you only need to
+      always be inferred if `batch_dims` was specified, so you only need to
       provide one of the two.
     rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
       to `tf.rank(img1) - 2`. In other words, if rank is not explicitly set,
@@ -1281,15 +1281,15 @@ def _validate_iqa_inputs(img1, img2, max_val, batch_dims, image_dims):
       the maximum and the minimum allowed values). Defaults to 1 for floating
       point input images and `MAX` for integer input images, where `MAX` is the
       largest positive representable number for the data type.
-    batch_dims: An `int`. The number of batch dimensions in `image`. If `None`,
-      it is inferred from `image` and `image_dims` as
-      `image.shape.rank - image_dims - 1`. If `image_dims` is also `None`,
+    batch_dims: An `int`. The number of batch dimensions in input images. If
+      `None`, it is inferred from inputs and `image_dims` as
+      `(rank of inputs) - image_dims - 1`. If `image_dims` is also `None`,
       then `batch_dims` defaults to 1. `batch_dims` can always be inferred if
       `image_dims` was specified, so you only need to provide one of the two.
-    image_dims: An `int`. The number of spatial dimensions in `image`. If
-      `None`, it is inferred from `image` and `batch_dims` as
-      `image.shape.rank - batch_dims - 1`. Defaults to `None`. `image_dims` can
-      always be inferred if `image_dims` was specified, so you only need to
+    image_dims: An `int`. The number of spatial dimensions in input images. If
+      `None`, it is inferred from inputs and `batch_dims` as
+      `(rank of inputs) - batch_dims - 1`. Defaults to `None`. `image_dims` can
+      always be inferred if `batch_dims` was specified, so you only need to
       provide one of the two.
 
   Returns:
