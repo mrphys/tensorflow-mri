@@ -19,6 +19,10 @@ Major Features and Improvements
 
   * Added new arguments ``batch_dims`` and ``image_dims`` to all image quality
     losses. Argument ``rank`` is now deprecated (use ``image_dims`` instead).
+  * Added new arguments ``multichannel`` and ``complex_part`` to all image
+    quality losses. These mirror the behaviour of the corresponding metrics
+    and allows for single-channel inputs and extraction of parts from complex
+    numbers, respectively. 
 
 * ``tfmri.metrics``:
 
