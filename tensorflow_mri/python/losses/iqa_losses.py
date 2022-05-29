@@ -21,13 +21,70 @@ import tensorflow as tf
 
 from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.util import api_util
+from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import deprecation
 from tensorflow_mri.python.util import keras_util
 
 
+class LossFunctionWrapperIQA(keras_util.LossFunctionWrapper):
+  """Wraps `tf.keras.losses.LossFunctionWrapper` to support IQA losses.
+
+  Adds two new arguments to `LossFunctionWrapper`:
+
+  * **multichannel**: If `True` (default), the input is expected to have a
+    channel dimension. If `False`, the input is not expected to have a
+    channel dimension. Because the wrapped functions expect a channel
+    dimension, this wrapper adds a channel dimension to the inputs if
+    `multichannel` is `False`.
+  * **complex_part**: If `None` (default), the input is passed unmodified to
+    the wrapped function. If `'real'`, `'imag'`, `'abs'`, or `'angle'`, the
+    relevant part is extracted and scaled before passing to the wrapped
+    function.
+  """
+  def __init__(self, *args, **kwargs):
+    self._max_val = kwargs.get('max_val') or 1.0  # Used during `update_state`.
+    self._multichannel = kwargs.pop('multichannel', True)
+    self._complex_part = check_util.validate_enum(
+        kwargs.pop('complex_part', None),
+        [None, 'real', 'imag', 'abs', 'angle'],
+        'complex_part')
+    super().__init__(*args, **kwargs)
+
+  def call(self, y_true, y_pred):
+    """Accumulates metric statistics.
+
+    Args:
+      y_true: The ground truth values.
+      y_pred: The predicted values.
+
+    Returns:
+      Update op.
+    """
+    # Add a singleton channel dimension if multichannel is disabled.
+    if not self._multichannel:
+      y_true = tf.expand_dims(y_true, axis=-1)
+      y_pred = tf.expand_dims(y_pred, axis=-1)
+    # Extract the relevant complex part, if necessary.
+    if self._complex_part is not None:
+      y_true = image_ops.extract_and_scale_complex_part(
+          y_true, self._complex_part, self._max_val)
+      y_pred = image_ops.extract_and_scale_complex_part(
+          y_pred, self._complex_part, self._max_val)
+    return super().call(y_true, y_pred)
+
+  def get_config(self):
+    """Returns the config of the metric."""
+    config = {
+        'multichannel': self._multichannel,
+        'complex_part': self._complex_part
+    }
+    base_config = super().get_config()
+    return {**base_config, **config}
+
+
 @api_util.export("losses.StructuralSimilarityLoss")
 @tf.keras.utils.register_keras_serializable(package="MRI")
-class StructuralSimilarityLoss(keras_util.LossFunctionWrapper):
+class StructuralSimilarityLoss(LossFunctionWrapperIQA):
   """Computes the structural similarity (SSIM) loss.
 
   The SSIM loss is equal to :math:`1.0 - \textrm{SSIM}`.
@@ -95,7 +152,7 @@ class StructuralSimilarityLoss(keras_util.LossFunctionWrapper):
 
 @api_util.export("losses.MultiscaleStructuralSimilarityLoss")
 @tf.keras.utils.register_keras_serializable(package="MRI")
-class MultiscaleStructuralSimilarityLoss(keras_util.LossFunctionWrapper):
+class MultiscaleStructuralSimilarityLoss(LossFunctionWrapperIQA):
   """Computes the multiscale structural similarity (MS-SSIM) loss.
 
   The MS-SSIM loss is equal to :math:`1.0 - \textrm{MS-SSIM}`.

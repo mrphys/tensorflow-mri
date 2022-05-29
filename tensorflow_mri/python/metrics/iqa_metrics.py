@@ -25,7 +25,7 @@ from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import deprecation
 
 
-class _MeanMetricWrapperIQA(tf.keras.metrics.MeanMetricWrapper):
+class MeanMetricWrapperIQA(tf.keras.metrics.MeanMetricWrapper):
   """Wraps `tf.keras.metrics.MeanMetricWrapper` to support IQA metrics.
 
   Adds two new arguments to `MeanMetricWrapper`:
@@ -41,7 +41,7 @@ class _MeanMetricWrapperIQA(tf.keras.metrics.MeanMetricWrapper):
     wrapped function. `complex_part` must be specified if the input is complex.
   """
   def __init__(self, *args, **kwargs):
-    self._max_val = kwargs.get('max_val') or 1.0 # Used during `update_state`.
+    self._max_val = kwargs.get('max_val') or 1.0  # Used during `update_state`.
     self._multichannel = kwargs.pop('multichannel', True)
     self._complex_part = check_util.validate_enum(
         kwargs.pop('complex_part', None),
@@ -84,7 +84,7 @@ class _MeanMetricWrapperIQA(tf.keras.metrics.MeanMetricWrapper):
 
 @api_util.export("metrics.PeakSignalToNoiseRatio")
 @tf.keras.utils.register_keras_serializable(package="MRI")
-class PeakSignalToNoiseRatio(_MeanMetricWrapperIQA):
+class PeakSignalToNoiseRatio(MeanMetricWrapperIQA):
   """Peak signal-to-noise ratio (PSNR) metric.
 
   The PSNR is the ratio between the maximum possible power of an image and the
@@ -154,7 +154,7 @@ class PeakSignalToNoiseRatio(_MeanMetricWrapperIQA):
 
 @api_util.export("metrics.StructuralSimilarity")
 @tf.keras.utils.register_keras_serializable(package="MRI")
-class StructuralSimilarity(_MeanMetricWrapperIQA):
+class StructuralSimilarity(MeanMetricWrapperIQA):
   """Structural similarity index (SSIM) metric.
 
   The SSIM is a method for predicting the perceived quality of an image, based
@@ -244,7 +244,7 @@ class StructuralSimilarity(_MeanMetricWrapperIQA):
 
 @api_util.export("metrics.MultiscaleStructuralSimilarity")
 @tf.keras.utils.register_keras_serializable(package="MRI")
-class MultiscaleStructuralSimilarity(_MeanMetricWrapperIQA):
+class MultiscaleStructuralSimilarity(MeanMetricWrapperIQA):
   """Multiscale structural similarity index (MS-SSIM) metric.
 
   Args:
