@@ -120,6 +120,15 @@ class StructuralSimilarityLoss(LossFunctionWrapperIQA):
       `y_true` and `y_pred` should have shape `[batch, height, width, channels]`
       if processing 2D images or `[batch, depth, height, width, channels]` if
       processing 3D images.
+    multichannel: A `boolean`. Whether multichannel computation is enabled. If
+      `False`, the inputs `y_true` and `y_pred` are not expected to have a
+      channel dimension, i.e. they should have shape
+      `batch_shape + [height, width]` (2D) or
+      `batch_shape + [depth, height, width]` (3D).
+    complex_part: The part of a complex input to be used in the computation of
+      the metric. Must be one of `'real'`, `'imag'`, `'abs'` or `'angle'`. Note
+      that real and imaginary parts, as well as angles, will be scaled to avoid
+      negative numbers.
     reduction: Type of `tf.keras.losses.Reduction` to apply to loss. Default
       value is `AUTO`.
     name: String name of the loss instance.
@@ -142,12 +151,23 @@ class StructuralSimilarityLoss(LossFunctionWrapperIQA):
                batch_dims=None,
                image_dims=None,
                rank=None,
+               multichannel=True,
+               complex_part=None,
                reduction=tf.keras.losses.Reduction.AUTO,
                name='ssim_loss'):
-    super().__init__(ssim_loss, reduction=reduction, name=name, max_val=max_val,
-                     filter_size=filter_size, filter_sigma=filter_sigma,
-                     k1=k1, k2=k2, batch_dims=batch_dims, image_dims=image_dims,
-                     rank=rank)
+    super().__init__(ssim_loss,
+                     reduction=reduction,
+                     name=name,
+                     max_val=max_val,
+                     filter_size=filter_size,
+                     filter_sigma=filter_sigma,
+                     k1=k1,
+                     k2=k2,
+                     batch_dims=batch_dims,
+                     image_dims=image_dims,
+                     rank=rank,
+                     multichannel=multichannel,
+                     complex_part=complex_part)
 
 
 @api_util.export("losses.MultiscaleStructuralSimilarityLoss")
@@ -193,6 +213,15 @@ class MultiscaleStructuralSimilarityLoss(LossFunctionWrapperIQA):
       `y_true` and `y_pred` should have shape `[batch, height, width, channels]`
       if processing 2D images or `[batch, depth, height, width, channels]` if
       processing 3D images.
+    multichannel: A `boolean`. Whether multichannel computation is enabled. If
+      `False`, the inputs `y_true` and `y_pred` are not expected to have a
+      channel dimension, i.e. they should have shape
+      `batch_shape + [height, width]` (2D) or
+      `batch_shape + [depth, height, width]` (3D).
+    complex_part: The part of a complex input to be used in the computation of
+      the metric. Must be one of `'real'`, `'imag'`, `'abs'` or `'angle'`. Note
+      that real and imaginary parts, as well as angles, will be scaled to avoid
+      negative numbers.
     reduction: Type of `tf.keras.losses.Reduction` to apply to loss. Default
       value is `AUTO`.
     name: String name of the loss instance.
@@ -216,13 +245,24 @@ class MultiscaleStructuralSimilarityLoss(LossFunctionWrapperIQA):
                batch_dims=None,
                image_dims=None,
                rank=None,
+               multichannel=True,
+               complex_part=None,
                reduction=tf.keras.losses.Reduction.AUTO,
                name='ssim_multiscale_loss'):
-    super().__init__(ssim_multiscale_loss, reduction=reduction, name=name,
-                     max_val=max_val, power_factors=power_factors,
-                     filter_size=filter_size, filter_sigma=filter_sigma,
-                     k1=k1, k2=k2, batch_dims=batch_dims, image_dims=image_dims,
-                     rank=rank)
+    super().__init__(ssim_multiscale_loss,
+                     reduction=reduction,
+                     name=name,
+                     max_val=max_val,
+                     power_factors=power_factors,
+                     filter_size=filter_size,
+                     filter_sigma=filter_sigma,
+                     k1=k1,
+                     k2=k2,
+                     batch_dims=batch_dims,
+                     image_dims=image_dims,
+                     rank=rank,
+                     multichannel=multichannel,
+                     complex_part=complex_part)
 
 
 @api_util.export("losses.ssim_loss")

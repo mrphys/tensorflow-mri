@@ -124,7 +124,7 @@ class PeakSignalToNoiseRatio(MeanMetricWrapperIQA):
     complex_part: The part of a complex input to be used in the computation of
       the metric. Must be one of `'real'`, `'imag'`, `'abs'` or `'angle'`. Note
       that real and imaginary parts, as well as angles, will be scaled to avoid
-      negative numbers. This argument must be specified for complex inputs.
+      negative numbers.
     name: String name of the metric instance.
     dtype: Data type of the metric result.
   """
@@ -200,7 +200,7 @@ class StructuralSimilarity(MeanMetricWrapperIQA):
     complex_part: The part of a complex input to be used in the computation of
       the metric. Must be one of `'real'`, `'imag'`, `'abs'` or `'angle'`. Note
       that real and imaginary parts, as well as angles, will be scaled to avoid
-      negative numbers. This argument must be specified for complex inputs.
+      negative numbers.
     name: String name of the metric instance.
     dtype: Data type of the metric result.
 
@@ -287,7 +287,7 @@ class MultiscaleStructuralSimilarity(MeanMetricWrapperIQA):
     complex_part: The part of a complex input to be used in the computation of
       the metric. Must be one of `'real'`, `'imag'`, `'abs'` or `'angle'`. Note
       that real and imaginary parts, as well as angles, will be scaled to avoid
-      negative numbers. This argument must be specified for complex inputs.
+      negative numbers.
     name: String name of the metric instance.
     dtype: Data type of the metric result.
 
