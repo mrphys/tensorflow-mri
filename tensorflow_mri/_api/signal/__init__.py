@@ -10,3 +10,5 @@ from tensorflow_mri.python.ops.signal_ops import crop_kspace as crop_kspace
 from tensorflow_mri.python.ops.fft_ops import fftn as fft
 from tensorflow_mri.python.ops.fft_ops import ifftn as ifft
 from tensorflow_nufft.python.ops.nufft_ops import nufft as nufft
+from tensorflow_mri.python.ops.wavelet_ops import dwt as dwt
+from tensorflow_mri.python.ops.wavelet_ops import idwt as idwt

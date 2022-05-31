@@ -42,6 +42,11 @@ Major Features and Improvements
     (for ``lstsq``) and ``partial_fourier`` (for ``pf``). These are now the
     canonical aliases, but the old ones will still be supported.
 
+* ``tfmri.signal``:
+
+  * Added new ops ``dwt`` and ``idwt`` to compute the N-dimensional discrete
+    wavelet transform and its inverse, respectively.
+
 * ``tfmri.plot``:
 
   * Added new argument ``norm`` to ``image_sequence``, ``tiled_image`` and
