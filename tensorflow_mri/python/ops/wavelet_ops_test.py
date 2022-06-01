@@ -48,7 +48,7 @@ class DiscreteWaveletTransformTest(test_util.TestCase):
     self.assertAllClose(y, result)
 
 
-  @parameterized.product(wavelet=pywt.wavelist(kind='discrete')[:1],
+  @parameterized.product(wavelet=pywt.wavelist(kind='discrete'),
                          axes=[None, [0], [1], [0, 1]])
   def test_dwt_idwt_2d(self, wavelet, axes):
     wt = wavelet_ops._as_wavelet(wavelet)  # pylint: disable=protected-access
@@ -69,6 +69,7 @@ class DiscreteWaveletTransformTest(test_util.TestCase):
     self.assertAllClose(expected, result, atol=1e-4, rtol=1e-4)
 
 
+  @test_util.run_all_execution_modes
   def test_dwt_idwt_complex(self):
     x = (np.asarray([3, 7, 1, 1, -2, 5, 4, 6], dtype=np.float32) +
          1j * np.asarray([-1, 2, 5, 2, -3, 3, 4, 1], dtype=np.float32))

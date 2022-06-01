@@ -17,8 +17,12 @@
 import unittest
 
 from absl.testing import parameterized
+from keras.testing_infra import test_combinations
 import numpy as np
 import tensorflow as tf
+
+
+run_all_execution_modes = test_combinations.run_all_keras_modes
 
 
 class TestCase(tf.test.TestCase, parameterized.TestCase):
