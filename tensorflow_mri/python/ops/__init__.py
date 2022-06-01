@@ -13,3 +13,5 @@
 # limitations under the License.
 # ==============================================================================
 """TFMRI operators."""
+
+from tensorflow_mri.python.ops import wavelet_ops

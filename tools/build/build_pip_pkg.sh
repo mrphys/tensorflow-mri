@@ -83,7 +83,7 @@ function main() {
 
   if [[ "${PLATFORM}" == "linux" ]]; then
     echo $(date) : "=== Auditing wheel"
-    auditwheel repair --plat manylinux2010_x86_64 dist/*linux_x86_64.whl -w dist/
+    auditwheel repair --plat manylinux2014_x86_64 dist/*linux_x86_64.whl -w dist/
     rm -rf dist/*linux_x86_64.whl
   fi
 

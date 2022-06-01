@@ -1,40 +1,71 @@
-Release 0.18.0
+Release 0.19.0
 ==============
+
+This release bumps the supported TensorFlow version to 2.9.
 
 Major Features and Improvements
 -------------------------------
 
-* ``tfmri.convex``:
+* ``tfmri.image``:
 
-  * All references to ``ndim`` in ``ConvexFunction`` and its subclasses have
-    been deprecated in favor of ``domain_dimension`` or ``domain_shape``. This
-    applies to constructor arguments, properties and methods.
-  * Refactored static and dynamic shape properties and methods to single-source
-    shape information on the ``_shape`` and ``_shape_tensor`` methods.
-    ``domain_dimension``, ``domain_dimension_tensor``, ``batch_shape`` and
-    ``batch_shape_tensor`` now just call ``shape`` and ``shape_tensor`` and
-    should not be overriden.
+  * Added new arguments ``batch_dims`` and ``image_dims`` to
+    ``image_gradients``, ``gradient_magnitude``, ``psnr``, ``ssim`` and
+    ``ssim_multiscale``.
+  * Argument ``rank`` of ``psnr``, ``ssim`` and ``ssim_multiscale`` is now
+    deprecated. To update, use ``image_dims`` instead.
+  * ``image_gradients`` and ``gradient_magnitude`` now support complex inputs.
 
-* ``tfmri.initializers``:
+* ``tfmri.losses``:
 
-  * New module with initializers ``VarianceScaling``, ``GlorotNormal``,
-    ``GlorotUniform``, ``HeNormal``, ``HeUniform``, ``LecunNormal`` and
-    ``LecunUniform``. All initializers are drop-in replacements for their
-    Keras counterparts and support complex values.
+  * Added new arguments ``batch_dims`` and ``image_dims`` to all image quality
+    losses. Argument ``rank`` is now deprecated (use ``image_dims`` instead).
+  * Added new arguments ``multichannel`` and ``complex_part`` to all image
+    quality losses. These mirror the behaviour of the corresponding metrics
+    and allows for single-channel inputs and extraction of parts from complex
+    numbers, respectively. 
+  * The canonical API names ``StructuralSimilarityLoss`` and
+    ``MultiscaleStructuralSimilarityLoss`` have been
+    changed to ``SSIMLoss`` and ``SSIMMultiscaleLoss``, respectively. The
+    old names are still available, but may be removed in the future.
 
-* ``tfmri.io``:
+* ``tfmri.metrics``:
 
-  * New function ``parse_twix`` to parse TWIX RAID files (Siemens raw data).
+  * Image quality metrics can now accept complex inputs without also specifying
+    ``complex_part``, in which case the unmodified complex values will be passed
+    to the downstream function. This may not be supported for all metrics.
+  * Added new arguments ``batch_dims`` and ``image_dims`` to all image quality
+    metrics. Argument ``rank`` is now deprecated (use ``image_dims`` instead).
+  * The canonical API names ``PeakSignalToNoiseRatio``,
+    ``StructuralSimilarity`` and ``MultiscaleStructuralSimilarity`` have been
+    changed to ``PSNR``, ``SSIM`` and ``SSIMMultiscale``, respectively. The
+    old names are still available, but may be removed in the future.
 
-* ``tfmri.layers``:
+* ``tfmri.recon``:
 
-  * Added new layers ``Conv1D``, ``Conv2D`` and ``Conv3D``. All layers
-    are drop-in replacements for their Keras counterparts and support
-    complex values.
+  * Added new argument ``preserve_phase`` to ``tfmri.recon.pf``. This allows
+    the user to recover the phase as well as the magnitude during partial
+    Fourier reconstruction. Argument ``return_complex`` has the same behaviour
+    and is now deprecated.
+  * Added new aliases ``adjoint`` (for ``adj``), ``least_squares``
+    (for ``lstsq``) and ``partial_fourier`` (for ``pf``). These are now the
+    canonical aliases, but the old ones will still be supported.
 
+* ``tfmri.signal``:
+
+  * Added new ops ``dwt`` and ``idwt`` to compute the N-dimensional discrete
+    wavelet transform and its inverse, respectively.
+
+* ``tfmri.plot``:
+
+  * Added new argument ``norm`` to ``image_sequence``, ``tiled_image`` and
+    ``tiled_image_sequence``. This allows the user to specify the scaling
+    to be applied before the colormap.
 
 Bug Fixes and Other Changes
 ---------------------------
 
-* Using a new API import system, which should address some issues with
-  the autocomplete features of some editors.
+* Fixed a bug with *k*-space weighting in homodyne detection method of
+  ``tfmri.recon.partial_fourier``. 
+* Like core TensorFlow, we now compile with ``_GLIBCXX_USE_CXX11_ABI=1``.
+* Like core TensorFlow, Python wheels now conform to ``manylinux2014``, an
+  upgrade from ``manylinux2010``.

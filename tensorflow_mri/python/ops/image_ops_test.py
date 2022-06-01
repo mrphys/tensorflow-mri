@@ -15,6 +15,7 @@
 """Tests for module `image_ops`."""
 
 import numpy as np
+import scipy.ndimage
 import tensorflow as tf
 
 from absl.testing import parameterized
@@ -207,191 +208,6 @@ class PeakSignalToNoiseRatioTest(test_util.TestCase):
     with self.assertRaisesRegex(tf.errors.InvalidArgumentError,
                                 "`rank` must be >= 2"):
       image_ops.psnr(img1, img2, 255)
-
-
-class StructuralSimilarityTest(test_util.TestCase):
-  """Tests for SSIM op."""
-
-  @classmethod
-  def setUpClass(cls):
-    """Prepare tests."""
-    super().setUpClass()
-    cls.data = io_util.read_hdf5('tests/data/image_ops_data.h5')
-
-  @test_util.run_in_graph_and_eager_modes
-  def test_ssim_2d_scalar(self):
-    """Test 2D SSIM with scalar batch."""
-    img1 = self.data['psnr/2d/img1']
-    img2 = self.data['psnr/2d/img2']
-
-    img1 = tf.expand_dims(img1, -1)
-    img2 = tf.expand_dims(img2, -1)
-
-    result = image_ops.ssim(img1, img2, max_val=255, rank=2)
-
-    self.assertAllClose(result, 0.5250339, rtol=1e-5, atol=1e-5)
-
-  @test_util.run_in_graph_and_eager_modes
-  def test_ssim_2d_trivial_batch(self):
-    """Test 2D SSIM with trivial batch of size 1."""
-    img1 = self.data['psnr/2d/img1']
-    img2 = self.data['psnr/2d/img2']
-
-    img1 = tf.expand_dims(img1, -1)
-    img2 = tf.expand_dims(img2, -1)
-    img1 = tf.expand_dims(img1, 0)
-    img2 = tf.expand_dims(img2, 0)
-
-    result = image_ops.ssim(img1, img2, max_val=255, rank=2)
-    self.assertAllClose(result, [0.5250339], rtol=1e-5, atol=1e-5)
-
-  @test_util.run_in_graph_and_eager_modes
-  def test_ssim_2d_batch_multichannel(self):
-    """Test 2D SSIM with multichannel batch of images."""
-    img1 = self.data['psnr/2d/batch/img1']
-    img2 = self.data['psnr/2d/batch/img2']
-    ref = [0.250783,
-           0.293936,
-           0.33806 ,
-           0.366984,
-           0.38121 ,
-           0.366342]
-
-    result = image_ops.ssim(img1, img2, max_val=255)
-    self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
-
-    # Test without specifying dynamic range, which should default to 255 for
-    # `tf.uint8`.
-    result = image_ops.ssim(img1, img2)
-    self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
-
-  @test_util.run_in_graph_and_eager_modes
-  def test_ssim_2d_nd_batch(self):
-    """Test 2D SSIM with N-D batch of images."""
-    img1 = self.data['psnr/2d/batch/img1']
-    img2 = self.data['psnr/2d/batch/img2']
-    img1 = tf.reshape(img1, (3, 2) + img1.shape[1:])
-    img2 = tf.reshape(img2, (3, 2) + img2.shape[1:])
-    ref = [[0.250783, 0.293936],
-           [0.33806 , 0.366984],
-           [0.38121 , 0.366342]]
-
-    result = image_ops.ssim(img1, img2, max_val=255, rank=2)
-    self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
-
-  @test_util.run_in_graph_and_eager_modes
-  def test_ssim_2d_batch_multichannel_float(self):
-    """Test 2D SSIM with multichannel batch of floating point images."""
-    img1 = self.data['psnr/2d/batch/img1']
-    img2 = self.data['psnr/2d/batch/img2']
-    ref = [0.250783,
-           0.293936,
-           0.33806 ,
-           0.366984,
-           0.38121 ,
-           0.366342]
-
-    img1 = tf.cast(img1, tf.float32) / 255.0
-    img2 = tf.cast(img2, tf.float32) / 255.0
-
-    result = image_ops.ssim(img1, img2, max_val=1)
-    self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
-
-    # Test without specifying dynamic range, which should default to 1 for
-    # `tf.float32`.
-    result = image_ops.ssim(img1, img2)
-    self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
-
-  @test_util.run_in_graph_and_eager_modes
-  def test_ssim_3d_scalar(self):
-    """Test 3D SSIM with scalar batch."""
-    img1 = self.data['psnr/3d/img1']
-    img2 = self.data['psnr/3d/img2']
-
-    img1 = img1[0, ...]
-    img2 = img2[0, ...]
-
-    img1 = tf.expand_dims(img1, -1)
-    img2 = tf.expand_dims(img2, -1)
-
-    result = image_ops.ssim(img1, img2, rank=3)
-    self.assertAllClose(result, 0.93111473)
-
-  @test_util.run_in_graph_and_eager_modes
-  def test_ssim_3d_batch(self):
-    """Test 3D SSIM with batch."""
-    img1 = self.data['psnr/3d/img1']
-    img2 = self.data['psnr/3d/img2']
-
-    ref = [0.93111473,
-           0.90337730]
-
-    img1 = img1[:2, ...]
-    img2 = img2[:2, ...]
-
-    img1 = tf.expand_dims(img1, -1)
-    img2 = tf.expand_dims(img2, -1)
-
-    result = image_ops.ssim(img1, img2, max_val=255)
-    self.assertAllClose(result, ref, rtol=1e-5, atol=1e-5)
-
-  @test_util.run_in_graph_and_eager_modes
-  def test_ssim_3d_mdbatch(self):
-    """Test 3D SSIM with multidimensional batch."""
-    img1 = self.data['psnr/3d/img1']
-    img2 = self.data['psnr/3d/img2']
-
-    ref = [[0.93111473, 0.90337730],
-           [0.90820014, 0.92448730]]
-
-    img1 = img1[:4, ...]
-    img2 = img2[:4, ...]
-
-    img1 = tf.expand_dims(img1, -1)
-    img2 = tf.expand_dims(img2, -1)
-
-    img1 = tf.reshape(img1, (2, 2) + img1.shape[1:])
-    img2 = tf.reshape(img2, (2, 2) + img2.shape[1:])
-
-    result = image_ops.ssim(img1, img2, max_val=255, rank=3)
-    self.assertAllClose(result, ref)
-
-  @test_util.run_in_graph_and_eager_modes
-  def test_ssim_3d_multichannel(self):
-    """Test 3D SSIM with multichannel inputs."""
-    # Does not work on CPU currently - GPU only.
-
-    # img1 = self.data['psnr/3d/img1']
-    # img2 = self.data['psnr/3d/img2']
-
-    # ref = [[0.93111473, 0.90337730],
-    #        [0.90820014, 0.92448730],
-    #        [0.90630510, 0.92143655]]
-
-    # img1 = tf.reshape(img1, (3, 2) + img1.shape[1:])
-    # img2 = tf.reshape(img2, (3, 2) + img2.shape[1:])
-
-    # img1 = tf.transpose(img1, [0, 2, 3, 4, 1])
-    # img2 = tf.transpose(img2, [0, 2, 3, 4, 1])
-
-    # result = image_ops.ssim(img1, img2, max_val=255, rank=3)
-    # self.assertAllClose(result, tf.math.reduce_mean(ref, axis=1))
-
-  def test_ssim_invalid_rank(self):
-    """Test SSIM with an invalid rank."""
-    img1 = self.data['psnr/2d/img1']
-    img2 = self.data['psnr/2d/img2']
-
-    with self.assertRaisesRegex(tf.errors.InvalidArgumentError,
-                                "`rank` must be >= 2"):
-      image_ops.ssim(img1, img2, 255)
-
-    img1 = tf.expand_dims(img1, -1)
-    img2 = tf.expand_dims(img2, -1)
-
-    with self.assertRaisesRegex(tf.errors.InvalidArgumentError,
-                                "`rank` must be >= 2"):
-      image_ops.ssim(img1, img2, 255)
 
 
 class MultiscaleStructuralSimilarityTest(test_util.TestCase):
@@ -599,6 +415,7 @@ class ExtractGlimpsesTest(test_util.TestCase):
 
 class ImageGradientsTest(test_util.TestCase):
   """Tests for the `image_gradients` op."""
+  # pylint: disable=missing-function-docstring
   def test_prewitt(self):
     expected_plane = np.reshape([[[0, 0], [0, 7], [0, 11], [0, 0]],
                                  [[5, 0], [-2, 5], [-1, 4], [-8, 0]],
@@ -637,6 +454,109 @@ class ImageGradientsTest(test_util.TestCase):
     edges = image_ops.image_gradients(img, method=method)
     self.assertAllClose(expected_batch, edges)
 
+    # Test with `batch_dims`.
+    edges = image_ops.image_gradients(img, method=method, batch_dims=1)
+    self.assertAllClose(expected_batch, edges)
+
+  def test_sobel_2d(self):
+    array = np.array([[3, 2, 5, 1, 4],
+                      [5, 8, 3, 7, 1],
+                      [5, 6, 9, 3, 5]], np.float32)
+    # `image_gradients` uses the `REFLECT` padding mode by default, which is
+    # equivalent to the SciPy `mirror` mode.
+    expected_0 = scipy.ndimage.sobel(array, axis=0, mode='mirror')
+    expected_1 = scipy.ndimage.sobel(array, axis=1, mode='mirror')
+    output = image_ops.image_gradients(array[None, ..., None], method='sobel')
+    self.assertAllClose(expected_0, output[0, ..., 0, 0])
+    self.assertAllClose(expected_1, output[0, ..., 0, 1])
+
+  def test_sobel_3d(self):
+    array = np.array([[[4, 7, 2, 3, 5],
+                       [3, 7, 7, 6, 3],
+                       [5, 6, 8, 3, 4],
+                       [8, 1, 3, 2, 7]],
+                      [[4, 1, 7, 1, 6],
+                       [2, 5, 9, 2, 1],
+                       [6, 6, 5, 9, 1],
+                       [1, 7, 0, 2, 8]],
+                      [[0, 0, 3, 7, 8],
+                       [9, 0, 6, 3, 8],
+                       [3, 9, 3, 3, 9],
+                       [7, 0, 1, 7, 9]]], np.float32)
+
+    # `image_gradients` uses the `REFLECT` padding mode by default, which is
+    # equivalent to the SciPy `mirror` mode.
+    expected_0 = scipy.ndimage.sobel(array, axis=0, mode='mirror')
+    expected_1 = scipy.ndimage.sobel(array, axis=1, mode='mirror')
+    expected_2 = scipy.ndimage.sobel(array, axis=2, mode='mirror')
+    output = image_ops.image_gradients(array[None, ..., None], method='sobel')
+    self.assertAllClose(expected_0, output[0, ..., 0, 0])
+    self.assertAllClose(expected_1, output[0, ..., 0, 1])
+    self.assertAllClose(expected_2, output[0, ..., 0, 2])
+
+    ## 2D with 2 batch dims
+    expected_0 = scipy.ndimage.sobel(array, axis=0, mode='mirror')
+    expected_1 = scipy.ndimage.sobel(array, axis=1, mode='mirror')
+    output = image_ops.image_gradients(array[None, ..., None], method='sobel')
+    self.assertAllClose(expected_0, output[0, ..., 0, 0])
+    self.assertAllClose(expected_1, output[0, ..., 0, 1])
+    self.assertAllClose(expected_2, output[0, ..., 0, 2])
+
+  def test_batch_dims(self):
+    array = np.array([[3, 2, 5, 1, 4],
+                      [5, 8, 3, 7, 1],
+                      [5, 6, 9, 3, 5]], np.float32)
+    # `image_gradients` uses the `REFLECT` padding mode by default, which is
+    # equivalent to the SciPy `mirror` mode.
+    expected_0 = scipy.ndimage.sobel(array, axis=0, mode='mirror')
+    expected_1 = scipy.ndimage.sobel(array, axis=1, mode='mirror')
+
+    # Two batch dims.
+    output = image_ops.image_gradients(
+        array[None, None, ..., None], method='sobel', batch_dims=2)
+    self.assertAllClose(expected_0, output[0, 0, ..., 0, 0])
+    self.assertAllClose(expected_1, output[0, 0, ..., 0, 1])
+
+    output = image_ops.image_gradients(
+        array[None, None, ..., None], method='sobel', image_dims=2)
+    self.assertAllClose(expected_0, output[0, 0, ..., 0, 0])
+    self.assertAllClose(expected_1, output[0, 0, ..., 0, 1])
+
+    output = image_ops.image_gradients(
+        array[None, None, ..., None], method='sobel',
+        batch_dims=2, image_dims=2)
+    self.assertAllClose(expected_0, output[0, 0, ..., 0, 0])
+    self.assertAllClose(expected_1, output[0, 0, ..., 0, 1])
+
+    # Zero batch dims.
+    output = image_ops.image_gradients(
+        array[..., None], method='sobel', batch_dims=0)
+    self.assertAllClose(expected_0, output[..., 0, 0])
+    self.assertAllClose(expected_1, output[..., 0, 1])
+
+    output = image_ops.image_gradients(
+        array[..., None], method='sobel', image_dims=2)
+    self.assertAllClose(expected_0, output[..., 0, 0])
+    self.assertAllClose(expected_1, output[..., 0, 1])
+
+  def test_sobel_2d_complex(self):
+    array = (np.array([[4, 7, 2, 3, 5],
+                       [3, 7, 7, 6, 3],
+                       [5, 6, 8, 3, 4],
+                       [8, 1, 3, 2, 7]], dtype=np.float32) +
+             np.array([[4, 1, 7, 1, 6],
+                       [2, 5, 9, 2, 1],
+                       [6, 6, 5, 9, 1],
+                       [1, 7, 0, 2, 8]], dtype=np.float32) * 1j)
+
+    # `image_gradients` uses the `REFLECT` padding mode by default, which is
+    # equivalent to the SciPy `mirror` mode.
+    expected_0 = scipy.ndimage.sobel(array, axis=0, mode='mirror')
+    expected_1 = scipy.ndimage.sobel(array, axis=1, mode='mirror')
+    output = image_ops.image_gradients(array[None, ..., None], method='sobel')
+    self.assertAllClose(expected_0, output[0, ..., 0, 0])
+    self.assertAllClose(expected_1, output[0, ..., 0, 1])
+
 
 class BaseTestCases():
   """Namespace of abstract base test cases."""
@@ -663,6 +583,14 @@ class BaseTestCases():
       self.assertAllClose(result, self.expected[test_name],
                           rtol=1e-5, atol=1e-5)
 
+      result = self.test_fn(img1, img2, max_val=255, image_dims=2)
+      self.assertAllClose(result, self.expected[test_name],
+                          rtol=1e-5, atol=1e-5)
+
+      result = self.test_fn(img1, img2, max_val=255, batch_dims=0)
+      self.assertAllClose(result, self.expected[test_name],
+                          rtol=1e-5, atol=1e-5)
+
     @test_util.run_in_graph_and_eager_modes
     def test_2d_trivial_batch(self):
       """Test 2D function with trivial batch of size 1."""
@@ -677,6 +605,18 @@ class BaseTestCases():
       img2 = tf.expand_dims(img2, 0)
 
       result = self.test_fn(img1, img2, max_val=255, rank=2)
+      self.assertAllClose(result, self.expected[test_name],
+                          rtol=1e-5, atol=1e-5)
+
+      result = self.test_fn(img1, img2, max_val=255, image_dims=2)
+      self.assertAllClose(result, self.expected[test_name],
+                          rtol=1e-5, atol=1e-5)
+
+      result = self.test_fn(img1, img2, max_val=255, batch_dims=1)
+      self.assertAllClose(result, self.expected[test_name],
+                          rtol=1e-5, atol=1e-5)
+
+      result = self.test_fn(img1, img2, max_val=255)
       self.assertAllClose(result, self.expected[test_name],
                           rtol=1e-5, atol=1e-5)
 
@@ -767,19 +707,24 @@ class BaseTestCases():
       self.assertAllClose(result, self.expected[test_name],
                           rtol=1e-5, atol=1e-5)
 
-    def test_invalid_rank(self):
-      """Test invalid rank."""
-      img1 = self.data['psnr/2d/img1']
-      img2 = self.data['psnr/2d/img2']
 
-      with self.assertRaisesRegex(ValueError, "rank must be 2 or 3"):
-        self.test_fn(img1, img2, 255)
-
-      img1 = tf.expand_dims(img1, -1)
-      img2 = tf.expand_dims(img2, -1)
-
-      with self.assertRaisesRegex(ValueError, "rank must be 2 or 3"):
-        self.test_fn(img1, img2, 255)
+class SSIMTest(BaseTestCases.IQATest):
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.test_fn = image_ops.ssim
+    self.expected = {
+        '2d_scalar_batch': 0.5250339,
+        '2d_trivial_batch': [0.5250339],
+        '2d_multichannel_batch': [0.250783, 0.293936, 0.33806 ,
+                                  0.366984, 0.38121 , 0.366342],
+        '2d_nd_batch': [[0.250783, 0.293936],
+                        [0.33806 , 0.366984],
+                        [0.38121 , 0.366342]],
+        '2d_batch_float': [0.250783, 0.293936, 0.33806 ,
+                           0.366984, 0.38121 , 0.366342],
+        '3d_scalar_batch': 0.93111473,
+        '3d_batch': [0.93111473, 0.90337730]
+    }
 
 
 class GMSDTest(BaseTestCases.IQATest):
@@ -922,6 +867,28 @@ class PhantomTest(test_util.TestCase):
     out /= rss
 
     return out.astype(dtype)
+
+
+class TestResolveBatchAndImageDims(test_util.TestCase):
+  """Tests for `_resolve_batch_and_image_dims`."""
+  # pylint: disable=missing-function-docstring
+  @parameterized.parameters(
+      # rank, batch_dims, image_dims, expected_batch_dims, expected_image_dims
+      (4, None, None, 1, 2),
+      (5, None, None, 1, 3),
+      (5, 2, None, 2, 2),
+      (5, 2, 2, 2, 2),
+      (5, None, 3, 1, 3),
+      (5, None, 2, 2, 2)
+  )
+  def test_resolve_batch_and_image_dims(
+      self, rank, input_batch_dims, input_image_dims,
+      expected_batch_dims, expected_image_dims):
+    image = tf.zeros((4,) * rank)
+    batch_dims, image_dims = image_ops._resolve_batch_and_image_dims(  # pylint: disable=protected-access
+        image, input_batch_dims, input_image_dims)
+    self.assertEqual(expected_batch_dims, batch_dims)
+    self.assertEqual(expected_image_dims, image_dims)
 
 
 if __name__ == '__main__':

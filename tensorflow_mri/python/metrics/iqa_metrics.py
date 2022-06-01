@@ -22,9 +22,10 @@ import tensorflow as tf
 from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
+from tensorflow_mri.python.util import deprecation
 
 
-class _MeanMetricWrapperIQA(tf.keras.metrics.MeanMetricWrapper):
+class MeanMetricWrapperIQA(tf.keras.metrics.MeanMetricWrapper):
   """Wraps `tf.keras.metrics.MeanMetricWrapper` to support IQA metrics.
 
   Adds two new arguments to `MeanMetricWrapper`:
@@ -40,7 +41,7 @@ class _MeanMetricWrapperIQA(tf.keras.metrics.MeanMetricWrapper):
     wrapped function. `complex_part` must be specified if the input is complex.
   """
   def __init__(self, *args, **kwargs):
-    self._max_val = kwargs.get('max_val') or 1.0 # Used during `update_state`.
+    self._max_val = kwargs.get('max_val') or 1.0  # Used during `update_state`.
     self._multichannel = kwargs.pop('multichannel', True)
     self._complex_part = check_util.validate_enum(
         kwargs.pop('complex_part', None),
@@ -58,10 +59,6 @@ class _MeanMetricWrapperIQA(tf.keras.metrics.MeanMetricWrapper):
 
     Returns:
       Update op.
-
-    Raises:
-      ValueError: If `y_true` or `y_pred` are complex and `complex_part` was not
-        specified.
     """
     # Add a singleton channel dimension if multichannel is disabled.
     if not self._multichannel:
@@ -73,9 +70,6 @@ class _MeanMetricWrapperIQA(tf.keras.metrics.MeanMetricWrapper):
           y_true, self._complex_part, self._max_val)
       y_pred = image_ops.extract_and_scale_complex_part(
           y_pred, self._complex_part, self._max_val)
-    else: # self._complex_part is None
-      if y_true.dtype.is_complex or y_pred.dtype.is_complex:
-        raise ValueError('complex_part must be specified for complex inputs.')
     return super().update_state(y_true, y_pred, sample_weight)
 
   def get_config(self):
@@ -88,9 +82,9 @@ class _MeanMetricWrapperIQA(tf.keras.metrics.MeanMetricWrapper):
     return {**base_config, **config}
 
 
-@api_util.export("metrics.PeakSignalToNoiseRatio")
+@api_util.export("metrics.PSNR", "metrics.PeakSignalToNoiseRatio")
 @tf.keras.utils.register_keras_serializable(package="MRI")
-class PeakSignalToNoiseRatio(_MeanMetricWrapperIQA):
+class PSNR(MeanMetricWrapperIQA):
   """Peak signal-to-noise ratio (PSNR) metric.
 
   The PSNR is the ratio between the maximum possible power of an image and the
@@ -107,6 +101,16 @@ class PeakSignalToNoiseRatio(_MeanMetricWrapperIQA):
       the maximum and the minimum allowed values). Defaults to 1 for floating
       point input images and `MAX` for integer input images, where `MAX` is the
       largest positive representable number for the data type.
+    batch_dims: An `int`. The number of batch dimensions in input images. If
+      `None`, it is inferred from inputs and `image_dims` as
+      `(rank of inputs) - image_dims - 1`. If `image_dims` is also `None`,
+      then `batch_dims` defaults to 1. `batch_dims` can always be inferred if
+      `image_dims` was specified, so you only need to provide one of the two.
+    image_dims: An `int`. The number of spatial dimensions in input images. If
+      `None`, it is inferred from inputs and `batch_dims` as
+      `(rank of inputs) - batch_dims - 1`. Defaults to `None`. `image_dims` can
+      always be inferred if `batch_dims` was specified, so you only need to
+      provide one of the two.
     rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
       to `tf.rank(y_true) - 2`. In other words, if rank is not explicitly set,
       `y_true` and `y_pred` should have shape `[batch, height, width, channels]`
@@ -120,12 +124,18 @@ class PeakSignalToNoiseRatio(_MeanMetricWrapperIQA):
     complex_part: The part of a complex input to be used in the computation of
       the metric. Must be one of `'real'`, `'imag'`, `'abs'` or `'angle'`. Note
       that real and imaginary parts, as well as angles, will be scaled to avoid
-      negative numbers. This argument must be specified for complex inputs.
+      negative numbers.
     name: String name of the metric instance.
     dtype: Data type of the metric result.
   """
+  @deprecation.deprecated_args(
+      deprecation.REMOVAL_DATE['0.19.0'],
+      'Use argument `image_dims` instead.',
+      ('rank', None))
   def __init__(self,
                max_val=None,
+               batch_dims=None,
+               image_dims=None,
                rank=None,
                multichannel=True,
                complex_part=None,
@@ -135,14 +145,16 @@ class PeakSignalToNoiseRatio(_MeanMetricWrapperIQA):
                      name=name,
                      dtype=dtype,
                      max_val=max_val,
+                     batch_dims=batch_dims,
+                     image_dims=image_dims,
                      rank=rank,
                      multichannel=multichannel,
                      complex_part=complex_part)
 
 
-@api_util.export("metrics.StructuralSimilarity")
+@api_util.export("metrics.SSIM", "metrics.StructuralSimilarity")
 @tf.keras.utils.register_keras_serializable(package="MRI")
-class StructuralSimilarity(_MeanMetricWrapperIQA):
+class SSIM(MeanMetricWrapperIQA):
   """Structural similarity index (SSIM) metric.
 
   The SSIM is a method for predicting the perceived quality of an image, based
@@ -165,6 +177,16 @@ class StructuralSimilarity(_MeanMetricWrapperIQA):
       term, as `C1 = (k1 * max_val) ** 2`. Defaults to 0.01.
     k2: Factor used to calculate the regularization constant for the contrast
       term, as `C2 = (k2 * max_val) ** 2`. Defaults to 0.03.
+    batch_dims: An `int`. The number of batch dimensions in input images. If
+      `None`, it is inferred from inputs and `image_dims` as
+      `(rank of inputs) - image_dims - 1`. If `image_dims` is also `None`,
+      then `batch_dims` defaults to 1. `batch_dims` can always be inferred if
+      `image_dims` was specified, so you only need to provide one of the two.
+    image_dims: An `int`. The number of spatial dimensions in input images. If
+      `None`, it is inferred from inputs and `batch_dims` as
+      `(rank of inputs) - batch_dims - 1`. Defaults to `None`. `image_dims` can
+      always be inferred if `batch_dims` was specified, so you only need to
+      provide one of the two.
     rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
       to `tf.rank(y_true) - 2`. In other words, if rank is not explicitly set,
       `y_true` and `y_pred` should have shape `[batch, height, width, channels]`
@@ -178,7 +200,7 @@ class StructuralSimilarity(_MeanMetricWrapperIQA):
     complex_part: The part of a complex input to be used in the computation of
       the metric. Must be one of `'real'`, `'imag'`, `'abs'` or `'angle'`. Note
       that real and imaginary parts, as well as angles, will be scaled to avoid
-      negative numbers. This argument must be specified for complex inputs.
+      negative numbers.
     name: String name of the metric instance.
     dtype: Data type of the metric result.
 
@@ -187,12 +209,18 @@ class StructuralSimilarity(_MeanMetricWrapperIQA):
       Image quality assessment: from error visibility to structural similarity.
       IEEE transactions on image processing, 13(4), 600-612.
   """
+  @deprecation.deprecated_args(
+      deprecation.REMOVAL_DATE['0.19.0'],
+      'Use argument `image_dims` instead.',
+      ('rank', None))
   def __init__(self,
                max_val=None,
                filter_size=11,
                filter_sigma=1.5,
                k1=0.01,
                k2=0.03,
+               batch_dims=None,
+               image_dims=None,
                rank=None,
                multichannel=True,
                complex_part=None,
@@ -207,14 +235,17 @@ class StructuralSimilarity(_MeanMetricWrapperIQA):
                      filter_sigma=filter_sigma,
                      k1=k1,
                      k2=k2,
+                     batch_dims=batch_dims,
+                     image_dims=image_dims,
                      rank=rank,
                      multichannel=multichannel,
                      complex_part=complex_part)
 
 
-@api_util.export("metrics.MultiscaleStructuralSimilarity")
+@api_util.export("metrics.SSIMMultiscale",
+                 "metrics.MultiscaleStructuralSimilarity")
 @tf.keras.utils.register_keras_serializable(package="MRI")
-class MultiscaleStructuralSimilarity(_MeanMetricWrapperIQA):
+class SSIMMultiscale(MeanMetricWrapperIQA):
   """Multiscale structural similarity index (MS-SSIM) metric.
 
   Args:
@@ -234,6 +265,21 @@ class MultiscaleStructuralSimilarity(_MeanMetricWrapperIQA):
       term, as `C1 = (k1 * max_val) ** 2`. Defaults to 0.01.
     k2: Factor used to calculate the regularization constant for the contrast
       term, as `C2 = (k2 * max_val) ** 2`. Defaults to 0.03.
+    batch_dims: An `int`. The number of batch dimensions in input images. If
+      `None`, it is inferred from inputs and `image_dims` as
+      `(rank of inputs) - image_dims - 1`. If `image_dims` is also `None`,
+      then `batch_dims` defaults to 1. `batch_dims` can always be inferred if
+      `image_dims` was specified, so you only need to provide one of the two.
+    image_dims: An `int`. The number of spatial dimensions in input images. If
+      `None`, it is inferred from inputs and `batch_dims` as
+      `(rank of inputs) - batch_dims - 1`. Defaults to `None`. `image_dims` can
+      always be inferred if `batch_dims` was specified, so you only need to
+      provide one of the two.
+    rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
+      to `tf.rank(y_true) - 2`. In other words, if rank is not explicitly set,
+      `y_true` and `y_pred` should have shape `[batch, height, width, channels]`
+      if processing 2D images or `[batch, depth, height, width, channels]` if
+      processing 3D images.
     multichannel: A `boolean`. Whether multichannel computation is enabled. If
       `False`, the inputs `y_true` and `y_pred` are not expected to have a
       channel dimension, i.e. they should have shape
@@ -242,7 +288,7 @@ class MultiscaleStructuralSimilarity(_MeanMetricWrapperIQA):
     complex_part: The part of a complex input to be used in the computation of
       the metric. Must be one of `'real'`, `'imag'`, `'abs'` or `'angle'`. Note
       that real and imaginary parts, as well as angles, will be scaled to avoid
-      negative numbers. This argument must be specified for complex inputs.
+      negative numbers.
     name: String name of the metric instance.
     dtype: Data type of the metric result.
 
@@ -252,12 +298,18 @@ class MultiscaleStructuralSimilarity(_MeanMetricWrapperIQA):
       Thrity-Seventh Asilomar Conference on Signals, Systems & Computers, 2003
       (Vol. 2, pp. 1398-1402). Ieee.
   """
+  @deprecation.deprecated_args(
+      deprecation.REMOVAL_DATE['0.19.0'],
+      'Use argument `image_dims` instead.',
+      ('rank', None))
   def __init__(self,
                max_val=None,
                filter_size=11,
                filter_sigma=1.5,
                k1=0.01,
                k2=0.03,
+               batch_dims=None,
+               image_dims=None,
                rank=None,
                multichannel=True,
                complex_part=None,
@@ -272,6 +324,24 @@ class MultiscaleStructuralSimilarity(_MeanMetricWrapperIQA):
                      filter_sigma=filter_sigma,
                      k1=k1,
                      k2=k2,
+                     batch_dims=batch_dims,
+                     image_dims=image_dims,
                      rank=rank,
                      multichannel=multichannel,
                      complex_part=complex_part)
+
+
+# For backward compatibility.
+@tf.keras.utils.register_keras_serializable(package="MRI")
+class PeakSignalToNoiseRatio(PSNR):
+  pass
+
+
+@tf.keras.utils.register_keras_serializable(package="MRI")
+class StructuralSimilarity(SSIM):
+  pass
+
+
+@tf.keras.utils.register_keras_serializable(package="MRI")
+class MultiscaleStructuralSimilarity(SSIMMultiscale):
+  pass

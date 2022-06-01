@@ -9,7 +9,9 @@ from tensorflow_mri.python.losses.confusion_losses import F1Loss as F1Loss
 from tensorflow_mri.python.losses.confusion_losses import F1Loss as DiceLoss
 from tensorflow_mri.python.losses.confusion_losses import IoULoss as IoULoss
 from tensorflow_mri.python.losses.confusion_losses import IoULoss as JaccardLoss
-from tensorflow_mri.python.losses.iqa_losses import StructuralSimilarityLoss as StructuralSimilarityLoss
-from tensorflow_mri.python.losses.iqa_losses import MultiscaleStructuralSimilarityLoss as MultiscaleStructuralSimilarityLoss
+from tensorflow_mri.python.losses.iqa_losses import SSIMLoss as SSIMLoss
+from tensorflow_mri.python.losses.iqa_losses import SSIMLoss as StructuralSimilarityLoss
+from tensorflow_mri.python.losses.iqa_losses import SSIMMultiscaleLoss as SSIMMultiscaleLoss
+from tensorflow_mri.python.losses.iqa_losses import SSIMMultiscaleLoss as MultiscaleStructuralSimilarityLoss
 from tensorflow_mri.python.losses.iqa_losses import ssim_loss as ssim_loss
 from tensorflow_mri.python.losses.iqa_losses import ssim_multiscale_loss as ssim_multiscale_loss

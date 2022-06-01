@@ -19,6 +19,9 @@ from tensorflow_mri.python.metrics.confusion_metrics import F1Score as F1Score
 from tensorflow_mri.python.metrics.confusion_metrics import F1Score as DiceIndex
 from tensorflow_mri.python.metrics.confusion_metrics import IoU as IoU
 from tensorflow_mri.python.metrics.confusion_metrics import IoU as JaccardIndex
-from tensorflow_mri.python.metrics.iqa_metrics import PeakSignalToNoiseRatio as PeakSignalToNoiseRatio
-from tensorflow_mri.python.metrics.iqa_metrics import StructuralSimilarity as StructuralSimilarity
-from tensorflow_mri.python.metrics.iqa_metrics import MultiscaleStructuralSimilarity as MultiscaleStructuralSimilarity
+from tensorflow_mri.python.metrics.iqa_metrics import PSNR as PSNR
+from tensorflow_mri.python.metrics.iqa_metrics import PSNR as PeakSignalToNoiseRatio
+from tensorflow_mri.python.metrics.iqa_metrics import SSIM as SSIM
+from tensorflow_mri.python.metrics.iqa_metrics import SSIM as StructuralSimilarity
+from tensorflow_mri.python.metrics.iqa_metrics import SSIMMultiscale as SSIMMultiscale
+from tensorflow_mri.python.metrics.iqa_metrics import SSIMMultiscale as MultiscaleStructuralSimilarity

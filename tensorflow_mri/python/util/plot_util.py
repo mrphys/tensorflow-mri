@@ -30,6 +30,7 @@ from tensorflow_mri.python.util import api_util
 def plot_image_sequence(images,
                         part=None,
                         cmap='gray',
+                        norm=None,
                         fps=20.0,
                         fig_size=None,
                         dpi=None,
@@ -50,6 +51,10 @@ def plot_image_sequence(images,
     cmap: A `str` or `matplotlib.colors.Colormap`_. The colormap used to map
       scalar values to colors. This parameter is ignored for RGB(A) data.
       Defaults to `'gray'`.
+    norm: A `matplotlib.colors.Normalize`_. Used to scale scalar data to the
+      [0, 1] range before mapping to colors using `cmap`. By default, a linear
+      scaling mapping the lowest value to 0 and the highest to 1 is used. This
+      parameter is ignored for RGB(A) data.
     fps: A `float`. The number of frames per second. Defaults to 20.
     fig_size: A `tuple` of `float`s. Width and height of the figure in inches.
     dpi: A `float`. The resolution of the figure in dots per inch.
@@ -69,6 +74,7 @@ def plot_image_sequence(images,
   .. _color: https://matplotlib.org/stable/tutorials/colors/colors.html
   .. _matplotlib.animation.ArtistAnimation: https://matplotlib.org/stable/api/_as_gen/matplotlib.animation.ArtistAnimation.html
   .. _matplotlib.colors.Colormap: https://matplotlib.org/stable/api/_as_gen/matplotlib.colors.Colormap.html
+  .. _matplotlib.colors.Normalize: https://matplotlib.org/stable/api/_as_gen/matplotlib.colors.Normalize.html
   .. _matplotlib.transforms.Bbox: https://matplotlib.org/stable/api/transformations.html#matplotlib.transforms.Bbox
   .. _matplotlib.figure.Figure: https://matplotlib.org/stable/api/figure_api.html#matplotlib.figure.Figure
   """
@@ -80,6 +86,7 @@ def plot_image_sequence(images,
   for image in images:
     artist = plt.imshow(image,
                         cmap=cmap,
+                        norm=norm,
                         animated=True)
     artist.axes.axis('off')
     artists.append([artist])
@@ -109,6 +116,7 @@ def plot_image_sequence(images,
 def plot_tiled_image_sequence(images,
                               part=None,
                               cmap='gray',
+                              norm=None,
                               fps=20.0,
                               fig_size=None,
                               dpi=None,
@@ -133,6 +141,10 @@ def plot_tiled_image_sequence(images,
     cmap: A `str` or `matplotlib.colors.Colormap`_. The colormap used to map
       scalar values to colors. This parameter is ignored for RGB(A) data.
       Defaults to `'gray'`.
+    norm: A `matplotlib.colors.Normalize`_. Used to scale scalar data to the
+      [0, 1] range before mapping to colors using `cmap`. By default, a linear
+      scaling mapping the lowest value to 0 and the highest to 1 is used. This
+      parameter is ignored for RGB(A) data.
     fps: A `float`. The number of frames per second. Defaults to 20.
     fig_size: A `tuple` of `float`s. Width and height of the figure in inches.
     dpi: A `float`. The resolution of the figure in dots per inch.
@@ -157,6 +169,7 @@ def plot_tiled_image_sequence(images,
   .. _color: https://matplotlib.org/stable/tutorials/colors/colors.html
   .. _matplotlib.animation.ArtistAnimation: https://matplotlib.org/stable/api/_as_gen/matplotlib.animation.ArtistAnimation.html
   .. _matplotlib.colors.Colormap: https://matplotlib.org/stable/api/_as_gen/matplotlib.colors.Colormap.html
+  .. _matplotlib.colors.Normalize: https://matplotlib.org/stable/api/_as_gen/matplotlib.colors.Normalize.html
   .. _matplotlib.transforms.Bbox: https://matplotlib.org/stable/api/transformations.html#matplotlib.transforms.Bbox
   .. _matplotlib.figure.Figure: https://matplotlib.org/stable/api/figure_api.html#matplotlib.figure.Figure
   """
@@ -194,6 +207,7 @@ def plot_tiled_image_sequence(images,
       # Render image.
       artist = ax.imshow(image,
                          cmap=cmap,
+                         norm=norm,
                          animated=True)
       frame_artists.append(artist)
     artists.append(frame_artists)
@@ -221,6 +235,7 @@ def plot_tiled_image_sequence(images,
 def plot_tiled_image(images,
                      part=None,
                      cmap='gray',
+                     norm=None,
                      fig_size=None,
                      dpi=None,
                      bg_color='dimgray',
@@ -243,6 +258,10 @@ def plot_tiled_image(images,
     cmap: A `str` or `matplotlib.colors.Colormap`_. The colormap used to map
       scalar values to colors. This parameter is ignored for RGB(A) data.
       Defaults to `'gray'`.
+    norm: A `matplotlib.colors.Normalize`_. Used to scale scalar data to the
+      [0, 1] range before mapping to colors using `cmap`. By default, a linear
+      scaling mapping the lowest value to 0 and the highest to 1 is used. This
+      parameter is ignored for RGB(A) data.
     fig_size: A `tuple` of `float`s. Width and height of the figure in inches.
     dpi: A `float`. The resolution of the figure in dots per inch.
     bg_color: A `color`_. The background color.
@@ -265,6 +284,7 @@ def plot_tiled_image(images,
 
   .. _color: https://matplotlib.org/stable/tutorials/colors/colors.html
   .. _matplotlib.colors.Colormap: https://matplotlib.org/stable/api/_as_gen/matplotlib.colors.Colormap.html
+  .. _matplotlib.colors.Normalize: https://matplotlib.org/stable/api/_as_gen/matplotlib.colors.Normalize.html
   .. _matplotlib.transforms.Bbox: https://matplotlib.org/stable/api/transformations.html#matplotlib.transforms.Bbox
   .. _matplotlib.figure.Figure: https://matplotlib.org/stable/api/figure_api.html#matplotlib.figure.Figure
   .. _matplotlib.image.AxesImage: https://matplotlib.org/stable/api/image_api.html#matplotlib.image.AxesImage
@@ -301,6 +321,7 @@ def plot_tiled_image(images,
     # Render image.
     artist = ax.imshow(image,
                        cmap=cmap,
+                       norm=norm,
                        animated=True)
     artists.append(artist)
   artists.append(artists)

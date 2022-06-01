@@ -3,9 +3,11 @@ ismrmrd
 matplotlib
 numpy
 plotly
+PyWavelets
+scipy
 tensorboard
-tensorflow>=2.8.0,<2.9.0
+tensorflow>=2.9.0,<2.10.0
 tensorflow-graphics
-tensorflow-io>=0.24.0,<0.25.0
-tensorflow-nufft>=0.7.0,<0.8.0
-tensorflow-probability>=0.16.0,<0.17.0
+tensorflow-io>=0.26.0
+tensorflow-nufft>=0.8.0
+tensorflow-probability>=0.16.0

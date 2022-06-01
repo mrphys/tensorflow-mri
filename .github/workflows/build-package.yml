@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     
     container:
-      image: ghcr.io/mrphys/tensorflow-manylinux:1.10.0
+      image: ghcr.io/mrphys/tensorflow-manylinux:1.11.0
 
     strategy:
       matrix:
@@ -39,7 +39,7 @@ jobs:
 
       - name: Compile shared library
         run: |
-          make PY_VERSION=${{ matrix.py_version }} CXX=/dt7/usr/bin/g++
+          make PY_VERSION=${{ matrix.py_version }} CXX=/dt9/usr/bin/g++
 
       - name: Install required packages
         run: |

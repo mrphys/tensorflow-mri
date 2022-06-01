@@ -31,7 +31,6 @@
 # pylint: disable=missing-function-docstring
 
 from keras import backend
-from keras import combinations
 from keras import models
 from keras.engine import input_layer
 from keras.layers import core
@@ -65,7 +64,8 @@ def _compute_fans(shape):
   return int(fan_in), int(fan_out)
 
 
-@combinations.generate(combinations.combine(mode=['graph', 'eager']))
+@tf.__internal__.test.combinations.generate(
+    tf.__internal__.test.combinations.combine(mode=['graph', 'eager']))
 class KerasInitializersTest(tf.test.TestCase):
   """Tests for Keras initializers."""
   def _runner(self, init, shape, target_mean=None, target_std=None,  # pylint: disable=missing-function-docstring,unused-argument
