@@ -10,7 +10,7 @@
 	],
 	// Enable GPUs.
 	"runArgs": [
-		"--gpus=all",
+		"--gpus=all"
 	],
 	// Enable plotting.
 	"mounts": [

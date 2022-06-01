@@ -82,9 +82,9 @@ class MeanMetricWrapperIQA(tf.keras.metrics.MeanMetricWrapper):
     return {**base_config, **config}
 
 
-@api_util.export("metrics.PeakSignalToNoiseRatio")
+@api_util.export("metrics.PSNR", "metrics.PeakSignalToNoiseRatio")
 @tf.keras.utils.register_keras_serializable(package="MRI")
-class PeakSignalToNoiseRatio(MeanMetricWrapperIQA):
+class PSNR(MeanMetricWrapperIQA):
   """Peak signal-to-noise ratio (PSNR) metric.
 
   The PSNR is the ratio between the maximum possible power of an image and the
@@ -152,9 +152,9 @@ class PeakSignalToNoiseRatio(MeanMetricWrapperIQA):
                      complex_part=complex_part)
 
 
-@api_util.export("metrics.StructuralSimilarity")
+@api_util.export("metrics.SSIM", "metrics.StructuralSimilarity")
 @tf.keras.utils.register_keras_serializable(package="MRI")
-class StructuralSimilarity(MeanMetricWrapperIQA):
+class SSIM(MeanMetricWrapperIQA):
   """Structural similarity index (SSIM) metric.
 
   The SSIM is a method for predicting the perceived quality of an image, based
@@ -242,9 +242,10 @@ class StructuralSimilarity(MeanMetricWrapperIQA):
                      complex_part=complex_part)
 
 
-@api_util.export("metrics.MultiscaleStructuralSimilarity")
+@api_util.export("metrics.SSIMMultiscale",
+                 "metrics.MultiscaleStructuralSimilarity")
 @tf.keras.utils.register_keras_serializable(package="MRI")
-class MultiscaleStructuralSimilarity(MeanMetricWrapperIQA):
+class SSIMMultiscale(MeanMetricWrapperIQA):
   """Multiscale structural similarity index (MS-SSIM) metric.
 
   Args:
@@ -328,3 +329,19 @@ class MultiscaleStructuralSimilarity(MeanMetricWrapperIQA):
                      rank=rank,
                      multichannel=multichannel,
                      complex_part=complex_part)
+
+
+# For backward compatibility.
+@tf.keras.utils.register_keras_serializable(package="MRI")
+class PeakSignalToNoiseRatio(PSNR):
+  pass
+
+
+@tf.keras.utils.register_keras_serializable(package="MRI")
+class StructuralSimilarity(SSIM):
+  pass
+
+
+@tf.keras.utils.register_keras_serializable(package="MRI")
+class MultiscaleStructuralSimilarity(SSIMMultiscale):
+  pass

@@ -13,8 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
-import itertools
+"""Tests for module `wavelet_ops`."""
 
 from absl.testing import parameterized
 import numpy as np
@@ -23,12 +22,10 @@ import pywt
 from tensorflow_mri.python.ops import wavelet_ops
 from tensorflow_mri.python.util import test_util
 
-DISCRETE_WAVELETS = list(itertools.chain.from_iterable(
-    [pywt.wavelist(family, kind='discrete') for family in pywt.families()]))
-
 
 class DiscreteWaveletTransformTest(test_util.TestCase):
-
+  """Tests for `dwt` and `idwt` operators."""
+  # pylint: disable=missing-function-docstring
   @parameterized.product(wavelet=pywt.wavelist(kind='discrete'),
                          odd_length=[True, False])
   def test_dwt_idwt(self, wavelet, odd_length):
@@ -51,8 +48,9 @@ class DiscreteWaveletTransformTest(test_util.TestCase):
     self.assertAllClose(y, result)
 
 
-  @parameterized.product(wavelet=pywt.wavelist(kind='discrete')[:1])
-  def test_dwt_idwt_2d(self, wavelet):
+  @parameterized.product(wavelet=pywt.wavelist(kind='discrete')[:1],
+                         axes=[None, [0], [1], [0, 1]])
+  def test_dwt_idwt_2d(self, wavelet, axes):
     wt = wavelet_ops._as_wavelet(wavelet)  # pylint: disable=protected-access
     if len(wt.dec_lo) > 4:
       self.skipTest('Wavelet too long for this test.')
@@ -62,10 +60,25 @@ class DiscreteWaveletTransformTest(test_util.TestCase):
                   [5, 8, 2, 33, 4, 9],
                   [2, 5, 19, 4, 19, 1]], dtype=np.float32)
 
-    expected = pywt.dwtn(x, wavelet)
-    result = wavelet_ops.dwt(x, wavelet)
+    expected = pywt.dwtn(x, wavelet, axes=axes)
+    result = wavelet_ops.dwt(x, wavelet, axes=axes)
     self.assertAllClose(expected, result, atol=1e-4, rtol=1e-4)
 
-    expected = pywt.idwtn(result, wavelet)
-    result = wavelet_ops.idwt(result, wavelet)
+    expected = pywt.idwtn(result, wavelet, axes=axes)
+    result = wavelet_ops.idwt(result, wavelet, axes=axes)
     self.assertAllClose(expected, result, atol=1e-4, rtol=1e-4)
+
+
+  def test_dwt_idwt_complex(self):
+    x = (np.asarray([3, 7, 1, 1, -2, 5, 4, 6], dtype=np.float32) +
+         1j * np.asarray([-1, 2, 5, 2, -3, 3, 4, 1], dtype=np.float32))
+    wavelet = 'haar'
+
+    a, d = pywt.dwt(x, wavelet)
+    result = wavelet_ops.dwt(x, wavelet)
+    self.assertAllClose(a, result['a'])
+    self.assertAllClose(d, result['d'])
+
+    y = pywt.idwt(a, d, wavelet)
+    result = wavelet_ops.idwt(result, wavelet)
+    self.assertAllClose(y, result)

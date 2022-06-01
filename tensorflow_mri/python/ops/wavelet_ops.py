@@ -36,6 +36,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # ==============================================================================
+"""Wavelet operators."""
 
 import collections.abc
 import itertools
@@ -52,7 +53,7 @@ def dwt(data, wavelet, mode='symmetric', axes=None):
   """Single-level N-dimensional discrete wavelet transform (DWT).
 
   Args:
-    data: A `tf.Tensor`.
+    data: A `tf.Tensor` of real or complex type.
     wavelet: A `str` or a `pywt.Wavelet`_, or a `list` thereof. When passed a
       `list`, different wavelets are applied along each axis in `axes`.
     mode: A `str`. The padding or signal extension mode. Must be one of the
@@ -65,19 +66,17 @@ def dwt(data, wavelet, mode='symmetric', axes=None):
     A `dict` where key specifies the transform type on each dimension and value
     is an N-dimensional `tf.Tensor` containing the corresponding coefficients.
 
-    For example, for a 2D case the result will look something like this::
-
-    .. code::
-
-      {
-        'aa': <coeffs>  # A(LL) - approx. on 1st dim, approx. on 2nd dim
-        'ad': <coeffs>  # V(LH) - approx. on 1st dim, detail on 2nd dim
-        'da': <coeffs>  # hi(HL) - detail on 1st dim, approx. on 2nd dim
-        'dd': <coeffs>  # D(HH) - detail on 1st dim, detail on 2nd dim
-      }
+    For example, for a 2D case the result will have keys `'aa'` (approximation
+    on 1st dimension, approximation on 2nd dimension), `'ad'` (approximation on
+    1st dimension, detail on 2nd dimension), `'da'` (detail on 1st dimension,
+    approximation on 2nd dimension), and `'dd'` (detail on 1st dimension, detail
+    on 2nd dimension).
 
     For user-specified `axes`, the order of the characters in the
     dictionary keys map to the specified `axes`.
+
+  Raises:
+    ValueError: If any of the inputs is not valid.
 
   .. _pywt.Wavelet: https://pywavelets.readthedocs.io/en/latest/ref/wavelets.html#pywt.Wavelet
   .. _tf.pad: https://www.tensorflow.org/api_docs/python/tf/pad
@@ -87,13 +86,9 @@ def dwt(data, wavelet, mode='symmetric', axes=None):
 
   # Handle complex numbers.
   if data.dtype.is_complex:
-    real = dwt(data.real, wavelet, mode, axes)
-    imag = dwt(data.imag, wavelet, mode, axes)
-    return dict((k, tf.dtypes.complex(real, imag)) for k in real.keys())
-
-  # Check dtype.
-  if data.dtype not in (tf.float32, tf.float64):
-    raise TypeError(f"Data type must be floating, but got {data.dtype}")
+    real = dwt(tf.math.real(data), wavelet, mode, axes)
+    imag = dwt(tf.math.imag(data), wavelet, mode, axes)
+    return {k: tf.dtypes.complex(real[k], imag[k]) for k in real.keys()}
 
   # Canonicalize axes. If None, compute decomposition along all axes.
   if axes is None:
@@ -105,10 +100,10 @@ def dwt(data, wavelet, mode='symmetric', axes=None):
   modes = _modes_per_axis(mode, axes)
 
   coeffs = [('', data)]
-  for axis, wav, mode in zip(axes, wavelets, modes):
+  for ax, wav, mod in zip(axes, wavelets, modes):
     new_coeffs = []
     for subband, x in coeffs:
-      c_a, c_d = _dwt_along_axis(x, wav, mode, axis)
+      c_a, c_d = _dwt_along_axis(x, wav, mod, ax)
       new_coeffs.extend([(subband + 'a', c_a),
                          (subband + 'd', c_d)])
     coeffs = new_coeffs
@@ -134,21 +129,22 @@ def idwt(coeffs, wavelet, mode='symmetric', axes=None):
     A `tf.Tensor` containing the signal reconstructed from the input
     coefficients.
 
+  Raises:
+    ValueError: If any of the inputs is not valid.
+
   .. _pywt.Wavelet: https://pywavelets.readthedocs.io/en/latest/ref/wavelets.html#pywt.Wavelet
   .. _tf.pad: https://www.tensorflow.org/api_docs/python/tf/pad
   """
-  # drop the keys corresponding to value = None
+  # Drop the keys where value is None.
   coeffs = {k: v for k, v in coeffs.items() if v is not None}
 
-  # drop the keys corresponding to value = None
-  coeffs = dict((k, v) for k, v in coeffs.items() if v is not None)
-
-  # Raise error for invalid key combinations.
+  # Check key combinations.
   coeffs = _fix_coeffs(coeffs)
 
-  if (any(v.dtype.is_complex for v in coeffs.values())):
-    real = dict((k, v.real) for k, v in coeffs.items())
-    imag = dict((k, v.imag) for k, v in coeffs.items())
+  # Handle complex numbers.
+  if any(v.dtype.is_complex for v in coeffs.values()):
+    real = {k: tf.math.real(v) for k, v in coeffs.items()}
+    imag = {k: tf.math.imag(v) for k, v in coeffs.items()}
     return tf.dtypes.complex(idwt(real, wavelet, mode, axes),
                              idwt(imag, wavelet, mode, axes))
 
@@ -160,8 +156,7 @@ def idwt(coeffs, wavelet, mode='symmetric', axes=None):
                     if v is not None and len(k) == ndim_transform)
     coeff_shape = next(coeff_shapes)
   except StopIteration:
-    raise ValueError("`coeffs` must contain at least one non-null wavelet "
-                     "band")
+    raise ValueError("`coeffs` must contain at least one non-null wavelet band")  # pylint: disable=raise-missing-from
   if any(s != coeff_shape for s in coeff_shapes):
     raise ValueError("`coeffs` must all be of equal size (or None)")
 
@@ -174,24 +169,25 @@ def idwt(coeffs, wavelet, mode='symmetric', axes=None):
 
   modes = _modes_per_axis(mode, axes)
   wavelets = _wavelets_per_axis(wavelet, axes)
-  for key_length, (axis, wav, mode) in reversed(
+  for key_length, (ax, wav, mod) in reversed(
       list(enumerate(zip(axes, wavelets, modes)))):
-    if axis < 0 or axis >= ndim:
-      raise np.AxisError("Axis greater than data dimensions")
+    if ax < 0 or ax >= ndim:
+      raise ValueError("Axis greater than data dimensions")
 
     new_coeffs = {}
-    new_keys = [''.join(coef) for coef in itertools.product('ad', repeat=key_length)]
+    new_keys = [''.join(coef)
+                for coef in itertools.product('ad', repeat=key_length)]
 
     for key in new_keys:
       lo = coeffs.get(key + 'a', None)
       hi = coeffs.get(key + 'd', None)
-      new_coeffs[key] = _idwt_along_axis(lo, hi, wav, mode, axis)
+      new_coeffs[key] = _idwt_along_axis(lo, hi, wav, mod, ax)
     coeffs = new_coeffs
 
   return coeffs['']
 
 
-def _dwt_along_axis(x, wavelet, mode, axis):
+def _dwt_along_axis(x, wavelet, mode, axis):  # pylint: disable=missing-param-doc
   """Computes the DWT along a single axis."""
   # Move axis `axis` to last position.
   perm = list(range(x.shape.rank))
@@ -201,7 +197,7 @@ def _dwt_along_axis(x, wavelet, mode, axis):
   # Do padding.
   pad_length = len(wavelet) - 1
   paddings = [[0, 0]] * (x.shape.rank - 1) + [[pad_length, pad_length]]
-  x = tf.pad(x, paddings, mode=mode)
+  x = tf.pad(x, paddings, mode=mode)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
 
   # Add channel dimension.
   x = tf.expand_dims(x, axis=-1)
@@ -243,7 +239,7 @@ def _dwt_along_axis(x, wavelet, mode, axis):
   return a, d
 
 
-def _idwt_along_axis(a, d, wavelet, mode, axis):
+def _idwt_along_axis(a, d, wavelet, mode, axis):  # pylint: disable=missing-param-doc,unused-argument
   """Computes the IDWT along a single axis."""
   # Move axis `axis` to last position.
   perm = list(range(a.shape.rank))
@@ -280,8 +276,8 @@ def _idwt_along_axis(a, d, wavelet, mode, axis):
   right_padding = len(wavelet.rec_hi) - 1
   paddings = [[0, 0]] * a.shape.rank
   paddings[-2] = [left_padding, right_padding]
-  a = tf.pad(a, paddings)
-  d = tf.pad(d, paddings)
+  a = tf.pad(a, paddings)  # pylint: disable=no-value-for-parameter
+  d = tf.pad(d, paddings)  # pylint: disable=no-value-for-parameter
 
   # Do convolution.
   a = tf.nn.conv1d(a, f_lo, 1, 'VALID')
@@ -289,8 +285,10 @@ def _idwt_along_axis(a, d, wavelet, mode, axis):
 
   # Keep only part of the output.
   current_length = tf.shape(a)[-2]
-  begin = tf.scatter_nd([[tf.rank(a) - 2]], [(current_length - output_length) // 2], [tf.rank(a)])
-  size = tf.tensor_scatter_nd_update(tf.shape(a), [[tf.rank(a) - 2]], [output_length])
+  begin = tf.scatter_nd(
+      [[tf.rank(a) - 2]], [(current_length - output_length) // 2], [tf.rank(a)])
+  size = tf.tensor_scatter_nd_update(
+      tf.shape(a), [[tf.rank(a) - 2]], [output_length])
   a = tf.slice(a, begin, size)
   d = tf.slice(d, begin, size)
 
@@ -313,7 +311,17 @@ def _idwt_along_axis(a, d, wavelet, mode, axis):
 
 
 def _dyadic_upsampling(x, axis=-1, indices='odd'):
-  """Performs dyadic upsampling along an axis."""
+  """Performs dyadic upsampling along an axis.
+
+  Args:
+    x: A `tf.Tensor`.
+    axis: An `int`. along which to upsample.
+    indices: A `str`. Must be `'odd'` or `'even'`. Controls whether to upsample
+      odd- or even-indexed elements.
+
+  Returns:
+    The upsampled `tf.Tensor`.
+  """
   # Canonicalize axis.
   axis = tf.cond(axis < 0, lambda: tf.rank(x) + axis, lambda: axis)
 
@@ -335,7 +343,7 @@ def _dyadic_upsampling(x, axis=-1, indices='odd'):
   elif indices == 'odd':
     paddings = tf.zeros([tf.rank(x), 2], dtype=tf.int32)
     paddings = tf.tensor_scatter_nd_update(paddings, [[axis, 0]], [1])
-    x = tf.pad(x, paddings)
+    x = tf.pad(x, paddings)  # pylint: disable=no-value-for-parameter
 
   return x
 
@@ -347,10 +355,13 @@ def _wavelets_per_axis(wavelet, axes):
     wavelet: A `str` or `Wavelet` or an iterable of `str` or `Wavelet`. If a
       single wavelet is provided, it will used for all axes. Otherwise one
       wavelet per axis must be provided.
-  axes: The `list` of axes to be transformed.
+    axes: The `list` of axes to be transformed.
 
   Returns:
     A `list` of wavelets equal in length to `axes`.
+
+  Raises:
+    ValueError: If `wavelet` is not valid for the given `axes`.
   """
   axes = tuple(axes)
   if isinstance(wavelet, (str, pywt.Wavelet)):
@@ -371,35 +382,39 @@ def _wavelets_per_axis(wavelet, axes):
   return wavelets
 
 
-def _modes_per_axis(modes, axes):
+def _modes_per_axis(mode, axes):
   """Initialize mode for each axis to be transformed.
 
   Args:
-    modes: A `str` or an iterable of `str`. If a single mode is provided, it
+    mode: A `str` or an iterable of `str`. If a single mode is provided, it
       will used for all axes. Otherwise one mode per axis must be provided.
     axes: The `list` of axes to be transformed.
 
   Returns:
-    A `list` of modes equal in length to `axes`.
+    A `list` of mode equal in length to `axes`.
+
+  Raises:
+    ValueError: If `mode` is not valid for the given `axes`.
   """
   axes = tuple(axes)
-  if isinstance(modes, str):
+  if isinstance(mode, str):
     # same mode on all axes
-    modes = [modes] * len(axes)
-  elif isinstance(modes, collections.abc.Iterable):
-    if len(modes) == 1:
-      modes = [modes[0]] * len(axes)
+    mode = [mode] * len(axes)
+  elif isinstance(mode, collections.abc.Iterable):
+    if len(mode) == 1:
+      mode = [mode[0]] * len(axes)
     else:
-      if len(modes) != len(axes):
-        raise ValueError(("The number of modes must match the number "
-                          "of axes to be transformed."))
-    modes = [str(mode) for mode in modes]
+      if len(mode) != len(axes):
+        raise ValueError(
+            "The number of mode must match the number "
+            "of axes to be transformed.")
+    mode = [str(mode) for mode in mode]
   else:
-    raise ValueError("modes must be a str or iterable")
-  return modes
+    raise ValueError("mode must be a str or iterable")
+  return mode
 
 
-def _as_wavelet(wavelet):
+def _as_wavelet(wavelet):  # pylint: disable=missing-param-doc
   """Convert wavelet name to a Wavelet object."""
   if not isinstance(wavelet, (pywt.ContinuousWavelet, pywt.Wavelet)):
     wavelet = pywt.DiscreteContinuousWavelet(wavelet)
@@ -412,7 +427,7 @@ def _as_wavelet(wavelet):
   return wavelet
 
 
-def _fix_coeffs(coeffs):
+def _fix_coeffs(coeffs):  # pylint: disable=missing-function-docstring
   missing_keys = [k for k, v in coeffs.items() if v is None]
   if missing_keys:
     raise ValueError(

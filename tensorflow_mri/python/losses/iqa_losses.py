@@ -82,16 +82,12 @@ class LossFunctionWrapperIQA(keras_util.LossFunctionWrapper):
     return {**base_config, **config}
 
 
-@api_util.export("losses.StructuralSimilarityLoss")
+@api_util.export("losses.SSIMLoss", "losses.StructuralSimilarityLoss")
 @tf.keras.utils.register_keras_serializable(package="MRI")
-class StructuralSimilarityLoss(LossFunctionWrapperIQA):
+class SSIMLoss(LossFunctionWrapperIQA):
   """Computes the structural similarity (SSIM) loss.
 
   The SSIM loss is equal to :math:`1.0 - \textrm{SSIM}`.
-
-  .. warning::
-    As of TensorFlow 2.6.0, 3D inputs with `channels` > 1 can only be processed
-    on GPU.
 
   Args:
     max_val: The dynamic range of the images (i.e., the difference between
@@ -170,16 +166,13 @@ class StructuralSimilarityLoss(LossFunctionWrapperIQA):
                      complex_part=complex_part)
 
 
-@api_util.export("losses.MultiscaleStructuralSimilarityLoss")
+@api_util.export("losses.SSIMMultiscaleLoss",
+                 "losses.MultiscaleStructuralSimilarityLoss")
 @tf.keras.utils.register_keras_serializable(package="MRI")
-class MultiscaleStructuralSimilarityLoss(LossFunctionWrapperIQA):
+class SSIMMultiscaleLoss(LossFunctionWrapperIQA):
   """Computes the multiscale structural similarity (MS-SSIM) loss.
 
   The MS-SSIM loss is equal to :math:`1.0 - \textrm{MS-SSIM}`.
-
-  .. warning::
-    As of TensorFlow 2.6.0, 3D inputs with `channels` > 1 can only be processed
-    on GPU.
 
   Args:
     max_val: The dynamic range of the images (i.e., the difference between
@@ -278,10 +271,6 @@ def ssim_loss(y_true, y_pred, max_val=None,
 
   The SSIM loss is equal to :math:`1.0 - \textrm{SSIM}`.
 
-  .. warning::
-    As of TensorFlow 2.6.0, 3D inputs with `channels` > 1 can only be processed
-    on GPU.
-
   Args:
     y_true: A `Tensor`. Ground truth images. For 2D images, must have rank >= 3
       with shape `batch_shape + [height, width, channels]`. For 3D images, must
@@ -357,10 +346,6 @@ def ssim_multiscale_loss(y_true, y_pred, max_val=None,
 
   The MS-SSIM loss is equal to :math:`1.0 - \textrm{MS-SSIM}`.
 
-  .. warning::
-    As of TensorFlow 2.6.0, 3D inputs with `channels` > 1 can only be processed
-    on GPU.
-
   Args:
     y_true: A `Tensor`. Ground truth images. For 2D images, must have rank >= 3
       with shape `batch_shape + [height, width, channels]`. For 3D images, must
@@ -427,3 +412,14 @@ def ssim_multiscale_loss(y_true, y_pred, max_val=None,
                                          batch_dims=batch_dims,
                                          image_dims=image_dims,
                                          rank=rank)
+
+
+# For backward compatibility.
+@tf.keras.utils.register_keras_serializable(package="MRI")
+class StructuralSimilarityLoss(SSIMLoss):
+  pass
+
+
+@tf.keras.utils.register_keras_serializable(package="MRI")
+class MultiscaleStructuralSimilarityLoss(SSIMMultiscaleLoss):
+  pass

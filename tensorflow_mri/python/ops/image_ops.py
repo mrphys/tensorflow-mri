@@ -1379,7 +1379,7 @@ def supports_complex_conv(func):
     if inputs.dtype.is_complex and filters.dtype.is_complex:
       # Both inputs and filters are complex.
       outputs_real = (
-          func(tf.math.real(inputs), tf.math.real(filters), *args, **kwargs) - 
+          func(tf.math.real(inputs), tf.math.real(filters), *args, **kwargs) -
           func(tf.math.imag(inputs), tf.math.imag(filters), *args, **kwargs))
       outputs_imag = (
           func(tf.math.real(inputs), tf.math.imag(filters), *args, **kwargs) +

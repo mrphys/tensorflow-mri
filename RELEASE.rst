@@ -23,6 +23,10 @@ Major Features and Improvements
     quality losses. These mirror the behaviour of the corresponding metrics
     and allows for single-channel inputs and extraction of parts from complex
     numbers, respectively. 
+  * The canonical API names ``StructuralSimilarityLoss`` and
+    ``MultiscaleStructuralSimilarityLoss`` have been
+    changed to ``SSIMLoss`` and ``SSIMMultiscaleLoss``, respectively. The
+    old names are still available, but may be removed in the future.
 
 * ``tfmri.metrics``:
 
@@ -31,6 +35,10 @@ Major Features and Improvements
     to the downstream function. This may not be supported for all metrics.
   * Added new arguments ``batch_dims`` and ``image_dims`` to all image quality
     metrics. Argument ``rank`` is now deprecated (use ``image_dims`` instead).
+  * The canonical API names ``PeakSignalToNoiseRatio``,
+    ``StructuralSimilarity`` and ``MultiscaleStructuralSimilarity`` have been
+    changed to ``PSNR``, ``SSIM`` and ``SSIMMultiscale``, respectively. The
+    old names are still available, but may be removed in the future.
 
 * ``tfmri.recon``:
 
@@ -58,3 +66,6 @@ Bug Fixes and Other Changes
 
 * Fixed a bug with *k*-space weighting in homodyne detection method of
   ``tfmri.recon.partial_fourier``. 
+* Like core TensorFlow, we now compile with ``_GLIBCXX_USE_CXX11_ABI=1``.
+* Like core TensorFlow, Python wheels now conform to ``manylinux2014``, an
+  upgrade from ``manylinux2010``.
