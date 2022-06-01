@@ -4,12 +4,13 @@
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 <link rel="index" title="Index" href="../../../genindex/" /><link rel="search" title="Search" href="../../../search/" /><link rel="next" title="tfmri.losses.ConfusionLoss" href="ConfusionLoss/" /><link rel="prev" title="tfmri.linalg.conjugate_gradient" href="../linalg/conjugate_gradient/" />
+        <link rel="canonical" href="https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/losses.html" />
 
-    <link rel="shortcut icon" href="../../../_static/tfmri_icon.svg"/><meta name="generator" content="sphinx-4.4.0, furo 2022.03.04"/>
+    <link rel="shortcut icon" href="../../../_static/tfmri_icon.svg"/><meta name="generator" content="sphinx-4.4.0, furo 2022.04.07"/>
         <title>tfmri.losses - TensorFlow MRI Documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?digest=935aa2abcc5c1da4283d1dc201fb1f0add16d23a" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?digest=25ceb02ed1c46dc30f2321ff83e92799f69dfdb9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?digest=68f4518137b9aefe99b631505a2064c3c42c9852" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono" />
     
     
@@ -45,10 +46,12 @@
   }
 </style></head>
   <body>
+    
     <script>
       document.body.dataset.theme = localStorage.getItem("theme") || "auto";
     </script>
     
+
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
   <symbol id="svg-toc" viewBox="0 0 24 24">
     <title>Contents</title>
@@ -283,8 +286,8 @@
 <li class="toctree-l2"><a class="reference internal" href="F1Loss/">F1Loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="FocalTverskyLoss/">FocalTverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="IoULoss/">IoULoss</a></li>
-<li class="toctree-l2"><a class="reference internal" href="MultiscaleStructuralSimilarityLoss/">MultiscaleStructuralSimilarityLoss</a></li>
-<li class="toctree-l2"><a class="reference internal" href="StructuralSimilarityLoss/">StructuralSimilarityLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SSIMLoss/">SSIMLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SSIMMultiscaleLoss/">SSIMMultiscaleLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="TverskyLoss/">TverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ssim_loss/">ssim_loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ssim_multiscale_loss/">ssim_multiscale_loss</a></li>
@@ -311,11 +314,11 @@
 <li class="toctree-l2"><a class="reference internal" href="../metrics/F1Score/">F1Score</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../metrics/FBetaScore/">FBetaScore</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../metrics/IoU/">IoU</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/MultiscaleStructuralSimilarity/">MultiscaleStructuralSimilarity</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../metrics/NegativePredictiveValue/">NegativePredictiveValue</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/PeakSignalToNoiseRatio/">PeakSignalToNoiseRatio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/PSNR/">PSNR</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../metrics/PositivePredictiveValue/">PositivePredictiveValue</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/StructuralSimilarity/">StructuralSimilarity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/SSIM/">SSIM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/SSIMMultiscale/">SSIMMultiscale</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../metrics/TrueNegativeRate/">TrueNegativeRate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../metrics/TruePositiveRate/">TruePositiveRate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../metrics/TverskyIndex/">TverskyIndex</a></li>
@@ -335,10 +338,10 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../recon/">tfmri.recon</a><input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../recon/adj/">adj</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../recon/adjoint/">adjoint</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../recon/grappa/">grappa</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../recon/lstsq/">lstsq</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../recon/pf/">pf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../recon/least_squares/">least_squares</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../recon/partial_fourier/">partial_fourier</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../recon/sense/">sense</a></li>
 </ul>
 </li>
@@ -360,10 +363,12 @@
 <li class="toctree-l1 has-children"><a class="reference internal" href="../signal/">tfmri.signal</a><input class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../signal/atanfilt/">atanfilt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../signal/crop_kspace/">crop_kspace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../signal/dwt/">dwt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../signal/fft/">fft</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../signal/filter_kspace/">filter_kspace</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../signal/hamming/">hamming</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../signal/hann/">hann</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../signal/idwt/">idwt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../signal/ifft/">ifft</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../signal/nufft/">nufft</a></li>
 </ul>
@@ -427,11 +432,11 @@
 <tr class="row-even"><td><p><a class="reference internal" href="IoULoss/#tensorflow_mri.losses.IoULoss" title="tensorflow_mri.losses.IoULoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IoULoss</span></code></a></p></td>
 <td><p>IoU loss function (aka Jaccard loss).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="MultiscaleStructuralSimilarityLoss/#tensorflow_mri.losses.MultiscaleStructuralSimilarityLoss" title="tensorflow_mri.losses.MultiscaleStructuralSimilarityLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MultiscaleStructuralSimilarityLoss</span></code></a></p></td>
-<td><p>Computes the multiscale structural similarity (MS-SSIM) loss.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="StructuralSimilarityLoss/#tensorflow_mri.losses.StructuralSimilarityLoss" title="tensorflow_mri.losses.StructuralSimilarityLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StructuralSimilarityLoss</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="SSIMLoss/#tensorflow_mri.losses.SSIMLoss" title="tensorflow_mri.losses.SSIMLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SSIMLoss</span></code></a></p></td>
 <td><p>Computes the structural similarity (SSIM) loss.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="SSIMMultiscaleLoss/#tensorflow_mri.losses.SSIMMultiscaleLoss" title="tensorflow_mri.losses.SSIMMultiscaleLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SSIMMultiscaleLoss</span></code></a></p></td>
+<td><p>Computes the multiscale structural similarity (MS-SSIM) loss.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="TverskyLoss/#tensorflow_mri.losses.TverskyLoss" title="tensorflow_mri.losses.TverskyLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TverskyLoss</span></code></a></p></td>
 <td><p>Tversky loss function.</p></td>

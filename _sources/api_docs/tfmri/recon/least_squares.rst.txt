@@ -1,0 +1,6 @@
+﻿tfmri.recon.least\_squares
+==========================
+
+.. currentmodule:: tensorflow_mri.recon
+
+.. autofunction:: least_squares

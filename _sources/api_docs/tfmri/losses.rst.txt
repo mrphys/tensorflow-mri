@@ -15,8 +15,8 @@ Classes
     F1Loss
     FocalTverskyLoss
     IoULoss
-    MultiscaleStructuralSimilarityLoss
-    StructuralSimilarityLoss
+    SSIMLoss
+    SSIMMultiscaleLoss
     TverskyLoss
 
 Functions

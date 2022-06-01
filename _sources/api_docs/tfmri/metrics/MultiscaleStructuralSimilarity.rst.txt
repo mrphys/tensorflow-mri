@@ -1,8 +1,0 @@
-﻿tfmri.metrics.MultiscaleStructuralSimilarity
-============================================
-
-.. currentmodule:: tensorflow_mri.metrics
-
-.. autoclass:: MultiscaleStructuralSimilarity
-    :members:
-    :show-inheritance:

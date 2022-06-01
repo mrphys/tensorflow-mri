@@ -1,6 +1,0 @@
-﻿tfmri.recon.lstsq
-=================
-
-.. currentmodule:: tensorflow_mri.recon
-
-.. autofunction:: lstsq

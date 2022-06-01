@@ -1,0 +1,8 @@
+﻿tfmri.losses.SSIMLoss
+=====================
+
+.. currentmodule:: tensorflow_mri.losses
+
+.. autoclass:: SSIMLoss
+    :members:
+    :show-inheritance:

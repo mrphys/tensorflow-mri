@@ -1,6 +1,0 @@
-﻿tfmri.recon.pf
-==============
-
-.. currentmodule:: tensorflow_mri.recon
-
-.. autofunction:: pf

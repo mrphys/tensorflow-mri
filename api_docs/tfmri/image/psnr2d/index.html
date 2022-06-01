@@ -4,12 +4,13 @@
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 <link rel="index" title="Index" href="../../../../genindex/" /><link rel="search" title="Search" href="../../../../search/" /><link rel="next" title="tfmri.image.psnr3d" href="../psnr3d/" /><link rel="prev" title="tfmri.image.psnr" href="../psnr/" />
+        <link rel="canonical" href="https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/image/psnr2d.html" />
 
-    <link rel="shortcut icon" href="../../../../_static/tfmri_icon.svg"/><meta name="generator" content="sphinx-4.4.0, furo 2022.03.04"/>
+    <link rel="shortcut icon" href="../../../../_static/tfmri_icon.svg"/><meta name="generator" content="sphinx-4.4.0, furo 2022.04.07"/>
         <title>tfmri.image.psnr2d - TensorFlow MRI Documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?digest=935aa2abcc5c1da4283d1dc201fb1f0add16d23a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo-extensions.css?digest=25ceb02ed1c46dc30f2321ff83e92799f69dfdb9" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?digest=68f4518137b9aefe99b631505a2064c3c42c9852" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono" />
     
     
@@ -45,10 +46,12 @@
   }
 </style></head>
   <body>
+    
     <script>
       document.body.dataset.theme = localStorage.getItem("theme") || "auto";
     </script>
     
+
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
   <symbol id="svg-toc" viewBox="0 0 24 24">
     <title>Contents</title>
@@ -283,8 +286,8 @@
 <li class="toctree-l2"><a class="reference internal" href="../../losses/F1Loss/">F1Loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../losses/FocalTverskyLoss/">FocalTverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../losses/IoULoss/">IoULoss</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../losses/MultiscaleStructuralSimilarityLoss/">MultiscaleStructuralSimilarityLoss</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../losses/StructuralSimilarityLoss/">StructuralSimilarityLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../losses/SSIMLoss/">SSIMLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../losses/SSIMMultiscaleLoss/">SSIMMultiscaleLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../losses/TverskyLoss/">TverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../losses/ssim_loss/">ssim_loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../losses/ssim_multiscale_loss/">ssim_multiscale_loss</a></li>
@@ -311,11 +314,11 @@
 <li class="toctree-l2"><a class="reference internal" href="../../metrics/F1Score/">F1Score</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../metrics/FBetaScore/">FBetaScore</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../metrics/IoU/">IoU</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../metrics/MultiscaleStructuralSimilarity/">MultiscaleStructuralSimilarity</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../metrics/NegativePredictiveValue/">NegativePredictiveValue</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../metrics/PeakSignalToNoiseRatio/">PeakSignalToNoiseRatio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../metrics/PSNR/">PSNR</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../metrics/PositivePredictiveValue/">PositivePredictiveValue</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../metrics/StructuralSimilarity/">StructuralSimilarity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../metrics/SSIM/">SSIM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../metrics/SSIMMultiscale/">SSIMMultiscale</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../metrics/TrueNegativeRate/">TrueNegativeRate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../metrics/TruePositiveRate/">TruePositiveRate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../metrics/TverskyIndex/">TverskyIndex</a></li>
@@ -335,10 +338,10 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../recon/">tfmri.recon</a><input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../recon/adj/">adj</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../recon/adjoint/">adjoint</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../recon/grappa/">grappa</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../recon/lstsq/">lstsq</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../recon/pf/">pf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../recon/least_squares/">least_squares</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../recon/partial_fourier/">partial_fourier</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../recon/sense/">sense</a></li>
 </ul>
 </li>
@@ -360,10 +363,12 @@
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../signal/">tfmri.signal</a><input class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/atanfilt/">atanfilt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/crop_kspace/">crop_kspace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../signal/dwt/">dwt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/fft/">fft</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/filter_kspace/">filter_kspace</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/hamming/">hamming</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/hann/">hann</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../signal/idwt/">idwt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/ifft/">ifft</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/nufft/">nufft</a></li>
 </ul>
@@ -408,7 +413,7 @@
 <h1>tfmri.image.psnr2d<a class="headerlink" href="#tfmri-image-psnr2d" title="Permalink to this headline">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="tensorflow_mri.image.psnr2d">
-<span class="sig-name descname"><span class="pre">psnr2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_val</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'psnr2d'</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.18.0/tensorflow_mri/python/ops/image_ops.py#L98-L122"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.image.psnr2d" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">psnr2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_val</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'psnr2d'</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.19.0/tensorflow_mri/python/ops/image_ops.py#L122-L146"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.image.psnr2d" title="Permalink to this definition">#</a></dt>
 <dd><p>Computes the peak signal-to-noise ratio (PSNR) between two 2D images.</p>
 <p>This function operates on batches of multi-channel inputs and returns a PSNR
 value for each image in the batch.</p>

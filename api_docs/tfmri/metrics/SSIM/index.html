@@ -3,13 +3,14 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
-<link rel="index" title="Index" href="../../../../genindex/" /><link rel="search" title="Search" href="../../../../search/" /><link rel="next" title="tfmri.recon.sense" href="../sense/" /><link rel="prev" title="tfmri.recon.lstsq" href="../lstsq/" />
+<link rel="index" title="Index" href="../../../../genindex/" /><link rel="search" title="Search" href="../../../../search/" /><link rel="next" title="tfmri.metrics.SSIMMultiscale" href="../SSIMMultiscale/" /><link rel="prev" title="tfmri.metrics.PositivePredictiveValue" href="../PositivePredictiveValue/" />
+        <link rel="canonical" href="https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/metrics/SSIM.html" />
 
-    <link rel="shortcut icon" href="../../../../_static/tfmri_icon.svg"/><meta name="generator" content="sphinx-4.4.0, furo 2022.03.04"/>
-        <title>tfmri.recon.pf - TensorFlow MRI Documentation</title>
+    <link rel="shortcut icon" href="../../../../_static/tfmri_icon.svg"/><meta name="generator" content="sphinx-4.4.0, furo 2022.04.07"/>
+        <title>tfmri.metrics.SSIM - TensorFlow MRI Documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?digest=935aa2abcc5c1da4283d1dc201fb1f0add16d23a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo-extensions.css?digest=25ceb02ed1c46dc30f2321ff83e92799f69dfdb9" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?digest=68f4518137b9aefe99b631505a2064c3c42c9852" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono" />
     
     
@@ -45,10 +46,12 @@
   }
 </style></head>
   <body>
+    
     <script>
       document.body.dataset.theme = localStorage.getItem("theme") || "auto";
     </script>
     
+
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
   <symbol id="svg-toc" viewBox="0 0 24 24">
     <title>Contents</title>
@@ -283,8 +286,8 @@
 <li class="toctree-l2"><a class="reference internal" href="../../losses/F1Loss/">F1Loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../losses/FocalTverskyLoss/">FocalTverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../losses/IoULoss/">IoULoss</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../losses/MultiscaleStructuralSimilarityLoss/">MultiscaleStructuralSimilarityLoss</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../losses/StructuralSimilarityLoss/">StructuralSimilarityLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../losses/SSIMLoss/">SSIMLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../losses/SSIMMultiscaleLoss/">SSIMMultiscaleLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../losses/TverskyLoss/">TverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../losses/ssim_loss/">ssim_loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../losses/ssim_multiscale_loss/">ssim_multiscale_loss</a></li>
@@ -305,20 +308,20 @@
 <li class="toctree-l2"><a class="reference internal" href="../../math/soft_threshold/">soft_threshold</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../metrics/">tfmri.metrics</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../metrics/Accuracy/">Accuracy</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../metrics/ConfusionMetric/">ConfusionMetric</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../metrics/F1Score/">F1Score</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../metrics/FBetaScore/">FBetaScore</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../metrics/IoU/">IoU</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../metrics/MultiscaleStructuralSimilarity/">MultiscaleStructuralSimilarity</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../metrics/NegativePredictiveValue/">NegativePredictiveValue</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../metrics/PeakSignalToNoiseRatio/">PeakSignalToNoiseRatio</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../metrics/PositivePredictiveValue/">PositivePredictiveValue</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../metrics/StructuralSimilarity/">StructuralSimilarity</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../metrics/TrueNegativeRate/">TrueNegativeRate</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../metrics/TruePositiveRate/">TruePositiveRate</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../metrics/TverskyIndex/">TverskyIndex</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../">tfmri.metrics</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../Accuracy/">Accuracy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ConfusionMetric/">ConfusionMetric</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../F1Score/">F1Score</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../FBetaScore/">FBetaScore</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../IoU/">IoU</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../NegativePredictiveValue/">NegativePredictiveValue</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../PSNR/">PSNR</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../PositivePredictiveValue/">PositivePredictiveValue</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">SSIM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../SSIMMultiscale/">SSIMMultiscale</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../TrueNegativeRate/">TrueNegativeRate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../TruePositiveRate/">TruePositiveRate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../TverskyIndex/">TverskyIndex</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../optimize/">tfmri.optimize</a><input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -334,12 +337,12 @@
 <li class="toctree-l2"><a class="reference internal" href="../../plot/tiled_image_sequence/">tiled_image_sequence</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current has-children"><a class="reference internal" href="../">tfmri.recon</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../adj/">adj</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../grappa/">grappa</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../lstsq/">lstsq</a></li>
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">pf</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../sense/">sense</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../recon/">tfmri.recon</a><input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../recon/adjoint/">adjoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../recon/grappa/">grappa</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../recon/least_squares/">least_squares</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../recon/partial_fourier/">partial_fourier</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../recon/sense/">sense</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../sampling/">tfmri.sampling</a><input class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -360,10 +363,12 @@
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../signal/">tfmri.signal</a><input class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/atanfilt/">atanfilt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/crop_kspace/">crop_kspace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../signal/dwt/">dwt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/fft/">fft</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/filter_kspace/">filter_kspace</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/hamming/">hamming</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/hann/">hann</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../signal/idwt/">idwt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/ifft/">ifft</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/nufft/">nufft</a></li>
 </ul>
@@ -404,75 +409,71 @@
           </label>
         </div>
         <article role="main">
-          <section id="tfmri-recon-pf">
-<h1>tfmri.recon.pf<a class="headerlink" href="#tfmri-recon-pf" title="Permalink to this headline">#</a></h1>
-<dl class="py function">
-<dt class="sig sig-object py" id="tensorflow_mri.recon.pf">
-<span class="sig-name descname"><span class="pre">pf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kspace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_complex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_kspace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'zerofill'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.18.0/tensorflow_mri/python/ops/recon_ops.py#L909-L987"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.recon.pf" title="Permalink to this definition">#</a></dt>
-<dd><p>Reconstructs an MR image using partial Fourier methods.</p>
+          <section id="tfmri-metrics-ssim">
+<h1>tfmri.metrics.SSIM<a class="headerlink" href="#tfmri-metrics-ssim" title="Permalink to this headline">#</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="tensorflow_mri.metrics.SSIM">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SSIM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.19.0/tensorflow_mri/python/metrics/iqa_metrics.py#L155-L242"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.metrics.SSIM" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflow_mri.python.metrics.iqa_metrics.MeanMetricWrapperIQA</span></code></p>
+<p>Structural similarity index (SSIM) metric.</p>
+<p>The SSIM is a method for predicting the perceived quality of an image, based
+on its similarity to a reference image.</p>
+<p>This metric supports 2D and 3D image inputs, <code class="docutils literal notranslate"><span class="pre">y_true</span></code> and <code class="docutils literal notranslate"><span class="pre">y_pred</span></code>. For 2D
+images, inputs must have rank &gt;= 3 with shape
+<code class="docutils literal notranslate"><span class="pre">batch_shape</span> <span class="pre">+</span> <span class="pre">[height,</span> <span class="pre">width,</span> <span class="pre">channels]</span></code>. For 3D images, inputs must have
+rank &gt;= 4 with shape <code class="docutils literal notranslate"><span class="pre">batch_shape</span> <span class="pre">+</span> <span class="pre">[depth,</span> <span class="pre">height,</span> <span class="pre">width,</span> <span class="pre">channels]</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>kspace</strong> – A <code class="docutils literal notranslate"><span class="pre">Tensor</span></code>. The <em>k</em>-space data. Must have type <code class="docutils literal notranslate"><span class="pre">complex64</span></code> or
-<code class="docutils literal notranslate"><span class="pre">complex128</span></code>. Must have shape <code class="docutils literal notranslate"><span class="pre">[...,</span> <span class="pre">*K]</span></code>, where <code class="docutils literal notranslate"><span class="pre">K</span></code> are the spatial
-frequency dimensions. <code class="docutils literal notranslate"><span class="pre">kspace</span></code> should only contain the observed data,
-without zero-filling of any kind.</p></li>
-<li><p><strong>factors</strong> – A list of <code class="docutils literal notranslate"><span class="pre">floats</span></code>. The partial Fourier factors. There must be a
-factor for each spatial frequency dimension. Each factor must be between
-0.5 and 1.0 and indicates the proportion of observed <em>k</em>-space values
-along the specified dimensions.</p></li>
-<li><p><strong>return_complex</strong> – A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#boolean-values">boolean</a>. If <a class="reference external" href="https://docs.python.org/3/library/constants.html#True">True</a>, returns complex instead of
-real-valued images. Note that partial Fourier reconstruction assumes that
-images are real, and the returned complex values may not be valid in all
-contexts.</p></li>
-<li><p><strong>return_kspace</strong> – <p>A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#boolean-values">boolean</a>. If <a class="reference external" href="https://docs.python.org/3/library/constants.html#True">True</a>, returns the filled <em>k</em>-space instead
-of the reconstructed images. This is always complex-valued.</p>
+<li><p><strong>max_val</strong> – The dynamic range of the images (i.e., the difference between
+the maximum and the minimum allowed values). Defaults to 1 for floating
+point input images and <code class="docutils literal notranslate"><span class="pre">MAX</span></code> for integer input images, where <code class="docutils literal notranslate"><span class="pre">MAX</span></code> is the
+largest positive representable number for the data type.</p></li>
+<li><p><strong>filter_size</strong> – The size of the Gaussian filter. Defaults to 11.</p></li>
+<li><p><strong>filter_sigma</strong> – The standard deviation of the Gaussian filter. Defaults to
+1.5.</p></li>
+<li><p><strong>k1</strong> – Factor used to calculate the regularization constant for the luminance
+term, as <code class="docutils literal notranslate"><span class="pre">C1</span> <span class="pre">=</span> <span class="pre">(k1</span> <span class="pre">*</span> <span class="pre">max_val)</span> <span class="pre">**</span> <span class="pre">2</span></code>. Defaults to 0.01.</p></li>
+<li><p><strong>k2</strong> – Factor used to calculate the regularization constant for the contrast
+term, as <code class="docutils literal notranslate"><span class="pre">C2</span> <span class="pre">=</span> <span class="pre">(k2</span> <span class="pre">*</span> <span class="pre">max_val)</span> <span class="pre">**</span> <span class="pre">2</span></code>. Defaults to 0.03.</p></li>
+<li><p><strong>batch_dims</strong> – <p>An <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex">int</a>. The number of batch dimensions in input images. If
+<a class="reference external" href="https://docs.python.org/3/library/constants.html#None">None</a>, it is inferred from inputs and <code class="docutils literal notranslate"><span class="pre">image_dims</span></code> as
+<code class="docutils literal notranslate"><span class="pre">(rank</span> <span class="pre">of</span> <span class="pre">inputs)</span> <span class="pre">-</span> <span class="pre">image_dims</span> <span class="pre">-</span> <span class="pre">1</span></code>. If <code class="docutils literal notranslate"><span class="pre">image_dims</span></code> is also <a class="reference external" href="https://docs.python.org/3/library/constants.html#None">None</a>,
+then <code class="docutils literal notranslate"><span class="pre">batch_dims</span></code> defaults to 1. <code class="docutils literal notranslate"><span class="pre">batch_dims</span></code> can always be inferred if
+<code class="docutils literal notranslate"><span class="pre">image_dims</span></code> was specified, so you only need to provide one of the two.</p>
 </p></li>
-<li><p><strong>method</strong> – A <code class="docutils literal notranslate"><span class="pre">string</span></code>. The partial Fourier reconstruction algorithm. Must be
-one of <code class="docutils literal notranslate"><span class="pre">"zerofill"</span></code>, <code class="docutils literal notranslate"><span class="pre">"homodyne"</span></code> (homodyne detection method) or <code class="docutils literal notranslate"><span class="pre">"pocs"</span></code>
-(projection onto convex sets method).</p></li>
-<li><p><strong>**kwargs</strong> – Additional method-specific keyword arguments. See Notes for</p></li>
-<li><p><strong>details.</strong> – </p></li>
+<li><p><strong>image_dims</strong> – <p>An <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex">int</a>. The number of spatial dimensions in input images. If
+<a class="reference external" href="https://docs.python.org/3/library/constants.html#None">None</a>, it is inferred from inputs and <code class="docutils literal notranslate"><span class="pre">batch_dims</span></code> as
+<code class="docutils literal notranslate"><span class="pre">(rank</span> <span class="pre">of</span> <span class="pre">inputs)</span> <span class="pre">-</span> <span class="pre">batch_dims</span> <span class="pre">-</span> <span class="pre">1</span></code>. Defaults to <a class="reference external" href="https://docs.python.org/3/library/constants.html#None">None</a>. <code class="docutils literal notranslate"><span class="pre">image_dims</span></code> can
+always be inferred if <code class="docutils literal notranslate"><span class="pre">batch_dims</span></code> was specified, so you only need to
+provide one of the two.</p>
+</p></li>
+<li><p><strong>rank</strong> – <p>An <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex">int</a>. The number of spatial dimensions. Must be 2 or 3. Defaults
+to <code class="docutils literal notranslate"><span class="pre">tf.rank(y_true)</span> <span class="pre">-</span> <span class="pre">2</span></code>. In other words, if rank is not explicitly set,
+<code class="docutils literal notranslate"><span class="pre">y_true</span></code> and <code class="docutils literal notranslate"><span class="pre">y_pred</span></code> should have shape <code class="docutils literal notranslate"><span class="pre">[batch,</span> <span class="pre">height,</span> <span class="pre">width,</span> <span class="pre">channels]</span></code>
+if processing 2D images or <code class="docutils literal notranslate"><span class="pre">[batch,</span> <span class="pre">depth,</span> <span class="pre">height,</span> <span class="pre">width,</span> <span class="pre">channels]</span></code> if
+processing 3D images.</p>
+</p></li>
+<li><p><strong>multichannel</strong> – A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#boolean-values">boolean</a>. Whether multichannel computation is enabled. If
+<a class="reference external" href="https://docs.python.org/3/library/constants.html#False">False</a>, the inputs <code class="docutils literal notranslate"><span class="pre">y_true</span></code> and <code class="docutils literal notranslate"><span class="pre">y_pred</span></code> are not expected to have a
+channel dimension, i.e. they should have shape
+<code class="docutils literal notranslate"><span class="pre">batch_shape</span> <span class="pre">+</span> <span class="pre">[height,</span> <span class="pre">width]</span></code> (2D) or
+<code class="docutils literal notranslate"><span class="pre">batch_shape</span> <span class="pre">+</span> <span class="pre">[depth,</span> <span class="pre">height,</span> <span class="pre">width]</span></code> (3D).</p></li>
+<li><p><strong>complex_part</strong> – The part of a complex input to be used in the computation of
+the metric. Must be one of <code class="docutils literal notranslate"><span class="pre">'real'</span></code>, <code class="docutils literal notranslate"><span class="pre">'imag'</span></code>, <code class="docutils literal notranslate"><span class="pre">'abs'</span></code> or <code class="docutils literal notranslate"><span class="pre">'angle'</span></code>. Note
+that real and imaginary parts, as well as angles, will be scaled to avoid
+negative numbers.</p></li>
+<li><p><strong>name</strong> – String name of the metric instance.</p></li>
+<li><p><strong>dtype</strong> – Data type of the metric result.</p></li>
 </ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><p>A <code class="docutils literal notranslate"><span class="pre">Tensor</span></code> with shape <code class="docutils literal notranslate"><span class="pre">[...,</span> <span class="pre">*S]</span></code> where <code class="docutils literal notranslate"><span class="pre">S</span> <span class="pre">=</span> <span class="pre">K</span> <span class="pre">/</span> <span class="pre">factors</span></code>. Has type
-<code class="docutils literal notranslate"><span class="pre">kspace.dtype</span></code> if either <code class="docutils literal notranslate"><span class="pre">return_complex</span></code> or <code class="docutils literal notranslate"><span class="pre">return_kspace</span></code> is <a class="reference external" href="https://docs.python.org/3/library/constants.html#True">True</a>, and
-type <code class="docutils literal notranslate"><span class="pre">kspace.dtype.real_dtype</span></code> otherwise.</p>
-</p>
 </dd>
 </dl>
-<p class="rubric">Notes</p>
-<p>This function accepts some method-specific arguments:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">method="zerofill"</span></code> accepts no additional arguments.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">method="homodyne"</span></code> accepts the following additional keyword arguments:</p>
-<ul>
-<li><p><strong>weighting_fn</strong>: An optional <code class="docutils literal notranslate"><span class="pre">string</span></code>. The weighting function. Must be
-one of <code class="docutils literal notranslate"><span class="pre">"step"</span></code>, <code class="docutils literal notranslate"><span class="pre">"ramp"</span></code>. Defaults to <code class="docutils literal notranslate"><span class="pre">"ramp"</span></code>. <code class="docutils literal notranslate"><span class="pre">"ramp"</span></code> helps
-mitigate Gibbs artifact, while <code class="docutils literal notranslate"><span class="pre">"step"</span></code> has better SNR properties.</p></li>
-</ul>
-</li>
-<li><p><code class="docutils literal notranslate"><span class="pre">method="pocs"</span></code> accepts the following additional keyword arguments:</p>
-<ul>
-<li><p><strong>tol</strong>: An optional <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex">float</a>. The convergence tolerance. Defaults to
-<code class="docutils literal notranslate"><span class="pre">1e-5</span></code>.</p></li>
-<li><p><strong>max_iter</strong>: An optional <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex">int</a>. The maximum number of iterations of the
-POCS algorithm. Defaults to <code class="docutils literal notranslate"><span class="pre">10</span></code>.</p></li>
-</ul>
-</li>
-</ul>
 <p class="rubric">References</p>
 <dl class="footnote brackets">
-<dt class="label" id="id4"><span class="brackets">1</span></dt>
-<dd><p>Noll, D. C., Nishimura, D. G., &amp; Macovski, A. (1991). Homodyne
-detection in magnetic resonance imaging. IEEE transactions on medical
-imaging, 10(2), 154-163.</p>
-</dd>
-<dt class="label" id="id5"><span class="brackets">2</span></dt>
-<dd><p>Haacke, E. M., Lindskogj, E. D., &amp; Lin, W. (1991). A fast, iterative,
-partial-Fourier technique capable of local phase recovery. Journal of
-Magnetic Resonance (1969), 92(1), 126-145.</p>
+<dt class="label" id="id6"><span class="brackets">1</span></dt>
+<dd><p>Wang, Z., Bovik, A. C., Sheikh, H. R., &amp; Simoncelli, E. P. (2004).
+Image quality assessment: from error visibility to structural similarity.
+IEEE transactions on image processing, 13(4), 600-612.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -483,23 +484,23 @@ Magnetic Resonance (1969), 92(1), 126-145.</p>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="../sense/">
+          <a class="next-page" href="../SSIMMultiscale/">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">tfmri.recon.sense</div>
+                <div class="title">tfmri.metrics.SSIMMultiscale</div>
               </div>
               <svg><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="../lstsq/">
+          <a class="prev-page" href="../PositivePredictiveValue/">
               <svg><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">tfmri.recon.lstsq</div>
+                <div class="title">tfmri.metrics.PositivePredictiveValue</div>
                 
               </div>
             </a>

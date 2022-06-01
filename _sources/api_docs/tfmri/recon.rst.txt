@@ -21,8 +21,8 @@ Functions
     :template: recon/function.rst
     :nosignatures:
 
-    adj
+    adjoint
     grappa
-    lstsq
-    pf
+    least_squares
+    partial_fourier
     sense

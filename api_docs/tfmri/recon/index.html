@@ -3,13 +3,14 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
-<link rel="index" title="Index" href="../../../genindex/" /><link rel="search" title="Search" href="../../../search/" /><link rel="next" title="tfmri.recon.adj" href="adj/" /><link rel="prev" title="tfmri.plot.tiled_image_sequence" href="../plot/tiled_image_sequence/" />
+<link rel="index" title="Index" href="../../../genindex/" /><link rel="search" title="Search" href="../../../search/" /><link rel="next" title="tfmri.recon.adjoint" href="adjoint/" /><link rel="prev" title="tfmri.plot.tiled_image_sequence" href="../plot/tiled_image_sequence/" />
+        <link rel="canonical" href="https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/recon.html" />
 
-    <link rel="shortcut icon" href="../../../_static/tfmri_icon.svg"/><meta name="generator" content="sphinx-4.4.0, furo 2022.03.04"/>
+    <link rel="shortcut icon" href="../../../_static/tfmri_icon.svg"/><meta name="generator" content="sphinx-4.4.0, furo 2022.04.07"/>
         <title>tfmri.recon - TensorFlow MRI Documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?digest=935aa2abcc5c1da4283d1dc201fb1f0add16d23a" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?digest=25ceb02ed1c46dc30f2321ff83e92799f69dfdb9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?digest=68f4518137b9aefe99b631505a2064c3c42c9852" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono" />
     
     
@@ -45,10 +46,12 @@
   }
 </style></head>
   <body>
+    
     <script>
       document.body.dataset.theme = localStorage.getItem("theme") || "auto";
     </script>
     
+
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
   <symbol id="svg-toc" viewBox="0 0 24 24">
     <title>Contents</title>
@@ -283,8 +286,8 @@
 <li class="toctree-l2"><a class="reference internal" href="../losses/F1Loss/">F1Loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/FocalTverskyLoss/">FocalTverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/IoULoss/">IoULoss</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../losses/MultiscaleStructuralSimilarityLoss/">MultiscaleStructuralSimilarityLoss</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../losses/StructuralSimilarityLoss/">StructuralSimilarityLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/SSIMLoss/">SSIMLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/SSIMMultiscaleLoss/">SSIMMultiscaleLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/TverskyLoss/">TverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/ssim_loss/">ssim_loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/ssim_multiscale_loss/">ssim_multiscale_loss</a></li>
@@ -311,11 +314,11 @@
 <li class="toctree-l2"><a class="reference internal" href="../metrics/F1Score/">F1Score</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../metrics/FBetaScore/">FBetaScore</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../metrics/IoU/">IoU</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/MultiscaleStructuralSimilarity/">MultiscaleStructuralSimilarity</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../metrics/NegativePredictiveValue/">NegativePredictiveValue</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/PeakSignalToNoiseRatio/">PeakSignalToNoiseRatio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/PSNR/">PSNR</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../metrics/PositivePredictiveValue/">PositivePredictiveValue</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/StructuralSimilarity/">StructuralSimilarity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/SSIM/">SSIM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/SSIMMultiscale/">SSIMMultiscale</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../metrics/TrueNegativeRate/">TrueNegativeRate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../metrics/TruePositiveRate/">TruePositiveRate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../metrics/TverskyIndex/">TverskyIndex</a></li>
@@ -335,10 +338,10 @@
 </ul>
 </li>
 <li class="toctree-l1 current has-children current-page"><a class="current reference internal" href="#">tfmri.recon</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="adj/">adj</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adjoint/">adjoint</a></li>
 <li class="toctree-l2"><a class="reference internal" href="grappa/">grappa</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lstsq/">lstsq</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pf/">pf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="least_squares/">least_squares</a></li>
+<li class="toctree-l2"><a class="reference internal" href="partial_fourier/">partial_fourier</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sense/">sense</a></li>
 </ul>
 </li>
@@ -360,10 +363,12 @@
 <li class="toctree-l1 has-children"><a class="reference internal" href="../signal/">tfmri.signal</a><input class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../signal/atanfilt/">atanfilt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../signal/crop_kspace/">crop_kspace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../signal/dwt/">dwt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../signal/fft/">fft</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../signal/filter_kspace/">filter_kspace</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../signal/hamming/">hamming</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../signal/hann/">hann</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../signal/idwt/">idwt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../signal/ifft/">ifft</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../signal/nufft/">nufft</a></li>
 </ul>
@@ -426,16 +431,16 @@
 <col style="width: 90%"/>
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="adj/#tensorflow_mri.recon.adj" title="tensorflow_mri.recon.adj"><code class="xref py py-obj docutils literal notranslate"><span class="pre">adj</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="adjoint/#tensorflow_mri.recon.adjoint" title="tensorflow_mri.recon.adjoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">adjoint</span></code></a></p></td>
 <td><p>Reconstructs an MR image using the adjoint MRI operator.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="grappa/#tensorflow_mri.recon.grappa" title="tensorflow_mri.recon.grappa"><code class="xref py py-obj docutils literal notranslate"><span class="pre">grappa</span></code></a></p></td>
 <td><p>Reconstructs an MR image using GRAPPA.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="lstsq/#tensorflow_mri.recon.lstsq" title="tensorflow_mri.recon.lstsq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lstsq</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="least_squares/#tensorflow_mri.recon.least_squares" title="tensorflow_mri.recon.least_squares"><code class="xref py py-obj docutils literal notranslate"><span class="pre">least_squares</span></code></a></p></td>
 <td><p>Reconstructs an MR image using a least-squares formulation.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="pf/#tensorflow_mri.recon.pf" title="tensorflow_mri.recon.pf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pf</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="partial_fourier/#tensorflow_mri.recon.partial_fourier" title="tensorflow_mri.recon.partial_fourier"><code class="xref py py-obj docutils literal notranslate"><span class="pre">partial_fourier</span></code></a></p></td>
 <td><p>Reconstructs an MR image using partial Fourier methods.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="sense/#tensorflow_mri.recon.sense" title="tensorflow_mri.recon.sense"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sense</span></code></a></p></td>
@@ -451,12 +456,12 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="adj/">
+          <a class="next-page" href="adjoint/">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">tfmri.recon.adj</div>
+                <div class="title">tfmri.recon.adjoint</div>
               </div>
               <svg><use href="#svg-arrow-right"></use></svg>
             </a>

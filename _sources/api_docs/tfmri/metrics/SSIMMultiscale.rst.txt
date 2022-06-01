@@ -1,0 +1,8 @@
+﻿tfmri.metrics.SSIMMultiscale
+============================
+
+.. currentmodule:: tensorflow_mri.metrics
+
+.. autoclass:: SSIMMultiscale
+    :members:
+    :show-inheritance:

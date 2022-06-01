@@ -23,9 +23,11 @@ Functions
 
     atanfilt
     crop_kspace
+    dwt
     fft
     filter_kspace
     hamming
     hann
+    idwt
     ifft
     nufft

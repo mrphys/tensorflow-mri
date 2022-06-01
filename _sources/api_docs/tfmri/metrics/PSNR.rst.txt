@@ -1,0 +1,8 @@
+﻿tfmri.metrics.PSNR
+==================
+
+.. currentmodule:: tensorflow_mri.metrics
+
+.. autoclass:: PSNR
+    :members:
+    :show-inheritance:

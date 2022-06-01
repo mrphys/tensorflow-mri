@@ -4,12 +4,13 @@
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 <link rel="index" title="Index" href="../../../genindex/" /><link rel="search" title="Search" href="../../../search/" /><link rel="next" title="tfmri.signal.atanfilt" href="atanfilt/" /><link rel="prev" title="tfmri.sampling.spiral_trajectory" href="../sampling/spiral_trajectory/" />
+        <link rel="canonical" href="https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/signal.html" />
 
-    <link rel="shortcut icon" href="../../../_static/tfmri_icon.svg"/><meta name="generator" content="sphinx-4.4.0, furo 2022.03.04"/>
+    <link rel="shortcut icon" href="../../../_static/tfmri_icon.svg"/><meta name="generator" content="sphinx-4.4.0, furo 2022.04.07"/>
         <title>tfmri.signal - TensorFlow MRI Documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?digest=935aa2abcc5c1da4283d1dc201fb1f0add16d23a" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?digest=25ceb02ed1c46dc30f2321ff83e92799f69dfdb9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?digest=68f4518137b9aefe99b631505a2064c3c42c9852" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono" />
     
     
@@ -45,10 +46,12 @@
   }
 </style></head>
   <body>
+    
     <script>
       document.body.dataset.theme = localStorage.getItem("theme") || "auto";
     </script>
     
+
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
   <symbol id="svg-toc" viewBox="0 0 24 24">
     <title>Contents</title>
@@ -283,8 +286,8 @@
 <li class="toctree-l2"><a class="reference internal" href="../losses/F1Loss/">F1Loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/FocalTverskyLoss/">FocalTverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/IoULoss/">IoULoss</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../losses/MultiscaleStructuralSimilarityLoss/">MultiscaleStructuralSimilarityLoss</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../losses/StructuralSimilarityLoss/">StructuralSimilarityLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/SSIMLoss/">SSIMLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../losses/SSIMMultiscaleLoss/">SSIMMultiscaleLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/TverskyLoss/">TverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/ssim_loss/">ssim_loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../losses/ssim_multiscale_loss/">ssim_multiscale_loss</a></li>
@@ -311,11 +314,11 @@
 <li class="toctree-l2"><a class="reference internal" href="../metrics/F1Score/">F1Score</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../metrics/FBetaScore/">FBetaScore</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../metrics/IoU/">IoU</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/MultiscaleStructuralSimilarity/">MultiscaleStructuralSimilarity</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../metrics/NegativePredictiveValue/">NegativePredictiveValue</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/PeakSignalToNoiseRatio/">PeakSignalToNoiseRatio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/PSNR/">PSNR</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../metrics/PositivePredictiveValue/">PositivePredictiveValue</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../metrics/StructuralSimilarity/">StructuralSimilarity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/SSIM/">SSIM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../metrics/SSIMMultiscale/">SSIMMultiscale</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../metrics/TrueNegativeRate/">TrueNegativeRate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../metrics/TruePositiveRate/">TruePositiveRate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../metrics/TverskyIndex/">TverskyIndex</a></li>
@@ -335,10 +338,10 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../recon/">tfmri.recon</a><input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../recon/adj/">adj</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../recon/adjoint/">adjoint</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../recon/grappa/">grappa</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../recon/lstsq/">lstsq</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../recon/pf/">pf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../recon/least_squares/">least_squares</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../recon/partial_fourier/">partial_fourier</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../recon/sense/">sense</a></li>
 </ul>
 </li>
@@ -360,10 +363,12 @@
 <li class="toctree-l1 current has-children current-page"><a class="current reference internal" href="#">tfmri.signal</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="atanfilt/">atanfilt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="crop_kspace/">crop_kspace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dwt/">dwt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="fft/">fft</a></li>
 <li class="toctree-l2"><a class="reference internal" href="filter_kspace/">filter_kspace</a></li>
 <li class="toctree-l2"><a class="reference internal" href="hamming/">hamming</a></li>
 <li class="toctree-l2"><a class="reference internal" href="hann/">hann</a></li>
+<li class="toctree-l2"><a class="reference internal" href="idwt/">idwt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ifft/">ifft</a></li>
 <li class="toctree-l2"><a class="reference internal" href="nufft/">nufft</a></li>
 </ul>
@@ -432,17 +437,23 @@
 <tr class="row-even"><td><p><a class="reference internal" href="crop_kspace/#tensorflow_mri.signal.crop_kspace" title="tensorflow_mri.signal.crop_kspace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">crop_kspace</span></code></a></p></td>
 <td><p>Crop <em>k</em>-space.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="fft/#tensorflow_mri.signal.fft" title="tensorflow_mri.signal.fft"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fft</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="dwt/#tensorflow_mri.signal.dwt" title="tensorflow_mri.signal.dwt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dwt</span></code></a></p></td>
+<td><p>Single-level N-dimensional discrete wavelet transform (DWT).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="fft/#tensorflow_mri.signal.fft" title="tensorflow_mri.signal.fft"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fft</span></code></a></p></td>
 <td><p>Computes the N-dimensional discrete Fourier Transform.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="filter_kspace/#tensorflow_mri.signal.filter_kspace" title="tensorflow_mri.signal.filter_kspace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">filter_kspace</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="filter_kspace/#tensorflow_mri.signal.filter_kspace" title="tensorflow_mri.signal.filter_kspace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">filter_kspace</span></code></a></p></td>
 <td><p>Filter <em>k</em>-space.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="hamming/#tensorflow_mri.signal.hamming" title="tensorflow_mri.signal.hamming"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hamming</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="hamming/#tensorflow_mri.signal.hamming" title="tensorflow_mri.signal.hamming"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hamming</span></code></a></p></td>
 <td><p>Calculate a Hamming window at the specified coordinates.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="hann/#tensorflow_mri.signal.hann" title="tensorflow_mri.signal.hann"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hann</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="hann/#tensorflow_mri.signal.hann" title="tensorflow_mri.signal.hann"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hann</span></code></a></p></td>
 <td><p>Calculate a Hann window at the specified coordinates.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="idwt/#tensorflow_mri.signal.idwt" title="tensorflow_mri.signal.idwt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">idwt</span></code></a></p></td>
+<td><p>Single-level N-dimensional inverse discrete wavelet transform (IDWT).</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="ifft/#tensorflow_mri.signal.ifft" title="tensorflow_mri.signal.ifft"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ifft</span></code></a></p></td>
 <td><p>Computes the N-dimensional inverse discrete Fourier Transform.</p></td>

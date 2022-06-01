@@ -1,8 +1,0 @@
-﻿tfmri.losses.StructuralSimilarityLoss
-=====================================
-
-.. currentmodule:: tensorflow_mri.losses
-
-.. autoclass:: StructuralSimilarityLoss
-    :members:
-    :show-inheritance:

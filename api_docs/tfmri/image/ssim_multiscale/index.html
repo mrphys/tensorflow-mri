@@ -4,12 +4,13 @@
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 <link rel="index" title="Index" href="../../../../genindex/" /><link rel="search" title="Search" href="../../../../search/" /><link rel="next" title="tfmri.image.total_variation" href="../total_variation/" /><link rel="prev" title="tfmri.image.ssim3d_multiscale" href="../ssim3d_multiscale/" />
+        <link rel="canonical" href="https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/image/ssim_multiscale.html" />
 
-    <link rel="shortcut icon" href="../../../../_static/tfmri_icon.svg"/><meta name="generator" content="sphinx-4.4.0, furo 2022.03.04"/>
+    <link rel="shortcut icon" href="../../../../_static/tfmri_icon.svg"/><meta name="generator" content="sphinx-4.4.0, furo 2022.04.07"/>
         <title>tfmri.image.ssim_multiscale - TensorFlow MRI Documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?digest=935aa2abcc5c1da4283d1dc201fb1f0add16d23a" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo-extensions.css?digest=25ceb02ed1c46dc30f2321ff83e92799f69dfdb9" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?digest=68f4518137b9aefe99b631505a2064c3c42c9852" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono" />
     
     
@@ -45,10 +46,12 @@
   }
 </style></head>
   <body>
+    
     <script>
       document.body.dataset.theme = localStorage.getItem("theme") || "auto";
     </script>
     
+
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
   <symbol id="svg-toc" viewBox="0 0 24 24">
     <title>Contents</title>
@@ -283,8 +286,8 @@
 <li class="toctree-l2"><a class="reference internal" href="../../losses/F1Loss/">F1Loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../losses/FocalTverskyLoss/">FocalTverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../losses/IoULoss/">IoULoss</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../losses/MultiscaleStructuralSimilarityLoss/">MultiscaleStructuralSimilarityLoss</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../losses/StructuralSimilarityLoss/">StructuralSimilarityLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../losses/SSIMLoss/">SSIMLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../losses/SSIMMultiscaleLoss/">SSIMMultiscaleLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../losses/TverskyLoss/">TverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../losses/ssim_loss/">ssim_loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../losses/ssim_multiscale_loss/">ssim_multiscale_loss</a></li>
@@ -311,11 +314,11 @@
 <li class="toctree-l2"><a class="reference internal" href="../../metrics/F1Score/">F1Score</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../metrics/FBetaScore/">FBetaScore</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../metrics/IoU/">IoU</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../metrics/MultiscaleStructuralSimilarity/">MultiscaleStructuralSimilarity</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../metrics/NegativePredictiveValue/">NegativePredictiveValue</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../metrics/PeakSignalToNoiseRatio/">PeakSignalToNoiseRatio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../metrics/PSNR/">PSNR</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../metrics/PositivePredictiveValue/">PositivePredictiveValue</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../metrics/StructuralSimilarity/">StructuralSimilarity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../metrics/SSIM/">SSIM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../metrics/SSIMMultiscale/">SSIMMultiscale</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../metrics/TrueNegativeRate/">TrueNegativeRate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../metrics/TruePositiveRate/">TruePositiveRate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../metrics/TverskyIndex/">TverskyIndex</a></li>
@@ -335,10 +338,10 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../recon/">tfmri.recon</a><input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../recon/adj/">adj</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../recon/adjoint/">adjoint</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../recon/grappa/">grappa</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../recon/lstsq/">lstsq</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../recon/pf/">pf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../recon/least_squares/">least_squares</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../recon/partial_fourier/">partial_fourier</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../recon/sense/">sense</a></li>
 </ul>
 </li>
@@ -360,10 +363,12 @@
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../signal/">tfmri.signal</a><input class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/atanfilt/">atanfilt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/crop_kspace/">crop_kspace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../signal/dwt/">dwt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/fft/">fft</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/filter_kspace/">filter_kspace</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/hamming/">hamming</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/hann/">hann</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../signal/idwt/">idwt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/ifft/">ifft</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../signal/nufft/">nufft</a></li>
 </ul>
@@ -408,8 +413,11 @@
 <h1>tfmri.image.ssim_multiscale<a class="headerlink" href="#tfmri-image-ssim-multiscale" title="Permalink to this headline">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="tensorflow_mri.image.ssim_multiscale">
-<span class="sig-name descname"><span class="pre">ssim_multiscale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_val</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">power_factors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0.0448,</span> <span class="pre">0.2856,</span> <span class="pre">0.3001,</span> <span class="pre">0.2363,</span> <span class="pre">0.1333)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">11</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.03</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rank</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ssim_multiscale'</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/v0.18.0/tensorflow_mri/python/ops/image_ops.py#L356-L526"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorflow_mri.image.ssim_multiscale" title="Permalink to this definition">#</a></dt>
-<dd><p>Computes the multiscale SSIM (MS-SSIM) between two N-D images.</p>
+<span class="sig-name descname"><span class="pre">ssim_multiscale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_val</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">power_factors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0.0448,</span> <span class="pre">0.2856,</span> <span class="pre">0.3001,</span> <span class="pre">0.2363,</span> <span class="pre">0.1333)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">11</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.03</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_dims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_dims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rank</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ssim_multiscale'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_mri.image.ssim_multiscale" title="Permalink to this definition">#</a></dt>
+<dd><p>Computes the multiscale SSIM (MS-SSIM) between two N-D images. (deprecated arguments)</p>
+<p>Deprecated: SOME ARGUMENTS ARE DEPRECATED: <code class="docutils literal notranslate"><span class="pre">(rank)</span></code>. They will be removed after 2022-09-01.
+Instructions for updating:
+Use argument <code class="docutils literal notranslate"><span class="pre">image_dims</span></code> instead.</p>
 <p>This function operates on batches of multi-channel inputs and returns an
 MS-SSIM value for each image in the batch.</p>
 <dl class="field-list simple">
@@ -437,7 +445,7 @@ largest positive representable number for the data type.</p></li>
 list determines the number of scales. Index 0 is the unscaled resolution’s
 weight and each increasing scale corresponds to the image being
 downsampled by 2. Defaults to (0.0448, 0.2856, 0.3001, 0.2363, 0.1333),
-which are the values obtained in the original paper <a class="footnote-reference brackets" href="#id2" id="id1">1</a>.</p></li>
+which are the values obtained in the original paper <a class="footnote-reference brackets" href="#id7" id="id1">1</a>.</p></li>
 <li><p><strong>filter_size</strong> – The size of the Gaussian filter. Defaults to 11.</p></li>
 <li><p><strong>filter_sigma</strong> – The standard deviation of the Gaussian filter. Defaults to
 1.5.</p></li>
@@ -445,11 +453,24 @@ which are the values obtained in the original paper <a class="footnote-reference
 term, as <code class="docutils literal notranslate"><span class="pre">C1</span> <span class="pre">=</span> <span class="pre">(k1</span> <span class="pre">*</span> <span class="pre">max_val)</span> <span class="pre">**</span> <span class="pre">2</span></code>. Defaults to 0.01.</p></li>
 <li><p><strong>k2</strong> – Factor used to calculate the regularization constant for the contrast
 term, as <code class="docutils literal notranslate"><span class="pre">C2</span> <span class="pre">=</span> <span class="pre">(k2</span> <span class="pre">*</span> <span class="pre">max_val)</span> <span class="pre">**</span> <span class="pre">2</span></code>. Defaults to 0.03.</p></li>
-<li><p><strong>rank</strong> – An <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex">int</a>. The number of spatial dimensions. Must be 2 or 3. Defaults
+<li><p><strong>batch_dims</strong> – <p>An <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex">int</a>. The number of batch dimensions in input images. If
+<a class="reference external" href="https://docs.python.org/3/library/constants.html#None">None</a>, it is inferred from inputs and <code class="docutils literal notranslate"><span class="pre">image_dims</span></code> as
+<code class="docutils literal notranslate"><span class="pre">(rank</span> <span class="pre">of</span> <span class="pre">inputs)</span> <span class="pre">-</span> <span class="pre">image_dims</span> <span class="pre">-</span> <span class="pre">1</span></code>. If <code class="docutils literal notranslate"><span class="pre">image_dims</span></code> is also <a class="reference external" href="https://docs.python.org/3/library/constants.html#None">None</a>,
+then <code class="docutils literal notranslate"><span class="pre">batch_dims</span></code> defaults to 1. <code class="docutils literal notranslate"><span class="pre">batch_dims</span></code> can always be inferred if
+<code class="docutils literal notranslate"><span class="pre">image_dims</span></code> was specified, so you only need to provide one of the two.</p>
+</p></li>
+<li><p><strong>image_dims</strong> – <p>An <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex">int</a>. The number of spatial dimensions in input images. If
+<a class="reference external" href="https://docs.python.org/3/library/constants.html#None">None</a>, it is inferred from inputs and <code class="docutils literal notranslate"><span class="pre">batch_dims</span></code> as
+<code class="docutils literal notranslate"><span class="pre">(rank</span> <span class="pre">of</span> <span class="pre">inputs)</span> <span class="pre">-</span> <span class="pre">batch_dims</span> <span class="pre">-</span> <span class="pre">1</span></code>. Defaults to <a class="reference external" href="https://docs.python.org/3/library/constants.html#None">None</a>. <code class="docutils literal notranslate"><span class="pre">image_dims</span></code> can
+always be inferred if <code class="docutils literal notranslate"><span class="pre">batch_dims</span></code> was specified, so you only need to
+provide one of the two.</p>
+</p></li>
+<li><p><strong>rank</strong> – <p>An <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#numeric-types-int-float-complex">int</a>. The number of spatial dimensions. Must be 2 or 3. Defaults
 to <code class="docutils literal notranslate"><span class="pre">tf.rank(img1)</span> <span class="pre">-</span> <span class="pre">2</span></code>. In other words, if rank is not explicitly set,
 <code class="docutils literal notranslate"><span class="pre">img1</span></code> and <code class="docutils literal notranslate"><span class="pre">img2</span></code> should have shape <code class="docutils literal notranslate"><span class="pre">[batch,</span> <span class="pre">height,</span> <span class="pre">width,</span> <span class="pre">channels]</span></code>
 if processing 2D images or <code class="docutils literal notranslate"><span class="pre">[batch,</span> <span class="pre">depth,</span> <span class="pre">height,</span> <span class="pre">width,</span> <span class="pre">channels]</span></code> if
-processing 3D images.</p></li>
+processing 3D images.</p>
+</p></li>
 <li><p><strong>name</strong> – Namespace to embed the computation in.</p></li>
 </ul>
 </dd>
@@ -460,7 +481,7 @@ value for each image in the batch.</p>
 </dl>
 <p class="rubric">References</p>
 <dl class="footnote brackets">
-<dt class="label" id="id2"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
+<dt class="label" id="id7"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
 <dd><p>Z. Wang, E. P. Simoncelli and A. C. Bovik, “Multiscale structural
 similarity for image quality assessment,” The Thrity-Seventh Asilomar
 Conference on Signals, Systems &amp; Computers, 2003, 2003, pp. 1398-1402

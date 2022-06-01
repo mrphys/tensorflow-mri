@@ -4,12 +4,13 @@
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 <link rel="index" title="Index" href="../../../genindex/" /><link rel="search" title="Search" href="../../../search/" /><link rel="next" title="TensorFlow MRI API documentation" href="../../../api_docs/" /><link rel="prev" title="Image reconstruction" href="../" />
+        <link rel="canonical" href="https://mrphys.github.io/tensorflow-mri/tutorials/recon/cg_sense.html" />
 
-    <link rel="shortcut icon" href="../../../_static/tfmri_icon.svg"/><meta name="generator" content="sphinx-4.4.0, furo 2022.03.04"/>
+    <link rel="shortcut icon" href="../../../_static/tfmri_icon.svg"/><meta name="generator" content="sphinx-4.4.0, furo 2022.04.07"/>
         <title>Image reconstruction with CG-SENSE - TensorFlow MRI Documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?digest=935aa2abcc5c1da4283d1dc201fb1f0add16d23a" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?digest=25ceb02ed1c46dc30f2321ff83e92799f69dfdb9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?digest=68f4518137b9aefe99b631505a2064c3c42c9852" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono" />
     
     
@@ -45,10 +46,12 @@
   }
 </style></head>
   <body>
+    
     <script>
       document.body.dataset.theme = localStorage.getItem("theme") || "auto";
     </script>
     
+
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
   <symbol id="svg-toc" viewBox="0 0 24 24">
     <title>Contents</title>
@@ -283,8 +286,8 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/losses/F1Loss/">F1Loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/losses/FocalTverskyLoss/">FocalTverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/losses/IoULoss/">IoULoss</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/losses/MultiscaleStructuralSimilarityLoss/">MultiscaleStructuralSimilarityLoss</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/losses/StructuralSimilarityLoss/">StructuralSimilarityLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/losses/SSIMLoss/">SSIMLoss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/losses/SSIMMultiscaleLoss/">SSIMMultiscaleLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/losses/TverskyLoss/">TverskyLoss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/losses/ssim_loss/">ssim_loss</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/losses/ssim_multiscale_loss/">ssim_multiscale_loss</a></li>
@@ -311,11 +314,11 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/metrics/F1Score/">F1Score</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/metrics/FBetaScore/">FBetaScore</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/metrics/IoU/">IoU</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/metrics/MultiscaleStructuralSimilarity/">MultiscaleStructuralSimilarity</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/metrics/NegativePredictiveValue/">NegativePredictiveValue</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/metrics/PeakSignalToNoiseRatio/">PeakSignalToNoiseRatio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/metrics/PSNR/">PSNR</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/metrics/PositivePredictiveValue/">PositivePredictiveValue</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/metrics/StructuralSimilarity/">StructuralSimilarity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/metrics/SSIM/">SSIM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/metrics/SSIMMultiscale/">SSIMMultiscale</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/metrics/TrueNegativeRate/">TrueNegativeRate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/metrics/TruePositiveRate/">TruePositiveRate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/metrics/TverskyIndex/">TverskyIndex</a></li>
@@ -335,10 +338,10 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../../api_docs/tfmri/recon/">tfmri.recon</a><input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/recon/adj/">adj</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/recon/adjoint/">adjoint</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/recon/grappa/">grappa</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/recon/lstsq/">lstsq</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/recon/pf/">pf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/recon/least_squares/">least_squares</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/recon/partial_fourier/">partial_fourier</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/recon/sense/">sense</a></li>
 </ul>
 </li>
@@ -360,10 +363,12 @@
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../../api_docs/tfmri/signal/">tfmri.signal</a><input class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/signal/atanfilt/">atanfilt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/signal/crop_kspace/">crop_kspace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/signal/dwt/">dwt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/signal/fft/">fft</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/signal/filter_kspace/">filter_kspace</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/signal/hamming/">hamming</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/signal/hann/">hann</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/signal/idwt/">idwt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/signal/ifft/">ifft</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api_docs/tfmri/signal/nufft/">nufft</a></li>
 </ul>
@@ -712,7 +717,9 @@ TensorFlow MRI version: 0.17.0
 <p>TensorFlow MRI supports CPU and GPU computation. If there is a GPU available in your environment and it is visible to TensorFlow, it will be used automatically.</p>
 <blockquote>
 <div><p>ℹ️ In Google Colab, you can enable GPU computation by clicking on <strong>Runtime &gt; Change runtime type</strong> and selecting <strong>GPU</strong> under <strong>Hardware accelerator</strong>.</p>
-<p>ℹ️ You can control whether CPU or GPU is used for a particular operation via the <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/device">tf.device</a> context manager.</p>
+</div></blockquote>
+<blockquote>
+<div><p>ℹ️ You can control whether CPU or GPU is used for a particular operation via the <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/device">tf.device</a> context manager.</p>
 </div></blockquote>
 </section>
 </section>
@@ -823,7 +830,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 <p>The <code class="docutils literal notranslate"><span class="pre">trajectory</span></code> array is stored with shape <code class="docutils literal notranslate"><span class="pre">[3,</span> <span class="pre">samples,</span> <span class="pre">views]</span></code>. As with the <code class="docutils literal notranslate"><span class="pre">kspace</span></code> array, we reverse the order and flatten the <code class="docutils literal notranslate"><span class="pre">samples</span></code> and <code class="docutils literal notranslate"><span class="pre">views</span></code> dimensions. Additionally we need to apply the following changes:</p>
 <ul class="simple">
 <li><p>The array represents a 3D trajectory but the image has a dimensionality, or <code class="docutils literal notranslate"><span class="pre">rank</span></code>, of 2. The last element along the innermost dimension contains only zeros and is not needed.</p></li>
-<li><p>TFMRI expects the sampling coordinates in radians/pixel, i.e. in the range <span class="math notranslate nohighlight">\([-\pi, \pi]\)</span>. However, the trajectory is provided in units of 1/FOV, i.e., in the range <span class="math notranslate nohighlight">\([-150, 150]\)</span>, so we need to convert the units.</p></li>
+<li><p>TFMRI expects the sampling coordinates in radians/pixel, i.e. in the range <span class="math notranslate nohighlight">\([-\pi, \pi]\)</span>. However, the trajectory is provided in units of 1/FOV, i.e., in the range <span class="math notranslate nohighlight">\([-150, 150]\)</span>, so we need to convert the units.</p></li>
 </ul>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
@@ -971,7 +978,9 @@ zf_images shape: (12, 300, 300)
 reconstructing multiple images with different trajectories.</p>
 <blockquote>
 <div><p>ℹ️ Many TFMRI operators support batches of inputs. Batch dimensions are always leading.</p>
-<p>ℹ️ TensorFlow broadcasting semantics are similar to those of NumPy. Learn more about broadcasting <a class="reference external" href="https://numpy.org/doc/stable/user/basics.broadcasting.html">here</a>.</p>
+</div></blockquote>
+<blockquote>
+<div><p>ℹ️ TensorFlow broadcasting semantics are similar to those of NumPy. Learn more about broadcasting <a class="reference external" href="https://numpy.org/doc/stable/user/basics.broadcasting.html">here</a>.</p>
 </div></blockquote>
 <p>Let’s have a look at the reconstructed images:</p>
 <div class="nbinput docutils container">

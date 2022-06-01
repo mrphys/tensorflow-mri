@@ -1,8 +1,0 @@
-﻿tfmri.metrics.PeakSignalToNoiseRatio
-====================================
-
-.. currentmodule:: tensorflow_mri.metrics
-
-.. autoclass:: PeakSignalToNoiseRatio
-    :members:
-    :show-inheritance:
