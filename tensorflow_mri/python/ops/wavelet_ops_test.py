@@ -83,3 +83,15 @@ class DiscreteWaveletTransformTest(test_util.TestCase):
     y = pywt.idwt(a, d, wavelet)
     result = wavelet_ops.idwt(result, wavelet)
     self.assertAllClose(y, result)
+
+
+  @test_util.run_all_execution_modes
+  def test_dwt_idwt_static_shape(self, wavelet='haar'):
+    x = np.asarray([3, 7, 1, 1, -2, 5, 4, 6], dtype=np.float32)
+
+    result = wavelet_ops.dwt(x, wavelet)
+    self.assertAllEqual([4], result['a'].shape)
+    self.assertAllClose([4], result['d'].shape)
+
+    result = wavelet_ops.idwt(result, wavelet)
+    self.assertAllEqual([8], result.shape)

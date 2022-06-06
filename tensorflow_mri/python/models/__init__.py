@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2022 University College London. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,15 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"TFMRI Python code."
+"""Keras models."""
 
-from tensorflow_mri.python import callbacks
-from tensorflow_mri.python import initializers
-from tensorflow_mri.python import io
-from tensorflow_mri.python import layers
-from tensorflow_mri.python import losses
-from tensorflow_mri.python import metrics
-from tensorflow_mri.python import models
-from tensorflow_mri.python import ops
-from tensorflow_mri.python import summary
-from tensorflow_mri.python import util
+from tensorflow_mri.python.models import conv_endec

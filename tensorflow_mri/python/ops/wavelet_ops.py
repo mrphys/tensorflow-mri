@@ -208,10 +208,16 @@ def _dwt_along_axis(x, wavelet, mode, axis):  # pylint: disable=missing-param-do
     scalar_batch = True
     x = tf.expand_dims(x, axis=0)
 
-  # Shift the input tensor by 1.
-  begin = tf.scatter_nd([[tf.rank(x) - 2]], [1], [tf.rank(x)])
+  # Shift the input tensor by 1. We take care to retain the static shape of the
+  # sliced tensor.
+  begin = [0] * x.shape.rank
+  begin[-2] = 1
   size = tf.shape(x) - begin
+  shape = x.shape.as_list()
+  if shape[-2] is not None:
+    shape[-2] -= 1
   x = tf.slice(x, begin, size)
+  x = tf.ensure_shape(x, shape)
 
   # Get filters.
   f_lo = tf.reverse(tf.reshape(wavelet.dec_lo, [-1, 1, 1]), [0])
@@ -323,7 +329,7 @@ def _dyadic_upsampling(x, axis=-1, indices='odd'):
     The upsampled `tf.Tensor`.
   """
   # Canonicalize axis.
-  axis = tf.cond(axis < 0, lambda: tf.rank(x) + axis, lambda: axis)
+  axis = axis + x.shape.rank if axis < 0 else axis
 
   # Compute output shape.
   output_shape = tf.tensor_scatter_nd_update(

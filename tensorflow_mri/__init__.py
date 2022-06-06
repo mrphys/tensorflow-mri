@@ -29,11 +29,12 @@ from tensorflow_mri._api import convex
 from tensorflow_mri._api import image
 from tensorflow_mri._api import initializers
 from tensorflow_mri._api import io
-from tensorflow_mri._api import math
 from tensorflow_mri._api import layers
 from tensorflow_mri._api import linalg
 from tensorflow_mri._api import losses
+from tensorflow_mri._api import math
 from tensorflow_mri._api import metrics
+from tensorflow_mri._api import models
 from tensorflow_mri._api import optimize
 from tensorflow_mri._api import plot
 from tensorflow_mri._api import recon

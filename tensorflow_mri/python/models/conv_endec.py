@@ -12,24 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Convolutional encoder-decoder layers."""
+"""Convolutional encoder-decoder models."""
+
+import string
 
 import tensorflow as tf
 
 from tensorflow_mri.python.layers import conv_blocks
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
-from tensorflow_mri.python.util import deprecation
 from tensorflow_mri.python.util import layer_util
 
 
-@api_util.export("layers.UNet")
-@tf.keras.utils.register_keras_serializable(package='MRI')
-@deprecation.deprecated(
-    date=deprecation.REMOVAL_DATE['0.20.0'],
-    instructions='Use `tfmri.models.UNetND` instead.')
-class UNet(tf.keras.layers.Layer):
-  """A UNet layer.
+UNET_DOC_TEMPLATE = string.Template(
+  """${rank}D U-Net model.
 
   Args:
     scales: The number of scales. `scales - 1` pooling layers will be added to
@@ -39,7 +35,7 @@ class UNet(tf.keras.layers.Layer):
       convolution network will have. The number of filters in following layers
       will be calculated from this number. Lowering this number may reduce the
       amount of memory required for training.
-    kernel_size: An integer or tuple/list of `rank` integers, specifying the
+    kernel_size: An integer or tuple/list of ${rank} integers, specifying the
       size of the convolution window. Can be a single integer to specify the
       same value for all spatial dimensions.
     pool_size: The pooling size for the pooling operations. Defaults to 2.
@@ -48,7 +44,6 @@ class UNet(tf.keras.layers.Layer):
     use_deconv: If `True`, transpose convolution (deconvolution) will be used
       instead of up-sampling. This increases the amount memory required during
       training. Defaults to `False`.
-    rank: An integer specifying the number of spatial dimensions. Defaults to 2.
     activation: A callable or a Keras activation identifier. Defaults to
       `'relu'`.
     kernel_initializer: A `tf.keras.initializers.Initializer` or a Keras
@@ -81,14 +76,29 @@ class UNet(tf.keras.layers.Layer):
       `'spatial'`. Standard dropout drops individual elements from the feature
       maps, whereas spatial dropout drops entire feature maps. Only relevant if
       `use_dropout` is `True`. Defaults to `'standard'`.
+    use_tight_frame: A `boolean`. If `True`, creates a tight frame U-Net as
+      described in [2]. Defaults to `False`.
     **kwargs: Additional keyword arguments to be passed to base class.
-  """
+
+  References:
+    .. [1] Ronneberger, O., Fischer, P., & Brox, T. (2015, October). U-net:
+      Convolutional networks for biomedical image segmentation. In International
+      Conference on Medical image computing and computer-assisted intervention
+      (pp. 234-241). Springer, Cham.
+    .. [2] Han, Y., & Ye, J. C. (2018). Framing U-Net via deep convolutional
+      framelets: Application to sparse-view CT. IEEE transactions on medical
+      imaging, 37(6), 1418-1429.
+  """)
+
+
+class UNet(tf.keras.Model):
+  """U-Net model (private base class)."""
   def __init__(self,
+               rank,
                scales,
                base_filters,
                kernel_size,
                pool_size=2,
-               rank=2,
                block_depth=2,
                use_deconv=False,
                activation='relu',
@@ -106,6 +116,7 @@ class UNet(tf.keras.layers.Layer):
                use_dropout=False,
                dropout_rate=0.3,
                dropout_type='standard',
+               use_tight_frame=False,
                **kwargs):
     """Creates a UNet layer."""
     self._scales = scales
@@ -131,6 +142,13 @@ class UNet(tf.keras.layers.Layer):
     self._dropout_rate = dropout_rate
     self._dropout_type = check_util.validate_enum(
         dropout_type, {'standard', 'spatial'}, 'dropout_type')
+    self._use_tight_frame = use_tight_frame
+    self._dwt_kwargs = {}
+    self._dwt_kwargs['return_dict'] = False
+
+    # Check inputs are consistent.
+    if use_tight_frame and pool_size != 2:
+      raise ValueError('pool_size must be 2 if use_tight_frame is True.')
 
     block_config = dict(
         filters=None, # To be filled for each scale.
@@ -150,9 +168,21 @@ class UNet(tf.keras.layers.Layer):
         dropout_rate=self._dropout_rate,
         dropout_type=self._dropout_type)
 
-    pool = layer_util.get_nd_layer('MaxPool', self._rank)
-    if use_deconv:
-      upsamp = layer_util.get_nd_layer('ConvTranspose', self._rank)
+    # Configure pooling layer.
+    if self._use_tight_frame:
+      pool_name = 'DWT'
+      pool_config = self._dwt_kwargs
+    else:
+      pool_name = 'MaxPool'
+      pool_config = dict(
+          pool_size=self._pool_size,
+          strides=self._pool_size,
+          padding='same')
+    pool_layer = layer_util.get_nd_layer(pool_name, self._rank)
+
+    # Configure upsampling layer.
+    if self._use_deconv:
+      upsamp_name = 'ConvTranspose'
       upsamp_config = dict(
           filters=None,  # To be filled for each scale.
           kernel_size=self._kernel_size,
@@ -164,9 +194,10 @@ class UNet(tf.keras.layers.Layer):
           kernel_regularizer=self._kernel_regularizer,
           bias_regularizer=self._bias_regularizer)
     else:
-      upsamp = layer_util.get_nd_layer('UpSampling', self._rank)
+      upsamp_name = 'UpSampling'
       upsamp_config = dict(
           size=self._pool_size)
+    upsamp_layer = layer_util.get_nd_layer(upsamp_name, self._rank)
 
     if tf.keras.backend.image_data_format() == 'channels_last':
       self._channel_axis = -1
@@ -178,6 +209,10 @@ class UNet(tf.keras.layers.Layer):
     self._pools = []
     self._upsamps = []
     self._concats = []
+    if self._use_tight_frame:
+      # For tight frame model, we also need to upsample each of the detail
+      # components.
+      self._detail_upsamps = []
 
     # Configure backbone and decoder.
     for scale in range(self._scales):
@@ -186,15 +221,18 @@ class UNet(tf.keras.layers.Layer):
       self._enc_blocks.append(conv_blocks.ConvBlock(**block_config))
 
       if scale < self._scales - 1:
-        self._pools.append(pool(
-            pool_size=self._pool_size,
-            strides=self._pool_size,
-            padding='same'))
+        self._pools.append(pool_layer(**pool_config))
         if use_deconv:
           upsamp_config['filters'] = num_filters
-        self._upsamps.append(upsamp(**upsamp_config))
-        self._concats.append(tf.keras.layers.Concatenate(
-            axis=self._channel_axis))
+        self._upsamps.append(upsamp_layer(**upsamp_config))
+        if self._use_tight_frame:
+          # Add one upsampling layer for each detail component. There are 1
+          # detail components for 1D, 3 detail components for 2D, and 7 detail
+          # components for 3D.
+          self._detail_upsamps.append([upsamp_layer(**upsamp_config)
+                                       for _ in range(2 ** self._rank - 1)])
+        self._concats.append(
+            tf.keras.layers.Concatenate(axis=self._channel_axis))
         self._dec_blocks.append(conv_blocks.ConvBlock(**block_config))
 
     # Configure output block.
@@ -219,17 +257,35 @@ class UNet(tf.keras.layers.Layer):
     """Runs forward pass on the input tensors."""
     x = inputs
 
+    # For skip connections to decoder.
+    cache = [None] * (self._scales - 1)
+    if self._use_tight_frame:
+      detail_cache = [None] * (self._scales - 1)
+
     # Backbone.
-    cache = [None] * (self._scales - 1) # For skip connections to decoder.
     for scale in range(self._scales - 1):
       cache[scale] = self._enc_blocks[scale](x)
       x = self._pools[scale](cache[scale])
+      if self._use_tight_frame:
+        # Store details for later concatenation, and continue processing
+        # approximation coefficients.
+        detail_cache[scale] = x[1:]  # details
+        x = x[0]  # approximation
+
+    # Lowest resolution scale.
     x = self._enc_blocks[-1](x)
 
     # Decoder.
     for scale in range(self._scales - 2, -1, -1):
       x = self._upsamps[scale](x)
-      x = self._concats[scale]([x, cache[scale]])
+      concat_inputs = [x, cache[scale]]
+      if self._use_tight_frame:
+        # Upsample detail components too.
+        d = [up(d) for d, up in zip(
+            detail_cache[scale], self._detail_upsamps[scale])]
+        # Add to concatenation.
+        concat_inputs.extend(d)
+      x = self._concats[scale](concat_inputs)
       x = self._dec_blocks[scale](x)
 
     # Head.
@@ -245,13 +301,12 @@ class UNet(tf.keras.layers.Layer):
     return x
 
   def get_config(self):
-    """Gets layer configuration."""
+    """Returns model configuration for serialization."""
     config = {
         'scales': self._scales,
         'base_filters': self._base_filters,
         'kernel_size': self._kernel_size,
         'pool_size': self._pool_size,
-        'rank': self._rank,
         'block_depth': self._block_depth,
         'use_deconv': self._use_deconv,
         'activation': self._activation,
@@ -268,7 +323,34 @@ class UNet(tf.keras.layers.Layer):
         'use_global_residual': self._use_global_residual,
         'use_dropout': self._use_dropout,
         'dropout_rate': self._dropout_rate,
-        'dropout_type': self._dropout_type
+        'dropout_type': self._dropout_type,
+        'use_tight_frame': self._use_tight_frame
     }
     base_config = super().get_config()
     return {**base_config, **config}
+
+
+@api_util.export("models.UNet1D")
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class UNet1D(UNet):
+  def __init__(self, *args, **kwargs):
+    super().__init__(1, *args, **kwargs)
+
+
+@api_util.export("models.UNet2D")
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class UNet2D(UNet):
+  def __init__(self, *args, **kwargs):
+    super().__init__(2, *args, **kwargs)
+
+
+@api_util.export("models.UNet3D")
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class UNet3D(UNet):
+  def __init__(self, *args, **kwargs):
+    super().__init__(3, *args, **kwargs)
+
+
+UNet1D.__doc__ = UNET_DOC_TEMPLATE.substitute(rank=1)
+UNet2D.__doc__ = UNET_DOC_TEMPLATE.substitute(rank=2)
+UNet3D.__doc__ = UNET_DOC_TEMPLATE.substitute(rank=3)
