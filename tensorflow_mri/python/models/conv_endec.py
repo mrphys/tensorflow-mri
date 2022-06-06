@@ -118,7 +118,9 @@ class UNet(tf.keras.Model):
                dropout_type='standard',
                use_tight_frame=False,
                **kwargs):
-    """Creates a UNet layer."""
+    """Creates a UNet model."""
+    super().__init__(**kwargs)
+
     self._scales = scales
     self._base_filters = base_filters
     self._kernel_size = kernel_size
@@ -250,8 +252,6 @@ class UNet(tf.keras.Model):
     if self._use_global_residual:
       self._add = tf.keras.layers.Add()
       self._out_activation_fn = tf.keras.activations.get(self._out_activation)
-
-    super().__init__(**kwargs)
 
   def call(self, inputs, training=None): # pylint: disable=missing-param-doc,unused-argument
     """Runs forward pass on the input tensors."""
