@@ -7,3 +7,9 @@ from tensorflow_mri.python.layers.convolutional import Conv2D as Conv2D
 from tensorflow_mri.python.layers.convolutional import Conv3D as Conv3D
 from tensorflow_mri.python.layers.conv_blocks import ConvBlock as ConvBlock
 from tensorflow_mri.python.layers.conv_endec import UNet as UNet
+from tensorflow_mri.python.layers.signal_layers import DWT1D as DWT1D
+from tensorflow_mri.python.layers.signal_layers import DWT2D as DWT2D
+from tensorflow_mri.python.layers.signal_layers import DWT3D as DWT3D
+from tensorflow_mri.python.layers.signal_layers import IDWT1D as IDWT1D
+from tensorflow_mri.python.layers.signal_layers import IDWT2D as IDWT2D
+from tensorflow_mri.python.layers.signal_layers import IDWT3D as IDWT3D
