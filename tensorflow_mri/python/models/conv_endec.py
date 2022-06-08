@@ -102,6 +102,7 @@ class UNet(tf.keras.Model):
                block_depth=2,
                use_deconv=False,
                activation='relu',
+               use_bias=True,
                kernel_initializer='VarianceScaling',
                bias_initializer='Zeros',
                kernel_regularizer=None,
@@ -129,6 +130,7 @@ class UNet(tf.keras.Model):
     self._block_depth = block_depth
     self._use_deconv = use_deconv
     self._activation = activation
+    self._use_bias = use_bias
     self._kernel_initializer = kernel_initializer
     self._bias_initializer = bias_initializer
     self._kernel_regularizer = kernel_regularizer
@@ -158,6 +160,7 @@ class UNet(tf.keras.Model):
         strides=1,
         rank=self._rank,
         activation=self._activation,
+        use_bias=self._use_bias,
         kernel_initializer=self._kernel_initializer,
         bias_initializer=self._bias_initializer,
         kernel_regularizer=self._kernel_regularizer,
@@ -191,6 +194,7 @@ class UNet(tf.keras.Model):
           strides=self._pool_size,
           padding='same',
           activation=None,
+          use_bias=self._use_bias,
           kernel_initializer=self._kernel_initializer,
           bias_initializer=self._bias_initializer,
           kernel_regularizer=self._kernel_regularizer,
@@ -310,6 +314,7 @@ class UNet(tf.keras.Model):
         'block_depth': self._block_depth,
         'use_deconv': self._use_deconv,
         'activation': self._activation,
+        'use_bias': self._use_bias,
         'kernel_initializer': self._kernel_initializer,
         'bias_initializer': self._bias_initializer,
         'kernel_regularizer': self._kernel_regularizer,
