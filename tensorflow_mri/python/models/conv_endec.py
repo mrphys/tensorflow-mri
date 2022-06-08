@@ -28,13 +28,8 @@ UNET_DOC_TEMPLATE = string.Template(
   """${rank}D U-Net model.
 
   Args:
-    scales: The number of scales. `scales - 1` pooling layers will be added to
-      the model. Lowering the depth may reduce the amount of memory required for
-      training.
-    base_filters: The number of filters that the first layer in the
-      convolution network will have. The number of filters in following layers
-      will be calculated from this number. Lowering this number may reduce the
-      amount of memory required for training.
+    filters: A `list` of `int`. The number of filters for convolutional layers
+      at each scale. The number of scales is inferred as `len(filters)`.
     kernel_size: An integer or tuple/list of ${rank} integers, specifying the
       size of the convolution window. Can be a single integer to specify the
       same value for all spatial dimensions.
@@ -95,8 +90,7 @@ class UNet(tf.keras.Model):
   """U-Net model (private base class)."""
   def __init__(self,
                rank,
-               scales,
-               base_filters,
+               filters,
                kernel_size,
                pool_size=2,
                block_depth=2,
@@ -121,9 +115,7 @@ class UNet(tf.keras.Model):
                **kwargs):
     """Creates a UNet model."""
     super().__init__(**kwargs)
-
-    self._scales = scales
-    self._base_filters = base_filters
+    self._filters = filters
     self._kernel_size = kernel_size
     self._pool_size = pool_size
     self._rank = rank
@@ -155,7 +147,7 @@ class UNet(tf.keras.Model):
       raise ValueError('pool_size must be 2 if use_tight_frame is True.')
 
     block_config = dict(
-        filters=None, # To be filled for each scale.
+        filters=None,  # To be filled for each scale.
         kernel_size=self._kernel_size,
         strides=1,
         rank=self._rank,
@@ -221,15 +213,14 @@ class UNet(tf.keras.Model):
       self._detail_upsamps = []
 
     # Configure backbone and decoder.
-    for scale in range(self._scales):
-      num_filters = base_filters * (2 ** scale)
-      block_config['filters'] = [num_filters] * self._block_depth
+    for scale, filt in enumerate(self._filters):
+      block_config['filters'] = [filt] * self._block_depth
       self._enc_blocks.append(conv_blocks.ConvBlock(**block_config))
 
-      if scale < self._scales - 1:
+      if scale < len(self._filters) - 1:
         self._pools.append(pool_layer(**pool_config))
         if use_deconv:
-          upsamp_config['filters'] = num_filters
+          upsamp_config['filters'] = filt
         self._upsamps.append(upsamp_layer(**upsamp_config))
         if self._use_tight_frame:
           # Add one upsampling layer for each detail component. There are 1
