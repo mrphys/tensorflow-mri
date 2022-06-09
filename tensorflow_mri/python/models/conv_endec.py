@@ -321,6 +321,7 @@ class UNet(tf.keras.Model):
         'bn_momentum': self._bn_momentum,
         'bn_epsilon': self._bn_epsilon,
         'out_channels': self._out_channels,
+        'out_kernel_size': self._out_kernel_size,
         'out_activation': self._out_activation,
         'use_global_residual': self._use_global_residual,
         'use_dropout': self._use_dropout,
