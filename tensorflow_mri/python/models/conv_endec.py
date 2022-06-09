@@ -18,9 +18,9 @@ import string
 
 import tensorflow as tf
 
-from tensorflow_mri.python.layers import conv_blocks
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
+from tensorflow_mri.python.util import model_util
 from tensorflow_mri.python.util import layer_util
 
 
@@ -59,6 +59,8 @@ UNET_DOC_TEMPLATE = string.Template(
     bn_epsilon: A `float`. Small float added to variance to avoid dividing by
       zero during batch normalization.
     out_channels: An `int`. The number of output channels.
+    out_kernel_size: An `int` or a list of ${rank} `int`. The size of the
+      convolutional kernel for the output layer. Defaults to `kernel_size`.
     out_activation: A callable or a Keras activation identifier. The output
       activation. Defaults to `None`.
     use_global_residual: A `boolean`. If `True`, adds a global residual
@@ -106,6 +108,7 @@ class UNet(tf.keras.Model):
                bn_momentum=0.99,
                bn_epsilon=0.001,
                out_channels=None,
+               out_kernel_size=None,
                out_activation=None,
                use_global_residual=False,
                use_dropout=False,
@@ -132,6 +135,7 @@ class UNet(tf.keras.Model):
     self._bn_momentum = bn_momentum
     self._bn_epsilon = bn_epsilon
     self._out_channels = out_channels
+    self._out_kernel_size = out_kernel_size
     self._out_activation = out_activation
     self._use_global_residual = use_global_residual
     self._use_dropout = use_dropout
@@ -141,16 +145,17 @@ class UNet(tf.keras.Model):
     self._use_tight_frame = use_tight_frame
     self._dwt_kwargs = {}
     self._dwt_kwargs['return_dict'] = False
+    self._scales = len(filters)
 
     # Check inputs are consistent.
     if use_tight_frame and pool_size != 2:
       raise ValueError('pool_size must be 2 if use_tight_frame is True.')
 
+    block_layer = model_util.get_nd_model('ConvBlock', self._rank)
     block_config = dict(
         filters=None,  # To be filled for each scale.
         kernel_size=self._kernel_size,
         strides=1,
-        rank=self._rank,
         activation=self._activation,
         use_bias=self._use_bias,
         kernel_initializer=self._kernel_initializer,
@@ -215,7 +220,7 @@ class UNet(tf.keras.Model):
     # Configure backbone and decoder.
     for scale, filt in enumerate(self._filters):
       block_config['filters'] = [filt] * self._block_depth
-      self._enc_blocks.append(conv_blocks.ConvBlock(**block_config))
+      self._enc_blocks.append(block_layer(**block_config))
 
       if scale < len(self._filters) - 1:
         self._pools.append(pool_layer(**pool_config))
@@ -230,18 +235,20 @@ class UNet(tf.keras.Model):
                                        for _ in range(2 ** self._rank - 1)])
         self._concats.append(
             tf.keras.layers.Concatenate(axis=self._channel_axis))
-        self._dec_blocks.append(conv_blocks.ConvBlock(**block_config))
+        self._dec_blocks.append(block_layer(**block_config))
 
     # Configure output block.
     if self._out_channels is not None:
       block_config['filters'] = self._out_channels
-      # If network is residual, the activation is performed after the residual
-      # addition.
-      if self._use_global_residual:
-        block_config['activation'] = None
-      else:
-        block_config['activation'] = self._out_activation
-      self._out_block = conv_blocks.ConvBlock(**block_config)
+    if self._out_kernel_size is not None:
+      block_config['kernel_size'] = self._out_kernel_size
+    # If network is residual, the activation is performed after the residual
+    # addition.
+    if self._use_global_residual:
+      block_config['activation'] = None
+    else:
+      block_config['activation'] = self._out_activation
+    self._out_block = block_layer(**block_config)
 
     # Configure residual addition, if requested.
     if self._use_global_residual:
@@ -298,8 +305,7 @@ class UNet(tf.keras.Model):
   def get_config(self):
     """Returns model configuration for serialization."""
     config = {
-        'scales': self._scales,
-        'base_filters': self._base_filters,
+        'filters': self._filters,
         'kernel_size': self._kernel_size,
         'pool_size': self._pool_size,
         'block_depth': self._block_depth,
@@ -324,6 +330,14 @@ class UNet(tf.keras.Model):
     }
     base_config = super().get_config()
     return {**base_config, **config}
+
+  @classmethod
+  def from_config(cls, config):
+    if 'base_filters' in config:
+      # Old config format. Convert to new format.
+      config['filters'] = [config.pop('base_filters') * (2 ** scale)
+                           for scale in config.pop('scales')]
+    return super().from_config(config)
 
 
 @api_util.export("models.UNet1D")
