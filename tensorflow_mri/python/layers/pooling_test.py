@@ -89,7 +89,6 @@ class MaxPoolingTest(test_util.TestCase):
                            [7. + 3.j, 4. + 8.j]])[..., None]
     layer = tfmri.layers.MaxPooling1D(dtype=dtype)
     output = layer(inputs)
-    print(expected, output)
     self.assertAllClose(expected, output)
 
   @parameterized.named_parameters(
@@ -136,24 +135,49 @@ class MaxPoolingTest(test_util.TestCase):
     output = layer(inputs)
     self.assertAllClose(expected, output)
 
-  # def test_max_pooling_3d(self):
-  #   pool_size = (3, 3, 3)
-  #   test_utils.layer_test(
-  #       keras.layers.MaxPooling3D,
-  #       kwargs={"strides": 2, "padding": "valid", "pool_size": pool_size},
-  #       input_shape=(3, 11, 12, 10, 4),
-  #   )
-  #   test_utils.layer_test(
-  #       keras.layers.MaxPooling3D,
-  #       kwargs={
-  #           "strides": 3,
-  #           "padding": "valid",
-  #           "data_format": "channels_first",
-  #           "pool_size": pool_size,
-  #       },
-  #       input_shape=(3, 4, 11, 12, 10),
-  #   )
+  @parameterized.named_parameters(
+      ("float32", "float32"),
+      ("complex64", "complex64")
+  )
+  def test_max_pooling_3d(self, dtype):
+    pool_size = (3, 3, 3)
+    test_utils.layer_test(
+        tfmri.layers.MaxPooling3D,
+        kwargs={"strides": 2,
+                "padding": "valid",
+                "pool_size": pool_size,
+                "dtype": dtype},
+        input_shape=(3, 11, 12, 10, 4),
+        input_dtype=dtype,
+        expected_output_dtype=dtype
+    )
+    test_utils.layer_test(
+        tfmri.layers.MaxPooling3D,
+        kwargs={
+            "strides": 3,
+            "padding": "valid",
+            "data_format": "channels_first",
+            "pool_size": pool_size,
+            "dtype": dtype
+        },
+        input_shape=(3, 4, 11, 12, 10),
+        input_dtype=dtype,
+        expected_output_dtype=dtype
+    )
 
+  @parameterized.named_parameters(
+      ("valid", "valid"),
+      ("same", "same")
+  )
+  def test_max_pooling_3d_result(self, padding):
+    x = tf.random.stateless_uniform((3, 11, 12, 10, 4), [32, 12])
+    real_layer = tfmri.layers.MaxPooling3D(
+        padding=padding, dtype="float32")
+    complex_layer = tfmri.layers.MaxPooling3D(
+        padding=padding, dtype="complex64")
+    real_output = real_layer(x)
+    complex_output = complex_layer(tf.cast(x, tf.complex64))
+    self.assertAllClose(real_output, tf.math.real(complex_output))
 
 if __name__ == "__main__":
   tf.test.main()
