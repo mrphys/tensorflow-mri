@@ -3,10 +3,19 @@
 """Keras layers."""
 
 from tensorflow_mri.python.layers.convolutional import Conv1D as Conv1D
+from tensorflow_mri.python.layers.convolutional import Conv1D as Convolution1D
 from tensorflow_mri.python.layers.convolutional import Conv2D as Conv2D
+from tensorflow_mri.python.layers.convolutional import Conv2D as Convolution2D
 from tensorflow_mri.python.layers.convolutional import Conv3D as Conv3D
+from tensorflow_mri.python.layers.convolutional import Conv3D as Convolution3D
 from tensorflow_mri.python.layers.conv_blocks import ConvBlock as ConvBlock
 from tensorflow_mri.python.layers.conv_endec import UNet as UNet
+from tensorflow_mri.python.layers.pooling import MaxPooling1D as MaxPool1D
+from tensorflow_mri.python.layers.pooling import MaxPooling1D as MaxPooling1D
+from tensorflow_mri.python.layers.pooling import MaxPooling2D as MaxPool2D
+from tensorflow_mri.python.layers.pooling import MaxPooling2D as MaxPooling2D
+from tensorflow_mri.python.layers.pooling import MaxPooling3D as MaxPool3D
+from tensorflow_mri.python.layers.pooling import MaxPooling3D as MaxPooling3D
 from tensorflow_mri.python.layers.signal_layers import DWT1D as DWT1D
 from tensorflow_mri.python.layers.signal_layers import DWT2D as DWT2D
 from tensorflow_mri.python.layers.signal_layers import DWT3D as DWT3D
