@@ -214,16 +214,16 @@ AveragePooling3D = api_util.export("layers.AveragePooling3D",
     complex_pool(tf.keras.layers.AveragePooling3D)))
 
 
-MaxPooling1D = api_util.export("layers.MaxPool1D", "layers.MaxPooling1D")(
+MaxPooling1D = api_util.export("layers.MaxPooling1D", "layers.MaxPool1D")(
     tf.keras.utils.register_keras_serializable(package='MRI')(
     complex_pool(tf.keras.layers.MaxPooling1D)))
 
 
-MaxPooling2D = api_util.export("layers.MaxPool2D", "layers.MaxPooling2D")(
+MaxPooling2D = api_util.export("layers.MaxPooling2D", "layers.MaxPool2D")(
     tf.keras.utils.register_keras_serializable(package='MRI')(
     complex_pool(tf.keras.layers.MaxPooling2D)))
 
 
-MaxPooling3D = api_util.export("layers.MaxPool3D", "layers.MaxPooling3D")(
+MaxPooling3D = api_util.export("layers.MaxPooling3D", "layers.MaxPool3D")(
     tf.keras.utils.register_keras_serializable(package='MRI')(
     complex_pool(tf.keras.layers.MaxPooling3D)))

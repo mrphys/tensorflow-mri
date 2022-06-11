@@ -16,12 +16,12 @@ from tensorflow_mri.python.layers.pooling import AveragePooling2D as AveragePool
 from tensorflow_mri.python.layers.pooling import AveragePooling2D as AvgPool2D
 from tensorflow_mri.python.layers.pooling import AveragePooling3D as AveragePooling3D
 from tensorflow_mri.python.layers.pooling import AveragePooling3D as AvgPool3D
-from tensorflow_mri.python.layers.pooling import MaxPooling1D as MaxPool1D
 from tensorflow_mri.python.layers.pooling import MaxPooling1D as MaxPooling1D
-from tensorflow_mri.python.layers.pooling import MaxPooling2D as MaxPool2D
+from tensorflow_mri.python.layers.pooling import MaxPooling1D as MaxPool1D
 from tensorflow_mri.python.layers.pooling import MaxPooling2D as MaxPooling2D
-from tensorflow_mri.python.layers.pooling import MaxPooling3D as MaxPool3D
+from tensorflow_mri.python.layers.pooling import MaxPooling2D as MaxPool2D
 from tensorflow_mri.python.layers.pooling import MaxPooling3D as MaxPooling3D
+from tensorflow_mri.python.layers.pooling import MaxPooling3D as MaxPool3D
 from tensorflow_mri.python.layers.signal_layers import DWT1D as DWT1D
 from tensorflow_mri.python.layers.signal_layers import DWT2D as DWT2D
 from tensorflow_mri.python.layers.signal_layers import DWT3D as DWT3D
