@@ -10,6 +10,12 @@ from tensorflow_mri.python.layers.convolutional import Conv3D as Conv3D
 from tensorflow_mri.python.layers.convolutional import Conv3D as Convolution3D
 from tensorflow_mri.python.layers.conv_blocks import ConvBlock as ConvBlock
 from tensorflow_mri.python.layers.conv_endec import UNet as UNet
+from tensorflow_mri.python.layers.pooling import AveragePooling1D as AveragePooling1D
+from tensorflow_mri.python.layers.pooling import AveragePooling1D as AvgPool1D
+from tensorflow_mri.python.layers.pooling import AveragePooling2D as AveragePooling2D
+from tensorflow_mri.python.layers.pooling import AveragePooling2D as AvgPool2D
+from tensorflow_mri.python.layers.pooling import AveragePooling3D as AveragePooling3D
+from tensorflow_mri.python.layers.pooling import AveragePooling3D as AvgPool3D
 from tensorflow_mri.python.layers.pooling import MaxPooling1D as MaxPool1D
 from tensorflow_mri.python.layers.pooling import MaxPooling1D as MaxPooling1D
 from tensorflow_mri.python.layers.pooling import MaxPooling2D as MaxPool2D

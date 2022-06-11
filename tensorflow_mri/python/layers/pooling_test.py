@@ -39,13 +39,139 @@ import tensorflow_mri as tfmri
 from tensorflow_mri.python.util import test_util
 
 
-# @test_combinations.generate(test_combinations.combine(mode=["graph", "eager"]))
+@test_combinations.generate(test_combinations.combine(mode=["graph", "eager"]))
+class AveragePoolingTest(tf.test.TestCase, parameterized.TestCase):
+  @parameterized.named_parameters(
+      ("float32", "float32"),
+      ("complex64", "complex64")
+  )
+  def test_average_pooling_1d(self, dtype):
+    # We need to disable training validation when type is complex and we are
+    # executing in graph mode. This is because the MSE loss used in
+    # `test_utils.layer_test` returns a complex number which is not possible.
+    validate_training = dtype == "float32" or tf.executing_eagerly()
+    for padding in ["valid", "same"]:
+      for stride in [1, 2]:
+        test_utils.layer_test(
+            tfmri.layers.AveragePooling1D,
+            kwargs={"strides": stride, "padding": padding, "dtype": dtype},
+            input_shape=(3, 5, 4),
+            input_dtype=dtype,
+            expected_output_dtype=dtype,
+            validate_training=validate_training
+        )
+
+    test_utils.layer_test(
+        tfmri.layers.AveragePooling1D,
+        kwargs={"data_format": "channels_first", "dtype": dtype},
+        input_shape=(3, 2, 6),
+        input_dtype=dtype,
+        expected_output_dtype=dtype,
+        validate_training=validate_training
+    )
+
+  @parameterized.named_parameters(
+      ("float32", "float32"),
+      ("complex64", "complex64")
+  )
+  def test_average_pooling_2d(self, dtype):
+    # We need to disable training validation when type is complex and we are
+    # executing in graph mode. This is because the MSE loss used in
+    # `test_utils.layer_test` returns a complex number which is not possible.
+    validate_training = dtype == "float32" or tf.executing_eagerly()
+    test_utils.layer_test(
+        tfmri.layers.AveragePooling2D,
+        kwargs={"strides": (2, 2),
+                "padding": "same",
+                "pool_size": (2, 2),
+                "dtype": dtype},
+        input_shape=(3, 5, 6, 4),
+        input_dtype=dtype,
+        expected_output_dtype=dtype,
+        validate_training=validate_training
+    )
+    test_utils.layer_test(
+        tfmri.layers.AveragePooling2D,
+        kwargs={"strides": (2, 2),
+                "padding": "valid",
+                "pool_size": (3, 3),
+                "dtype": dtype},
+        input_shape=(3, 5, 6, 4),
+        input_dtype=dtype,
+        expected_output_dtype=dtype,
+        validate_training=validate_training
+    )
+
+    # This part of the test can only run on GPU but doesn't appear
+    # to be properly assigned to a GPU when running in eager mode.
+    if not tf.executing_eagerly():
+      # Only runs on GPU with CUDA, channels_first is not supported on
+      # CPU.
+      # TODO(b/62340061): Support channels_first on CPU.
+      if tf.test.is_gpu_available(cuda_only=True):
+        test_utils.layer_test(
+            tfmri.layers.AveragePooling2D,
+            kwargs={
+                "strides": (1, 1),
+                "padding": "valid",
+                "pool_size": (2, 2),
+                "data_format": "channels_first",
+                "dtype": dtype
+            },
+            input_shape=(3, 4, 5, 6),
+            input_dtype=dtype,
+            expected_output_dtype=dtype,
+            validate_training=validate_training
+        )
+
+  @parameterized.named_parameters(
+      ("float32", "float32"),
+      ("complex64", "complex64")
+  )
+  def test_average_pooling_3d(self, dtype):
+    # We need to disable training validation when type is complex and we are
+    # executing in graph mode. This is because the MSE loss used in
+    # `test_utils.layer_test` returns a complex number which is not possible.
+    validate_training = dtype == "float32" or tf.executing_eagerly()
+    pool_size = (3, 3, 3)
+    test_utils.layer_test(
+        tfmri.layers.AveragePooling3D,
+        kwargs={"strides": 2,
+                "padding": "valid",
+                "pool_size": pool_size,
+                "dtype": dtype},
+        input_shape=(3, 11, 12, 10, 4),
+        input_dtype=dtype,
+        expected_output_dtype=dtype,
+        validate_training=validate_training
+    )
+    test_utils.layer_test(
+        tfmri.layers.AveragePooling3D,
+        kwargs={
+            "strides": 3,
+            "padding": "valid",
+            "data_format": "channels_first",
+            "pool_size": pool_size,
+            "dtype": dtype
+        },
+        input_shape=(3, 4, 11, 12, 10),
+        input_dtype=dtype,
+        expected_output_dtype=dtype,
+        validate_training=validate_training
+    )
+
+
+@test_combinations.generate(test_combinations.combine(mode=["graph", "eager"]))
 class MaxPoolingTest(test_util.TestCase):
   @parameterized.named_parameters(
       ("float32", "float32"),
       ("complex64", "complex64")
   )
   def test_max_pooling_1d(self, dtype):
+    # We need to disable training validation when type is complex and we are
+    # executing in graph mode. This is because the MSE loss used in
+    # `test_utils.layer_test` returns a complex number which is not possible.
+    validate_training = dtype == "float32" or tf.executing_eagerly()
     for padding in ["valid", "same"]:
       for stride in [1, 2]:
         test_utils.layer_test(
@@ -53,14 +179,16 @@ class MaxPoolingTest(test_util.TestCase):
             kwargs={"strides": stride, "padding": padding, "dtype": dtype},
             input_shape=(3, 5, 4),
             input_dtype=dtype,
-            expected_output_dtype=dtype
+            expected_output_dtype=dtype,
+            validate_training=validate_training
         )
     test_utils.layer_test(
         tfmri.layers.MaxPooling1D,
         kwargs={"data_format": "channels_first", "dtype": dtype},
         input_shape=(3, 2, 6),
         input_dtype=dtype,
-        expected_output_dtype=dtype
+        expected_output_dtype=dtype,
+        validate_training=validate_training
     )
 
   @parameterized.named_parameters(
@@ -96,6 +224,10 @@ class MaxPoolingTest(test_util.TestCase):
       ("complex64", "complex64")
   )
   def test_max_pooling_2d(self, dtype):
+    # We need to disable training validation when type is complex and we are
+    # executing in graph mode. This is because the MSE loss used in
+    # `test_utils.layer_test` returns a complex number which is not possible.
+    validate_training = dtype == "float32" or tf.executing_eagerly()
     pool_size = (3, 3)
     for strides in [(1, 1), (2, 2)]:
       test_utils.layer_test(
@@ -108,7 +240,8 @@ class MaxPoolingTest(test_util.TestCase):
           },
           input_shape=(3, 5, 6, 4),
           input_dtype=dtype,
-          expected_output_dtype=dtype
+          expected_output_dtype=dtype,
+          validate_training=validate_training
       )
 
   @parameterized.named_parameters(
@@ -140,6 +273,10 @@ class MaxPoolingTest(test_util.TestCase):
       ("complex64", "complex64")
   )
   def test_max_pooling_3d(self, dtype):
+    # We need to disable training validation when type is complex and we are
+    # executing in graph mode. This is because the MSE loss used in
+    # `test_utils.layer_test` returns a complex number which is not possible.
+    validate_training = dtype == "float32" or tf.executing_eagerly()
     pool_size = (3, 3, 3)
     test_utils.layer_test(
         tfmri.layers.MaxPooling3D,
@@ -149,7 +286,8 @@ class MaxPoolingTest(test_util.TestCase):
                 "dtype": dtype},
         input_shape=(3, 11, 12, 10, 4),
         input_dtype=dtype,
-        expected_output_dtype=dtype
+        expected_output_dtype=dtype,
+        validate_training=validate_training
     )
     test_utils.layer_test(
         tfmri.layers.MaxPooling3D,
@@ -162,7 +300,8 @@ class MaxPoolingTest(test_util.TestCase):
         },
         input_shape=(3, 4, 11, 12, 10),
         input_dtype=dtype,
-        expected_output_dtype=dtype
+        expected_output_dtype=dtype,
+        validate_training=validate_training
     )
 
   @parameterized.named_parameters(
@@ -178,6 +317,7 @@ class MaxPoolingTest(test_util.TestCase):
     real_output = real_layer(x)
     complex_output = complex_layer(tf.cast(x, tf.complex64))
     self.assertAllClose(real_output, tf.math.real(complex_output))
+
 
 if __name__ == "__main__":
   tf.test.main()
