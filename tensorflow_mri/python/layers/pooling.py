@@ -138,7 +138,7 @@ def complex_pool(base):
           # Compute 3D argmax indices.
           indices_d = tf.reshape(indices_d,
                                 tf.concat([tf.shape(indices_d)[:2], [-1]], 0))
-          indices_d = tf.gather(indices_d, indices_hw, batch_dims=2)
+          indices_d = tf.gather(indices_d, indices_hw, batch_dims=2)  # pylint: disable=no-value-for-parameter
           indices = indices_d * factor_d + indices_hw
 
         else:  # 1D or 2D
@@ -159,7 +159,7 @@ def complex_pool(base):
               padding=padding,
               data_format="NHWC")
 
-        outputs = tf.gather(tf.reshape(inputs, [in_shape[0], -1]),
+        outputs = tf.gather(tf.reshape(inputs, [in_shape[0], -1]),  # pylint: disable=no-value-for-parameter
                             indices,
                             batch_dims=1)
 

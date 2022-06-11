@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for module `conv_endec`."""
+# pylint: disable=missing-param-doc
 
 from absl.testing import parameterized
 import tensorflow as tf

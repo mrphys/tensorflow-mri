@@ -28,6 +28,7 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for max pooling layers."""
+# pylint: disable=missing-class-docstring,missing-function-docstring
 
 from absl.testing import parameterized
 from keras.testing_infra import test_combinations

@@ -59,7 +59,7 @@ class DWT(tf.keras.layers.Layer):
     self.op = wavelet_ops.idwt if self.inverse else wavelet_ops.dwt
     self.axes = list(range(-(self.rank + 1), -1))
 
-  def call(self, inputs):
+  def call(self, inputs):  # pylint: disable=missing-function-docstring
     outputs = self.op(inputs,
                       wavelet=self.wavelet,
                       mode=self.mode,
