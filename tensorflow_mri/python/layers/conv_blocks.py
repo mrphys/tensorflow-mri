@@ -34,12 +34,16 @@ import itertools
 import tensorflow as tf
 
 from tensorflow_mri.python.util import api_util
+from tensorflow_mri.python.util import deprecation
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import layer_util
 
 
 @api_util.export("layers.ConvBlock")
 @tf.keras.utils.register_keras_serializable(package='MRI')
+@deprecation.deprecated(
+    date=deprecation.REMOVAL_DATE['0.20.0'],
+    instructions='Use `tfmri.models.ConvBlockND` instead.')
 class ConvBlock(tf.keras.layers.Layer):
   """A basic convolution block.
 

@@ -144,7 +144,7 @@ class UNet(tf.keras.Model):
         dropout_type, {'standard', 'spatial'}, 'dropout_type')
     self._use_tight_frame = use_tight_frame
     self._dwt_kwargs = {}
-    self._dwt_kwargs['return_dict'] = False
+    self._dwt_kwargs['format_dict'] = False
     self._scales = len(filters)
 
     # Check inputs are consistent.
