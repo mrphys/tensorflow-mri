@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for module `signal_layers`."""
+# pylint: disable=missing-class-docstring, missing-function-docstring
 
 import keras
 import numpy as np
@@ -23,7 +24,6 @@ from tensorflow_mri.python.util import test_util
 
 
 class DWTTest(test_util.TestCase):
-
   def test_dwt_1d(self):
     wavelet = 'haar'
     rng = np.random.default_rng()
