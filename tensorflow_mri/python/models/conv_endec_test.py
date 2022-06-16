@@ -104,6 +104,7 @@ class UNetTest(test_util.TestCase):
         bn_momentum=0.98,
         bn_epsilon=0.002,
         out_channels=1,
+        out_kernel_size=1,
         out_activation='relu',
         use_global_residual=True,
         use_dropout=True,
