@@ -20,7 +20,7 @@ import tensorflow as tf
 
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
-from tensorflow_mri.python.util import model_util
+from tensorflow_mri.python.util import model_util  # pylint: disable=cyclic-import
 from tensorflow_mri.python.util import layer_util
 
 
