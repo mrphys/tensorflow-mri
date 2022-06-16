@@ -30,24 +30,19 @@
 """Convolutional neural network blocks."""
 
 import itertools
+import string
 
 import tensorflow as tf
 
 from tensorflow_mri.python.util import api_util
-from tensorflow_mri.python.util import deprecation
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import layer_util
 
 
-@api_util.export("layers.ConvBlock")
-@tf.keras.utils.register_keras_serializable(package='MRI')
-@deprecation.deprecated(
-    date=deprecation.REMOVAL_DATE['0.20.0'],
-    instructions='Use `tfmri.models.ConvBlockND` instead.')
-class ConvBlock(tf.keras.layers.Layer):
-  """A basic convolution block.
+CONV_BLOCK_DOC_TEMPLATE = string.Template(
+  """${rank}D convolutional block.
 
-  A Conv + BN + Activation block. The number of convolutional layers is
+  A basic Conv + BN + Activation block. The number of convolutional layers is
   determined by `filters`. BN and activation are optional.
 
   Args:
@@ -60,7 +55,6 @@ class ConvBlock(tf.keras.layers.Layer):
     strides: An integer or tuple/list of `rank` integers, specifying the strides
       of the convolution along each spatial dimension. Can be a single integer
       to specify the same value for all spatial dimensions.
-    rank: An integer specifying the number of spatial dimensions. Defaults to 2.
     activation: A callable or a Keras activation identifier. The activation to
       use in all layers. Defaults to `'relu'`.
     out_activation: A callable or a Keras activation identifier. The activation
@@ -96,12 +90,16 @@ class ConvBlock(tf.keras.layers.Layer):
       maps, whereas spatial dropout drops entire feature maps. Only relevant if
       `use_dropout` is `True`. Defaults to `'standard'`.
     **kwargs: Additional keyword arguments to be passed to base class.
-  """
+  """)
+
+
+class ConvBlock(tf.keras.Model):
+  """Convolutional block (private base class)."""
   def __init__(self,
+               rank,
                filters,
                kernel_size,
                strides=1,
-               rank=2,
                activation='relu',
                out_activation='same',
                use_bias=True,
@@ -120,11 +118,10 @@ class ConvBlock(tf.keras.layers.Layer):
                **kwargs):
     """Create a basic convolution block."""
     super().__init__(**kwargs)
-
+    self._rank = rank
     self._filters = [filters] if isinstance(filters, int) else filters
     self._kernel_size = kernel_size
     self._strides = strides
-    self._rank = rank
     self._activation = activation
     self._out_activation = out_activation
     self._use_bias = use_bias
@@ -223,7 +220,6 @@ class ConvBlock(tf.keras.layers.Layer):
         'filters': self._filters,
         'kernel_size': self._kernel_size,
         'strides': self._strides,
-        'rank': self._rank,
         'activation': self._activation,
         'out_activation': self._out_activation,
         'use_bias': self._use_bias,
@@ -242,3 +238,29 @@ class ConvBlock(tf.keras.layers.Layer):
     }
     base_config = super().get_config()
     return {**base_config, **config}
+
+
+@api_util.export("models.ConvBlock1D")
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class ConvBlock1D(ConvBlock):
+  def __init__(self, *args, **kwargs):
+    super().__init__(1, *args, **kwargs)
+
+
+@api_util.export("models.ConvBlock2D")
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class ConvBlock2D(ConvBlock):
+  def __init__(self, *args, **kwargs):
+    super().__init__(2, *args, **kwargs)
+
+
+@api_util.export("models.ConvBlock3D")
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class ConvBlock3D(ConvBlock):
+  def __init__(self, *args, **kwargs):
+    super().__init__(3, *args, **kwargs)
+
+
+ConvBlock1D.__doc__ = CONV_BLOCK_DOC_TEMPLATE.substitute(rank=1)
+ConvBlock2D.__doc__ = CONV_BLOCK_DOC_TEMPLATE.substitute(rank=2)
+ConvBlock3D.__doc__ = CONV_BLOCK_DOC_TEMPLATE.substitute(rank=3)

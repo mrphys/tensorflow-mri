@@ -17,6 +17,7 @@
 import tensorflow as tf
 
 from tensorflow_mri.python.layers import convolutional
+from tensorflow_mri.python.layers import signal_layers
 
 
 def get_nd_layer(name, rank):
@@ -55,13 +56,20 @@ _ND_LAYERS = {
     ('Cropping', 1): tf.keras.layers.Cropping1D,
     ('Cropping', 2): tf.keras.layers.Cropping2D,
     ('Cropping', 3): tf.keras.layers.Cropping3D,
+    ('DepthwiseConv', 1): tf.keras.layers.DepthwiseConv1D,
     ('DepthwiseConv', 2): tf.keras.layers.DepthwiseConv2D,
+    ('DWT', 1): signal_layers.DWT1D,
+    ('DWT', 2): signal_layers.DWT2D,
+    ('DWT', 3): signal_layers.DWT3D,
     ('GlobalAveragePooling', 1): tf.keras.layers.GlobalAveragePooling1D,
     ('GlobalAveragePooling', 2): tf.keras.layers.GlobalAveragePooling2D,
     ('GlobalAveragePooling', 3): tf.keras.layers.GlobalAveragePooling3D,
     ('GlobalMaxPool', 1): tf.keras.layers.GlobalMaxPool1D,
     ('GlobalMaxPool', 2): tf.keras.layers.GlobalMaxPool2D,
     ('GlobalMaxPool', 3): tf.keras.layers.GlobalMaxPool3D,
+    ('IDWT', 1): signal_layers.IDWT1D,
+    ('IDWT', 2): signal_layers.IDWT2D,
+    ('IDWT', 3): signal_layers.IDWT3D,
     ('LocallyConnected', 1): tf.keras.layers.LocallyConnected1D,
     ('LocallyConnected', 2): tf.keras.layers.LocallyConnected2D,
     ('MaxPool', 1): tf.keras.layers.MaxPool1D,

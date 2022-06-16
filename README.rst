@@ -76,9 +76,9 @@ TensorFlow MRI contains operators for:
   etc.
 * Signal processing
   (`tfmri.signal <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/signal>`_):
-  N-dimensional FFT, non-uniform FFT
+  N-dimensional fast Fourier transform (FFT), non-uniform FFT (NUFFT)
   (see also `TensorFlow NUFFT <https://github.com/mrphys/tensorflow-nufft>`_),
-  *k*-space filtering, etc.
+  discrete wavelet transform (DWT), *k*-space filtering, etc.
 * Unconstrained optimization
   (`tfmri.optimize <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/optimize>`_):
   gradient descent, L-BFGS.

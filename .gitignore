@@ -5,6 +5,7 @@
 .ipynb_checkpoints/
 __pycache__/
 artifacts/
+build/
 third_party/spiral_waveform
 tools/docs/_build
 tools/docs/_templates

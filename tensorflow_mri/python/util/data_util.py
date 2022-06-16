@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2022 University College London. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,11 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Keras layers."""
+"""Utilities for file download and caching."""
 
-from tensorflow_mri.python.layers import convolutional
-from tensorflow_mri.python.layers import conv_blocks
-from tensorflow_mri.python.layers import conv_endec
-from tensorflow_mri.python.layers import pooling
-from tensorflow_mri.python.layers import preproc_layers
-from tensorflow_mri.python.layers import signal_layers
+import functools
+import os
+
+import keras
+
+# The default cache dir where things will be stored.
+CACHE_DIR = os.path.join(os.path.expanduser('~'), '.tfmri')
+
+# Same as https://www.tensorflow.org/api_docs/python/tf/keras/utils/get_file,
+# but replaces default cache dir of "~/.keras" with "~/.tfmri".
+get_file = functools.partial(keras.utils.get_file, cache_dir=CACHE_DIR)

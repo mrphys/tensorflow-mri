@@ -118,16 +118,16 @@ def complex_conv(base):
 #  2. `register_keras_serializable`: Registers the new layer with the Keras
 #     serialization framework.
 #  3. `export`: Exports the new layer to the TFMRI API.
-Conv1D = api_util.export("layers.Conv1D")(
+Conv1D = api_util.export("layers.Conv1D", "layers.Convolution1D")(
     tf.keras.utils.register_keras_serializable(package='MRI')(
     complex_conv(tf.keras.layers.Conv1D)))
 
 
-Conv2D = api_util.export("layers.Conv2D")(
+Conv2D = api_util.export("layers.Conv2D", "layers.Convolution2D")(
     tf.keras.utils.register_keras_serializable(package='MRI')(
     complex_conv(tf.keras.layers.Conv2D)))
 
 
-Conv3D = api_util.export("layers.Conv3D")(
+Conv3D = api_util.export("layers.Conv3D", "layers.Convolution3D")(
     tf.keras.utils.register_keras_serializable(package='MRI')(
     complex_conv(tf.keras.layers.Conv3D)))
