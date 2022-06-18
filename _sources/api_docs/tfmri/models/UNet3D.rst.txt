@@ -1,0 +1,8 @@
+﻿tfmri.models.UNet3D
+===================
+
+.. currentmodule:: tensorflow_mri.models
+
+.. autoclass:: UNet3D
+    :members:
+    :show-inheritance:

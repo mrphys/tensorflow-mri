@@ -1,0 +1,8 @@
+﻿tfmri.models.ConvBlock1D
+========================
+
+.. currentmodule:: tensorflow_mri.models
+
+.. autoclass:: ConvBlock1D
+    :members:
+    :show-inheritance:

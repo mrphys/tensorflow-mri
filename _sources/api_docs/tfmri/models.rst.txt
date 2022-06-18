@@ -1,0 +1,29 @@
+tfmri.models
+============
+
+.. automodule:: tensorflow_mri.models
+
+Classes
+-------
+
+.. autosummary::
+    :toctree: models
+    :template: models/class.rst
+    :nosignatures:
+
+    ConvBlock1D
+    ConvBlock2D
+    ConvBlock3D
+    UNet1D
+    UNet2D
+    UNet3D
+
+Functions
+---------
+
+.. autosummary::
+    :toctree: models
+    :template: models/function.rst
+    :nosignatures:
+
+    

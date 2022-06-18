@@ -11,10 +11,22 @@ Classes
     :template: layers/class.rst
     :nosignatures:
 
+    AveragePooling1D
+    AveragePooling2D
+    AveragePooling3D
     Conv1D
     Conv2D
     Conv3D
     ConvBlock
+    DWT1D
+    DWT2D
+    DWT3D
+    IDWT1D
+    IDWT2D
+    IDWT3D
+    MaxPooling1D
+    MaxPooling2D
+    MaxPooling3D
     UNet
 
 Functions

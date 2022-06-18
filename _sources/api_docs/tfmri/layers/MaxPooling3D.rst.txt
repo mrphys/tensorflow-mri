@@ -1,0 +1,8 @@
+﻿tfmri.layers.MaxPooling3D
+=========================
+
+.. currentmodule:: tensorflow_mri.layers
+
+.. autoclass:: MaxPooling3D
+    :members:
+    :show-inheritance:

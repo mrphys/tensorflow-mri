@@ -1,0 +1,8 @@
+﻿tfmri.layers.IDWT2D
+===================
+
+.. currentmodule:: tensorflow_mri.layers
+
+.. autoclass:: IDWT2D
+    :members:
+    :show-inheritance:

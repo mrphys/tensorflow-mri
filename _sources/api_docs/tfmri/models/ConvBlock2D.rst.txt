@@ -1,0 +1,8 @@
+﻿tfmri.models.ConvBlock2D
+========================
+
+.. currentmodule:: tensorflow_mri.models
+
+.. autoclass:: ConvBlock2D
+    :members:
+    :show-inheritance:

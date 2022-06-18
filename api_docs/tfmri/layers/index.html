@@ -3,7 +3,7 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
-<link rel="index" title="Index" href="../../../genindex/" /><link rel="search" title="Search" href="../../../search/" /><link rel="next" title="tfmri.layers.Conv1D" href="Conv1D/" /><link rel="prev" title="tfmri.io.parse_twix" href="../io/parse_twix/" />
+<link rel="index" title="Index" href="../../../genindex/" /><link rel="search" title="Search" href="../../../search/" /><link rel="next" title="tfmri.layers.AveragePooling1D" href="AveragePooling1D/" /><link rel="prev" title="tfmri.io.parse_twix" href="../io/parse_twix/" />
         <link rel="canonical" href="https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/layers.html" />
 
     <link rel="shortcut icon" href="../../../_static/tfmri_icon.svg"/><meta name="generator" content="sphinx-4.4.0, furo 2022.04.07"/>
@@ -261,10 +261,22 @@
 </ul>
 </li>
 <li class="toctree-l1 current has-children current-page"><a class="current reference internal" href="#">tfmri.layers</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="AveragePooling1D/">AveragePooling1D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AveragePooling2D/">AveragePooling2D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AveragePooling3D/">AveragePooling3D</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Conv1D/">Conv1D</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Conv2D/">Conv2D</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Conv3D/">Conv3D</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ConvBlock/">ConvBlock</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DWT1D/">DWT1D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DWT2D/">DWT2D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DWT3D/">DWT3D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="IDWT1D/">IDWT1D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="IDWT2D/">IDWT2D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="IDWT3D/">IDWT3D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MaxPooling1D/">MaxPooling1D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MaxPooling2D/">MaxPooling2D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="MaxPooling3D/">MaxPooling3D</a></li>
 <li class="toctree-l2"><a class="reference internal" href="UNet/">UNet</a></li>
 </ul>
 </li>
@@ -324,12 +336,21 @@
 <li class="toctree-l2"><a class="reference internal" href="../metrics/TverskyIndex/">TverskyIndex</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../optimize/">tfmri.optimize</a><input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../models/">tfmri.models</a><input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../models/ConvBlock1D/">ConvBlock1D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../models/ConvBlock2D/">ConvBlock2D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../models/ConvBlock3D/">ConvBlock3D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../models/UNet1D/">UNet1D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../models/UNet2D/">UNet2D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../models/UNet3D/">UNet3D</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../optimize/">tfmri.optimize</a><input class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../optimize/gradient_descent/">gradient_descent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../optimize/lbfgs_minimize/">lbfgs_minimize</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../plot/">tfmri.plot</a><input class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../plot/">tfmri.plot</a><input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../plot/close/">close</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../plot/image_sequence/">image_sequence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../plot/show/">show</a></li>
@@ -337,7 +358,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../plot/tiled_image_sequence/">tiled_image_sequence</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../recon/">tfmri.recon</a><input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../recon/">tfmri.recon</a><input class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../recon/adjoint/">adjoint</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../recon/grappa/">grappa</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../recon/least_squares/">least_squares</a></li>
@@ -345,7 +366,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../recon/sense/">sense</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../sampling/">tfmri.sampling</a><input class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../sampling/">tfmri.sampling</a><input class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../sampling/density_grid/">density_grid</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../sampling/estimate_density/">estimate_density</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../sampling/estimate_radial_density/">estimate_radial_density</a></li>
@@ -360,7 +381,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../sampling/spiral_trajectory/">spiral_trajectory</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../signal/">tfmri.signal</a><input class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../signal/">tfmri.signal</a><input class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" role="switch" type="checkbox"/><label for="toctree-checkbox-19"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../signal/atanfilt/">atanfilt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../signal/crop_kspace/">crop_kspace</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../signal/dwt/">dwt</a></li>
@@ -373,7 +394,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../signal/nufft/">nufft</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../summary/">tfmri.summary</a><input class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" role="switch" type="checkbox"/><label for="toctree-checkbox-19"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../summary/">tfmri.summary</a><input class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" role="switch" type="checkbox"/><label for="toctree-checkbox-20"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../summary/gif/">gif</a></li>
 </ul>
 </li>
@@ -420,17 +441,53 @@
 <col style="width: 90%"/>
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="Conv1D/#tensorflow_mri.layers.Conv1D" title="tensorflow_mri.layers.Conv1D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Conv1D</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="AveragePooling1D/#tensorflow_mri.layers.AveragePooling1D" title="tensorflow_mri.layers.AveragePooling1D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AveragePooling1D</span></code></a></p></td>
+<td><p>Average pooling for temporal data.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="AveragePooling2D/#tensorflow_mri.layers.AveragePooling2D" title="tensorflow_mri.layers.AveragePooling2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AveragePooling2D</span></code></a></p></td>
+<td><p>Average pooling operation for spatial data.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="AveragePooling3D/#tensorflow_mri.layers.AveragePooling3D" title="tensorflow_mri.layers.AveragePooling3D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AveragePooling3D</span></code></a></p></td>
+<td><p>Average pooling operation for 3D data (spatial or spatio-temporal).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="Conv1D/#tensorflow_mri.layers.Conv1D" title="tensorflow_mri.layers.Conv1D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Conv1D</span></code></a></p></td>
 <td><p>1D convolution layer (e.g.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="Conv2D/#tensorflow_mri.layers.Conv2D" title="tensorflow_mri.layers.Conv2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Conv2D</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="Conv2D/#tensorflow_mri.layers.Conv2D" title="tensorflow_mri.layers.Conv2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Conv2D</span></code></a></p></td>
 <td><p>2D convolution layer (e.g.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="Conv3D/#tensorflow_mri.layers.Conv3D" title="tensorflow_mri.layers.Conv3D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Conv3D</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="Conv3D/#tensorflow_mri.layers.Conv3D" title="tensorflow_mri.layers.Conv3D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Conv3D</span></code></a></p></td>
 <td><p>3D convolution layer (e.g.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="ConvBlock/#tensorflow_mri.layers.ConvBlock" title="tensorflow_mri.layers.ConvBlock"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvBlock</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="ConvBlock/#tensorflow_mri.layers.ConvBlock" title="tensorflow_mri.layers.ConvBlock"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvBlock</span></code></a></p></td>
 <td><p>A basic convolution block.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="DWT1D/#tensorflow_mri.layers.DWT1D" title="tensorflow_mri.layers.DWT1D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DWT1D</span></code></a></p></td>
+<td><p>Single-level 1D discrete wavelet transform (DWT) layer.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="DWT2D/#tensorflow_mri.layers.DWT2D" title="tensorflow_mri.layers.DWT2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DWT2D</span></code></a></p></td>
+<td><p>Single-level 2D discrete wavelet transform (DWT) layer.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="DWT3D/#tensorflow_mri.layers.DWT3D" title="tensorflow_mri.layers.DWT3D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DWT3D</span></code></a></p></td>
+<td><p>Single-level 3D discrete wavelet transform (DWT) layer.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="IDWT1D/#tensorflow_mri.layers.IDWT1D" title="tensorflow_mri.layers.IDWT1D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IDWT1D</span></code></a></p></td>
+<td><p>Single-level 1D inverse discrete wavelet transform (IDWT) layer.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="IDWT2D/#tensorflow_mri.layers.IDWT2D" title="tensorflow_mri.layers.IDWT2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IDWT2D</span></code></a></p></td>
+<td><p>Single-level 2D inverse discrete wavelet transform (IDWT) layer.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="IDWT3D/#tensorflow_mri.layers.IDWT3D" title="tensorflow_mri.layers.IDWT3D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IDWT3D</span></code></a></p></td>
+<td><p>Single-level 3D inverse discrete wavelet transform (IDWT) layer.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="MaxPooling1D/#tensorflow_mri.layers.MaxPooling1D" title="tensorflow_mri.layers.MaxPooling1D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MaxPooling1D</span></code></a></p></td>
+<td><p>Max pooling operation for 1D temporal data.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="MaxPooling2D/#tensorflow_mri.layers.MaxPooling2D" title="tensorflow_mri.layers.MaxPooling2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MaxPooling2D</span></code></a></p></td>
+<td><p>Max pooling operation for 2D spatial data.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="MaxPooling3D/#tensorflow_mri.layers.MaxPooling3D" title="tensorflow_mri.layers.MaxPooling3D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MaxPooling3D</span></code></a></p></td>
+<td><p>Max pooling operation for 3D data (spatial or spatio-temporal).</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="UNet/#tensorflow_mri.layers.UNet" title="tensorflow_mri.layers.UNet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">UNet</span></code></a></p></td>
 <td><p>A UNet layer.</p></td>
@@ -456,12 +513,12 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="Conv1D/">
+          <a class="next-page" href="AveragePooling1D/">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">tfmri.layers.Conv1D</div>
+                <div class="title">tfmri.layers.AveragePooling1D</div>
               </div>
               <svg><use href="#svg-arrow-right"></use></svg>
             </a>

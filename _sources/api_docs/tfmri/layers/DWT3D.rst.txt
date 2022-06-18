@@ -1,0 +1,8 @@
+﻿tfmri.layers.DWT3D
+==================
+
+.. currentmodule:: tensorflow_mri.layers
+
+.. autoclass:: DWT3D
+    :members:
+    :show-inheritance:

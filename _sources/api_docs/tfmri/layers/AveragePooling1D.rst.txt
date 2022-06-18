@@ -1,0 +1,8 @@
+﻿tfmri.layers.AveragePooling1D
+=============================
+
+.. currentmodule:: tensorflow_mri.layers
+
+.. autoclass:: AveragePooling1D
+    :members:
+    :show-inheritance:

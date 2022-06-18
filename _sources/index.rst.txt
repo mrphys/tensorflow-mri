@@ -44,6 +44,7 @@ TensorFlow MRI |release|
    api_docs/tfmri/losses
    api_docs/tfmri/math
    api_docs/tfmri/metrics
+   api_docs/tfmri/models
    api_docs/tfmri/optimize
    api_docs/tfmri/plot
    api_docs/tfmri/recon
