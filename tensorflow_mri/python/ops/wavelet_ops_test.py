@@ -17,6 +17,7 @@
 
 from absl.testing import parameterized
 import numpy as np
+import tensorflow as tf
 import pywt
 
 from tensorflow_mri.python.ops import wavelet_ops
@@ -24,7 +25,7 @@ from tensorflow_mri.python.util import test_util
 
 
 class DiscreteWaveletTransformTest(test_util.TestCase):
-  """Tests for `dwt` and `idwt` operators."""
+  """Tests for wavelet operators."""
   # pylint: disable=missing-function-docstring
   @parameterized.product(wavelet=pywt.wavelist(kind='discrete'),
                          odd_length=[True, False])
@@ -95,3 +96,42 @@ class DiscreteWaveletTransformTest(test_util.TestCase):
 
     result = wavelet_ops.idwt(result, wavelet)
     self.assertAllEqual([8], result.shape)
+
+
+  @test_util.run_all_execution_modes
+  @parameterized.named_parameters(
+      # name, shape, wavelet, level, axes, dtype
+      ("test0", [16], 'haar', 2, None, 'float32'),
+      ("test1", [16], 'haar', 2, None, 'complex64'),
+      ("test2", [8, 8], 'db2', 1, None, 'float32'),
+      ("test3", [8, 8], 'db2', None, 1, 'float32'),
+  )
+  def test_wavedec_waverec(self, shape, wavelet, level, axes, dtype):
+    x = np.random.uniform(size=shape).astype(dtype)
+
+    expected = pywt.wavedecn(x, wavelet, level=level, axes=axes)
+    result = wavelet_ops.wavedec(x, wavelet, level=level, axes=axes)
+
+    self.assertAllClose(expected, result)
+
+    expected = pywt.waverecn(result, wavelet, axes=axes)
+    result = wavelet_ops.waverec(result, wavelet, axes=axes)
+    self.assertAllClose(expected, result)
+
+
+  @parameterized.named_parameters(
+      # name, shape, wavelet, axes, expected
+      ("test0", [16, 20], 'haar', None, None),
+      ("test1", [64, 32], 'db2', None, 3),
+      ("test2", [64, 32], 4, None, 3),
+      ("test3", 32, 'db2', None, 3),
+  )
+  def test_dwt_max_level(self, shape, wavelet, axes, expected):
+    if expected is None:
+      expected = pywt.dwtn_max_level(shape, wavelet, axes=axes)
+    result = wavelet_ops.dwt_max_level(shape, wavelet, axes=axes)
+    self.assertEqual(expected, result)
+
+
+if __name__ == '__main__':
+  tf.test.main()
