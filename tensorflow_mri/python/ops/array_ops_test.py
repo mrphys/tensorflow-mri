@@ -13,7 +13,9 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for module `array_ops`."""
+# pylint: disable=missing-class-docstring
 
+from absl.testing import parameterized
 import numpy as np
 import tensorflow as tf
 
@@ -237,6 +239,25 @@ class SymmetricPadOrCropTest(test_util.TestCase):
 
     self.assertAllEqual(concrete_fn.structured_outputs.shape,
                         expected_output_shape)
+
+
+class UpdateTensorTest(test_util.TestCase):
+
+  @test_util.run_all_execution_modes
+  @parameterized.named_parameters(
+      # name, tensor, slices, value
+      ("test0", [0, 0, 0], (slice(1, 2),), [2]),
+      ("test1", [0, 0, 0], (slice(0, None, 2)), [2, 1]),
+      ("test2", [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
+       (slice(0, 2), slice(1, 3)), [[1, 2], [3, 4]])
+  )
+  def test_update_tensor(self, tensor, slices, value):
+    with tf.device('/cpu:0'):
+      expected = np.asarray(tensor)
+      expected[slices] = value
+      tensor = tf.constant(tensor)
+      result = array_ops.update_tensor(tensor, slices, value)
+      self.assertAllClose(expected, result)
 
 
 if __name__ == '__main__':

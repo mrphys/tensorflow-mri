@@ -50,6 +50,7 @@ import pywt
 import numpy as np
 import tensorflow as tf
 
+from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.util import api_util
 
 
@@ -409,8 +410,10 @@ def _dwt_along_axis(x, wavelet, mode, axis):  # pylint: disable=missing-param-do
   # Get filters.
   f_lo = tf.reverse(tf.reshape(wavelet.dec_lo, [-1, 1, 1]), [0])
   f_hi = tf.reverse(tf.reshape(wavelet.dec_hi, [-1, 1, 1]), [0])
+  f_lo = tf.cast(f_lo, x.dtype)
+  f_hi = tf.cast(f_hi, x.dtype)
 
-  # Compute coefficients.
+  # Compute approximation and detail coeffs.
   a = tf.nn.conv1d(x, f_lo, 2, 'VALID')
   d = tf.nn.conv1d(x, f_hi, 2, 'VALID')
 
@@ -454,6 +457,8 @@ def _idwt_along_axis(a, d, wavelet, mode, axis):  # pylint: disable=missing-para
   # Get filters.
   f_lo = tf.reverse(tf.reshape(wavelet.rec_lo, [-1, 1, 1]), [0])
   f_hi = tf.reverse(tf.reshape(wavelet.rec_hi, [-1, 1, 1]), [0])
+  f_lo = tf.cast(f_lo, a.dtype)
+  f_hi = tf.cast(f_hi, d.dtype)
 
   # Define length.
   input_length = 2 * tf.shape(a)[-2]
@@ -741,6 +746,7 @@ def _match_coeff_dims(a_coeff, d_coeff_dict):  # pylint: disable=missing-functio
   return a_coeff[tuple(slice(s) for s in d_coeff.shape)]
 
 
+@api_util.export("signal.wavelet_max_level")
 def dwt_max_level(shape, wavelet_or_length, axes=None):
   """Computes the maximum useful level of wavelet decomposition.
 
@@ -750,7 +756,7 @@ def dwt_max_level(shape, wavelet_or_length, axes=None):
   The level returned is the minimum along all axes.
 
   Examples:
-    >>> tfmri.signal.dwt_max_level((64, 32), 'db2')
+    >>> tfmri.signal.wavelet_max_level((64, 32), 'db2')
     3
 
   Args:
@@ -792,3 +798,235 @@ def _dwt_max_level(input_length, filter_length):
 def _log2_int(x):
   """Returns the integer log2 of x."""
   return x.bit_length() - 1
+
+
+@api_util.export("signal.wavelet_coeffs_to_tensor")
+def coeffs_to_tensor(coeffs, padding=0, axes=None):
+  """Arranges a wavelet coefficient list into a single tensor.
+
+  Args:
+    coeffs: A `list` of wavelet coefficients as returned by
+      `tfmri.signal.wavedec`.
+    padding: The value to use for the background if the coefficients cannot be
+      tightly packed. If None, raise an error if the coefficients cannot be
+      tightly packed.
+    axes: Axes over which the DWT that created `coeffs` was performed. The
+      default value of `None` corresponds to all axes.
+
+  Returns:
+    A `tuple` (`tensor`, `slices`) holding the coefficients
+    `tf.Tensor` and a `list` of slices corresponding to each coefficient. For
+    example, in a 2D tensor, `tensor[slices[1]['dd']]` would extract
+    the first level detail coefficients from `tensor`.
+
+  Notes
+  -----
+  Assume a 2D coefficient dictionary, `c`, from a two-level transform.
+
+  Then all 2D coefficients will be stacked into a single larger 2D array
+  as follows::
+
+  .. code-block::
+
+    +---------------+---------------+-------------------------------+
+    |               |               |                               |
+    |     c[0]      |  c[1]['da']   |                               |
+    |               |               |                               |
+    +---------------+---------------+           c[2]['da']          |
+    |               |               |                               |
+    | c[1]['ad']    |  c[1]['dd']   |                               |
+    |               |               |                               |
+    +---------------+---------------+ ------------------------------+
+    |                               |                               |
+    |                               |                               |
+    |                               |                               |
+    |          c[2]['ad']           |           c[2]['dd']          |
+    |                               |                               |
+    |                               |                               |
+    |                               |                               |
+    +-------------------------------+-------------------------------+
+
+  If the transform was not performed with mode "periodization" or the signal
+  length was not a multiple of ``2**level``, coefficients at each subsequent
+  scale will not be exactly 1/2 the size of those at the previous level due
+  to additional coefficients retained to handle the boundary condition. In
+  these cases, the default setting of `padding=0` indicates to pad the
+  individual coefficient arrays with 0 as needed so that they can be stacked
+  into a single, contiguous array.
+
+  Examples:
+    >>> import tensorflow_mri as tfmri
+    >>> cam = pywt.data.camera()
+    >>> coeffs = tfmri.signal.wavedec(cam, wavelet='db2', level=3)
+    >>> tensor, slices = tfmri.signal.wavelet_coeffs_to_tensor(coeffs)
+  """
+  coeffs, axes, ndim, ndim_transform = _prepare_coeffs_axes(coeffs, axes)
+
+  # initialize with the approximation coefficients.
+  a_coeffs = coeffs[0]
+  a_shape = a_coeffs.shape
+
+  if len(coeffs) == 1:
+    # only a single approximation coefficient array was found
+    return a_coeffs, [tuple([slice(None)] * ndim)]
+
+  # determine size of output and if tight packing is possible
+  arr_shape, is_tight_packing = _determine_coeff_array_shape(coeffs, axes)
+
+  # preallocate output array
+  if padding is None:
+    if not is_tight_packing:
+      raise ValueError("array coefficients cannot be tightly packed")
+    coeff_tensor = tf.zeros(arr_shape, dtype=a_coeffs.dtype)
+  else:
+    coeff_tensor = tf.fill(arr_shape, tf.cast(padding, a_coeffs.dtype))
+
+  a_slices = tuple([slice(s) for s in a_shape])
+  coeff_tensor = array_ops.update_tensor(coeff_tensor, a_slices, a_coeffs)
+
+  # initialize list of coefficient slices
+  coeff_slices = []
+  coeff_slices.append(a_slices)
+
+  # loop over the detail cofficients, adding them to coeff_tensor
+  ds = coeffs[1:]
+  for coeff_dict in ds:
+    coeff_slices.append({})  # new dictionary for detail coefficients
+    if any(d is None for d in coeff_dict.values()):
+      raise ValueError("coeffs_to_tensor does not support missing "
+                       "coefficients.")
+    d_shape = coeff_dict['d' * ndim_transform].shape
+    for key in coeff_dict.keys():
+      d = coeff_dict[key]
+      slice_array = [slice(None)] * ndim
+      for i, let in enumerate(key):
+        ax_i = axes[i]  # axis corresponding to this transform index
+        if let == 'a':
+          slice_array[ax_i] = slice(d.shape[ax_i])
+        elif let == 'd':
+          slice_array[ax_i] = slice(a_shape[ax_i],
+                                    a_shape[ax_i] + d.shape[ax_i])
+        else:
+          raise ValueError("unexpected letter: {}".format(let))
+      slice_array = tuple(slice_array)
+      coeff_tensor = array_ops.update_tensor(coeff_tensor, slice_array, d)
+      coeff_slices[-1][key] = slice_array
+    a_shape = [a_shape[n] + d_shape[n] for n in range(ndim)]
+  return coeff_tensor, coeff_slices
+
+
+@api_util.export("signal.wavelet_tensor_to_coeffs")
+def tensor_to_coeffs(coeff_tensor, coeff_slices):
+  """Extracts wavelet coefficients from tensor into a list.
+
+  Args:
+    coeff_tensor: A `tf.Tensor` containing all wavelet coefficients. This should
+      have been generated via `tfmri.signal.wavelet_coeffs_to_tensor`.
+    coeff_slices : A `list` of slices corresponding to each coefficient as
+      obtained from `wavelet_tensor_to_coeffs`.
+
+  Returns:
+    The wavelet coefficients in the format expected by `tfmri.signal.waverec`.
+
+  Notes:
+    A single large array containing all coefficients will have subsets stored,
+    into a `waverecn`` list, c, as indicated below::
+
+    .. code-block::
+
+      +---------------+---------------+-------------------------------+
+      |               |               |                               |
+      |     c[0]      |  c[1]['da']   |                               |
+      |               |               |                               |
+      +---------------+---------------+           c[2]['da']          |
+      |               |               |                               |
+      | c[1]['ad']    |  c[1]['dd']   |                               |
+      |               |               |                               |
+      +---------------+---------------+ ------------------------------+
+      |                               |                               |
+      |                               |                               |
+      |                               |                               |
+      |          c[2]['ad']           |           c[2]['dd']          |
+      |                               |                               |
+      |                               |                               |
+      |                               |                               |
+      +-------------------------------+-------------------------------+
+
+  Examples:
+    >>> import tensorflow_mri as tfmri
+    >>> cam = pywt.data.camera()
+    >>> coeffs = tfmri.signal.wavedec(cam, wavelet='db2', level=3)
+    >>> tensor, slices = tfmri.signal.wavelet_coeffs_to_tensor(coeffs)
+    >>> coeffs_from_arr = tfmri.signal.wavelet_tensor_to_coeffs(tensor, slices)
+    >>> cam_recon = tfmri.signal.waverec(coeffs_from_arr, wavelet='db2')
+    >>> # cam and cam_recon are equal
+  """
+  coeff_tensor = tf.convert_to_tensor(coeff_tensor)
+  coeffs = []
+  if len(coeff_slices) == 0:
+    raise ValueError("empty list of coefficient slices")
+  else:
+    coeffs.append(coeff_tensor[coeff_slices[0]])
+
+  # difference coefficients at each level
+  for n in range(1, len(coeff_slices)):
+    d = {}
+    for k, v in coeff_slices[n].items():
+      d[k] = coeff_tensor[v]
+    coeffs.append(d)
+  return coeffs
+
+
+def _determine_coeff_array_shape(coeffs, axes):
+  arr_shape = np.asarray(coeffs[0].shape)
+  axes = np.asarray(axes)  # axes that were transformed
+  ndim_transform = len(axes)
+  ncoeffs = coeffs[0].shape.num_elements()
+  for d in coeffs[1:]:
+    arr_shape[axes] += np.asarray(d['d'*ndim_transform].shape)[axes]
+    for _, v in d.items():
+      ncoeffs += v.shape.num_elements()
+  arr_shape = tuple(arr_shape.tolist())
+  # if the total number of coefficients doesn't equal the size of the array
+  # then tight packing is not possible.
+  is_tight_packing = (np.prod(arr_shape) == ncoeffs)
+  return arr_shape, is_tight_packing
+
+
+def _prepare_coeffs_axes(coeffs, axes):
+  """Helper function to check type of coeffs and axes.
+
+  This code is used by both coeffs_to_tensor and ravel_coeffs.
+  """
+  if not isinstance(coeffs, list) or len(coeffs) == 0:
+    raise ValueError("input must be a list of coefficients from wavedec")
+  if coeffs[0] is None:
+    raise ValueError("coeffs_to_tensor does not support missing "
+                     "coefficients.")
+  if not isinstance(coeffs[0], tf.Tensor):
+    raise ValueError("first list element must be a tensor")
+  ndim = coeffs[0].ndim
+
+  if len(coeffs) > 1:
+    if not isinstance(coeffs[1], dict):
+      raise ValueError("invalid coefficient list")
+
+  if len(coeffs) == 1:
+    # no detail coefficients were found
+    return coeffs, axes, ndim, None
+
+  # Determine the number of dimensions that were transformed via key length
+  ndim_transform = len(list(coeffs[1].keys())[0])
+  if axes is None:
+    if ndim_transform < ndim:
+      raise ValueError(
+          "coeffs corresponds to a DWT performed over only a subset of "
+          "the axes.  In this case, axes must be specified.")
+    axes = np.arange(ndim)
+
+  if len(axes) != ndim_transform:
+    raise ValueError(
+        "The length of axes doesn't match the number of dimensions "
+        "transformed.")
+
+  return coeffs, axes, ndim, ndim_transform

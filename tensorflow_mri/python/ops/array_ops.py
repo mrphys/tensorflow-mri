@@ -14,7 +14,10 @@
 # ==============================================================================
 """Array manipulation operations."""
 
+import numpy as np
 import tensorflow as tf
+import tensorflow.experimental.numpy as tnp
+from tensorflow.python.ops.numpy_ops import np_array_ops
 
 
 def broadcast_static_shapes(*shapes):
@@ -274,3 +277,38 @@ def _compute_static_output_shape(input_shape, target_shape):
           output_shape.as_list(), input_shape.as_list())])
 
   return output_shape
+
+
+def update_tensor(tensor, slices, value):
+  """Updates the values of a tensor at the specified slices.
+
+  Equivalent to `tensor[slices] = values`.
+
+  Args:
+    tensor: A `tf.Tensor`.
+    slices: The indices or slices.
+    value: A `tf.Tensor`.
+
+  Returns:
+    An updated `tf.Tensor` with the same shape and type as `tensor`.
+  """
+  # Using a private implementation in the TensorFlow NumPy API.
+  # pylint: disable=protected-access
+  return _with_index_update_helper(np_array_ops._UpdateMethod.UPDATE,
+                                   tensor, slices, value)
+
+
+def _with_index_update_helper(update_method, a, slice_spec, updates):  # pylint: disable=missing-param-doc
+  """Implementation of ndarray._with_index_*."""
+  # Adapted from tensorflow/python/ops/numpy_ops/np_array_ops.py.
+  # pylint: disable=protected-access
+  if (isinstance(slice_spec, bool) or (isinstance(slice_spec, tf.Tensor) and
+                                       slice_spec.dtype == tf.dtypes.bool) or
+      (isinstance(slice_spec, (np.ndarray, tnp.ndarray)) and
+       slice_spec.dtype == np.bool_)):
+    slice_spec = tnp.nonzero(slice_spec)
+
+  if not isinstance(slice_spec, tuple):
+    slice_spec = np_array_ops._as_spec_tuple(slice_spec)
+
+  return np_array_ops._slice_helper(a, slice_spec, update_method, updates)
