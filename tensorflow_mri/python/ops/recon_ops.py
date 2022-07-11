@@ -59,12 +59,20 @@ def reconstruct_adj(kspace,
   This operator supports batched inputs. All batch shapes should be
   broadcastable with each other.
 
+  This operator supports multicoil imaging. Coil combination is triggered
+  when `sensitivities` is not `None`. If you have multiple coils but wish to
+  reconstruct each coil separately, simply set `sensitivities` to `None`. The
+  coil dimension will then be treated as a standard batch dimension (i.e., it
+  becomes part of `...`).
+
   Args:
     kspace: A `Tensor`. The *k*-space samples. Must have type `complex64` or
       `complex128`. `kspace` can be either Cartesian or non-Cartesian. A
       Cartesian `kspace` must have shape
       `[..., num_coils, *image_shape]`, where `...` are batch dimensions. A
       non-Cartesian `kspace` must have shape `[..., num_coils, num_samples]`.
+      If not multicoil (`sensitivities` is `None`), then the `num_coils` axis
+      must be omitted.
     image_shape: A `TensorShape` or a list of `ints`. Must have length 2 or 3.
       The shape of the reconstructed image[s].
     mask: An optional `Tensor` of type `bool`. The sampling mask. Must have
