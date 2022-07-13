@@ -13,10 +13,13 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for module `util.linalg_imaging`."""
+# pylint: disable=missing-class-docstring
 
+from absl.testing import parameterized
 import numpy as np
 import tensorflow as tf
 
+from tensorflow_mri.python.ops import wavelet_ops
 from tensorflow_mri.python.util import linalg_imaging
 from tensorflow_mri.python.util import test_util
 
@@ -279,3 +282,40 @@ class LinearOperatorFiniteDifferenceTest(test_util.TestCase):
     self.assertIsInstance(linop.range_shape, tf.TensorShape)
     self.assertAllEqual(linop.range_shape, range_shape)
     self.assertAllEqual(linop.range_shape_tensor(), range_shape)
+
+
+class LinearOperatorWaveletTest(test_util.TestCase):
+  @parameterized.named_parameters(
+      # name, wavelet, level, axes, domain_shape, range_shape
+      ("test0", "haar", None, None, [6, 6], [7, 7]),
+      ("test1", "haar", 1, None, [6, 6], [6, 6]),
+      ("test2", "haar", None, -1, [6, 6], [6, 7])
+  )
+  def test_general(self, wavelet, level, axes, domain_shape, range_shape):
+    # Instantiate.
+    linop = linalg_imaging.LinearOperatorWavelet(
+        domain_shape, wavelet=wavelet, level=level, axes=axes)
+
+    # Example data.
+    data = np.arange(np.prod(domain_shape)).reshape(domain_shape)
+    data = data.astype("float32")
+
+    # Forward and adjoint.
+    expected_forward, coeff_slices = wavelet_ops.coeffs_to_tensor(
+        wavelet_ops.wavedec(data, wavelet=wavelet, level=level, axes=axes),
+        axes=axes)
+    expected_adjoint = wavelet_ops.waverec(
+        wavelet_ops.tensor_to_coeffs(expected_forward, coeff_slices),
+        wavelet=wavelet, axes=axes)
+
+    # Test shapes.
+    self.assertAllClose(domain_shape, linop.domain_shape)
+    self.assertAllClose(domain_shape, linop.domain_shape_tensor())
+    self.assertAllClose(range_shape, linop.range_shape)
+    self.assertAllClose(range_shape, linop.range_shape_tensor())
+
+    # Test transform.
+    result_forward = linop.transform(data)
+    result_adjoint = linop.transform(result_forward, adjoint=True)
+    self.assertAllClose(expected_forward, result_forward)
+    self.assertAllClose(expected_adjoint, result_adjoint)

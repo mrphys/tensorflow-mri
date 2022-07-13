@@ -856,8 +856,8 @@ def coeffs_to_tensor(coeffs, padding=0, axes=None):
 
   Examples:
     >>> import tensorflow_mri as tfmri
-    >>> cam = pywt.data.camera()
-    >>> coeffs = tfmri.signal.wavedec(cam, wavelet='db2', level=3)
+    >>> image = tfmri.image.phantom()
+    >>> coeffs = tfmri.signal.wavedec(image, wavelet='db2', level=3)
     >>> tensor, slices = tfmri.signal.wavelet_coeffs_to_tensor(coeffs)
   """
   coeffs, axes, ndim, ndim_transform = _prepare_coeffs_axes(coeffs, axes)
@@ -1023,6 +1023,9 @@ def _prepare_coeffs_axes(coeffs, axes):
           "coeffs corresponds to a DWT performed over only a subset of "
           "the axes.  In this case, axes must be specified.")
     axes = np.arange(ndim)
+
+  if isinstance(axes, int):
+    axes = [axes]
 
   if len(axes) != ndim_transform:
     raise ValueError(

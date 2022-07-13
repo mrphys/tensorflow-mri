@@ -22,6 +22,7 @@ import abc
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import array_ops
+from tensorflow_mri.python.ops import wavelet_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import linalg_ext
@@ -885,3 +886,98 @@ class LinearOperatorFiniteDifference(LinalgImagingMixin,  # pylint: disable=abst
   @property
   def axis(self):
     return self._axis
+
+
+@api_util.export("linalg.LinearOperatorWavelet")
+class LinearOperatorWavelet(LinearOperator):  # pylint: disable=abstract-method
+  """Linear operator representing a wavelet decomposition matrix.
+
+  Args:
+    domain_shape: A 1D `tf.Tensor` or a `list` of `int`. The domain shape of
+      this linear operator (i.e., the input shape). Because this operator is
+      square, the range shape is equal to the domain shape.
+    wavelet: A `str` or a `pywt.Wavelet`_, or a `list` thereof. When passed a
+      `list`, different wavelets are applied along each axis in `axes`.
+    mode: A `str`. The padding or signal extension mode. Must be one of the
+      values supported by `tfmri.signal.wavedec`. Defaults to `'symmetric'`.
+    level: An `int` >= 0. The decomposition level. If `None` (default),
+      the maximum useful level of decomposition will be used (see
+      `tfmri.signal.dwt_max_level`).
+    axes: An `int`. The axes over which the DWT is computed.
+      Defaults to `None` (all axes in the domain shape).
+    dtype: A `tf.dtypes.DType`. The data type for this operator. Defaults to
+      `float32`.
+    name: A `str`. A name for this operator.
+  """
+  def __init__(self,
+               domain_shape,
+               wavelet,
+               mode='symmetric',
+               level=None,
+               axes=None,
+               dtype=tf.dtypes.float32,
+               name="LinearOperatorWavelet"):
+    # Set parameters.
+    parameters = dict(
+        domain_shape=domain_shape,
+        wavelet=wavelet,
+        mode=mode,
+        level=level,
+        axes=axes,
+        dtype=dtype,
+        name=name
+    )
+    self.wavelet = wavelet
+    self.mode = mode
+    self.level = level
+    self.axes = axes
+
+    # Compute the static and dynamic shapes and save them for later use.
+    self._domain_shape_dynamic = tf.convert_to_tensor(
+        domain_shape, dtype=tf.int32)
+    self._domain_shape_static = tf.TensorShape(
+        tf.get_static_value(domain_shape, partial=True))
+
+    # Compute the coefficient slices needed for adjoint (wavelet
+    # reconstruction).
+    x = tf.ensure_shape(tf.zeros(self._domain_shape_dynamic, dtype=dtype),
+                        self._domain_shape_static)
+    x = wavelet_ops.wavedec(x, wavelet=wavelet, mode=mode,
+                            level=level, axes=axes)
+    y, self._coeff_slices = wavelet_ops.coeffs_to_tensor(x, axes=axes)
+
+    # Get the range shape.
+    self._range_shape_static = y.shape
+    self._range_shape_dynamic = tf.shape(y)
+
+    # Call base class.
+    super().__init__(dtype,
+                     is_non_singular=None,
+                     is_self_adjoint=None,
+                     is_positive_definite=None,
+                     is_square=True,
+                     name=name,
+                     parameters=parameters)
+
+  def _transform(self, x, adjoint=False):
+    if adjoint:
+      x = wavelet_ops.tensor_to_coeffs(x, self._coeff_slices)
+      x = wavelet_ops.waverec(x, wavelet=self.wavelet, mode=self.mode,
+                              axes=self.axes)
+    else:
+      x = wavelet_ops.wavedec(x, wavelet=self.wavelet, mode=self.mode,
+                              level=self.level, axes=self.axes)
+      x, _ = wavelet_ops.coeffs_to_tensor(x, axes=self.axes)
+    return x
+
+  def _domain_shape(self):
+    return self._domain_shape_static
+
+  def _range_shape(self):
+    return self._range_shape_static
+
+  def _domain_shape_tensor(self):
+    return self._domain_shape_dynamic
+
+  def _range_shape_tensor(self):
+    return self._range_shape_dynamic
