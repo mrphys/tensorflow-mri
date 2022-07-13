@@ -232,6 +232,17 @@ class RadialTrajectoryTest(test_util.TestCase):
                      [1.4454685, 1.9361506]]]
     self.assertAllClose(angles, ref_angles)
 
+  def test_angles_sorted_half(self):  # pylint: disable=missing-param-doc
+    """Test angles."""
+    # pylint: disable=protected-access
+    expected = [[0, 0.741629, 1.48326, 1.94161, 2.68324],
+                [2.96652, 3.42487, 4.1665, 4.90813, 5.36648],
+                [5.64976, 0.108202, 0.566554, 1.30818, 2.04981]]
+    angles = traj_ops._trajectory_angles(
+        5, phases=3, ordering='sorted_half', angle_range='full')
+    self.assertAllClose(np.expand_dims(expected, -1), angles,
+                        atol=1e-5, rtol=1e-5)
+
   def test_number_of_views_warning(self):
     """Test warning about number of views for golden angle trajectories."""
     string = "optimal k-space filling is achieved when the number of views"

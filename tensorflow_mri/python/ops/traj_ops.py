@@ -720,7 +720,9 @@ def _trajectory_angles(views,
     angles = _angles_2d(phi * default_max, default_max)
     angles = tf.sort(angles, axis=1)
   elif ordering == 'sorted_half':
-    angles = _angles_2d(phi * pi, default_max)
+    if angle_range != 'full':
+      raise ValueError("ordering='sorted_half' requires angle_range='full'")
+    angles = _angles_2d(phi * pi, pi)
     angles = tf.sort(angles, axis=1)
     def _scan_fn(prev, curr):
       # curr is the list of angles for the current phase (1D vector).
