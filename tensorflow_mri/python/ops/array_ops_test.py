@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for module `array_ops`."""
-# pylint: disable=missing-class-docstring
+# pylint: disable=missing-class-docstring,missing-function-docstring
 
 from absl.testing import parameterized
 import numpy as np

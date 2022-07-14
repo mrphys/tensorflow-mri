@@ -819,6 +819,9 @@ def coeffs_to_tensor(coeffs, padding=0, axes=None):
     example, in a 2D tensor, `tensor[slices[1]['dd']]` would extract
     the first level detail coefficients from `tensor`.
 
+  Raises:
+    ValueError: If passed invalid inputs.
+
   Notes
   -----
   Assume a 2D coefficient dictionary, `c`, from a two-level transform.
@@ -881,7 +884,7 @@ def coeffs_to_tensor(coeffs, padding=0, axes=None):
   else:
     coeff_tensor = tf.fill(arr_shape, tf.cast(padding, a_coeffs.dtype))
 
-  a_slices = tuple([slice(s) for s in a_shape])
+  a_slices = tuple(slice(s) for s in a_shape)
   coeff_tensor = array_ops.update_tensor(coeff_tensor, a_slices, a_coeffs)
 
   # initialize list of coefficient slices
@@ -928,6 +931,9 @@ def tensor_to_coeffs(coeff_tensor, coeff_slices):
   Returns:
     The wavelet coefficients in the format expected by `tfmri.signal.waverec`.
 
+  Raises:
+    ValueError: If passed an empty list of coefficients.
+
   Notes:
     A single large array containing all coefficients will have subsets stored,
     into a `waverecn`` list, c, as indicated below::
@@ -954,19 +960,18 @@ def tensor_to_coeffs(coeff_tensor, coeff_slices):
 
   Examples:
     >>> import tensorflow_mri as tfmri
-    >>> cam = pywt.data.camera()
-    >>> coeffs = tfmri.signal.wavedec(cam, wavelet='db2', level=3)
+    >>> image = tfmri.image.phantom()
+    >>> coeffs = tfmri.signal.wavedec(image, wavelet='db2', level=3)
     >>> tensor, slices = tfmri.signal.wavelet_coeffs_to_tensor(coeffs)
     >>> coeffs_from_arr = tfmri.signal.wavelet_tensor_to_coeffs(tensor, slices)
-    >>> cam_recon = tfmri.signal.waverec(coeffs_from_arr, wavelet='db2')
-    >>> # cam and cam_recon are equal
+    >>> image_recon = tfmri.signal.waverec(coeffs_from_arr, wavelet='db2')
+    >>> # image and image_recon are equal
   """
   coeff_tensor = tf.convert_to_tensor(coeff_tensor)
   coeffs = []
   if len(coeff_slices) == 0:
     raise ValueError("empty list of coefficient slices")
-  else:
-    coeffs.append(coeff_tensor[coeff_slices[0]])
+  coeffs.append(coeff_tensor[coeff_slices[0]])
 
   # difference coefficients at each level
   for n in range(1, len(coeff_slices)):
@@ -977,7 +982,8 @@ def tensor_to_coeffs(coeff_tensor, coeff_slices):
   return coeffs
 
 
-def _determine_coeff_array_shape(coeffs, axes):
+def _determine_coeff_array_shape(coeffs, axes):  # pylint: disable=missing-param-doc
+  """Determines the shape of the coefficients array."""
   arr_shape = np.asarray(coeffs[0].shape)
   axes = np.asarray(axes)  # axes that were transformed
   ndim_transform = len(axes)
@@ -993,7 +999,7 @@ def _determine_coeff_array_shape(coeffs, axes):
   return arr_shape, is_tight_packing
 
 
-def _prepare_coeffs_axes(coeffs, axes):
+def _prepare_coeffs_axes(coeffs, axes):  # pylint: disable=missing-param-doc
   """Helper function to check type of coeffs and axes.
 
   This code is used by both coeffs_to_tensor and ravel_coeffs.

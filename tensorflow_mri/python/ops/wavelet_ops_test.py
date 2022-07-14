@@ -37,6 +37,7 @@
 # SOFTWARE.
 # ==============================================================================
 """Tests for module `wavelet_ops`."""
+# pylint: disable=missing-class-docstring,missing-function-docstring
 
 import warnings
 
@@ -192,7 +193,6 @@ class DiscreteWaveletTransformTest(test_util.TestCase):
 
 
 class CoeffsToArrayTest(test_util.TestCase):
-
   def test_coeffs_to_array(self):
     # single element list returns the first element
     a_coeffs = [tf.reshape(tf.range(8), (2, 4))]
@@ -214,7 +214,8 @@ class CoeffsToArrayTest(test_util.TestCase):
                       [a_coeffs, (None, None, None)])
 
     # invalid type for second coefficient list element
-    self.assertRaises(ValueError, wavelet_ops.coeffs_to_tensor, [a_coeffs, None])
+    self.assertRaises(ValueError, wavelet_ops.coeffs_to_tensor,
+                      [a_coeffs, None])
 
     # use an invalid key name in the coef dictionary
     coeffs = [np.array([0]), dict(d=np.array([0]), c=np.array([0]))]
@@ -251,13 +252,14 @@ class CoeffsToArrayTest(test_util.TestCase):
     rng = np.random.RandomState(1234)
     mode = 'symmetric'
     wave = pywt.Wavelet('db2')
-    N = 16
+    n = 16
     ndim = 3
     for axes in [(-1, ), (0, ), (1, ), (0, 1), (1, 2), (0, 2), None]:
       with self.subTest(axes=axes):
-        x1 = rng.randn(*([N] * ndim))
+        x1 = rng.randn(*([n] * ndim))
         coeffs = wavelet_ops.wavedec(x1, wave, mode=mode, axes=axes)
-        coeff_arr, coeff_slices = wavelet_ops.coeffs_to_tensor(coeffs, axes=axes)
+        coeff_arr, coeff_slices = wavelet_ops.coeffs_to_tensor(
+            coeffs, axes=axes)
         if axes is not None:
           # if axes is not None, it must be provided to coeffs_to_tensor
           self.assertRaises(ValueError, wavelet_ops.coeffs_to_tensor, coeffs)
@@ -310,7 +312,7 @@ class CoeffsToArrayTest(test_util.TestCase):
       for wave in ['haar']:
         with self.subTest(mode=mode, wave=wave):
           wave = pywt.Wavelet(wave)
-          maxlevel = wavelet_ops.dwt_max_level(np.min(x1.shape), w.dec_len)
+          maxlevel = wavelet_ops.dwt_max_level(np.min(x1.shape), wave.dec_len)
           if maxlevel == 0:
             continue
           coeffs = wavelet_ops.wavedec(x1, wave, mode=mode)
@@ -318,7 +320,7 @@ class CoeffsToArrayTest(test_util.TestCase):
           coeffs2 = wavelet_ops.tensor_to_coeffs(coeff_arr, coeff_slices)
           x1r = wavelet_ops.waverec(coeffs2, wave, mode=mode)
           # truncate reconstructed values to original shape
-          x1r = x1r[tuple([slice(s) for s in x1.shape])]
+          x1r = x1r[tuple(slice(s) for s in x1.shape)]
           self.assertAllClose(x1, x1r, rtol=1e-4, atol=1e-4)
 
 
