@@ -902,8 +902,9 @@ class LinearOperatorWavelet(LinearOperator):  # pylint: disable=abstract-method
     level: An `int` >= 0. The decomposition level. If `None` (default),
       the maximum useful level of decomposition will be used (see
       `tfmri.signal.wavelet_max_level`).
-    axes: An `int`. The axes over which the DWT is computed.
-      Defaults to `None` (all axes in the domain shape).
+    axes: A `list` of `int`. The axes over which the DWT is computed. Axes refer
+      only to domain dimensions without regard for the batch dimensions.
+      Defaults to `None` (all domain dimensions). 
     dtype: A `tf.dtypes.DType`. The data type for this operator. Defaults to
       `float32`.
     name: A `str`. A name for this operator.
@@ -959,14 +960,26 @@ class LinearOperatorWavelet(LinearOperator):  # pylint: disable=abstract-method
                      parameters=parameters)
 
   def _transform(self, x, adjoint=False):
+    # Get static batch dimensions.
+    if x.shape.rank is None:
+      raise ValueError("rank of input x must be known statically")
+    if x.domain_shape.rank is None:
+      raise ValueError("rank of domain must be known statically")
+    batch_dims = x.shape.rank - x.domain_shape.rank
+    # Take into account batch dimensions in axes. For negative axes, we do not
+    # need to do anything as we start counting from the right. For positive
+    # axes, we need to add the number of batch dimensions so that the axes
+    # refer to the domain dimensions only.
+    axes = [ax if ax < 0 else ax + batch_dims for ax in self.axes]
+    # Ready to do the computation.
     if adjoint:
       x = wavelet_ops.tensor_to_coeffs(x, self._coeff_slices)
       x = wavelet_ops.waverec(x, wavelet=self.wavelet, mode=self.mode,
-                              axes=self.axes)
+                              axes=axes)
     else:
       x = wavelet_ops.wavedec(x, wavelet=self.wavelet, mode=self.mode,
-                              level=self.level, axes=self.axes)
-      x, _ = wavelet_ops.coeffs_to_tensor(x, axes=self.axes)
+                              level=self.level, axes=axes)
+      x, _ = wavelet_ops.coeffs_to_tensor(x, axes=axes)
     return x
 
   def _domain_shape(self):
