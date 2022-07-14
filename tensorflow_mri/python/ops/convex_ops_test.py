@@ -13,12 +13,14 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for module `convex_ops`."""
+# pylint: disable=missing-class-docstring,missing-function-docstring
 
 from absl.testing import parameterized
 import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import convex_ops
+from tensorflow_mri.python.ops import wavelet_ops
 from tensorflow_mri.python.util import test_util
 
 
@@ -324,10 +326,30 @@ class ConvexFunctionTotalVariationTest(test_util.TestCase):
 
 
 class ConvexFunctionL1WaveletTest(test_util.TestCase):
-  def test_general(self):
-    x = tf.constant([[1., 2., 3.], [4., 5., 6.]])
-    f = convex_ops.ConvexFunctionL1Wavelet(tf.shape(x), 'haar', scale=0.1)
-    self.assertAllClose(0.6, f(x))
+  @parameterized.named_parameters(
+      ("test0", 'haar', 1, None, 0.1),
+      ("test1", 'haar', 2, None, 0.2),
+      ("test2", 'db2', 1, [-1], 0.3),
+  )
+  def test_general(self, wavelet, level, axes, scale):
+    x = np.arange(24).reshape(4, 6).astype("float32")
+    f = convex_ops.ConvexFunctionL1Wavelet(
+        tf.shape(x), wavelet=wavelet, level=level, axes=axes, scale=scale)
+
+    self.assertIsInstance(f.domain_dimension, int)
+    self.assertIsInstance(f.domain_dimension_tensor(), tf.Tensor)
+    self.assertAllClose(24, f.domain_dimension)
+    self.assertAllClose(24, f.domain_dimension_tensor())
+
+    # Wavelet operator.
+    expected, _ = wavelet_ops.coeffs_to_tensor(
+        wavelet_ops.wavedec(x, wavelet=wavelet, level=level, axes=axes),
+        axes=axes)
+    # L1 norm.
+    expected = tf.math.reduce_sum(tf.math.abs(expected))
+    # Scaling.
+    expected *= scale
+    self.assertAllClose(expected, f(x.flat))
 
 
 if __name__ == '__main__':
