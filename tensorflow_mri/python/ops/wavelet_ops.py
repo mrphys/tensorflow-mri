@@ -204,7 +204,7 @@ def wavedec(data, wavelet, mode='symmetric', level=None, axes=None):
       values supported by `tf.pad`_. Defaults to `'symmetric'`.
     level: An `int` >= 0. The decomposition level. If `None` (default),
       the maximum useful level of decomposition will be used (see
-      `tfmri.signal.dwt_max_level`).
+      `tfmri.signal.wavelet_max_level`).
     axes: A `list` of `int`. Axes over which to compute the DWT. Axes may not
       be repeated. A value of `None` (the default) selects all axes.
 

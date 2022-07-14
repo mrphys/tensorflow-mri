@@ -894,15 +894,14 @@ class LinearOperatorWavelet(LinearOperator):  # pylint: disable=abstract-method
 
   Args:
     domain_shape: A 1D `tf.Tensor` or a `list` of `int`. The domain shape of
-      this linear operator (i.e., the input shape). Because this operator is
-      square, the range shape is equal to the domain shape.
+      this linear operator.
     wavelet: A `str` or a `pywt.Wavelet`_, or a `list` thereof. When passed a
       `list`, different wavelets are applied along each axis in `axes`.
     mode: A `str`. The padding or signal extension mode. Must be one of the
       values supported by `tfmri.signal.wavedec`. Defaults to `'symmetric'`.
     level: An `int` >= 0. The decomposition level. If `None` (default),
       the maximum useful level of decomposition will be used (see
-      `tfmri.signal.dwt_max_level`).
+      `tfmri.signal.wavelet_max_level`).
     axes: An `int`. The axes over which the DWT is computed.
       Defaults to `None` (all axes in the domain shape).
     dtype: A `tf.dtypes.DType`. The data type for this operator. Defaults to

@@ -323,5 +323,12 @@ class ConvexFunctionTotalVariationTest(test_util.TestCase):
     self.assertAllClose(res3, ref3)
 
 
+class ConvexFunctionL1WaveletTest(test_util.TestCase):
+  def test_general(self):
+    x = tf.constant([[1., 2., 3.], [4., 5., 6.]])
+    f = convex_ops.ConvexFunctionL1Wavelet(tf.shape(x), 'haar', scale=0.1)
+    self.assertAllClose(0.6, f(x))
+
+
 if __name__ == '__main__':
   tf.test.main()

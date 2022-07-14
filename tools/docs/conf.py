@@ -81,6 +81,9 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # Do not add full qualification to objects' signatures.
 add_module_names = False
 
+# For classes, list the documentation of both the class and the `__init__`
+# method.
+autoclass_content = 'both'
 
 # -- Options for HTML output -------------------------------------------------
 

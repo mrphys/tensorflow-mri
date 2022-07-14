@@ -742,6 +742,52 @@ class ConvexFunctionTotalVariation(ConvexFunctionLinearOperatorComposition):  # 
                      name=name)
 
 
+@api_util.export("convex.ConvexFunctionL1Wavelet")
+class ConvexFunctionL1Wavelet(ConvexFunctionLinearOperatorComposition):  # pylint: disable=abstract-method
+  r"""A `ConvexFunction` representing an L1 wavelet regularization term.
+
+  For a given input :math:`x`, computes :math:`\lambda \left\| Dx \right\|_1`,
+  where :math:`\lambda` is a scaling factor and :math:`D` is a wavelet
+  decomposition operator (see `tfmri.linalg.LinearOperatorWavelet`).
+
+  Args:
+    scale: A `float`. A scaling factor.
+    domain_shape: A 1D `tf.Tensor` or a `list` of `int`. The domain shape of
+      this linear operator.
+    wavelet: A `str` or a `pywt.Wavelet`_, or a `list` thereof. When passed a
+      `list`, different wavelets are applied along each axis in `axes`.
+    mode: A `str`. The padding or signal extension mode. Must be one of the
+      values supported by `tfmri.signal.wavedec`. Defaults to `'symmetric'`.
+    level: An `int` >= 0. The decomposition level. If `None` (default),
+      the maximum useful level of decomposition will be used (see
+      `tfmri.signal.wavelet_max_level`).
+    axes: An `int`. The axes over which the DWT is computed.
+      Defaults to `None` (all axes in the domain shape).
+    dtype: A `tf.dtypes.DType`. The dtype of the inputs.
+    name: A name for this `ConvexFunction`.
+  """
+  def __init__(self,
+               domain_shape,
+               wavelet,
+               mode='symmetric',
+               level=None,
+               axes=None,
+               scale=None,
+               dtype=tf.dtypes.float32,
+               name=None):
+    operator = linalg_imaging.LinearOperatorWavelet(domain_shape,
+                                                    wavelet,
+                                                    mode=mode,
+                                                    level=level,
+                                                    axes=axes,
+                                                    dtype=dtype)
+    function = ConvexFunctionL1Norm(
+        scale=scale,
+        domain_dimension=operator.range_dimension_tensor(),
+        dtype=dtype)
+    super().__init__(function, operator, name=name)
+
+
 @api_util.export("convex.ConvexFunctionQuadratic")
 class ConvexFunctionQuadratic(ConvexFunction):  # pylint: disable=abstract-method
   r"""A `ConvexFunction` representing a generic quadratic function.
