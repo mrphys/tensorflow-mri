@@ -14,6 +14,10 @@ Breaking Changes
 Major Features and Improvements
 -------------------------------
 
+* ``tfmri.convex``:
+
+  * Added new class ``ConvexFunctionL1Wavelet``.
+
 * ``tfmri.linalg``:
 
   * Added new class ``LinearOperatorWavelet``.
