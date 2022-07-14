@@ -19,6 +19,8 @@ import tensorflow as tf
 import tensorflow.experimental.numpy as tnp
 from tensorflow.python.ops.numpy_ops import np_array_ops
 
+from tensorflow_mri.python.util import api_util
+
 
 def broadcast_static_shapes(*shapes):
   """Computes the shape of a broadcast given known shapes.
@@ -279,10 +281,19 @@ def _compute_static_output_shape(input_shape, target_shape):
   return output_shape
 
 
+@api_util.export("array.update_tensor")
 def update_tensor(tensor, slices, value):
   """Updates the values of a tensor at the specified slices.
 
-  Equivalent to `tensor[slices] = values`.
+  This operator performs slice assignment.
+
+  .. note::
+    Equivalent to `tensor[slices] = value`.
+
+  .. warning::
+    TensorFlow does not support slice assignment because tensors are immutable.
+    This operator works around this limitation by creating a new tensor, which
+    may have performance implications.
 
   Args:
     tensor: A `tf.Tensor`.
