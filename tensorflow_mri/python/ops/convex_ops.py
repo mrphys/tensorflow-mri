@@ -402,18 +402,8 @@ class ConvexFunctionIndicatorBall(ConvexFunction):  # pylint: disable=abstract-m
     super().__init__(scale=scale, dtype=dtype, name=name)
     self._order = check_util.validate_enum(order, [1, 2, np.inf], name='order')
 
-    self._domain_dimension_static = tf.get_static_value(domain_dimension)
-    if not isinstance(domain_dimension, (int, type(None))):
-      raise ValueError(
-          f"domain_dimension must be a scalar integer, "
-          f"but got: {self._domain_dimension_static}")
-
-    self._domain_dimension_dynamic = tf.convert_to_tensor(
-        domain_dimension, dtype=tf.int32)
-    if self._domain_dimension_dynamic.shape.rank != 0:
-      raise ValueError(
-          f"domain_dimension must be a scalar integer, "
-          f"but got: {self._domain_dimension_dynamic.shape}")
+    self._domain_dimension_static, self._domain_dimension_dynamic = (
+        _get_static_and_dynamic_dimension(domain_dimension))
 
   def _call(self, x):
     # Note that the scale has no effect, as the indicator function is always
@@ -517,19 +507,8 @@ class ConvexFunctionNorm(ConvexFunction):  # pylint: disable=abstract-method
     super().__init__(scale=scale, dtype=dtype, name=name)
     self._order = check_util.validate_enum(order, [1, 2, np.inf], name='order')
 
-    self._domain_dimension_static = tf.get_static_value(domain_dimension)
-    if not isinstance(domain_dimension, (int, type(None))):
-      print(self._domain_dimension_static.dtype)
-      raise ValueError(
-          f"domain_dimension must be a scalar integer, "
-          f"but got: {self._domain_dimension_static}")
-
-    self._domain_dimension_dynamic = tf.convert_to_tensor(
-        domain_dimension, dtype=tf.int32)
-    if self._domain_dimension_dynamic.shape.rank != 0:
-      raise ValueError(
-          f"domain_dimension must be a scalar integer, "
-          f"but got: {self._domain_dimension_dynamic.shape}")
+    self._domain_dimension_static, self._domain_dimension_dynamic = (
+        _get_static_and_dynamic_dimension(domain_dimension))
 
   def _call(self, x):
     return self._scale * tf.math.real(tf.norm(x, ord=self._order, axis=-1))
@@ -973,3 +952,32 @@ def _conjugate_exponent(exp):
   if exp == np.inf:
     return 1.0
   return exp / (exp - 1.0)
+
+
+def _get_static_and_dynamic_dimension(dim):  # pylint: disable=missing-param-doc
+  """Returns the static and dynamic information from `dim`."""
+  # Get static dimension.
+  dim_static = tf.get_static_value(dim)
+  if dim_static is not None:
+    if isinstance(dim_static, np.ndarray):
+      try:
+        dim_static = dim_static.item()
+      except ValueError as err:
+        raise ValueError(
+            f"domain_dimension must be a scalar integer, "
+            f"but got: {dim_static} (type: {type(dim_static)})") from err
+    if isinstance(dim_static, (np.int32, np.int64)):
+      dim_static = dim_static.item()
+    if not isinstance(dim_static, int):
+      raise ValueError(
+          f"domain_dimension must be a scalar integer, "
+          f"but got: {dim_static} (type: {type(dim_static)})")
+
+  # Get dynamic dimension.
+  dim_dynamic = tf.convert_to_tensor(dim, dtype=tf.int32)
+  if dim_dynamic.shape.rank != 0:
+    raise ValueError(
+        f"domain_dimension must be a scalar integer, "
+        f"but got: {dim_dynamic} (type: {type(dim_dynamic)})")
+
+  return dim_static, dim_dynamic

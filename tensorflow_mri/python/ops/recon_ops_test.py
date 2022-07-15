@@ -477,6 +477,149 @@ class ReconstructTest(test_util.TestCase):
       self.assertIsInstance(results, tf.Tensor)
 
 
+class LeastSquaresTest(test_util.TestCase):
+  def test_compressed_sensing_l1_wavelet(self):
+    shape = [8, 8]
+    image = image_ops.phantom(shape=shape, dtype=tf.complex64)
+    # The mask below was generated randomly using this code. However, to ensure
+    # 100% determinism we hardcode the mask (setting the seed is not enough,
+    # because NumPy/TensorFlow random generators do not guarantee
+    # reproducibility across different versions).
+    # density = traj_ops.density_grid(shape,
+    #                                 outer_density=0.1,
+    #                                 inner_cutoff=0.15,
+    #                                 outer_cutoff=0.75)
+    # mask = traj_ops.random_sampling_mask(shape=shape,
+    #                                      density=density,
+    #                                      seed=[1234, 5678])
+    mask = [[False, False,  True, False, False, False, False, False],
+            [False, False, False, False, False, False, False, False],
+            [False,  True, False, False,  True, False, False, False],
+            [False, False,  True,  True,  True,  True, False, False],
+            [ True, False, False,  True,  True,  True, False, False],
+            [False, False, False,  True,  True, False, False, False],
+            [False, False, False, False, False,  True, False, False],
+            [False, False, False, False, False,  True, False, False]]
+
+    kspace = fft_ops.fftn(image, shift=True)
+    kspace *= tf.cast(mask, tf.complex64)
+
+    regularizer = convex_ops.ConvexFunctionL1Wavelet(
+        shape, 'haar', level=2, scale=0.5, dtype=tf.complex64)
+    recon = recon_ops.reconstruct_lstsq(
+        kspace, shape, mask=mask, regularizer=regularizer)
+
+    expected = [
+       [ 0.34179926+0.30613357j,  0.3417428 +0.30630958j,
+         0.6689252 +0.5598738j ,  0.6686945 +0.5602565j ,
+         1.2340636 -0.2148357j ,  1.23368   -0.2146943j ,
+         0.15142666+0.2750988j ,  0.08611039+0.3179876j ],
+       [ 0.3420096 +0.30618003j,  0.34171504+0.3062238j ,
+         1.9308203 +0.03409361j,  1.930787  +0.03424059j,
+         2.606547  +0.61097986j,  2.6062891 +0.6112608j ,
+         0.1514751 +0.27488872j,  0.08607277+0.31800568j],
+       [ 0.2832344 -0.29769248j,  0.28288317-0.29749206j,
+         1.4607992 -0.36595207j,  1.4605489 -0.3660729j ,
+         1.7979488 -0.28135628j,  1.7979484 -0.28116226j,
+        -0.00337884-0.18306382j, -0.00363272-0.1827644j ],
+       [ 0.28306255-0.29766917j,  0.28288803-0.2973669j ,
+         1.0218956 -0.24774893j,  1.0215473 -0.24767056j,
+         1.7981545 -0.2812703j ,  1.797894  -0.28125632j,
+        -0.00354373-0.18284853j, -0.00361615-0.18267009j],
+       [-0.02226475+0.28652188j, -0.02214793+0.2866598j ,
+         1.4652784 +0.33295962j,  1.4650053 +0.33324894j,
+         0.6805991 +0.12670842j,  0.680208  +0.12687585j,
+         0.33172938+0.1782302j ,  0.3314214 +0.17820854j],
+       [-0.021961  +0.2864609j , -0.0221408 +0.28642035j,
+         1.4651511 +0.3330814j ,  1.4650812 +0.33326146j,
+         1.3525531 +0.33497405j,  1.3522899 +0.33521318j,
+         0.33176833+0.17799535j,  0.33142558+0.17818964j],
+       [ 0.1972605 -0.33466882j,  0.19683616-0.33455336j,
+         2.0666962 -0.52016133j,  2.0664406 -0.52020437j,
+         1.922491  +0.19525945j,  1.922551  +0.19537224j,
+         0.42206743-0.24393967j,  0.42183053-0.24355185j],
+       [ 0.19710806-0.3347677j ,  0.19676188-0.334543j  ,
+         1.3019115 -0.0558873j ,  1.3016343 -0.05568542j,
+         0.29104483-0.5771697j ,  0.2908303 -0.57718724j,
+         0.42195508-0.2436194j ,  0.421938  -0.24345556j]]
+    self.assertAllClose(expected, recon, rtol=1e-5, atol=1e-5)
+
+  def test_compressed_sensing_l1_wavelet_multicoi(self):
+    shape = [8, 8]
+    image, sens = image_ops.phantom(
+        shape=shape, num_coils=4, dtype=tf.complex64, return_sensitivities=True)
+    # The mask below was generated randomly using this code. However, to ensure
+    # 100% determinism we hardcode the mask (setting the seed is not enough,
+    # because NumPy/TensorFlow random generators do not guarantee
+    # reproducibility across different versions).
+    # density = traj_ops.density_grid(shape,
+    #                                 outer_density=0.1,
+    #                                 inner_cutoff=0.15,
+    #                                 outer_cutoff=0.75)
+    # mask = traj_ops.random_sampling_mask(shape=shape,
+    #                                      density=density,
+    #                                      seed=[1234, 5678])
+    mask = [[False, False,  True, False, False, False, False, False],
+            [False, False, False, False, False, False, False, False],
+            [False,  True, False, False,  True, False, False, False],
+            [False, False,  True,  True,  True,  True, False, False],
+            [ True, False, False,  True,  True,  True, False, False],
+            [False, False, False,  True,  True, False, False, False],
+            [False, False, False, False, False,  True, False, False],
+            [False, False, False, False, False,  True, False, False]]
+
+    kspace = fft_ops.fftn(image, axes=[-2, -1], shift=True)
+    kspace *= tf.cast(mask, tf.complex64)
+
+    regularizer = convex_ops.ConvexFunctionL1Wavelet(
+        shape, 'haar', level=2, scale=0.5, dtype=tf.complex64)
+    recon = recon_ops.reconstruct_lstsq(
+        kspace, shape, mask=mask, sensitivities=sens, regularizer=regularizer)
+
+    expected = [
+       [0.40788233+0.09244551j, 0.40777513+0.09250628j,
+        1.5386903 -0.02036293j, 1.538751  -0.02051309j,
+        0.8836167 -0.31155926j, 0.88366103-0.31144089j,
+        0.2749335 +0.04516386j, 0.274903  +0.04511612j],
+       [0.40785035+0.09247903j, 0.40780166+0.09250979j,
+        1.5386543 -0.02045235j, 1.5386062 -0.02044583j,
+        2.443501  +0.33469176j, 2.4435632 +0.33456582j,
+        0.27481675+0.04501313j, 0.27484408+0.04512517j],
+       [0.34545314-0.01897199j, 0.34548455-0.01885714j,
+        1.8099102 -0.14981847j, 1.8099062 -0.14989099j,
+        2.2956266 +0.04863668j, 2.2955754 +0.04873982j,
+        0.24760048-0.09828575j, 0.24764319-0.09838261j],
+       [0.34555954-0.01890662j, 0.3456543 -0.01903058j,
+        1.1428082 -0.11400633j, 1.1427848 -0.1138969j ,
+        0.9767417 -0.3125655j , 0.97675574-0.31256628j,
+        0.24743372-0.09847797j, 0.24731372-0.09844565j],
+       [0.03984646+0.1727991j , 0.03976073+0.17282495j,
+        1.3216747 +0.18094535j, 1.3216183 +0.18089586j,
+        1.1143698 +0.14693272j, 1.1144072 +0.1468962j ,
+        0.26738882+0.00661303j, 0.2675456 +0.0066012j ],
+       [0.03972306+0.1728731j , 0.03967386+0.17292835j,
+        1.3215551 +0.18083024j, 1.3214544 +0.18088897j,
+        1.2834618 +0.17041454j, 1.2836148 +0.17026538j,
+        0.26747093+0.00668541j, 0.26741967+0.00680417j],
+       [0.2772537 -0.12690209j, 0.27725938-0.12695788j,
+        2.7376573 -0.6365766j , 2.7378259 -0.6365111j ,
+        2.4262521 +0.44118595j, 2.4260592 +0.4412532j ,
+        0.35059568-0.09451335j, 0.35067502-0.09468891j],
+       [0.27730492-0.12696016j, 0.27743122-0.12700506j,
+        0.3810194 +0.39855784j, 0.3810459 +0.3985247j ,
+        0.13833281-0.32683632j, 0.13833402-0.3267697j ,
+        0.35064778-0.09473409j, 0.35055292-0.09468822j]]
+    self.assertAllClose(expected, recon, rtol=1e-5, atol=1e-5)
+
+  def test_admm_without_regularizer(self):
+    shape = [64, 64]
+    image = image_ops.phantom(shape=shape, dtype=tf.complex64)
+    kspace = fft_ops.fftn(image, axes=[-2, -1], shift=True)
+    with self.assertRaisesRegex(
+        ValueError, "optimizer 'admm' requires a regularizer"):
+      recon_ops.reconstruct_lstsq(kspace, shape, optimizer='admm')
+
+
 class ReconstructPartialKSpaceTest(test_util.TestCase):
   """Tests for `reconstruct_pf` operation."""
   # pylint: disable=missing-function-docstring

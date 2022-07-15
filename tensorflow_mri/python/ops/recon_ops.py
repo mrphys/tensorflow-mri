@@ -356,7 +356,7 @@ def reconstruct_lstsq(kspace,
 
   elif optimizer == 'admm':
     if regularizer is None:
-      raise ValueError("ADMM optimizer requires a regularizer to be provided.")
+      raise ValueError("optimizer 'admm' requires a regularizer")
     # Create the least-squares objective.
     function_f = convex_ops.ConvexFunctionLeastSquares(operator, kspace)
     # Configure ADMM formulation depending on regularizer.

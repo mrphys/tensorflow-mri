@@ -962,15 +962,20 @@ class LinearOperatorWavelet(LinearOperator):  # pylint: disable=abstract-method
   def _transform(self, x, adjoint=False):
     # Get static batch dimensions.
     if x.shape.rank is None:
-      raise ValueError("rank of input x must be known statically")
-    if x.domain_shape.rank is None:
-      raise ValueError("rank of domain must be known statically")
-    batch_dims = x.shape.rank - x.domain_shape.rank
+      raise NotImplementedError("rank of input x must be known statically")
+    if self.domain_shape.rank is None:
+      raise NotImplementedError("rank of domain must be known statically")
+    batch_dims = x.shape.rank - self.domain_shape.rank
+    # If `axes` is None, select all axes in domain.
+    if self.axes is None:
+      axes = list(range(-self.domain_shape.rank, 0))
+    else:
+      axes = self.axes
     # Take into account batch dimensions in axes. For negative axes, we do not
     # need to do anything as we start counting from the right. For positive
     # axes, we need to add the number of batch dimensions so that the axes
-    # refer to the domain dimensions only.
-    axes = [ax if ax < 0 else ax + batch_dims for ax in self.axes]
+    # refer to the domain dimensions only.  
+    axes = [ax if ax < 0 else ax + batch_dims for ax in axes]
     # Ready to do the computation.
     if adjoint:
       x = wavelet_ops.tensor_to_coeffs(x, self._coeff_slices)
