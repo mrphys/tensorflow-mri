@@ -163,7 +163,8 @@ def reconstruct_lstsq(kspace,
                       optimizer=None,
                       optimizer_kwargs=None,
                       filter_corners=False,
-                      return_optimizer_state=False):
+                      return_optimizer_state=False,
+                      use_toeplitz_nufft=False):
   r"""Reconstructs an MR image using a least-squares formulation.
 
   This is an iterative reconstruction method which formulates the image
@@ -247,6 +248,13 @@ def reconstruct_lstsq(kspace,
       *k*-space coverage. Defaults to `False`.
     return_optimizer_state: A `boolean`. If `True`, returns the optimizer
       state along with the reconstructed image.
+    use_toeplitz_nufft: A `boolean`. If `True`, uses the Toeplitz approach [5]
+      to compute :math:`F^H F x`, where :math:`F` is the non-uniform Fourier
+      operator. If `False`, the same operation is performed using the standard
+      NUFFT operation. The Toeplitz approach might be faster than the direct
+      approach but is slightly less accurate. This argument is only relevant
+      for non-Cartesian reconstruction and will be ignored for Cartesian
+      problems.
 
   Returns:
     A `Tensor`. The reconstructed image. Has the same type as `kspace` and
@@ -290,6 +298,11 @@ def reconstruct_lstsq(kspace,
       correlations. Magnetic Resonance in Medicine: An Official Journal of the
       International Society for Magnetic Resonance in Medicine, 50(5),
       1031-1042.
+
+    .. [5] Fessler, J. A., Lee, S., Olafsson, V. T., Shi, H. R., & Noll, D. C.
+      (2005). Toeplitz-based iterative image reconstruction for MRI with
+      correction for magnetic field inhomogeneity. IEEE Transactions on Signal
+      Processing, 53(9), 3393-3402.
   """  # pylint: disable=line-too-long
   # Choose a default optimizer.
   if optimizer is None:
