@@ -43,7 +43,7 @@ class LinearOperatorNUFFT(linalg_imaging.LinearOperator):  # pylint: disable=abs
       operator. This is usually the shape of the image but may include
       additional dimensions.
     trajectory: A `tf.Tensor` of type `float32` or `float64`. Must have shape
-      `[..., M, N]`, where `N` is the rank (or spatial dimensionality), `M` is
+      `[..., M, N]`, where `N` is the rank (number of dimensions), `M` is
       the number of samples and `...` is the batch shape, which can have any
       number of dimensions.
     norm: A `str`. The FFT normalization mode. Must be `None` (no normalization)
@@ -53,80 +53,108 @@ class LinearOperatorNUFFT(linalg_imaging.LinearOperator):  # pylint: disable=abs
   def __init__(self,
                domain_shape,
                trajectory,
-               norm=None,
+               norm='ortho',
                name="LinearOperatorNUFFT"):
 
     parameters = dict(
-      domain_shape=domain_shape,
-      trajectory=trajectory,
-      norm=norm,
-      name=name
+        domain_shape=domain_shape,
+        trajectory=trajectory,
+        norm=norm,
+        name=name
     )
 
+    # Get domain shapes.
     self._domain_shape_static, self._domain_shape_dynamic = (
         tensor_util.static_and_dynamic_shapes_from_shape(domain_shape))
 
-    self._points = check_util.validate_tensor_dtype(
-      tf.convert_to_tensor(trajectory), 'floating', 'points')
-    self._rank = self._points.shape[-1]
-    self._norm = check_util.validate_enum(norm, {None, 'ortho'}, 'norm')
+    # Validate the remaining inputs.
+    self.trajectory = check_util.validate_tensor_dtype(
+        tf.convert_to_tensor(trajectory), 'floating', 'trajectory')
+    self.norm = check_util.validate_enum(norm, {None, 'ortho'}, 'norm')
 
-    # Compute NUFFT batch shape. The NUFFT batch shape is different from this
-    # operator's batch shape, and it is included in the operator's inner shape.
-    nufft_batch_shape = self.domain_shape[:-self.rank]
+    # We infer the rank from the trajectory.
+    rank_static = self.trajectory.shape[-1]
+    rank_dynamic = tf.shape(self._trajectory)[-1]
+    # The domain rank is >= the operation rank.
+    domain_rank_static = self._domain_shape_static.rank
+    domain_rank_dynamic = tf.shape(self._domain_shape_dynamic)[0]
 
-    # Batch shape of `points` might have two parts: one that goes into NUFFT
-    # batch shape and another that goes into this operator's batch shape.
-    points_batch_shape = self.points.shape[:-2]
+    # The grid shape are the last `rank` dimensions of domain_shape. We don't
+    # need the static grid shape.
+    self._grid_shape = self._domain_shape_dynamic[-rank_dynamic:]
 
-    if nufft_batch_shape.rank == 0:
-      self._bshape = points_batch_shape
+    # We need to do some work to figure out the batch shapes. This operator
+    # could have a batch shape, if the trajectory has a batch shape. However,
+    # we allow the user to include one or more batch dimensions in the domain
+    # shape, if they so wish. Therefore, not all batch dimensions in the
+    # trajectory are necessarily part of the batch shape.
+
+    # Compute the true batch shape (i.e., the batch dimensions that are
+    # NOT included in the domain shape).
+    batch_dims_dynamic = tf.rank(self.trajectory) - domain_rank_dynamic - 2
+    if (self.trajectory.shape.rank is not None and
+        domain_rank_static is not None):
+      batch_dims_static = self.trajectory.shape.rank - domain_rank_static - 2
     else:
-      # Take operator part of batch shape, then keep remainder.
-      self._bshape = points_batch_shape[:-nufft_batch_shape.rank] # pylint: disable=invalid-unary-operand-type
-      points_batch_shape = points_batch_shape[-nufft_batch_shape.rank:] # pylint: disable=invalid-unary-operand-type
-      # Check that NUFFT part of points batch shape is broadcast compatible with
-      # NUFFT batch shape.
-      points_batch_shape = points_batch_shape.as_list()
-      points_batch_shape = [None if s == 1 else s for s in points_batch_shape]
-      points_batch_shape = [None] * (
-        nufft_batch_shape.rank - len(points_batch_shape)) + points_batch_shape
-      if not nufft_batch_shape.is_compatible_with(points_batch_shape):
-        raise ValueError(
-            f"The batch shape of `points` must be broadcastable to the batch "
-            f"part of `domain_shape`. Received batch shapes "
-            f"{str(self.domain_shape[:-self.rank])} and "
-            f"{str(self.points.shape[:-2])} for input and `points`, "
-            f"respectively.")
-    self._rshape = nufft_batch_shape + self.points.shape[-2:-1]
+      batch_dims_static = None
 
-    is_square = self.domain_dimension == self.range_dimension
+    self._batch_shape_dynamic = tf.shape(self.trajectory)[:batch_dims_dynamic]
+    if batch_dims_static is not None:
+      self._batch_shape_static = self.trajectory.shape[:batch_dims_static]
+    else:
+      self._batch_shape_static = tf.TensorShape(None)
 
-    super().__init__(tensor_util.get_complex_dtype(self.points.dtype),
+    # Compute the "extra" shape. This shape includes those dimensions which
+    # are not part of the NUFFT (e.g., they are effectively batch dimensions),
+    # but which are included in the domain shape rather than in the batch shape.
+    extra_shape_dynamic = self._domain_shape_dynamic[:-rank_dynamic]
+    if rank_static is not None:
+      extra_shape_static = self._domain_shape_static[:-rank_static]
+    else:
+      extra_shape_static = tf.TensorShape(None)
+
+    # Check that the "extra" shape in `domain_shape` and `trajectory` are
+    # compatible for broadcasting.
+    shape1, shape2 = extra_shape_static, self.trajectory.shape[:-2]
+    try:
+      tf.broadcast_static_shape(shape1, shape2)
+    except ValueError:
+      raise ValueError(
+          f"The \"batch\" shapes in `domain_shape` and `trajectory` are not "
+          f"compatible for broadcasting: {shape1} vs {shape2}")
+
+    # Compute the range shape.
+    self._range_shape_dynamic = tf.concat(
+        [extra_shape_dynamic, tf.shape(self.trajectory)[-2:-1]], axis=0)
+    self._range_shape_static = extra_shape_static.concatenate(
+        self.trajectory.shape[-2:-1])
+
+    super().__init__(tensor_util.get_complex_dtype(self.trajectory.dtype),
                      is_non_singular=None,
                      is_self_adjoint=None,
                      is_positive_definite=None,
-                     is_square=is_square,
+                     is_square=None,
                      name=name,
                      parameters=parameters)
 
     # Compute normalization factors.
     if self.norm == 'ortho':
       norm_factor = tf.math.reciprocal(
-          tf.math.sqrt(tf.cast(self.grid_shape.num_elements(), self.dtype)))
+          tf.math.sqrt(tf.cast(tf.math.reduce_prod(self._grid_shape),
+          self.dtype)))
       self._norm_factor_forward = norm_factor
       self._norm_factor_adjoint = norm_factor
 
   def _transform(self, x, adjoint=False):
     if adjoint:
-      x = fft_ops.nufft(x, self.points,
-                        grid_shape=self.grid_shape,
+      x = fft_ops.nufft(x, self._trajectory,
+                        grid_shape=self._grid_shape,
                         transform_type='type_1',
                         fft_direction='backward')
       if self.norm is not None:
         x *= self._norm_factor_adjoint
     else:
-      x = fft_ops.nufft(x, self.points,
+      x = fft_ops.nufft(x, self._trajectory,
                         transform_type='type_2',
                         fft_direction='forward')
       if self.norm is not None:
@@ -140,10 +168,16 @@ class LinearOperatorNUFFT(linalg_imaging.LinearOperator):  # pylint: disable=abs
     return self._domain_shape_dynamic
 
   def _range_shape(self):
-    return self._rshape
+    return self._range_shape_static
+
+  def _range_shape_tensor(self):
+    return self._range_shape_dynamic
 
   def _batch_shape(self):
-    return self._bshape
+    return self._batch_shape_static
+
+  def _batch_shape_tensor(self):
+    return self._batch_shape_dynamic
 
 
 @api_util.export("linalg.LinearOperatorFiniteDifference")

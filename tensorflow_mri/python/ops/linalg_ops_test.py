@@ -18,9 +18,56 @@ from absl.testing import parameterized
 import numpy as np
 import tensorflow as tf
 
+from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.ops import wavelet_ops
 from tensorflow_mri.python.util import test_util
+
+
+class LinearOperatorNUFFTTest(test_util.TestCase):
+  @parameterized.named_parameters(
+      ("normalized", "ortho"),
+      ("unnormalized", None)
+  )
+  def test_general(self, norm):
+    shape = [8, 12]
+    n_points = 100
+    rank = 2
+    rng = np.random.default_rng()
+    traj = rng.uniform(low=-np.pi, high=np.pi, size=(n_points, rank))
+    traj = traj.astype(np.float32)
+    linop = linalg_ops.LinearOperatorNUFFT(shape, traj, norm=norm)
+
+    self.assertIsInstance(linop.domain_shape, tf.TensorShape)
+    self.assertIsInstance(linop.domain_shape_tensor(), tf.Tensor)
+    self.assertIsInstance(linop.range_shape, tf.TensorShape)
+    self.assertIsInstance(linop.range_shape_tensor(), tf.Tensor)
+    self.assertIsInstance(linop.batch_shape, tf.TensorShape)
+    self.assertIsInstance(linop.batch_shape_tensor(), tf.Tensor)
+    self.assertAllClose(shape, linop.domain_shape)
+    self.assertAllClose(shape, linop.domain_shape_tensor())
+    self.assertAllClose([n_points], linop.range_shape)
+    self.assertAllClose([n_points], linop.range_shape_tensor())
+    self.assertAllClose([], linop.batch_shape)
+    self.assertAllClose([], linop.batch_shape_tensor())
+
+    # Check forward.
+    x = (rng.uniform(size=shape).astype(np.float32) +
+         rng.uniform(size=shape).astype(np.float32) * 1j)
+    expected_forward = fft_ops.nufft(x, traj)
+    if norm:
+      expected_forward /= np.sqrt(np.prod(shape))
+    result_forward = linop.transform(x)
+    self.assertAllClose(expected_forward, result_forward)
+
+    # Check adjoint.
+    expected_adjoint = fft_ops.nufft(result_forward, traj, grid_shape=shape,
+                                     transform_type="type_1",
+                                     fft_direction="backward")
+    if norm:
+      expected_adjoint /= np.sqrt(np.prod(shape))
+    result_adjoint = linop.transform(result_forward, adjoint=True)
+    self.assertAllClose(expected_adjoint, result_adjoint)
 
 
 class LinearOperatorFiniteDifferenceTest(test_util.TestCase):
