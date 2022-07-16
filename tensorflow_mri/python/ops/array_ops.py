@@ -323,3 +323,56 @@ def _with_index_update_helper(update_method, a, slice_spec, updates):  # pylint:
     slice_spec = np_array_ops._as_spec_tuple(slice_spec)
 
   return np_array_ops._slice_helper(a, slice_spec, update_method, updates)
+
+
+def map_fn(fn, elems, batch_dims=1, **kwargs):
+  """Transforms `elems` by applying `fn` to each element.
+
+  .. note::
+    Similar to `tf.map_fn`, but it supports unstacking along multiple batch
+    dimensions.
+
+  For the parameters, see `tf.map_fn`. The only difference is that there is an
+  additional `batch_dims` keyword argument which allows specifying the number
+  of batch dimensions. The default is 1, in which case this function is equal
+  to `tf.map_fn`.
+  """
+  # This function works by reshaping any number of batch dimensions into a
+  # single batch dimension, calling the original `tf.map_fn`, and then
+  # restoring the original batch dimensions.
+  static_batch_dims = tf.get_static_value(batch_dims)
+
+  # Get batch shapes.
+  if static_batch_dims is None:
+    # We don't know how many batch dimensions there are statically, so we can't
+    # get the batch shape statically.
+    static_batch_shapes = tf.nest.map_structure(
+        lambda _: tf.TensorShape(None), elems)
+  else:
+    static_batch_shapes = tf.nest.map_structure(
+        lambda x: x.shape[:static_batch_dims], elems)
+  dynamic_batch_shapes = tf.nest.map_structure(
+      lambda x: tf.shape(x)[:batch_dims], elems)
+
+  # Flatten the batch dimensions.
+  elems = tf.nest.map_structure(
+      lambda x: tf.reshape(
+          x, tf.concat([[-1], tf.shape(x)[batch_dims:]], axis=0)), elems)
+
+  # Process each batch.
+  output = tf.map_fn(fn, elems, **kwargs)
+
+  # Unflatten the batch dimensions.
+  output = tf.nest.map_structure(
+      lambda x, dynamic_batch_shape: tf.reshape(
+          x, tf.concat([dynamic_batch_shape, tf.shape(x)[1:]], axis=0)),
+      output, dynamic_batch_shapes)
+
+  # Set the static batch shapes on the output, if known.
+  if static_batch_dims is not None:
+    output = tf.nest.map_structure(
+        lambda x, static_batch_shape: tf.ensure_shape(
+            x, static_batch_shape.concatenate(x.shape[static_batch_dims:])),
+        output, static_batch_shapes)
+
+  return output

@@ -127,24 +127,26 @@ def validate_list(value,
   return value
 
 
-def validate_axis(value,
-                  rank=None,
-                  min_length=None,
-                  max_length=None,
-                  canonicalize=False,
-                  must_be_unique=True,
-                  scalar_to_list=True):
+def validate_static_axes(value,
+                         rank=None,
+                         min_length=None,
+                         max_length=None,
+                         canonicalize=False,
+                         must_be_unique=True,
+                         scalar_to_list=True,
+                         none_means_all=False):
   """Validates that value is a valid list of axes.
 
   Args:
     value: The value to check.
-    rank: The rank of the tensor.
+    rank: The rank of the tensor that the axes refer to.
     min_length: The minimum number of axes.
     max_length: The maximum number of axes.
     canonicalize: Must be `"positive"`, `"negative"` or `None`.
     must_be_unique: If `True`, repeated axes are not allowed.
     scalar_to_list: If `True`, scalar inputs are converted to a list of length
       1.
+    none_means_all: If `True`, `None` means all axes.
 
   Returns:
     A valid `list` of axes.
@@ -152,6 +154,12 @@ def validate_axis(value,
   Raises:
     ValueError: If `value` is not valid.
   """
+  if value is None:
+    if none_means_all:
+      value = list(range(rank))
+    else:
+      raise ValueError("`None` is not a valid axes value.")
+
   scalar = isinstance(value, int)
   if scalar:
     value = [value]

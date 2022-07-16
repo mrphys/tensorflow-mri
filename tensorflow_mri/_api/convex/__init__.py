@@ -14,6 +14,7 @@ from tensorflow_mri.python.ops.convex_ops import ConvexFunctionL2Norm as ConvexF
 from tensorflow_mri.python.ops.convex_ops import ConvexFunctionL2NormSquared as ConvexFunctionL2NormSquared
 from tensorflow_mri.python.ops.convex_ops import ConvexFunctionTikhonov as ConvexFunctionTikhonov
 from tensorflow_mri.python.ops.convex_ops import ConvexFunctionTotalVariation as ConvexFunctionTotalVariation
+from tensorflow_mri.python.ops.convex_ops import ConvexFunctionL1Wavelet as ConvexFunctionL1Wavelet
 from tensorflow_mri.python.ops.convex_ops import ConvexFunctionQuadratic as ConvexFunctionQuadratic
 from tensorflow_mri.python.ops.convex_ops import ConvexFunctionLeastSquares as ConvexFunctionLeastSquares
 from tensorflow_mri.python.ops.optimizer_ops import admm_minimize as admm_minimize

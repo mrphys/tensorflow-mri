@@ -19,7 +19,118 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import linalg_ops
+from tensorflow_mri.python.ops import wavelet_ops
 from tensorflow_mri.python.util import test_util
+
+
+class LinearOperatorFiniteDifferenceTest(test_util.TestCase):
+  """Tests for difference linear operator."""
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+    cls.linop1 = linalg_ops.LinearOperatorFiniteDifference([4])
+    cls.linop2 = linalg_ops.LinearOperatorFiniteDifference([4, 4], axis=-2)
+    cls.matrix1 = tf.convert_to_tensor([[-1, 1, 0, 0],
+                                        [0, -1, 1, 0],
+                                        [0, 0, -1, 1]], dtype=tf.float32)
+
+  def test_transform(self):
+    """Test transform method."""
+    signal = tf.random.normal([4, 4])
+    result = self.linop2.transform(signal)
+    self.assertAllClose(result, np.diff(signal, axis=-2))
+
+  def test_matvec(self):
+    """Test matvec method."""
+    signal = tf.constant([1, 2, 4, 8], dtype=tf.float32)
+    result = tf.linalg.matvec(self.linop1, signal)
+    self.assertAllClose(result, [1, 2, 4])
+    self.assertAllClose(result, np.diff(signal))
+    self.assertAllClose(result, tf.linalg.matvec(self.matrix1, signal))
+
+    signal2 = tf.range(16, dtype=tf.float32)
+    result = tf.linalg.matvec(self.linop2, signal2)
+    self.assertAllClose(result, [4] * 12)
+
+  def test_matvec_adjoint(self):
+    """Test matvec with adjoint."""
+    signal = tf.constant([1, 2, 4], dtype=tf.float32)
+    result = tf.linalg.matvec(self.linop1, signal, adjoint_a=True)
+    self.assertAllClose(result,
+                        tf.linalg.matvec(tf.transpose(self.matrix1), signal))
+
+  def test_shapes(self):
+    """Test shapes."""
+    self._test_all_shapes(self.linop1, [4], [3])
+    self._test_all_shapes(self.linop2, [4, 4], [3, 4])
+
+  def _test_all_shapes(self, linop, domain_shape, range_shape):
+    """Test shapes."""
+    self.assertIsInstance(linop.domain_shape, tf.TensorShape)
+    self.assertAllEqual(linop.domain_shape, domain_shape)
+    self.assertAllEqual(linop.domain_shape_tensor(), domain_shape)
+
+    self.assertIsInstance(linop.range_shape, tf.TensorShape)
+    self.assertAllEqual(linop.range_shape, range_shape)
+    self.assertAllEqual(linop.range_shape_tensor(), range_shape)
+
+
+class LinearOperatorWaveletTest(test_util.TestCase):
+  @parameterized.named_parameters(
+      # name, wavelet, level, axes, domain_shape, range_shape
+      ("test0", "haar", None, None, [6, 6], [7, 7]),
+      ("test1", "haar", 1, None, [6, 6], [6, 6]),
+      ("test2", "haar", None, -1, [6, 6], [6, 7]),
+      ("test3", "haar", None, [-1], [6, 6], [6, 7])
+  )
+  def test_general(self, wavelet, level, axes, domain_shape, range_shape):
+    # Instantiate.
+    linop = linalg_ops.LinearOperatorWavelet(
+        domain_shape, wavelet=wavelet, level=level, axes=axes)
+
+    # Example data.
+    data = np.arange(np.prod(domain_shape)).reshape(domain_shape)
+    data = data.astype("float32")
+
+    # Forward and adjoint.
+    expected_forward, coeff_slices = wavelet_ops.coeffs_to_tensor(
+        wavelet_ops.wavedec(data, wavelet=wavelet, level=level, axes=axes),
+        axes=axes)
+    expected_adjoint = wavelet_ops.waverec(
+        wavelet_ops.tensor_to_coeffs(expected_forward, coeff_slices),
+        wavelet=wavelet, axes=axes)
+
+    # Test shapes.
+    self.assertAllClose(domain_shape, linop.domain_shape)
+    self.assertAllClose(domain_shape, linop.domain_shape_tensor())
+    self.assertAllClose(range_shape, linop.range_shape)
+    self.assertAllClose(range_shape, linop.range_shape_tensor())
+
+    # Test transform.
+    result_forward = linop.transform(data)
+    result_adjoint = linop.transform(result_forward, adjoint=True)
+    self.assertAllClose(expected_forward, result_forward)
+    self.assertAllClose(expected_adjoint, result_adjoint)
+
+  def test_with_batch_inputs(self):
+    """Test batch shape."""
+    axes = [-2, -1]
+    data = np.arange(4 * 8 * 8).reshape(4, 8, 8).astype("float32")
+    linop = linalg_ops.LinearOperatorWavelet((8, 8), wavelet="haar", level=1)
+
+    # Forward and adjoint.
+    expected_forward, coeff_slices = wavelet_ops.coeffs_to_tensor(
+        wavelet_ops.wavedec(data, wavelet='haar', level=1, axes=axes),
+        axes=axes)
+    expected_adjoint = wavelet_ops.waverec(
+        wavelet_ops.tensor_to_coeffs(expected_forward, coeff_slices),
+        wavelet='haar', axes=axes)
+
+    result_forward = linop.transform(data)
+    self.assertAllClose(expected_forward, result_forward)
+
+    result_adjoint = linop.transform(result_forward, adjoint=True)
+    self.assertAllClose(expected_adjoint, result_adjoint)
 
 
 class LinearOperatorMRITest(test_util.TestCase):

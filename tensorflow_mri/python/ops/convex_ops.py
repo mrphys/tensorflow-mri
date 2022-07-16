@@ -690,24 +690,28 @@ class ConvexFunctionTotalVariation(ConvexFunctionLinearOperatorComposition):  # 
   Args:
     domain_shape: A 1D integer `tf.Tensor`. The shape of the domain. Defaults to
       `None`. The domain of this `ConvexFunction` may have multiple axes.
-    axis: An `int` or a list of `ints`. The axes along which to compute the
-      total variation. Defaults to -1.
+    axes: An `int` or a list of `ints`. The axes along which to compute the
+      total variation. If `None` (default), the total variation is computed
+      over all axes.
     scale: A `float`. A scaling factor.
     dtype: A `tf.DType`. The dtype of the inputs.
     name: A name for this `ConvexFunction`.
   """
   def __init__(self,
                domain_shape,
-               axis=-1,
+               axes=None,
                scale=None,
                dtype=tf.float32,
                name=None):
     domain_shape = tf.TensorShape(domain_shape)
-    axis = check_util.validate_axis(axis, domain_shape.rank,
-                                    max_length=domain_shape.rank,
-                                    canonicalize="negative")
+    axes = check_util.validate_static_axes(axes, domain_shape.rank,
+                                           max_length=domain_shape.rank,
+                                           canonicalize="negative")
+    # `LinearOperatorFiniteDifference` operates along one axis only. So for
+    # multiple axes, we create one operator for each axis and vertically stack
+    # them.
     operators = [linalg_imaging.LinearOperatorFiniteDifference(
-        domain_shape, axis=ax, dtype=dtype) for ax in axis]
+        domain_shape, axis=axis, dtype=dtype) for axis in axes]
     operator = linalg_ext.LinearOperatorVerticalStack(operators)
     function = ConvexFunctionL1Norm(domain_dimension=operator.range_dimension,
                                     scale=scale,

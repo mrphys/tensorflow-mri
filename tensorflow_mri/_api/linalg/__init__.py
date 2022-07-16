@@ -9,7 +9,8 @@ from tensorflow_mri.python.util.linalg_imaging import LinearOperatorAddition as 
 from tensorflow_mri.python.util.linalg_imaging import LinearOperatorScaledIdentity as LinearOperatorScaledIdentity
 from tensorflow_mri.python.util.linalg_imaging import LinearOperatorDiag as LinearOperatorDiag
 from tensorflow_mri.python.util.linalg_imaging import LinearOperatorGramMatrix as LinearOperatorGramMatrix
-from tensorflow_mri.python.util.linalg_imaging import LinearOperatorFiniteDifference as LinearOperatorFiniteDifference
-from tensorflow_mri.python.util.linalg_imaging import LinearOperatorWavelet as LinearOperatorWavelet
+from tensorflow_mri.python.ops.linalg_ops import LinearOperatorNUFFT as LinearOperatorNUFFT
+from tensorflow_mri.python.ops.linalg_ops import LinearOperatorFiniteDifference as LinearOperatorFiniteDifference
+from tensorflow_mri.python.ops.linalg_ops import LinearOperatorWavelet as LinearOperatorWavelet
 from tensorflow_mri.python.ops.linalg_ops import LinearOperatorMRI as LinearOperatorMRI
 from tensorflow_mri.python.ops.linalg_ops import conjugate_gradient as conjugate_gradient

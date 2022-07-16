@@ -18,20 +18,23 @@ This module contains linear operators and solvers.
 """
 
 import collections
+import functools
 
 import tensorflow as tf
 import tensorflow_nufft as tfft
 from tensorflow.python.ops.linalg import linear_operator
 
+from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.ops import math_ops
+from tensorflow_mri.python.ops import wavelet_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import linalg_imaging
 from tensorflow_mri.python.util import tensor_util
 
 
-@api_util.export("linalg.LinearOperatorFourier")
+@api_util.export("linalg.LinearOperatorNUFFT")
 class LinearOperatorNUFFT(linalg_imaging.LinearOperator):  # pylint: disable=abstract-method
   """Linear operator acting like a nonuniform DFT matrix.
 
@@ -141,6 +144,235 @@ class LinearOperatorNUFFT(linalg_imaging.LinearOperator):  # pylint: disable=abs
 
   def _batch_shape(self):
     return self._bshape
+
+
+@api_util.export("linalg.LinearOperatorFiniteDifference")
+class LinearOperatorFiniteDifference(linalg_imaging.LinearOperator):  # pylint: disable=abstract-method
+  """Linear operator representing a finite difference matrix.
+
+  Args:
+    domain_shape: A 1D `tf.Tensor` or a `list` of `int`. The domain shape of
+      this linear operator.
+    axis: An `int`. The axis along which the finite difference is taken.
+      Defaults to -1.
+    dtype: A `tf.dtypes.DType`. The data type for this operator. Defaults to
+      `float32`.
+    name: A `str`. A name for this operator.
+  """
+  def __init__(self,
+               domain_shape,
+               axis=-1,
+               dtype=tf.dtypes.float32,
+               name="LinearOperatorFiniteDifference"):
+
+    parameters = dict(
+        domain_shape=domain_shape,
+        axis=axis,
+        dtype=dtype,
+        name=name
+    )
+
+    # Compute the static and dynamic shapes and save them for later use.
+    self._domain_shape_static, self._domain_shape_dynamic = (
+        tensor_util.static_and_dynamic_shapes_from_shape(domain_shape))
+
+    # Validate axis and canonicalize to negative. This ensures the correct
+    # axis is selected in the presence of batch dimensions.
+    self.axis = check_util.validate_static_axes(
+        axis, self._domain_shape_static.rank,
+        min_length=1,
+        max_length=1,
+        canonicalize="negative",
+        scalar_to_list=False)
+
+    # Compute range shape statically. The range has one less element along
+    # the difference axis than the domain.
+    range_shape_static = self._domain_shape_static.as_list()
+    if range_shape_static[self.axis] is not None:
+      range_shape_static[self.axis] -= 1
+    range_shape_static = tf.TensorShape(range_shape_static)
+    self._range_shape_static = range_shape_static
+
+    # Now compute dynamic range shape. First concatenate the leading axes with
+    # the updated difference dimension. Then, iff the difference axis is not
+    # the last one, concatenate the trailing axes.
+    range_shape_dynamic = self._domain_shape_dynamic
+    range_shape_dynamic = tf.concat([
+        range_shape_dynamic[:self.axis],
+        [range_shape_dynamic[self.axis] - 1]], axis=0)
+    if self.axis != -1:
+      range_shape_dynamic = tf.concat([
+          range_shape_dynamic,
+          range_shape_dynamic[self.axis + 1:]], axis=0)
+    self._range_shape_dynamic = range_shape_dynamic
+
+    super().__init__(dtype,
+                     is_non_singular=None,
+                     is_self_adjoint=None,
+                     is_positive_definite=None,
+                     is_square=None,
+                     name=name,
+                     parameters=parameters)
+
+  def _transform(self, x, adjoint=False):
+
+    if adjoint:
+      paddings1 = [[0, 0]] * x.shape.rank
+      paddings2 = [[0, 0]] * x.shape.rank
+      paddings1[self.axis] = [1, 0]
+      paddings2[self.axis] = [0, 1]
+      x1 = tf.pad(x, paddings1) # pylint: disable=no-value-for-parameter
+      x2 = tf.pad(x, paddings2) # pylint: disable=no-value-for-parameter
+      x = x1 - x2
+    else:
+      slice1 = [slice(None)] * x.shape.rank
+      slice2 = [slice(None)] * x.shape.rank
+      slice1[self.axis] = slice(1, None)
+      slice2[self.axis] = slice(None, -1)
+      x1 = x[tuple(slice1)]
+      x2 = x[tuple(slice2)]
+      x = x1 - x2
+
+    return x
+
+  def _domain_shape(self):
+    return self._domain_shape_static
+
+  def _range_shape(self):
+    return self._range_shape_static
+
+  def _domain_shape_tensor(self):
+    return self._domain_shape_dynamic
+
+  def _range_shape_tensor(self):
+    return self._range_shape_dynamic
+
+
+@api_util.export("linalg.LinearOperatorWavelet")
+class LinearOperatorWavelet(linalg_imaging.LinearOperator):  # pylint: disable=abstract-method
+  """Linear operator representing a wavelet decomposition matrix.
+
+  Args:
+    domain_shape: A 1D `tf.Tensor` or a `list` of `int`. The domain shape of
+      this linear operator.
+    wavelet: A `str` or a `pywt.Wavelet`_, or a `list` thereof. When passed a
+      `list`, different wavelets are applied along each axis in `axes`.
+    mode: A `str`. The padding or signal extension mode. Must be one of the
+      values supported by `tfmri.signal.wavedec`. Defaults to `'symmetric'`.
+    level: An `int` >= 0. The decomposition level. If `None` (default),
+      the maximum useful level of decomposition will be used (see
+      `tfmri.signal.wavelet_max_level`).
+    axes: A `list` of `int`. The axes over which the DWT is computed. Axes refer
+      only to domain dimensions without regard for the batch dimensions.
+      Defaults to `None` (all domain dimensions).
+    dtype: A `tf.dtypes.DType`. The data type for this operator. Defaults to
+      `float32`.
+    name: A `str`. A name for this operator.
+  """
+  def __init__(self,
+               domain_shape,
+               wavelet,
+               mode='symmetric',
+               level=None,
+               axes=None,
+               dtype=tf.dtypes.float32,
+               name="LinearOperatorWavelet"):
+    # Set parameters.
+    parameters = dict(
+        domain_shape=domain_shape,
+        wavelet=wavelet,
+        mode=mode,
+        level=level,
+        axes=axes,
+        dtype=dtype,
+        name=name
+    )
+
+    # Get the static and dynamic shapes and save them for later use.
+    self._domain_shape_static, self._domain_shape_dynamic = (
+        tensor_util.static_and_dynamic_shapes_from_shape(domain_shape))
+    # At the moment, the wavelet implementation relies on shapes being
+    # statically known.
+    if not self._domain_shape_static.is_fully_defined():
+      raise ValueError(f"static `domain_shape` must be fully defined, "
+                       f"but got {self._domain_shape_static}")
+    static_rank = self._domain_shape_static.rank
+
+    # Set arguments.
+    self.wavelet = wavelet
+    self.mode = mode
+    self.level = level
+    self.axes = check_util.validate_static_axes(axes,
+                                                rank=static_rank,
+                                                min_length=1,
+                                                canonicalize="negative",
+                                                must_be_unique=True,
+                                                scalar_to_list=True,
+                                                none_means_all=True)
+
+    # Compute the coefficient slices needed for adjoint (wavelet
+    # reconstruction).
+    x = tf.ensure_shape(tf.zeros(self._domain_shape_dynamic, dtype=dtype),
+                        self._domain_shape_static)
+    x = wavelet_ops.wavedec(x, wavelet=self.wavelet, mode=self.mode,
+                            level=self.level, axes=self.axes)
+    y, self._coeff_slices = wavelet_ops.coeffs_to_tensor(x, axes=self.axes)
+
+    # Get the range shape.
+    self._range_shape_static = y.shape
+    self._range_shape_dynamic = tf.shape(y)
+
+    # Call base class.
+    super().__init__(dtype,
+                     is_non_singular=None,
+                     is_self_adjoint=None,
+                     is_positive_definite=None,
+                     is_square=None,
+                     name=name,
+                     parameters=parameters)
+
+  def _transform(self, x, adjoint=False):
+    # While `wavedec` and `waverec` can transform only a subset of axes (and
+    # thus theoretically support batches), there is a caveat due to the
+    # `coeff_slices` object required by `waverec`. This object contains
+    # information relevant to a specific batch shape. While we could recompute
+    # this object for every input batch shape, it is easier to just process
+    # each batch independently.
+    if x.shape.rank is not None and self._domain_shape_static.rank is not None:
+      # Rank of input and this operator are known statically, so we can infer
+      # the number of batch dimensions statically too.
+      batch_dims = x.shape.rank - self._domain_shape_static.rank
+    else:
+      # We need to obtain the number of batch dimensions dynamically.
+      batch_dims = tf.rank(x) - tf.shape(self._domain_shape_dynamic)[0]
+    # Transform each batch.
+    x = array_ops.map_fn(
+        functools.partial(self._transform_batch, adjoint=adjoint),
+        x, batch_dims=batch_dims)
+    return x
+
+  def _transform_batch(self, x, adjoint=False):
+    if adjoint:
+      x = wavelet_ops.tensor_to_coeffs(x, self._coeff_slices)
+      x = wavelet_ops.waverec(x, wavelet=self.wavelet, mode=self.mode,
+                              axes=self.axes)
+    else:
+      x = wavelet_ops.wavedec(x, wavelet=self.wavelet, mode=self.mode,
+                              level=self.level, axes=self.axes)
+      x, _ = wavelet_ops.coeffs_to_tensor(x, axes=self.axes)
+    return x
+
+  def _domain_shape(self):
+    return self._domain_shape_static
+
+  def _range_shape(self):
+    return self._range_shape_static
+
+  def _domain_shape_tensor(self):
+    return self._domain_shape_dynamic
+
+  def _range_shape_tensor(self):
+    return self._range_shape_dynamic
 
 
 @api_util.export("linalg.LinearOperatorMRI")
