@@ -31,6 +31,118 @@ from tensorflow_mri.python.util import linalg_imaging
 from tensorflow_mri.python.util import tensor_util
 
 
+@api_util.export("linalg.LinearOperatorFourier")
+class LinearOperatorNUFFT(linalg_imaging.LinearOperator):  # pylint: disable=abstract-method
+  """Linear operator acting like a nonuniform DFT matrix.
+
+  Args:
+    domain_shape: A 1D integer `tf.Tensor`. The domain shape of this
+      operator. This is usually the shape of the image but may include
+      additional dimensions.
+    trajectory: A `tf.Tensor` of type `float32` or `float64`. Must have shape
+      `[..., M, N]`, where `N` is the rank (or spatial dimensionality), `M` is
+      the number of samples and `...` is the batch shape, which can have any
+      number of dimensions.
+    norm: A `str`. The FFT normalization mode. Must be `None` (no normalization)
+      or `'ortho'`.
+    name: An optional `string`. The name of this operator.
+  """
+  def __init__(self,
+               domain_shape,
+               trajectory,
+               norm=None,
+               name="LinearOperatorNUFFT"):
+
+    parameters = dict(
+      domain_shape=domain_shape,
+      trajectory=trajectory,
+      norm=norm,
+      name=name
+    )
+
+    self._domain_shape_static, self._domain_shape_dynamic = (
+        tensor_util.static_and_dynamic_shapes_from_shape(domain_shape))
+
+    self._points = check_util.validate_tensor_dtype(
+      tf.convert_to_tensor(trajectory), 'floating', 'points')
+    self._rank = self._points.shape[-1]
+    self._norm = check_util.validate_enum(norm, {None, 'ortho'}, 'norm')
+
+    # Compute NUFFT batch shape. The NUFFT batch shape is different from this
+    # operator's batch shape, and it is included in the operator's inner shape.
+    nufft_batch_shape = self.domain_shape[:-self.rank]
+
+    # Batch shape of `points` might have two parts: one that goes into NUFFT
+    # batch shape and another that goes into this operator's batch shape.
+    points_batch_shape = self.points.shape[:-2]
+
+    if nufft_batch_shape.rank == 0:
+      self._bshape = points_batch_shape
+    else:
+      # Take operator part of batch shape, then keep remainder.
+      self._bshape = points_batch_shape[:-nufft_batch_shape.rank] # pylint: disable=invalid-unary-operand-type
+      points_batch_shape = points_batch_shape[-nufft_batch_shape.rank:] # pylint: disable=invalid-unary-operand-type
+      # Check that NUFFT part of points batch shape is broadcast compatible with
+      # NUFFT batch shape.
+      points_batch_shape = points_batch_shape.as_list()
+      points_batch_shape = [None if s == 1 else s for s in points_batch_shape]
+      points_batch_shape = [None] * (
+        nufft_batch_shape.rank - len(points_batch_shape)) + points_batch_shape
+      if not nufft_batch_shape.is_compatible_with(points_batch_shape):
+        raise ValueError(
+            f"The batch shape of `points` must be broadcastable to the batch "
+            f"part of `domain_shape`. Received batch shapes "
+            f"{str(self.domain_shape[:-self.rank])} and "
+            f"{str(self.points.shape[:-2])} for input and `points`, "
+            f"respectively.")
+    self._rshape = nufft_batch_shape + self.points.shape[-2:-1]
+
+    is_square = self.domain_dimension == self.range_dimension
+
+    super().__init__(tensor_util.get_complex_dtype(self.points.dtype),
+                     is_non_singular=None,
+                     is_self_adjoint=None,
+                     is_positive_definite=None,
+                     is_square=is_square,
+                     name=name,
+                     parameters=parameters)
+
+    # Compute normalization factors.
+    if self.norm == 'ortho':
+      norm_factor = tf.math.reciprocal(
+          tf.math.sqrt(tf.cast(self.grid_shape.num_elements(), self.dtype)))
+      self._norm_factor_forward = norm_factor
+      self._norm_factor_adjoint = norm_factor
+
+  def _transform(self, x, adjoint=False):
+    if adjoint:
+      x = fft_ops.nufft(x, self.points,
+                        grid_shape=self.grid_shape,
+                        transform_type='type_1',
+                        fft_direction='backward')
+      if self.norm is not None:
+        x *= self._norm_factor_adjoint
+    else:
+      x = fft_ops.nufft(x, self.points,
+                        transform_type='type_2',
+                        fft_direction='forward')
+      if self.norm is not None:
+        x *= self._norm_factor_forward
+    return x
+
+  def _domain_shape(self):
+    return self._domain_shape_static
+
+  def _domain_shape_tensor(self):
+    return self._domain_shape_dynamic
+
+  def _range_shape(self):
+    return self._rshape
+
+  def _batch_shape(self):
+    return self._bshape
+
+
 @api_util.export("linalg.LinearOperatorMRI")
 @linear_operator.make_composite_tensor
 class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,  # pylint: disable=abstract-method
