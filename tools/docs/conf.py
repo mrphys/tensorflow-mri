@@ -88,34 +88,28 @@ autoclass_content = 'both'
 # -- Options for HTML output -------------------------------------------------
 
 html_title = 'TensorFlow MRI Documentation'
-
+html_logo = '../assets/tfmri_logo.svg'
 html_favicon = '../assets/tfmri_icon.svg'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'furo'
+html_theme = 'sphinx_book_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['../assets']
 
-
+# https://sphinx-book-theme.readthedocs.io/en/latest/tutorials/get-started.html
 html_theme_options = {
-  'sidebar_hide_name': True,
-  'light_logo': 'tfmri_logo.svg',
-  'dark_logo': 'tmfri_logo_dark.svg',
-  'light_css_variables': {
-    'color-brand-primary': '#128091',
-    'color-brand-content': '#128091',
-    'font-stack': 'Roboto, sans-serif',
-    "font-stack--monospace": "Roboto Mono, monospace"
-  },
-  'dark_css_variables': {
-    'color-brand-primary': '#18A8BE',
-    'color-brand-content': '#18A8BE'
-  }
+    'repository_url': 'https://github.com/mrphys/tensorflow-mri',
+    'use_repository_button': True,
+    'logo_only': True,
+    'launch_buttons': {
+        'colab_url': "https://colab.research.google.com/"
+    },
+    'path_to_docs': 'tools/docs'
 }
 
 html_css_files = [
@@ -148,6 +142,11 @@ source_suffix = [
     '.md',
     '.ipynb'
 ]
+
+# Do not execute notebooks.
+# https://myst-nb.readthedocs.io/en/latest/computation/execute.html
+nb_execution_mode = "off"
+
 
 import tensorflow_mri as tfmri
 
