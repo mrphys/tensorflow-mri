@@ -223,27 +223,16 @@ def wavedec(data, wavelet, mode='symmetric', level=None, axes=None):
   Examples:
     >>> import tensorflow as tf
     >>> import tensorflow_mri as tfmri
-    >>> coeffs = tfmri.signal.wavedec(tf.ones((4, 4, 4)), 'db1')
+    >>> coeffs = tfmri.signal.wavedec(tf.ones((4, 4)), 'db1')
     >>> # Levels:
     >>> len(coeffs)-1
     2
     >>> tfmri.signal.waverec(coeffs, 'db1')
-    array([[[ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.]],
-            [[ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.]],
-            [[ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.]],
-            [[ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.]]])
+    <tf.Tensor: shape=(4, 4), dtype=float32, numpy=
+    array([[0.9999999, 0.9999999, 0.9999999, 0.9999999],
+           [0.9999999, 0.9999999, 0.9999999, 0.9999999],
+           [0.9999999, 0.9999999, 0.9999999, 0.9999999],
+           [0.9999999, 0.9999999, 0.9999999, 0.9999999]], dtype=float32)>
 
   .. _pywt.Wavelet: https://pywavelets.readthedocs.io/en/latest/ref/wavelets.html#pywt.Wavelet
   .. _tf.pad: https://www.tensorflow.org/api_docs/python/tf/pad
@@ -289,27 +278,16 @@ def waverec(coeffs, wavelet, mode='symmetric', axes=None):
   Examples:
     >>> import tensorflow as tf
     >>> import tensorflow_mri as tfmri
-    >>> coeffs = tfmri.signal.wavedec(tf.ones((4, 4, 4)), 'db1')
+    >>> coeffs = tfmri.signal.wavedec(tf.ones((4, 4)), 'db1')
     >>> # Levels:
     >>> len(coeffs)-1
     2
     >>> tfmri.signal.waverec(coeffs, 'db1')
-    array([[[ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.]],
-            [[ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.]],
-            [[ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.]],
-            [[ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.],
-            [ 1.,  1.,  1.,  1.]]])
+    <tf.Tensor: shape=(4, 4), dtype=float32, numpy=
+    array([[0.9999999, 0.9999999, 0.9999999, 0.9999999],
+           [0.9999999, 0.9999999, 0.9999999, 0.9999999],
+           [0.9999999, 0.9999999, 0.9999999, 0.9999999],
+           [0.9999999, 0.9999999, 0.9999999, 0.9999999]], dtype=float32)>
 
   Raises:
     ValueError: If passed invalid input values.
@@ -756,6 +734,7 @@ def dwt_max_level(shape, wavelet_or_length, axes=None):
   The level returned is the minimum along all axes.
 
   Examples:
+    >>> import tensorflow_mri as tfmri
     >>> tfmri.signal.wavelet_max_level((64, 32), 'db2')
     3
 

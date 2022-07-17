@@ -38,8 +38,11 @@ docs: $(TARGET)
 	$(PYTHON) tools/docs/create_documents.py
 	$(MAKE) -C tools/docs dirhtml PY_VERSION=$(PY_VERSION)
 
-test: $(wildcard tensorflow_mri/python/ops/*.py)
+test: $(wildcard tensorflow_mri/python/*.py)
 	$(PYTHON) -m unittest discover -v -p *_test.py
+
+doctest: $(wildcard tensorflow_mri/python/*.py)
+	$(PYTHON) tools/docs/test_docs.py
 
 lint: $(wildcard tensorflow_mri/python/ops/*.py)
 	pylint --rcfile=pylintrc tensorflow_mri/python
