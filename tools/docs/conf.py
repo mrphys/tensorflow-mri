@@ -66,7 +66,7 @@ extensions = [
   'sphinx.ext.autosummary',
   'sphinx.ext.linkcode',
   'sphinx.ext.autosectionlabel',
-  'nbsphinx',
+  'myst_nb',
   'sphinx_sitemap'
 ]
 
@@ -132,6 +132,22 @@ sitemap_url_scheme = '{link}'
 # For autosummary generation.
 autosummary_filename_map = conf_helper.AutosummaryFilenameMap()
 
+# -- Options for MyST ----------------------------------------------------------
+# https://myst-nb.readthedocs.io/en/latest/authoring/jupyter-notebooks.html
+myst_enable_extensions = [
+    "amsmath",
+    "colon_fence",
+    "deflist",
+    "dollarmath",
+    "html_image",
+]
+
+# https://myst-nb.readthedocs.io/en/latest/authoring/basics.html
+source_suffix = [
+    '.rst',
+    '.md',
+    '.ipynb'
+]
 
 import tensorflow_mri as tfmri
 
