@@ -72,12 +72,16 @@ class LinearOperatorNUFFT(linalg_imaging.LinearOperator):  # pylint: disable=abs
         tf.convert_to_tensor(trajectory), 'floating', 'trajectory')
     self.norm = check_util.validate_enum(norm, {None, 'ortho'}, 'norm')
 
-    # We infer the rank from the trajectory.
+    # We infer the operation's rank from the trajectory.
     rank_static = self.trajectory.shape[-1]
-    rank_dynamic = tf.shape(self._trajectory)[-1]
+    rank_dynamic = tf.shape(self.trajectory)[-1]
     # The domain rank is >= the operation rank.
     domain_rank_static = self._domain_shape_static.rank
     domain_rank_dynamic = tf.shape(self._domain_shape_dynamic)[0]
+    # The difference between this operation's rank and the domain rank is the
+    # number of extra dims.
+    extra_dims_static = domain_rank_static - rank_static
+    extra_dims_dynamic = domain_rank_dynamic - rank_dynamic
 
     # The grid shape are the last `rank` dimensions of domain_shape. We don't
     # need the static grid shape.
@@ -89,13 +93,20 @@ class LinearOperatorNUFFT(linalg_imaging.LinearOperator):  # pylint: disable=abs
     # shape, if they so wish. Therefore, not all batch dimensions in the
     # trajectory are necessarily part of the batch shape.
 
+    # The total number of dimensions in `trajectory` is equal to
+    # `batch_dims + extra_dims + 2`.
     # Compute the true batch shape (i.e., the batch dimensions that are
     # NOT included in the domain shape).
-    batch_dims_dynamic = tf.rank(self.trajectory) - domain_rank_dynamic - 2
+    batch_dims_dynamic = tf.rank(self.trajectory) - extra_dims_dynamic - 2
     if (self.trajectory.shape.rank is not None and
-        domain_rank_static is not None):
-      batch_dims_static = self.trajectory.shape.rank - domain_rank_static - 2
+        extra_dims_static is not None):
+      # We know the total number of dimensions in `trajectory` and we know
+      # the number of extra dims, so we can compute the number of batch dims
+      # statically.
+      batch_dims_static = self.trajectory.shape.rank - extra_dims_static - 2
     else:
+      # We are missing at least some information, so the number of batch
+      # dimensions is unknown.
       batch_dims_static = None
 
     self._batch_shape_dynamic = tf.shape(self.trajectory)[:batch_dims_dynamic]
@@ -147,14 +158,14 @@ class LinearOperatorNUFFT(linalg_imaging.LinearOperator):  # pylint: disable=abs
 
   def _transform(self, x, adjoint=False):
     if adjoint:
-      x = fft_ops.nufft(x, self._trajectory,
+      x = fft_ops.nufft(x, self.trajectory,
                         grid_shape=self._grid_shape,
                         transform_type='type_1',
                         fft_direction='backward')
       if self.norm is not None:
         x *= self._norm_factor_adjoint
     else:
-      x = fft_ops.nufft(x, self._trajectory,
+      x = fft_ops.nufft(x, self.trajectory,
                         transform_type='type_2',
                         fft_direction='forward')
       if self.norm is not None:

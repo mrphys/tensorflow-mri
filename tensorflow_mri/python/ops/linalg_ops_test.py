@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for module `linalg_ops`."""
+# pylint: disable=missing-class-docstring,missing-function-docstring
 
 from absl.testing import parameterized
 import numpy as np
@@ -58,7 +59,7 @@ class LinearOperatorNUFFTTest(test_util.TestCase):
     if norm:
       expected_forward /= np.sqrt(np.prod(shape))
     result_forward = linop.transform(x)
-    self.assertAllClose(expected_forward, result_forward)
+    self.assertAllClose(expected_forward, result_forward, rtol=1e-5, atol=1e-5)
 
     # Check adjoint.
     expected_adjoint = fft_ops.nufft(result_forward, traj, grid_shape=shape,
@@ -67,7 +68,102 @@ class LinearOperatorNUFFTTest(test_util.TestCase):
     if norm:
       expected_adjoint /= np.sqrt(np.prod(shape))
     result_adjoint = linop.transform(result_forward, adjoint=True)
-    self.assertAllClose(expected_adjoint, result_adjoint)
+    self.assertAllClose(expected_adjoint, result_adjoint, rtol=1e-5, atol=1e-5)
+
+
+  @parameterized.named_parameters(
+      ("normalized", "ortho"),
+      ("unnormalized", None)
+  )
+  def test_with_batch_dim(self, norm):
+    shape = [8, 12]
+    n_points = 100
+    batch_size = 4
+    traj_shape = [batch_size, n_points]
+    rank = 2
+    rng = np.random.default_rng()
+    traj = rng.uniform(low=-np.pi, high=np.pi, size=(*traj_shape, rank))
+    traj = traj.astype(np.float32)
+    linop = linalg_ops.LinearOperatorNUFFT(shape, traj, norm=norm)
+
+    self.assertIsInstance(linop.domain_shape, tf.TensorShape)
+    self.assertIsInstance(linop.domain_shape_tensor(), tf.Tensor)
+    self.assertIsInstance(linop.range_shape, tf.TensorShape)
+    self.assertIsInstance(linop.range_shape_tensor(), tf.Tensor)
+    self.assertIsInstance(linop.batch_shape, tf.TensorShape)
+    self.assertIsInstance(linop.batch_shape_tensor(), tf.Tensor)
+    self.assertAllClose(shape, linop.domain_shape)
+    self.assertAllClose(shape, linop.domain_shape_tensor())
+    self.assertAllClose([n_points], linop.range_shape)
+    self.assertAllClose([n_points], linop.range_shape_tensor())
+    self.assertAllClose([batch_size], linop.batch_shape)
+    self.assertAllClose([batch_size], linop.batch_shape_tensor())
+
+    # Check forward.
+    x = (rng.uniform(size=shape).astype(np.float32) +
+         rng.uniform(size=shape).astype(np.float32) * 1j)
+    expected_forward = fft_ops.nufft(x, traj)
+    if norm:
+      expected_forward /= np.sqrt(np.prod(shape))
+    result_forward = linop.transform(x)
+    self.assertAllClose(expected_forward, result_forward, rtol=1e-5, atol=1e-5)
+
+    # Check adjoint.
+    expected_adjoint = fft_ops.nufft(result_forward, traj, grid_shape=shape,
+                                     transform_type="type_1",
+                                     fft_direction="backward")
+    if norm:
+      expected_adjoint /= np.sqrt(np.prod(shape))
+    result_adjoint = linop.transform(result_forward, adjoint=True)
+    self.assertAllClose(expected_adjoint, result_adjoint, rtol=1e-5, atol=1e-5)
+
+
+  @parameterized.named_parameters(
+      ("normalized", "ortho"),
+      ("unnormalized", None)
+  )
+  def test_with_extra_dim(self, norm):
+    shape = [8, 12]
+    n_points = 100
+    batch_size = 4
+    traj_shape = [batch_size, n_points]
+    rank = 2
+    rng = np.random.default_rng()
+    traj = rng.uniform(low=-np.pi, high=np.pi, size=(*traj_shape, rank))
+    traj = traj.astype(np.float32)
+    linop = linalg_ops.LinearOperatorNUFFT(
+        [batch_size, *shape], traj, norm=norm)
+
+    self.assertIsInstance(linop.domain_shape, tf.TensorShape)
+    self.assertIsInstance(linop.domain_shape_tensor(), tf.Tensor)
+    self.assertIsInstance(linop.range_shape, tf.TensorShape)
+    self.assertIsInstance(linop.range_shape_tensor(), tf.Tensor)
+    self.assertIsInstance(linop.batch_shape, tf.TensorShape)
+    self.assertIsInstance(linop.batch_shape_tensor(), tf.Tensor)
+    self.assertAllClose([batch_size, *shape], linop.domain_shape)
+    self.assertAllClose([batch_size, *shape], linop.domain_shape_tensor())
+    self.assertAllClose([batch_size, n_points], linop.range_shape)
+    self.assertAllClose([batch_size, n_points], linop.range_shape_tensor())
+    self.assertAllClose([], linop.batch_shape)
+    self.assertAllClose([], linop.batch_shape_tensor())
+
+    # Check forward.
+    x = (rng.uniform(size=[batch_size, *shape]).astype(np.float32) +
+         rng.uniform(size=[batch_size, *shape]).astype(np.float32) * 1j)
+    expected_forward = fft_ops.nufft(x, traj)
+    if norm:
+      expected_forward /= np.sqrt(np.prod(shape))
+    result_forward = linop.transform(x)
+    self.assertAllClose(expected_forward, result_forward, rtol=1e-5, atol=1e-5)
+
+    # Check adjoint.
+    expected_adjoint = fft_ops.nufft(result_forward, traj, grid_shape=shape,
+                                     transform_type="type_1",
+                                     fft_direction="backward")
+    if norm:
+      expected_adjoint /= np.sqrt(np.prod(shape))
+    result_adjoint = linop.transform(result_forward, adjoint=True)
+    self.assertAllClose(expected_adjoint, result_adjoint, rtol=1e-5, atol=1e-5)
 
 
 class LinearOperatorFiniteDifferenceTest(test_util.TestCase):
