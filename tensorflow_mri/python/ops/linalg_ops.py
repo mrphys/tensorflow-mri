@@ -48,7 +48,7 @@ class LinearOperatorNUFFT(linalg_imaging.LinearOperator):  # pylint: disable=abs
       number of dimensions.
     norm: A `str`. The FFT normalization mode. Must be `None` (no normalization)
       or `'ortho'`.
-    name: An optional `string`. The name of this operator.
+    name: An optional `str`. The name of this operator.
   """
   def __init__(self,
                domain_shape,
@@ -189,6 +189,87 @@ class LinearOperatorNUFFT(linalg_imaging.LinearOperator):  # pylint: disable=abs
 
   def _batch_shape_tensor(self):
     return self._batch_shape_dynamic
+
+
+@api_util.export("linalg.LinearOperatorGramNUFFT")
+class LinearOperatorGramNUFFT(LinearOperatorNUFFT):  # pylint: disable=abstract-method
+  """Linear operator acting like the Gram matrix of an NUFFT operator.
+
+  If :math:`F` is a `tfmri.linalg.LinearOperatorNUFFT`, then this operator
+  applies :math:`F^H F`. This operator is self-adjoint.
+
+  Args:
+    domain_shape: A 1D integer `tf.Tensor`. The domain shape of this
+      operator. This is usually the shape of the image but may include
+      additional dimensions.
+    trajectory: A `tf.Tensor` of type `float32` or `float64`. Must have shape
+      `[..., M, N]`, where `N` is the rank (number of dimensions), `M` is
+      the number of samples and `...` is the batch shape, which can have any
+      number of dimensions.
+    norm: A `str`. The FFT normalization mode. Must be `None` (no normalization)
+      or `'ortho'`.
+    toeplitz: A `boolean`. If `True`, uses the Toeplitz approach [1]
+      to compute :math:`F^H F x`, where :math:`F` is the NUFFT operator.
+      If `False`, the same operation is performed using the standard
+      NUFFT operation. The Toeplitz approach might be faster than the direct
+      approach but is slightly less accurate. This argument is only relevant
+      for non-Cartesian reconstruction and will be ignored for Cartesian
+      problems.
+    name: An optional `str`. The name of this operator.
+
+  References:
+    [1] Fessler, J. A., Lee, S., Olafsson, V. T., Shi, H. R., & Noll, D. C.
+      (2005). Toeplitz-based iterative image reconstruction for MRI with
+      correction for magnetic field inhomogeneity. IEEE Transactions on Signal
+      Processing, 53(9), 3393-3402.
+  """
+  def __init__(self,
+               domain_shape,
+               trajectory,
+               norm='ortho',
+               toeplitz=False,
+               name="LinearOperatorNUFFT"):
+
+    parameters = dict(
+        domain_shape=domain_shape,
+        trajectory=trajectory,
+        norm=norm,
+        toeplitz=toeplitz,
+        name=name
+    )
+
+    self.toeplitz = toeplitz
+
+    super().__init__(
+        domain_shape=domain_shape,
+        trajectory=trajectory,
+        norm=norm,
+        name=name
+    )
+
+  def _transform(self, x, adjoint=False):  # pylint: disable=unused-argument
+    # This operator is self-adjoint, so `adjoint` arg is unused.
+    if self.toeplitz:
+      # Using specialized Toeplitz implementation.
+      return self._transform_toeplitz(x)
+    else:
+      # Using standard NUFFT implementation.
+      return super()._transform(super()._transform(x, adjoint=False),
+                                adjoint=True)
+
+  def _transform_toeplitz(self, x):
+    pass
+
+  def _compute_toeplitz_kernel(self):
+    pass
+
+  def _range_shape(self):
+    # Override the NUFFT operator's range shape. The range shape for this
+    # operator is the same as the domain shape.
+    return self._domain_shape()
+
+  def _range_shape_tensor(self):
+    return self._domain_shape_tensor()
 
 
 @api_util.export("linalg.LinearOperatorFiniteDifference")
