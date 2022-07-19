@@ -20,7 +20,9 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import fft_ops
+from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.ops import linalg_ops
+from tensorflow_mri.python.ops import traj_ops
 from tensorflow_mri.python.ops import wavelet_ops
 from tensorflow_mri.python.util import test_util
 
@@ -164,6 +166,77 @@ class LinearOperatorNUFFTTest(test_util.TestCase):
       expected_adjoint /= np.sqrt(np.prod(shape))
     result_adjoint = linop.transform(result_forward, adjoint=True)
     self.assertAllClose(expected_adjoint, result_adjoint, rtol=1e-5, atol=1e-5)
+
+
+  def test_with_density(self):
+    image_shape = (128, 128)
+    image = image_ops.phantom(shape=image_shape, dtype=tf.complex64)
+    trajectory = traj_ops.radial_trajectory(
+        128, 128, flatten_encoding_dims=True)
+    density = traj_ops.radial_density(
+        128, 128, flatten_encoding_dims=True)
+    weights = tf.cast(tf.math.sqrt(tf.math.reciprocal_no_nan(density)),
+                      tf.complex64)
+
+    linop = linalg_ops.LinearOperatorNUFFT(
+        image_shape, trajectory=trajectory)
+    linop_d = linalg_ops.LinearOperatorNUFFT(
+        image_shape, trajectory=trajectory, density=density)
+
+    # Test forward.
+    kspace = linop.transform(image)
+    kspace_d = linop_d.transform(image)
+    self.assertAllClose(kspace * weights, kspace_d)
+
+    # Test adjoint and precompensate function.
+    recon = linop.transform(linop.precompensate(kspace) * weights * weights,
+                            adjoint=True)
+    recon_d1 = linop_d.transform(kspace_d, adjoint=True)
+    recon_d2 = linop_d.transform(linop_d.precompensate(kspace), adjoint=True)
+    self.assertAllClose(recon, recon_d1)
+    self.assertAllClose(recon, recon_d2)
+
+
+class LinearOperatorGramNUFFTTest(test_util.TestCase):
+  @parameterized.named_parameters(
+      # name, density, norm, toeplitz
+      ("unnormalized", False, None, False),
+      ("normalized", False, 'ortho', False),
+      ("unnormalized_density", True, None, False),
+      ("normalized_density", True, 'ortho', False),
+      ("unnormalized_toeplitz", False, None, True),
+      ("normalized_toeplitz", False, 'ortho', True),
+      ("unnormalized_density_toeplitz", True, None, True),
+      ("normalized_density_toeplitz", True, 'ortho', True)
+  )
+  def test_general(self, density, norm, toeplitz):
+    with tf.device('/cpu:0'):
+      image_shape = (128, 128)
+      image = image_ops.phantom(shape=image_shape, dtype=tf.complex64)
+      trajectory = traj_ops.radial_trajectory(
+          128, 128, flatten_encoding_dims=True)
+      if density is True:
+        density = traj_ops.radial_density(
+            128, 128, flatten_encoding_dims=True)
+      else:
+        density = None
+
+      linop = linalg_ops.LinearOperatorNUFFT(
+          image_shape, trajectory=trajectory, density=density, norm=norm)
+      linop_gram = linalg_ops.LinearOperatorGramNUFFT(
+          image_shape, trajectory=trajectory, density=density, norm=norm,
+          toeplitz=toeplitz)
+
+      recon = linop.transform(linop.transform(image), adjoint=True)
+      recon_gram = linop_gram.transform(image)
+
+      if norm is None:
+        # Reduce the magnitude of these values to avoid the need to use a large
+        # tolerance.
+        recon /= tf.cast(tf.math.reduce_prod(image_shape), tf.complex64)
+        recon_gram /= tf.cast(tf.math.reduce_prod(image_shape), tf.complex64)
+
+      self.assertAllClose(recon, recon_gram, rtol=1e-4, atol=1e-4)
 
 
 class LinearOperatorFiniteDifferenceTest(test_util.TestCase):

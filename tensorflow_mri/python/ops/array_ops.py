@@ -376,3 +376,10 @@ def map_fn(fn, elems, batch_dims=1, **kwargs):
         output, static_batch_shapes)
 
   return output
+
+
+def slice_along_axis(tensor, axis, start, length):
+  """Slices a tensor along the specified axis."""
+  begin = tf.scatter_nd([[axis]], [start], [tensor.shape.rank])
+  size = tf.tensor_scatter_nd_update(tf.shape(tensor), [[axis]], [length])
+  return tf.slice(tensor, begin, size)

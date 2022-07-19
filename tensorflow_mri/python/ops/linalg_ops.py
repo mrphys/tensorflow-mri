@@ -42,17 +42,53 @@ class LinearOperatorNUFFT(linalg_imaging.LinearOperator):  # pylint: disable=abs
     domain_shape: A 1D integer `tf.Tensor`. The domain shape of this
       operator. This is usually the shape of the image but may include
       additional dimensions.
-    trajectory: A `tf.Tensor` of type `float32` or `float64`. Must have shape
+    trajectory: A `tf.Tensor` of type `float32` or `float64`. Contains the
+      sampling locations or *k*-space trajectory. Must have shape
       `[..., M, N]`, where `N` is the rank (number of dimensions), `M` is
       the number of samples and `...` is the batch shape, which can have any
       number of dimensions.
+    density: A `tf.Tensor` of type `float32` or `float64`. Contains the
+      sampling density at each point in `trajectory`. Must have shape
+      `[..., M]`, where `M` is the number of samples and `...` is the batch
+      shape, which can have any number of dimensions. Defaults to `None`, in
+      which case the density is assumed to be 1.0 in all locations.
     norm: A `str`. The FFT normalization mode. Must be `None` (no normalization)
       or `'ortho'`.
     name: An optional `str`. The name of this operator.
+
+  Notes:
+    In MRI, sampling density compensation is typically performed during the
+    adjoint transform. However, in order to maintain the validity of the linear
+    operator, this operator applies the compensation orthogonally, i.e.,
+    it scales the data by the square root of `density` in both forward and
+    adjoint transforms. If you are using this operator to compute the adjoint
+    and wish to apply the full compensation, you can do so via the
+    `precompensate` method.
+
+    >>> import tensorflow as tf
+    >>> import tensorflow_mri as tfmri
+    >>> # Create some data.
+    >>> image_shape = (128, 128)
+    >>> image = image_ops.phantom(shape=image_shape, dtype=tf.complex64)
+    >>> trajectory = tfmri.sampling.radial_trajectory(
+    >>>     128, 128, flatten_encoding_dims=True)
+    >>> density = tfmri.sampling.radial_density(
+    >>>     128, 128, flatten_encoding_dims=True)
+    >>> # Create a NUFFT operator.
+    >>> linop = tfmri.linalg.LinearOperatorNUFFT(
+    >>>     image_shape, trajectory=trajectory, density=density)
+    >>> # Create k-space.
+    >>> kspace = tfmri.signal.nufft(image, trajectory)
+    >>> # This reconstructs the image applying only partial compensation
+    >>> # (square root of weights).
+    >>> image = linop.transform(kspace, adjoint=True)
+    >>> # This reconstruct the image with full compensation.
+    >>> image = linop.transform(linop.precompensate(kspace), adjoint=True)
   """
   def __init__(self,
                domain_shape,
                trajectory,
+               density=None,
                norm='ortho',
                name="LinearOperatorNUFFT"):
 
@@ -73,19 +109,19 @@ class LinearOperatorNUFFT(linalg_imaging.LinearOperator):  # pylint: disable=abs
     self.norm = check_util.validate_enum(norm, {None, 'ortho'}, 'norm')
 
     # We infer the operation's rank from the trajectory.
-    rank_static = self.trajectory.shape[-1]
-    rank_dynamic = tf.shape(self.trajectory)[-1]
+    self._rank_static = self.trajectory.shape[-1]
+    self._rank_dynamic = tf.shape(self.trajectory)[-1]
     # The domain rank is >= the operation rank.
     domain_rank_static = self._domain_shape_static.rank
     domain_rank_dynamic = tf.shape(self._domain_shape_dynamic)[0]
     # The difference between this operation's rank and the domain rank is the
     # number of extra dims.
-    extra_dims_static = domain_rank_static - rank_static
-    extra_dims_dynamic = domain_rank_dynamic - rank_dynamic
+    extra_dims_static = domain_rank_static - self._rank_static
+    extra_dims_dynamic = domain_rank_dynamic - self._rank_dynamic
 
     # The grid shape are the last `rank` dimensions of domain_shape. We don't
     # need the static grid shape.
-    self._grid_shape = self._domain_shape_dynamic[-rank_dynamic:]
+    self._grid_shape = self._domain_shape_dynamic[-self._rank_dynamic:]
 
     # We need to do some work to figure out the batch shapes. This operator
     # could have a batch shape, if the trajectory has a batch shape. However,
@@ -118,9 +154,9 @@ class LinearOperatorNUFFT(linalg_imaging.LinearOperator):  # pylint: disable=abs
     # Compute the "extra" shape. This shape includes those dimensions which
     # are not part of the NUFFT (e.g., they are effectively batch dimensions),
     # but which are included in the domain shape rather than in the batch shape.
-    extra_shape_dynamic = self._domain_shape_dynamic[:-rank_dynamic]
-    if rank_static is not None:
-      extra_shape_static = self._domain_shape_static[:-rank_static]
+    extra_shape_dynamic = self._domain_shape_dynamic[:-self._rank_dynamic]
+    if self._rank_static is not None:
+      extra_shape_static = self._domain_shape_static[:-self._rank_static]
     else:
       extra_shape_static = tf.TensorShape(None)
 
@@ -140,6 +176,24 @@ class LinearOperatorNUFFT(linalg_imaging.LinearOperator):  # pylint: disable=abs
     self._range_shape_static = extra_shape_static.concatenate(
         self.trajectory.shape[-2:-1])
 
+    # Statically check that density can be broadcasted with trajectory.
+    if density is not None:
+      try:
+        tf.broadcast_static_shape(self.trajectory.shape[:-1], density.shape)
+      except ValueError as err:
+        raise ValueError(
+            f"The \"batch\" shapes in `trajectory` and `density` are not "
+            f"compatible for broadcasting: {self.trajectory.shape[:-1]} vs "
+            f"{density.shape}") from err
+      self.density = tf.convert_to_tensor(density)
+      self.weights = tf.math.reciprocal_no_nan(self.density)
+      self._weights_sqrt = tf.cast(
+          tf.math.sqrt(self.weights),
+          tensor_util.get_complex_dtype(self.trajectory.dtype))
+    else:
+      self.density = None
+      self.weights = None
+
     super().__init__(tensor_util.get_complex_dtype(self.trajectory.dtype),
                      is_non_singular=None,
                      is_self_adjoint=None,
@@ -158,6 +212,8 @@ class LinearOperatorNUFFT(linalg_imaging.LinearOperator):  # pylint: disable=abs
 
   def _transform(self, x, adjoint=False):
     if adjoint:
+      if self.density is not None:
+        x *= self._weights_sqrt
       x = fft_ops.nufft(x, self.trajectory,
                         grid_shape=self._grid_shape,
                         transform_type='type_1',
@@ -170,6 +226,13 @@ class LinearOperatorNUFFT(linalg_imaging.LinearOperator):  # pylint: disable=abs
                         fft_direction='forward')
       if self.norm is not None:
         x *= self._norm_factor_forward
+      if self.density is not None:
+        x *= self._weights_sqrt
+    return x
+
+  def precompensate(self, x):
+    if self.density is not None:
+      return x * self._weights_sqrt
     return x
 
   def _domain_shape(self):
@@ -189,6 +252,13 @@ class LinearOperatorNUFFT(linalg_imaging.LinearOperator):  # pylint: disable=abs
 
   def _batch_shape_tensor(self):
     return self._batch_shape_dynamic
+
+  @property
+  def rank(self):
+    return self._rank_static
+
+  def rank_tensor(self):
+    return self._rank_dynamic
 
 
 @api_util.export("linalg.LinearOperatorGramNUFFT")
@@ -226,42 +296,143 @@ class LinearOperatorGramNUFFT(LinearOperatorNUFFT):  # pylint: disable=abstract-
   def __init__(self,
                domain_shape,
                trajectory,
+               density=None,
                norm='ortho',
                toeplitz=False,
                name="LinearOperatorNUFFT"):
-
-    parameters = dict(
+    super().__init__(
         domain_shape=domain_shape,
         trajectory=trajectory,
+        density=density,
         norm=norm,
-        toeplitz=toeplitz,
         name=name
     )
 
     self.toeplitz = toeplitz
-
-    super().__init__(
-        domain_shape=domain_shape,
-        trajectory=trajectory,
-        norm=norm,
-        name=name
-    )
+    if self.toeplitz:
+      # Compute the FFT shift for adjoint NUFFT computation.
+      self._fft_shift = tf.cast(self._grid_shape // 2, self.dtype.real_dtype)
+      # Compute the Toeplitz kernel.
+      self._toeplitz_kernel = self._compute_toeplitz_kernel()
+      # Kernel shape (without batch dimensions).
+      self._kernel_shape = tf.shape(self._toeplitz_kernel)[-self.rank_tensor():]
 
   def _transform(self, x, adjoint=False):  # pylint: disable=unused-argument
     # This operator is self-adjoint, so `adjoint` arg is unused.
     if self.toeplitz:
       # Using specialized Toeplitz implementation.
       return self._transform_toeplitz(x)
-    else:
-      # Using standard NUFFT implementation.
-      return super()._transform(super()._transform(x, adjoint=False),
-                                adjoint=True)
+    # Using standard NUFFT implementation.
+    return super()._transform(super()._transform(x), adjoint=True)
 
   def _transform_toeplitz(self, x):
-    pass
+    input_shape = tf.shape(x)
+    fft_axes = tf.range(-self.rank_tensor(), 0)
+    x = fft_ops.fftn(x, axes=fft_axes, shape=self._kernel_shape)
+    x *= self._toeplitz_kernel
+    x = fft_ops.ifftn(x, axes=fft_axes)
+    x = tf.slice(x, tf.zeros([tf.rank(x)], dtype=tf.int32), input_shape)
+    return x
 
   def _compute_toeplitz_kernel(self):
-    pass
+    trajectory = self.trajectory
+    weights = self.weights
+    if self.rank is None:
+      raise NotImplementedError(f"rank of {self.name} must be known statically")
+
+    if weights is None:
+      # If no weights were passed, use ones.
+      weights = tf.ones(tf.shape(trajectory)[:-1], dtype=self.dtype.real_dtype)
+    # Cast weights to complex dtype.
+    weights = tf.cast(tf.math.sqrt(weights), self.dtype)
+
+    # Compute N-D kernel recursively.
+    kernel = self._compute_kernel_recursive(trajectory, weights, self.rank - 1)
+
+    # Make sure that the kernel is symmetric/Hermitian/self-adjoint.
+    kernel = self._enforce_kernel_symmetry(kernel)
+
+    # Additional normalization by sqrt(2 ** rank). This is required because
+    # we are using FFTs with twice the length of the original image.
+    if self.norm == 'ortho':
+      kernel *= tf.cast(tf.math.sqrt(2.0 ** self.rank), kernel.dtype)
+
+    # Put the kernel in Fourier space.
+    fft_axes = list(range(-self.rank, 0))
+    fft_norm = self.norm or "backward"
+    return fft_ops.fftn(kernel, axes=fft_axes, norm=fft_norm)
+
+  def _compute_kernel_recursive(self, trajectory, weights, axis):
+    """Recursively computes the Toeplitz kernel."""
+    if axis == 0:
+      # Outer-most axis. Compute left half, then use Hermitian symmetry to
+      # compute right half.
+      kernel_left = self._nufft_adjoint(weights, trajectory)
+      kernel_right = tf.math.conj(kernel_left)
+    else:
+      # We still have two or more axes to process. Compute left and right kernels
+      # by calling this function recursively. We call ourselves twice, first
+      # with current frequencies, then with negated frequencies along current
+      # axes.
+      kernel_left = self._compute_kernel_recursive(
+          trajectory, weights, axis - 1)
+      flippings = tf.tensor_scatter_nd_update(
+          tf.ones([tf.shape(trajectory)[-1]]), [[axis]], [-1])
+      kernel_right = self._compute_kernel_recursive(
+          trajectory * flippings, weights, axis - 1)
+
+    # Remove zero frequency and reverse.
+    kernel_right = tf.reverse(
+        array_ops.slice_along_axis(
+            kernel_right, axis, 1, kernel_right.shape[axis] - 1),
+        [axis])
+
+    # Create block of zeros to be inserted between the left and right halves of
+    # the kernel.
+    zeros_shape = tf.concat(
+        [tf.shape(kernel_left)[:axis], [1], tf.shape(kernel_left)[(axis + 1):]],
+        axis=0)
+    zeros = tf.zeros(zeros_shape, dtype=kernel_left.dtype)
+
+    # Concatenate the left and right halves of kernel, with a block of zeros in
+    # the middle.
+    return tf.concat([kernel_left, zeros, kernel_right], axis)
+
+  def _nufft_adjoint(self, x, trajectory=None):
+    """Applies the adjoint NUFFT operator.
+
+    We use this instead of `super()._transform(x, adjoint=True)` because we
+    need to be able to change the trajectory.
+    """
+    # shift = tf.convert_to_tensor(self.shift, dtype=points.dtype)
+    # Apply FFT shift.
+    x *= tf.math.exp(tf.dtypes.complex(
+        tf.constant(0, dtype=self.dtype.real_dtype),
+        tf.math.reduce_sum(trajectory * self._fft_shift, -1)))
+    # Temporarily update trajectory.
+    if trajectory is not None:
+      temp = self.trajectory
+      self.trajectory = trajectory
+    x = super()._transform(x, adjoint=True)
+    if trajectory is not None:
+      self.trajectory = temp
+    return x
+
+  def _enforce_kernel_symmetry(self, kernel):
+    """Enforces Hermitian symmetry on an input kernel.
+
+    Args:
+      kernel: A `tf.Tensor`. An approximately Hermitian kernel.
+
+    Returns:
+      A Hermitian-symmetric kernel.
+    """
+    kernel_axes = list(range(-self.rank, 0))
+    reversed_kernel = tf.roll(
+        tf.reverse(kernel, kernel_axes),
+        shift=tf.ones([tf.size(kernel_axes)], dtype=tf.int32),
+        axis=kernel_axes)
+    return (kernel + tf.math.conj(reversed_kernel)) / 2
 
   def _range_shape(self):
     # Override the NUFFT operator's range shape. The range shape for this
