@@ -20,6 +20,7 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import fft_ops
+from tensorflow_mri.python.ops import geom_ops
 from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.ops import traj_ops
@@ -198,28 +199,31 @@ class LinearOperatorNUFFTTest(test_util.TestCase):
 
 
 class LinearOperatorGramNUFFTTest(test_util.TestCase):
-  @parameterized.named_parameters(
-      # name, density, norm, toeplitz
-      ("unnormalized", False, None, False),
-      ("normalized", False, 'ortho', False),
-      ("unnormalized_density", True, None, False),
-      ("normalized_density", True, 'ortho', False),
-      ("unnormalized_toeplitz", False, None, True),
-      ("normalized_toeplitz", False, 'ortho', True),
-      ("unnormalized_density_toeplitz", True, None, True),
-      ("normalized_density_toeplitz", True, 'ortho', True)
+  @parameterized.product(
+      density=[False, True],
+      norm=[None, 'ortho'],
+      toeplitz=[False, True],
+      batch=[False, True]
   )
-  def test_general(self, density, norm, toeplitz):
+  def test_general(self, density, norm, toeplitz, batch):
     with tf.device('/cpu:0'):
       image_shape = (128, 128)
       image = image_ops.phantom(shape=image_shape, dtype=tf.complex64)
       trajectory = traj_ops.radial_trajectory(
-          128, 128, flatten_encoding_dims=True)
+          128, 129, flatten_encoding_dims=True)
       if density is True:
         density = traj_ops.radial_density(
-            128, 128, flatten_encoding_dims=True)
+            128, 129, flatten_encoding_dims=True)
       else:
         density = None
+
+      # If testing batches, create new inputs to generate a batch.
+      if batch:
+        image = tf.stack([image, image * 0.5])
+        trajectory = tf.stack([
+            trajectory, geom_ops.rotate_2d(trajectory, [np.pi / 2])])
+        if density is not None:
+          density = tf.stack([density, density])
 
       linop = linalg_ops.LinearOperatorNUFFT(
           image_shape, trajectory=trajectory, density=density, norm=norm)

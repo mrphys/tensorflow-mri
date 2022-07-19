@@ -338,7 +338,8 @@ class LinearOperatorGramNUFFT(LinearOperatorNUFFT):  # pylint: disable=abstract-
     trajectory = self.trajectory
     weights = self.weights
     if self.rank is None:
-      raise NotImplementedError(f"rank of {self.name} must be known statically")
+      raise NotImplementedError(
+          f"The rank of {self.name} must be known statically.")
 
     if weights is None:
       # If no weights were passed, use ones.
@@ -346,8 +347,9 @@ class LinearOperatorGramNUFFT(LinearOperatorNUFFT):  # pylint: disable=abstract-
     # Cast weights to complex dtype.
     weights = tf.cast(tf.math.sqrt(weights), self.dtype)
 
-    # Compute N-D kernel recursively.
-    kernel = self._compute_kernel_recursive(trajectory, weights, self.rank - 1)
+    # Compute N-D kernel recursively. Begin with last axis.
+    last_axis = self.rank - 1
+    kernel = self._compute_kernel_recursive(trajectory, weights, last_axis)
 
     # Make sure that the kernel is symmetric/Hermitian/self-adjoint.
     kernel = self._enforce_kernel_symmetry(kernel)
@@ -364,11 +366,23 @@ class LinearOperatorGramNUFFT(LinearOperatorNUFFT):  # pylint: disable=abstract-
 
   def _compute_kernel_recursive(self, trajectory, weights, axis):
     """Recursively computes the Toeplitz kernel."""
+    # Account for the batch dimensions. We do not need to do the recursion
+    # for these.
+    batch_dims = self.batch_shape.rank
+    if batch_dims is None:
+      raise NotImplementedError(
+          f"The number of batch dimensions of {self.name} must be known "
+          f"statically.")
+    # The current axis without the batch dimensions.
+    image_axis = axis + batch_dims
     if axis == 0:
       # Outer-most axis. Compute left half, then use Hermitian symmetry to
       # compute right half.
+      # TODO(jmontalt): there should be a way to compute the NUFFT only once.
       kernel_left = self._nufft_adjoint(weights, trajectory)
-      kernel_right = tf.math.conj(kernel_left)
+      flippings = tf.tensor_scatter_nd_update(
+          tf.ones([self.rank_tensor()]), [[axis]], [-1])
+      kernel_right = self._nufft_adjoint(weights, trajectory * flippings)
     else:
       # We still have two or more axes to process. Compute left and right kernels
       # by calling this function recursively. We call ourselves twice, first
@@ -377,26 +391,26 @@ class LinearOperatorGramNUFFT(LinearOperatorNUFFT):  # pylint: disable=abstract-
       kernel_left = self._compute_kernel_recursive(
           trajectory, weights, axis - 1)
       flippings = tf.tensor_scatter_nd_update(
-          tf.ones([tf.shape(trajectory)[-1]]), [[axis]], [-1])
+          tf.ones([self.rank_tensor()]), [[axis]], [-1])
       kernel_right = self._compute_kernel_recursive(
           trajectory * flippings, weights, axis - 1)
 
     # Remove zero frequency and reverse.
-    kernel_right = tf.reverse(
-        array_ops.slice_along_axis(
-            kernel_right, axis, 1, kernel_right.shape[axis] - 1),
-        [axis])
+    kernel_right = tf.reverse(array_ops.slice_along_axis(
+        kernel_right, image_axis, 1, tf.shape(kernel_right)[image_axis] - 1),
+        [image_axis])
 
     # Create block of zeros to be inserted between the left and right halves of
     # the kernel.
-    zeros_shape = tf.concat(
-        [tf.shape(kernel_left)[:axis], [1], tf.shape(kernel_left)[(axis + 1):]],
-        axis=0)
+    zeros_shape = tf.concat([
+        tf.shape(kernel_left)[:image_axis], [1],
+        tf.shape(kernel_left)[(image_axis + 1):]], axis=0)
     zeros = tf.zeros(zeros_shape, dtype=kernel_left.dtype)
 
     # Concatenate the left and right halves of kernel, with a block of zeros in
     # the middle.
-    return tf.concat([kernel_left, zeros, kernel_right], axis)
+    kernel = tf.concat([kernel_left, zeros, kernel_right], image_axis)
+    return kernel
 
   def _nufft_adjoint(self, x, trajectory=None):
     """Applies the adjoint NUFFT operator.
@@ -404,7 +418,6 @@ class LinearOperatorGramNUFFT(LinearOperatorNUFFT):  # pylint: disable=abstract-
     We use this instead of `super()._transform(x, adjoint=True)` because we
     need to be able to change the trajectory.
     """
-    # shift = tf.convert_to_tensor(self.shift, dtype=points.dtype)
     # Apply FFT shift.
     x *= tf.math.exp(tf.dtypes.complex(
         tf.constant(0, dtype=self.dtype.real_dtype),
