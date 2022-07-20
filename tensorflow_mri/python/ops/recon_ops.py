@@ -164,7 +164,7 @@ def reconstruct_lstsq(kspace,
                       optimizer_kwargs=None,
                       filter_corners=False,
                       return_optimizer_state=False,
-                      use_toeplitz_nufft=False):
+                      toeplitz_nufft=False):
   r"""Reconstructs an MR image using a least-squares formulation.
 
   This is an iterative reconstruction method which formulates the image
@@ -248,7 +248,7 @@ def reconstruct_lstsq(kspace,
       *k*-space coverage. Defaults to `False`.
     return_optimizer_state: A `boolean`. If `True`, returns the optimizer
       state along with the reconstructed image.
-    use_toeplitz_nufft: A `boolean`. If `True`, uses the Toeplitz approach [5]
+    toeplitz_nufft: A `boolean`. If `True`, uses the Toeplitz approach [5]
       to compute :math:`F^H F x`, where :math:`F` is the non-uniform Fourier
       operator. If `False`, the same operation is performed using the standard
       NUFFT operation. The Toeplitz approach might be faster than the direct
@@ -333,6 +333,24 @@ def reconstruct_lstsq(kspace,
                                           dynamic_domain=dynamic_domain)
   rank = operator.rank
 
+  # If using Toeplitz NUFFT, we need to use the specialized Gram MRI operator.
+  if toeplitz_nufft and operator.is_non_cartesian:
+    gram_operator = linalg_ops.LinearOperatorGramMRI(
+        image_shape,
+        extra_shape=extra_shape,
+        mask=mask,
+        trajectory=trajectory,
+        density=density,
+        sensitivities=sensitivities,
+        phase=phase,
+        fft_norm='ortho',
+        sens_norm=sens_norm,
+        dynamic_domain=dynamic_domain,
+        toeplitz_nufft=toeplitz_nufft)
+  else:
+    # No Toeplitz NUFFT. In this case don't bother defining the Gram operator.
+    gram_operator = None
+
   # Apply density compensation, if provided.
   if density is not None:
     kspace *= operator._dens_weights_sqrt  # pylint: disable=protected-access
@@ -355,7 +373,8 @@ def reconstruct_lstsq(kspace,
       reg_prior = None
 
     operator_gm = linalg_imaging.LinearOperatorGramMatrix(
-        operator, reg_parameter=reg_parameter, reg_operator=reg_operator)
+        operator, reg_parameter=reg_parameter, reg_operator=reg_operator,
+        gram_operator=gram_operator)
     rhs = initial_image
     # Update the rhs with the a priori estimate, if provided.
     if reg_prior is not None:
@@ -371,7 +390,8 @@ def reconstruct_lstsq(kspace,
     if regularizer is None:
       raise ValueError("optimizer 'admm' requires a regularizer")
     # Create the least-squares objective.
-    function_f = convex_ops.ConvexFunctionLeastSquares(operator, kspace)
+    function_f = convex_ops.ConvexFunctionLeastSquares(
+        operator, kspace, gram_operator=gram_operator)
     # Configure ADMM formulation depending on regularizer.
     if isinstance(regularizer,
                   convex_ops.ConvexFunctionLinearOperatorComposition):

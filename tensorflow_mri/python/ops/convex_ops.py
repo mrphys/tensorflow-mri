@@ -703,19 +703,25 @@ class ConvexFunctionTotalVariation(ConvexFunctionLinearOperatorComposition):  # 
                scale=None,
                dtype=tf.float32,
                name=None):
-    domain_shape = tf.TensorShape(domain_shape)
-    axes = check_util.validate_static_axes(axes, domain_shape.rank,
-                                           max_length=domain_shape.rank,
-                                           canonicalize="negative")
+    domain_shape_static, _ = (
+        tensor_util.static_and_dynamic_shapes_from_shape(domain_shape))
+    if axes is None:
+      if domain_shape_static.rank is None:
+        raise NotImplementedError(
+            "Rank of domain_shape must be known statically")
+      axes = list(range(domain_shape_static.rank))
+    if isinstance(axes, int):
+      axes = [axes]
     # `LinearOperatorFiniteDifference` operates along one axis only. So for
     # multiple axes, we create one operator for each axis and vertically stack
     # them.
-    operators = [linalg_imaging.LinearOperatorFiniteDifference(
+    operators = [linalg_ops.LinearOperatorFiniteDifference(
         domain_shape, axis=axis, dtype=dtype) for axis in axes]
     operator = linalg_ext.LinearOperatorVerticalStack(operators)
-    function = ConvexFunctionL1Norm(domain_dimension=operator.range_dimension,
-                                    scale=scale,
-                                    dtype=dtype)
+    function = ConvexFunctionL1Norm(
+        domain_dimension=operator.range_dimension_tensor(),
+        scale=scale,
+        dtype=dtype)
     super().__init__(function,
                      operator=operator,
                      name=name)
@@ -911,18 +917,27 @@ class ConvexFunctionLeastSquares(ConvexFunctionQuadratic):  # pylint: disable=ab
   :math:`Ax - b`.
 
   Args:
-    operator: A `Tensor` or a `LinearOperator` representing a matrix `A` with
-      shape `[..., m, n]`. The linear system operator.
+    operator: A `tf.Tensor` or a `tfmri.linalg.LinearOperator` representing a
+      matrix :math:`A` with shape `[..., m, n]`. The linear system operator.
     rhs: A `Tensor` representing a vector `b` with shape `[..., m]`. The
       right-hand side of the linear system.
+    gram_operator: A `tf.Tensor` or a `tfmri.linalg.LinearOperator` representing
+      the Gram matrix of `operator`. This may be used to provide a specialized
+      implementation of the Gram matrix :math:`A^H A`. Defaults to `None`, in
+      which case a naive implementation of the Gram matrix is derived from
+      `operator`.
     scale: A `float`. A scaling factor. Defaults to 1.0.
     name: A name for this `ConvexFunction`.
   """
-  def __init__(self, operator, rhs, scale=None, name=None):
+  def __init__(self, operator, rhs, gram_operator=None, scale=None, name=None):
     if isinstance(operator, linalg_imaging.LinalgImagingMixin):
       rhs = operator.flatten_range_shape(rhs)
-    quadratic_coefficient = tf.linalg.LinearOperatorComposition(
-        [operator.H, operator], is_self_adjoint=True, is_positive_definite=True)
+    if gram_operator:
+      quadratic_coefficient = gram_operator
+    else:
+      quadratic_coefficient = tf.linalg.LinearOperatorComposition(
+          [operator.H, operator],
+          is_self_adjoint=True, is_positive_definite=True)
     linear_coefficient = tf.math.negative(
         tf.linalg.matvec(operator, rhs, adjoint_a=True))
     constant_coefficient = tf.constant(0.0, dtype=operator.dtype)
@@ -972,6 +987,8 @@ def _get_static_and_dynamic_dimension(dim):  # pylint: disable=missing-param-doc
             f"but got: {dim_static} (type: {type(dim_static)})") from err
     if isinstance(dim_static, (np.int32, np.int64)):
       dim_static = dim_static.item()
+    if isinstance(dim_static, tf.compat.v1.Dimension):
+      dim_static = dim_static.value
     if not isinstance(dim_static, int):
       raise ValueError(
           f"domain_dimension must be a scalar integer, "

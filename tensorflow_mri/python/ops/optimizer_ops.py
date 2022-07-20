@@ -211,9 +211,9 @@ def admm_minimize(function_f,
       Lagrangian. Also corresponds to the step size of the dual variable update
       in the scaled form of ADMM.
     absolute_tolerance: A scalar `tf.Tensor` of real dtype. The absolute
-      tolerance. Defaults to 1e-8.
+      tolerance. Defaults to 1e-5.
     relative_tolerance: A scalar `tf.Tensor` of real dtype. The relative
-      tolerance. Defaults to 1e-8.
+      tolerance. Defaults to 1e-5.
     max_iterations: A scalar `tf.Tensor` of integer dtype. The maximum number
       of iterations of the ADMM update.
     linearized: A `boolean`. If `True`, use linearized variant of the ADMM

@@ -478,6 +478,117 @@ class ReconstructTest(test_util.TestCase):
 
 
 class LeastSquaresTest(test_util.TestCase):
+  def test_linear_noncart_multicoil_toeplitz(self):
+    resolution = 128
+    shape = [resolution, resolution]
+    image, sens = image_ops.phantom(
+        shape=shape, num_coils=4, dtype=tf.complex64, return_sensitivities=True)
+    trajectory = traj_ops.radial_trajectory(
+        resolution, resolution // 2 + 1, flatten_encoding_dims=True)
+    density = traj_ops.radial_density(
+        resolution, resolution // 2 + 1, flatten_encoding_dims=True)
+    kspace = fft_ops.nufft(image, trajectory)
+
+    recon = recon_ops.reconstruct_lstsq(
+        kspace, shape, trajectory=trajectory, density=density,
+        sensitivities=sens, toeplitz_nufft=False)
+
+    recon_toep = recon_ops.reconstruct_lstsq(
+        kspace, shape, trajectory=trajectory, density=density,
+        sensitivities=sens, toeplitz_nufft=True)
+
+    self.assertAllClose(recon, recon_toep, rtol=1e-2, atol=1e-2)
+
+  def test_cs_tv_noncart_toeplitz(self):
+    resolution = 128
+    shape = [resolution, resolution]
+    image, sens = image_ops.phantom(
+        shape=shape, num_coils=4, dtype=tf.complex64, return_sensitivities=True)
+    trajectory = traj_ops.radial_trajectory(
+        resolution, resolution // 2 + 1, flatten_encoding_dims=True)
+    density = traj_ops.radial_density(
+        resolution, resolution // 2 + 1, flatten_encoding_dims=True)
+    kspace = fft_ops.nufft(image, trajectory)
+
+    regularizer = convex_ops.ConvexFunctionTotalVariation(
+        domain_shape=shape, scale=0.2, dtype=tf.complex64) 
+
+    recon = recon_ops.reconstruct_lstsq(
+        kspace, shape, trajectory=trajectory, density=density,
+        sensitivities=sens, regularizer=regularizer, toeplitz_nufft=False)
+
+    recon_toep = recon_ops.reconstruct_lstsq(
+        kspace, shape, trajectory=trajectory, density=density,
+        sensitivities=sens, regularizer=regularizer, toeplitz_nufft=True)
+
+    self.assertAllClose(recon, recon_toep, rtol=1e-2, atol=1e-2)
+
+  def test_compressed_sensing_total_variation(self):
+    shape = [8, 8]
+    image = image_ops.phantom(shape=shape, dtype=tf.complex64)
+    # The mask below was generated randomly using this code. However, to ensure
+    # 100% determinism we hardcode the mask (setting the seed is not enough,
+    # because NumPy/TensorFlow random generators do not guarantee
+    # reproducibility across different versions).
+    # density = traj_ops.density_grid(shape,
+    #                                 outer_density=0.1,
+    #                                 inner_cutoff=0.15,
+    #                                 outer_cutoff=0.75)
+    # mask = traj_ops.random_sampling_mask(shape=shape,
+    #                                     density=density,
+    #                                     seed=[1234, 5678])
+    mask = [[False, False,  True, False, False, False, False, False],
+            [False, False, False, False, False, False, False, False],
+            [False,  True, False, False,  True, False, False, False],
+            [False, False,  True,  True,  True,  True, False, False],
+            [ True, False, False,  True,  True,  True, False, False],
+            [False, False, False,  True,  True, False, False, False],
+            [False, False, False, False, False,  True, False, False],
+            [False, False, False, False, False,  True, False, False]]
+
+    kspace = fft_ops.fftn(image, shift=True)
+    kspace *= tf.cast(mask, tf.complex64)
+
+    regularizer = convex_ops.ConvexFunctionTotalVariation(
+        shape, scale=0.5, dtype=tf.complex64)
+    recon = recon_ops.reconstruct_lstsq(
+        kspace, shape, mask=mask, regularizer=regularizer)
+
+    expected = [
+       [0.47365025+0.35727844j, 0.47362387+0.3574852j ,
+        0.47102705+0.35773143j, 1.5927275 +0.03364388j,
+        1.5925304 +0.03386804j, 1.5924214 +0.03396048j,
+        0.63141483+0.17710306j, 0.47365424+0.24591646j],
+       [0.49422392+0.24302912j, 0.49413317+0.24296162j,
+        1.592535  +0.03359434j, 1.5924664 +0.03376158j,
+        1.5924141 +0.03393522j, 1.5923434 +0.03402908j,
+        0.63145584+0.1770497j , 0.47367054+0.24595489j],
+       [0.42961526-0.03568281j, 0.42958477-0.03572694j,
+        1.5923353 +0.03373172j, 1.5923089 +0.0338942j ,
+        1.592305  +0.0341074j , 1.5922856 +0.03428759j,
+        0.52442116+0.04065578j, 0.52437794+0.04063034j],
+       [0.42960957-0.03569088j, 0.4295284 -0.03570621j,
+        1.410736  -0.01676844j, 1.4108166 -0.01677309j,
+        1.4109547 -0.01682312j, 1.4110198 -0.01687882j,
+        0.5244667 +0.04046582j, 0.52443236+0.04049375j],
+       [0.429612  -0.03571485j, 0.42952585-0.03567624j,
+        1.4107622 -0.01665446j, 1.4108161 -0.01667437j,
+        1.4109243 -0.01672381j, 1.410965  -0.01678341j,
+        0.5245532 +0.04018233j, 0.5245165 +0.04022514j],
+       [0.4297124 -0.03573817j, 0.42958248-0.03571387j,
+        1.4109347 -0.01656535j, 1.4108994 -0.01657733j,
+        1.4109379 -0.01667013j, 1.4108921 -0.01673685j,
+        0.5246046 +0.03988812j, 0.5245441 +0.04001619j],
+       [0.47826728-0.28862503j, 0.6072884 -0.22691496j,
+        1.4110522 -0.01650939j, 1.4109974 -0.01655797j,
+        1.4109544 -0.01662711j, 1.4108546 -0.01663312j,
+        0.5247626 +0.03954637j, 0.5248155 +0.03936924j],
+       [0.47841653-0.2886274j , 0.60729015-0.2270134j ,
+        1.4111687 -0.01653639j, 1.4111212 -0.01657057j,
+        1.4110851 -0.01657632j, 0.3350836 -0.51524085j,
+        0.33502012-0.51509833j, 0.33495024-0.514987j  ]]
+    self.assertAllClose(expected, recon, rtol=1e-5, atol=1e-5)
+
   def test_compressed_sensing_l1_wavelet(self):
     shape = [8, 8]
     image = image_ops.phantom(shape=shape, dtype=tf.complex64)

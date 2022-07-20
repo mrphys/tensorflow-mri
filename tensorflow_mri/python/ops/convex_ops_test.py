@@ -326,30 +326,97 @@ class ConvexFunctionTikhonovTest(test_util.TestCase):
 class ConvexFunctionTotalVariationTest(test_util.TestCase):
   """Tests for `ConvexFunctionTotalVariation`."""
   # pylint: disable=missing-function-docstring
-  def test_call(self):
+  def test_2d_all_axes(self):
     x = [[1., 2., 3.],
          [4., 5., 6.]]
     x_flat = tf.reshape(x, [-1])
-    reg1 = convex_ops.ConvexFunctionTotalVariation(scale=0.1,
-                                                   domain_shape=[2, 3],
-                                                   axis=[0, 1])
-    ref1 = 1.3
-    res1 = reg1(x_flat)
-    self.assertAllClose(res1, ref1)
+    expected = 1.3
 
-    reg2 = convex_ops.ConvexFunctionTotalVariation(scale=0.1,
-                                                   domain_shape=[2, 3],
-                                                   axis=1)
-    res2 = reg2(x_flat)
-    ref2 = 0.4
-    self.assertAllClose(res2, ref2)
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[2, 3],
+                                                axes=[0, 1],
+                                                scale=0.1)
+    result = f(x_flat)
+    self.assertAllClose(expected, result)
 
-    reg3 = convex_ops.ConvexFunctionTotalVariation(scale=0.5,
-                                                   domain_shape=[3],
-                                                   axis=-1)
-    res3 = reg3(x)
-    ref3 = [1.0, 1.0]
-    self.assertAllClose(res3, ref3)
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[2, 3],
+                                                axes=None,
+                                                scale=0.1)
+    result = f(x_flat)
+    self.assertAllClose(expected, result)
+
+  def test_2d_single_axis(self):
+    x = [[1., 2., 3.],
+         [4., 5., 6.]]
+    x_flat = tf.reshape(x, [-1])
+    expected = 0.4
+
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[2, 3],
+                                                axes=1,
+                                                scale=0.1)
+    result = f(x_flat)
+    self.assertAllClose(expected, result)
+
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[2, 3],
+                                                axes=[1],
+                                                scale=0.1)
+    result = f(x_flat)
+    self.assertAllClose(expected, result)
+
+    expected = 0.9
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[2, 3],
+                                                axes=[0],
+                                                scale=0.1)
+    result = f(x_flat)
+    self.assertAllClose(expected, result)
+
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[2, 3],
+                                                axes=[-2],
+                                                scale=0.1)
+    result = f(x_flat)
+    self.assertAllClose(expected, result)
+
+  def test_1d_batch(self):
+    x = [[1., 2., 3.],
+         [4., 5., 6.]]
+    x_flat = tf.reshape(x, [-1])
+    expected = [1.0, 1.0]
+
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[3],
+                                                axes=-1,
+                                                scale=0.5)
+    result = f(x)
+    self.assertAllClose(expected, result)
+
+  def test_2d_batch(self):
+    x = tf.constant([[1., 2., 3.],
+                     [4., 5., 6.]])
+    x = tf.stack([x, x * 2])
+    x = tf.reshape(x, [2, -1])
+
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[2, 3],
+                                                axes=1,
+                                                scale=0.1)
+    self.assertAllClose([0.4, 0.8], f(x))
+
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[2, 3],
+                                                axes=[1],
+                                                scale=0.1)
+    self.assertAllClose([0.4, 0.8], f(x))
+
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[2, 3],
+                                                axes=[0],
+                                                scale=0.1)
+    self.assertAllClose([0.9, 1.8], f(x))
+
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[2, 3],
+                                                axes=[-2],
+                                                scale=0.1)
+    self.assertAllClose([0.9, 1.8], f(x))
+
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[2, 3],
+                                                axes=[-2, -1],
+                                                scale=0.1)
+    self.assertAllClose([1.3, 2.6], f(x))
 
 
 class ConvexFunctionL1WaveletTest(test_util.TestCase):

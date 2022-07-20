@@ -457,6 +457,96 @@ class LinearOperatorMRITest(test_util.TestCase):
     y = tf.linalg.matvec(linop.H, tf.linalg.matvec(linop, x))
     self.assertAllClose(x, y)
 
+  def test_nufft_with_sensitivities(self):
+    resolution = 128
+    image_shape = [resolution, resolution]
+    num_coils = 4
+    image, sensitivities = image_ops.phantom(
+        shape=image_shape, num_coils=num_coils, dtype=tf.complex64,
+        return_sensitivities=True)
+    image = image_ops.phantom(shape=image_shape, dtype=tf.complex64)
+    trajectory = traj_ops.radial_trajectory(resolution, resolution // 2 + 1,
+                                            flatten_encoding_dims=True)
+    density = traj_ops.radial_density(resolution, resolution // 2 + 1,
+                                      flatten_encoding_dims=True)
+
+    linop = linalg_ops.LinearOperatorMRI(
+        image_shape, trajectory=trajectory, density=density,
+        sensitivities=sensitivities)
+
+    # Test shapes.
+    expected_domain_shape = image_shape
+    self.assertAllClose(expected_domain_shape, linop.domain_shape)
+    self.assertAllClose(expected_domain_shape, linop.domain_shape_tensor())
+    expected_range_shape = [num_coils, (2 * resolution) * (resolution // 2 + 1)]
+    self.assertAllClose(expected_range_shape, linop.range_shape)
+    self.assertAllClose(expected_range_shape, linop.range_shape_tensor())
+
+    # Test forward.
+    weights = tf.cast(tf.math.sqrt(tf.math.reciprocal_no_nan(density)),
+                      tf.complex64)
+    norm = tf.math.sqrt(tf.cast(tf.math.reduce_prod(image_shape), tf.complex64))
+    expected = fft_ops.nufft(image * sensitivities, trajectory) * weights / norm
+    kspace = linop.transform(image)
+    self.assertAllClose(expected, kspace)
+
+    # Test adjoint.
+    expected = tf.math.reduce_sum(
+        fft_ops.nufft(
+            kspace * weights, trajectory, grid_shape=image_shape,
+            transform_type='type_1', fft_direction='backward') / norm *
+        tf.math.conj(sensitivities), axis=-3)
+    recon = linop.transform(kspace, adjoint=True)
+    self.assertAllClose(expected, recon)
+
+
+class LinearOperatorGramMRITest(test_util.TestCase):
+  @parameterized.product(batch=[False, True], extra=[False, True],
+                         toeplitz_nufft=[False, True])
+  def test_general(self, batch, extra, toeplitz_nufft):
+    resolution = 128
+    image_shape = [resolution, resolution]
+    num_coils = 4
+    image, sensitivities = image_ops.phantom(
+        shape=image_shape, num_coils=num_coils, dtype=tf.complex64,
+        return_sensitivities=True)
+    image = image_ops.phantom(shape=image_shape, dtype=tf.complex64)
+    trajectory = traj_ops.radial_trajectory(resolution, resolution // 2 + 1,
+                                            flatten_encoding_dims=True)
+    density = traj_ops.radial_density(resolution, resolution // 2 + 1,
+                                      flatten_encoding_dims=True)
+    if batch:
+      image = tf.stack([image, image * 2])
+      if extra:
+        extra_shape = [2]
+      else:
+        extra_shape = None
+    else:
+      extra_shape = None
+
+    linop = linalg_ops.LinearOperatorMRI(
+        image_shape, extra_shape=extra_shape,
+        trajectory=trajectory, density=density,
+        sensitivities=sensitivities)
+    linop_gram = linalg_ops.LinearOperatorGramMRI(
+        image_shape, extra_shape=extra_shape,
+        trajectory=trajectory, density=density,
+        sensitivities=sensitivities, toeplitz_nufft=toeplitz_nufft)
+
+    # Test shapes.
+    expected_domain_shape = image_shape
+    if extra_shape is not None:
+      expected_domain_shape = extra_shape + image_shape
+    self.assertAllClose(expected_domain_shape, linop_gram.domain_shape)
+    self.assertAllClose(expected_domain_shape, linop_gram.domain_shape_tensor())
+    self.assertAllClose(expected_domain_shape, linop_gram.range_shape)
+    self.assertAllClose(expected_domain_shape, linop_gram.range_shape_tensor())
+
+    # Test transform.
+    expected = linop.transform(linop.transform(image), adjoint=True)
+    self.assertAllClose(expected, linop_gram.transform(image),
+                        rtol=1e-4, atol=1e-4)
+
 
 # Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 #

@@ -693,8 +693,7 @@ class LinearOperatorDiag(LinalgImagingMixin, tf.linalg.LinearOperatorDiag): # py
 
 
 @api_util.export("linalg.LinearOperatorGramMatrix")
-class LinearOperatorGramMatrix(LinalgImagingMixin,  # pylint: disable=abstract-method
-                               tf.linalg.LinearOperator):
+class LinearOperatorGramMatrix(LinearOperator):
   r"""Linear operator representing the Gram matrix of an operator.
 
   If :math:`A` is a `LinearOperator`, this operator is equivalent to
@@ -717,11 +716,15 @@ class LinearOperatorGramMatrix(LinalgImagingMixin,  # pylint: disable=abstract-m
   :math:`{\mathop{\mathrm{argmin}}_x} {\left \| Ax-b \right \|_2^2 + \lambda \left \| T(x-x_0) \right \|_2^2}`.
 
   Args:
-    operator: A `LinearOperator`.
+    operator: A `tfmri.linalg.LinearOperator`. The operator :math:`A` whose Gram
+      matrix is represented by this linear operator.
     reg_parameter: A `Tensor` of shape `[B1, ..., Bb]` and real dtype.
       The regularization parameter :math:`\lambda`. Defaults to 0.
-    reg_operator: A `LinearOperator`. The regularization transform :math:`T`.
-      Defaults to the identity.
+    reg_operator: A `tfmri.linalg.LinearOperator`. The regularization transform
+      :math:`T`. Defaults to the identity.
+    gram_operator: A `tfmri.linalg.LinearOperator`. The Gram matrix
+      :math:`A^H A`. This may be optionally provided to use a specialized
+      Gram matrix implementation. Defaults to `None`.
     is_non_singular: Expect that this operator is non-singular.
     is_self_adjoint: Expect that this operator is equal to its Hermitian
       transpose.
@@ -736,6 +739,7 @@ class LinearOperatorGramMatrix(LinalgImagingMixin,  # pylint: disable=abstract-m
                operator,
                reg_parameter=None,
                reg_operator=None,
+               gram_operator=None,
                is_non_singular=None,
                is_self_adjoint=True,
                is_positive_definite=True,
@@ -753,8 +757,12 @@ class LinearOperatorGramMatrix(LinalgImagingMixin,  # pylint: disable=abstract-m
     self._operator = operator
     self._reg_parameter = reg_parameter
     self._reg_operator = reg_operator
-    self._composed = LinearOperatorComposition(
-        operators=[self._operator.H, self._operator])
+    self._gram_operator = gram_operator
+    if gram_operator is not None:
+      self._composed = gram_operator
+    else:
+      self._composed = LinearOperatorComposition(
+          operators=[self._operator.H, self._operator])
 
     if not is_self_adjoint:
       raise ValueError("A Gram matrix is always self-adjoint.")

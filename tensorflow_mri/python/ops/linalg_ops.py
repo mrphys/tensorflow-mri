@@ -82,7 +82,7 @@ class LinearOperatorNUFFT(linalg_imaging.LinearOperator):  # pylint: disable=abs
     >>> # This reconstructs the image applying only partial compensation
     >>> # (square root of weights).
     >>> image = linop.transform(kspace, adjoint=True)
-    >>> # This reconstruct the image with full compensation.
+    >>> # This reconstructs the image with full compensation.
     >>> image = linop.transform(linop.precompensate(kspace), adjoint=True)
   """
   def __init__(self,
@@ -272,10 +272,16 @@ class LinearOperatorGramNUFFT(LinearOperatorNUFFT):  # pylint: disable=abstract-
     domain_shape: A 1D integer `tf.Tensor`. The domain shape of this
       operator. This is usually the shape of the image but may include
       additional dimensions.
-    trajectory: A `tf.Tensor` of type `float32` or `float64`. Must have shape
+    trajectory: A `tf.Tensor` of type `float32` or `float64`. Contains the
+      sampling locations or *k*-space trajectory. Must have shape
       `[..., M, N]`, where `N` is the rank (number of dimensions), `M` is
       the number of samples and `...` is the batch shape, which can have any
       number of dimensions.
+    density: A `tf.Tensor` of type `float32` or `float64`. Contains the
+      sampling density at each point in `trajectory`. Must have shape
+      `[..., M]`, where `M` is the number of samples and `...` is the batch
+      shape, which can have any number of dimensions. Defaults to `None`, in
+      which case the density is assumed to be 1.0 in all locations.
     norm: A `str`. The FFT normalization mode. Must be `None` (no normalization)
       or `'ortho'`.
     toeplitz: A `boolean`. If `True`, uses the Toeplitz approach [1]
@@ -686,9 +692,7 @@ class LinearOperatorWavelet(linalg_imaging.LinearOperator):  # pylint: disable=a
 
 
 @api_util.export("linalg.LinearOperatorMRI")
-@linear_operator.make_composite_tensor
-class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,  # pylint: disable=abstract-method
-                        tf.linalg.LinearOperator):
+class LinearOperatorMRI(linalg_imaging.LinearOperator):  # pylint: disable=abstract-method
   """Linear operator representing an MRI encoding matrix.
 
   The MRI operator, :math:`A`, maps a [batch of] images, :math:`x` to a
@@ -952,6 +956,9 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,  # pylint: disable=ab
     else:
       self._dynamic_domain = None
 
+    # This variable is used by `LinearOperatorGramMRI` to disable the NUFFT.
+    self._skip_nufft = False
+
     super().__init__(dtype, name=name, parameters=parameters)
 
   def _transform(self, x, adjoint=False):
@@ -974,17 +981,18 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,  # pylint: disable=ab
     """
     if adjoint:
       # Apply density compensation.
-      if self._density is not None:
+      if self._density is not None and not self._skip_nufft:
         x *= self._dens_weights_sqrt
 
       # Apply adjoint Fourier operator.
       if self.is_non_cartesian:  # Non-Cartesian imaging, use NUFFT.
-        x = tfft.nufft(x, self._trajectory,
-                       grid_shape=self._image_shape,
-                       transform_type='type_1',
-                       fft_direction='backward')
-        if self._fft_norm is not None:
-          x *= self._fft_norm_factor
+        if not self._skip_nufft:
+          x = tfft.nufft(x, self._trajectory,
+                         grid_shape=self._image_shape,
+                         transform_type='type_1',
+                         fft_direction='backward')
+          if self._fft_norm is not None:
+            x *= self._fft_norm_factor
 
       else:  # Cartesian imaging, use FFT.
         if self._mask is not None:
@@ -1026,11 +1034,12 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,  # pylint: disable=ab
 
       # Apply Fourier operator.
       if self.is_non_cartesian:  # Non-Cartesian imaging, use NUFFT.
-        x = tfft.nufft(x, self._trajectory,
-                       transform_type='type_2',
-                       fft_direction='forward')
-        if self._fft_norm is not None:
-          x *= self._fft_norm_factor
+        if not self._skip_nufft:
+          x = tfft.nufft(x, self._trajectory,
+                         transform_type='type_2',
+                         fft_direction='forward')
+          if self._fft_norm is not None:
+            x *= self._fft_norm_factor
 
       else:  # Cartesian imaging, use FFT.
         x = fft_ops.fftn(x, axes=self._image_axes,
@@ -1039,7 +1048,7 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,  # pylint: disable=ab
           x *= self._mask_linop_dtype  # Undersampling.
 
       # Apply density compensation.
-      if self._density is not None:
+      if self._density is not None and not self._skip_nufft:
         x *= self._dens_weights_sqrt
 
     return x
@@ -1122,6 +1131,61 @@ class LinearOperatorMRI(linalg_imaging.LinalgImagingMixin,  # pylint: disable=ab
   def _composite_tensor_fields(self):
     return ("image_shape", "mask", "trajectory", "density", "sensitivities",
             "fft_norm")
+
+
+@api_util.export("linalg.LinearOperatorGramMRI")
+class LinearOperatorGramMRI(LinearOperatorMRI):  # pylint: disable=abstract-method
+  def __init__(self,
+               image_shape,
+               extra_shape=None,
+               mask=None,
+               trajectory=None,
+               density=None,
+               sensitivities=None,
+               phase=None,
+               fft_norm='ortho',
+               sens_norm=True,
+               dynamic_domain=None,
+               toeplitz_nufft=False,
+               dtype=tf.complex64,
+               name="LinearOperatorGramMRI"):
+    super().__init__(
+        image_shape,
+        extra_shape=extra_shape,
+        mask=mask,
+        trajectory=trajectory,
+        density=density,
+        sensitivities=sensitivities,
+        phase=phase,
+        fft_norm=fft_norm,
+        sens_norm=sens_norm,
+        dynamic_domain=dynamic_domain,
+        dtype=dtype,
+        name=name
+    )
+
+    self.toeplitz_nufft = toeplitz_nufft
+    if self.toeplitz_nufft and self.is_non_cartesian:
+      # Create a Gram NUFFT operator with Toeplitz embedding.
+      self._linop_gram_nufft = LinearOperatorGramNUFFT(
+          image_shape, trajectory=self._trajectory, density=self._density,
+          norm=fft_norm, toeplitz=True)
+      # Disable NUFFT computation on base class. The NUFFT will instead be
+      # performed by the Gram NUFFT operator.
+      self._skip_nufft = True
+
+  def _transform(self, x, adjoint=False):
+    x = super()._transform(x)
+    if self.toeplitz_nufft:
+      x = self._linop_gram_nufft.transform(x)
+    x = super()._transform(x, adjoint=True)
+    return x
+
+  def _range_shape(self):
+    return self._domain_shape()
+
+  def _range_shape_tensor(self):
+    return self._domain_shape_tensor()
 
 
 # Copyright 2019 The TensorFlow Authors. All Rights Reserved.
