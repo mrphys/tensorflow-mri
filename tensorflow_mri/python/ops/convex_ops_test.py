@@ -378,7 +378,6 @@ class ConvexFunctionTotalVariationTest(test_util.TestCase):
   def test_1d_batch(self):
     x = [[1., 2., 3.],
          [4., 5., 6.]]
-    x_flat = tf.reshape(x, [-1])
     expected = [1.0, 1.0]
 
     f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[3],

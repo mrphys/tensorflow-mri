@@ -357,7 +357,7 @@ def map_fn(fn, elems, batch_dims=1, **kwargs):
   # Flatten the batch dimensions.
   elems = tf.nest.map_structure(
       lambda x: tf.reshape(
-          x, tf.concat([[-1], tf.shape(x)[batch_dims:]], axis=0)), elems)
+          x, tf.concat([[-1], tf.shape(x)[batch_dims:]], 0)), elems)
 
   # Process each batch.
   output = tf.map_fn(fn, elems, **kwargs)
@@ -365,7 +365,7 @@ def map_fn(fn, elems, batch_dims=1, **kwargs):
   # Unflatten the batch dimensions.
   output = tf.nest.map_structure(
       lambda x, dynamic_batch_shape: tf.reshape(
-          x, tf.concat([dynamic_batch_shape, tf.shape(x)[1:]], axis=0)),
+          x, tf.concat([dynamic_batch_shape, tf.shape(x)[1:]], 0)),
       output, dynamic_batch_shapes)
 
   # Set the static batch shapes on the output, if known.

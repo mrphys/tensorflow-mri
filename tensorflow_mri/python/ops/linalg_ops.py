@@ -22,7 +22,6 @@ import functools
 
 import tensorflow as tf
 import tensorflow_nufft as tfft
-from tensorflow.python.ops.linalg import linear_operator
 
 from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import fft_ops
@@ -165,14 +164,14 @@ class LinearOperatorNUFFT(linalg_imaging.LinearOperator):  # pylint: disable=abs
     shape1, shape2 = extra_shape_static, self.trajectory.shape[:-2]
     try:
       tf.broadcast_static_shape(shape1, shape2)
-    except ValueError:
+    except ValueError as err:
       raise ValueError(
           f"The \"batch\" shapes in `domain_shape` and `trajectory` are not "
-          f"compatible for broadcasting: {shape1} vs {shape2}")
+          f"compatible for broadcasting: {shape1} vs {shape2}") from err
 
     # Compute the range shape.
     self._range_shape_dynamic = tf.concat(
-        [extra_shape_dynamic, tf.shape(self.trajectory)[-2:-1]], axis=0)
+        [extra_shape_dynamic, tf.shape(self.trajectory)[-2:-1]], 0)
     self._range_shape_static = extra_shape_static.concatenate(
         self.trajectory.shape[-2:-1])
 
@@ -324,6 +323,7 @@ class LinearOperatorGramNUFFT(LinearOperatorNUFFT):  # pylint: disable=abstract-
       self._kernel_shape = tf.shape(self._toeplitz_kernel)[-self.rank_tensor():]
 
   def _transform(self, x, adjoint=False):  # pylint: disable=unused-argument
+    """Applies this linear operator."""
     # This operator is self-adjoint, so `adjoint` arg is unused.
     if self.toeplitz:
       # Using specialized Toeplitz implementation.
@@ -332,6 +332,7 @@ class LinearOperatorGramNUFFT(LinearOperatorNUFFT):  # pylint: disable=abstract-
     return super()._transform(super()._transform(x), adjoint=True)
 
   def _transform_toeplitz(self, x):
+    """Applies this linear operator using the Toeplitz approach."""
     input_shape = tf.shape(x)
     fft_axes = tf.range(-self.rank_tensor(), 0)
     x = fft_ops.fftn(x, axes=fft_axes, shape=self._kernel_shape)
@@ -341,6 +342,7 @@ class LinearOperatorGramNUFFT(LinearOperatorNUFFT):  # pylint: disable=abstract-
     return x
 
   def _compute_toeplitz_kernel(self):
+    """Computes the kernel for the Toeplitz approach."""
     trajectory = self.trajectory
     weights = self.weights
     if self.rank is None:
@@ -371,7 +373,30 @@ class LinearOperatorGramNUFFT(LinearOperatorNUFFT):  # pylint: disable=abstract-
     return fft_ops.fftn(kernel, axes=fft_axes, norm=fft_norm)
 
   def _compute_kernel_recursive(self, trajectory, weights, axis):
-    """Recursively computes the Toeplitz kernel."""
+    """Recursively computes the kernel for the Toeplitz approach.
+
+    This function works by computing the two halves of the kernel along each
+    axis. The "left" half is computed using the input trajectory. The "right"
+    half is computed using the trajectory flipped along the current axis, and
+    then reversed. Then the two halves are concatenated, with a block of zeros
+    inserted in between. If there is more than one axis, the process is repeated
+    recursively for each axis.
+
+    This function calls the adjoint NUFFT 2 ** N times, where N is the number
+    of dimensions. NOTE: this could be optimized to 2 ** (N - 1) calls.
+
+    Args:
+      trajectory: A `tf.Tensor` containing the current *k*-space trajectory.
+      weights: A `tf.Tensor` containing the current density compensation
+        weights.
+      axis: An `int` denoting the current axis.
+
+    Returns:
+      A `tf.Tensor` containing the kernel.
+
+    Raises:
+      NotImplementedError: If the rank of the operator is not known statically.
+    """
     # Account for the batch dimensions. We do not need to do the recursion
     # for these.
     batch_dims = self.batch_shape.rank
@@ -410,7 +435,7 @@ class LinearOperatorGramNUFFT(LinearOperatorNUFFT):  # pylint: disable=abstract-
     # the kernel.
     zeros_shape = tf.concat([
         tf.shape(kernel_left)[:image_axis], [1],
-        tf.shape(kernel_left)[(image_axis + 1):]], axis=0)
+        tf.shape(kernel_left)[(image_axis + 1):]], 0)
     zeros = tf.zeros(zeros_shape, dtype=kernel_left.dtype)
 
     # Concatenate the left and right halves of kernel, with a block of zeros in
@@ -422,7 +447,17 @@ class LinearOperatorGramNUFFT(LinearOperatorNUFFT):  # pylint: disable=abstract-
     """Applies the adjoint NUFFT operator.
 
     We use this instead of `super()._transform(x, adjoint=True)` because we
-    need to be able to change the trajectory.
+    need to be able to change the trajectory and to apply an FFT shift.
+
+    Args:
+      x: A `tf.Tensor` containing the input data (typically the weights or
+        ones).
+      trajectory: A `tf.Tensor` containing the *k*-space trajectory, which
+        may have been flipped and therefore different from the original. If
+        `None`, the original trajectory is used.
+
+    Returns:
+      A `tf.Tensor` containing the result of the adjoint NUFFT.
     """
     # Apply FFT shift.
     x *= tf.math.exp(tf.dtypes.complex(
@@ -515,11 +550,11 @@ class LinearOperatorFiniteDifference(linalg_imaging.LinearOperator):  # pylint: 
     range_shape_dynamic = self._domain_shape_dynamic
     range_shape_dynamic = tf.concat([
         range_shape_dynamic[:self.axis],
-        [range_shape_dynamic[self.axis] - 1]], axis=0)
+        [range_shape_dynamic[self.axis] - 1]], 0)
     if self.axis != -1:
       range_shape_dynamic = tf.concat([
           range_shape_dynamic,
-          range_shape_dynamic[self.axis + 1:]], axis=0)
+          range_shape_dynamic[self.axis + 1:]], 0)
     self._range_shape_dynamic = range_shape_dynamic
 
     super().__init__(dtype,
@@ -1135,6 +1170,69 @@ class LinearOperatorMRI(linalg_imaging.LinearOperator):  # pylint: disable=abstr
 
 @api_util.export("linalg.LinearOperatorGramMRI")
 class LinearOperatorGramMRI(LinearOperatorMRI):  # pylint: disable=abstract-method
+  """Linear operator representing an MRI encoding matrix.
+
+  If :math:`A` is a `tfmri.linalg.LinearOperatorMRI`, then this ooperator
+  represents the matrix :math:`G = A^H A`.
+
+  In certain circumstances, this operator may be able to apply the matrix
+  :math:`G` more efficiently than the composition :math:`G = A^H A` using
+  `tfmri.linalg.LinearOperatorMRI` objects.
+
+  Args:
+    image_shape: A `tf.TensorShape` or a list of `ints`. The shape of the images
+      that this operator acts on. Must have length 2 or 3.
+    extra_shape: An optional `tf.TensorShape` or list of `ints`. Additional
+      dimensions that should be included within the operator domain. Note that
+      `extra_shape` is not needed to reconstruct independent batches of images.
+      However, it is useful when this operator is used as part of a
+      reconstruction that performs computation along non-spatial dimensions,
+      e.g. for temporal regularization. Defaults to `None`.
+    mask: An optional `tf.Tensor` of type `tf.bool`. The sampling mask. Must
+      have shape `[..., *S]`, where `S` is the `image_shape` and `...` is
+      the batch shape, which can have any number of dimensions. If `mask` is
+      passed, this operator represents an undersampled MRI operator.
+    trajectory: An optional `tf.Tensor` of type `float32` or `float64`. Must
+      have shape `[..., M, N]`, where `N` is the rank (number of spatial
+      dimensions), `M` is the number of samples in the encoded space and `...`
+      is the batch shape, which can have any number of dimensions. If
+      `trajectory` is passed, this operator represents a non-Cartesian MRI
+      operator.
+    density: An optional `tf.Tensor` of type `float32` or `float64`. The
+      sampling densities. Must have shape `[..., M]`, where `M` is the number of
+      samples and `...` is the batch shape, which can have any number of
+      dimensions. This input is only relevant for non-Cartesian MRI operators.
+      If passed, the non-Cartesian operator will include sampling density
+      compensation. If `None`, the operator will not perform sampling density
+      compensation.
+    sensitivities: An optional `tf.Tensor` of type `complex64` or `complex128`.
+      The coil sensitivity maps. Must have shape `[..., C, *S]`, where `S`
+      is the `image_shape`, `C` is the number of coils and `...` is the batch
+      shape, which can have any number of dimensions.
+    phase: An optional `tf.Tensor` of type `float32` or `float64`. A phase
+      estimate for the image. If provided, this operator will be
+      phase-constrained.
+    fft_norm: FFT normalization mode. Must be `None` (no normalization)
+      or `'ortho'`. Defaults to `'ortho'`.
+    sens_norm: A `boolean`. Whether to normalize coil sensitivities. Defaults to
+      `True`.
+    dynamic_domain: A `str`. The domain of the dynamic dimension, if present.
+      Must be one of `'time'` or `'frequency'`. May only be provided together
+      with a non-scalar `extra_shape`. The dynamic dimension is the last
+      dimension of `extra_shape`. The `'time'` mode (default) should be
+      used for regular dynamic reconstruction. The `'frequency'` mode should be
+      used for reconstruction in x-f space.
+    toeplitz_nufft: A `boolean`. If `True`, uses the Toeplitz approach [5]
+      to compute :math:`F^H F x`, where :math:`F` is the non-uniform Fourier
+      operator. If `False`, the same operation is performed using the standard
+      NUFFT operation. The Toeplitz approach might be faster than the direct
+      approach but is slightly less accurate. This argument is only relevant
+      for non-Cartesian reconstruction and will be ignored for Cartesian
+      problems.
+    dtype: A `tf.dtypes.DType`. The dtype of this operator. Must be `complex64`
+      or `complex128`. Defaults to `complex64`.
+    name: An optional `str`. The name of this operator.
+  """
   def __init__(self,
                image_shape,
                extra_shape=None,

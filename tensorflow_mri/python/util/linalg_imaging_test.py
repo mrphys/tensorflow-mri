@@ -15,11 +15,8 @@
 """Tests for module `util.linalg_imaging`."""
 # pylint: disable=missing-class-docstring,missing-function-docstring
 
-from absl.testing import parameterized
-import numpy as np
 import tensorflow as tf
 
-from tensorflow_mri.python.ops import wavelet_ops
 from tensorflow_mri.python.util import linalg_imaging
 from tensorflow_mri.python.util import test_util
 

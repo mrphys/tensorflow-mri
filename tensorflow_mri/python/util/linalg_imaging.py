@@ -22,7 +22,6 @@ import abc
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import array_ops
-from tensorflow_mri.python.ops import wavelet_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import linalg_ext
@@ -693,7 +692,7 @@ class LinearOperatorDiag(LinalgImagingMixin, tf.linalg.LinearOperatorDiag): # py
 
 
 @api_util.export("linalg.LinearOperatorGramMatrix")
-class LinearOperatorGramMatrix(LinearOperator):
+class LinearOperatorGramMatrix(LinearOperator):  # pylint: disable=abstract-method
   r"""Linear operator representing the Gram matrix of an operator.
 
   If :math:`A` is a `LinearOperator`, this operator is equivalent to

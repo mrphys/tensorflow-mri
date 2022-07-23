@@ -20,7 +20,8 @@ Major Features and Improvements
 
 * ``tfmri.linalg``:
 
-  * Added new class ``LinearOperatorWavelet``.
+  * Added new classes ``LinearOperatorNUFFT``, ``LinearOperatorGramNUFFT`` and
+    and ``LinearOperatorWavelet``.
 
 
 Bug Fixes and Other Changes

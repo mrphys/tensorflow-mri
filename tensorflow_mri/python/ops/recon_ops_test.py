@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for module `recon_ops`."""
+# pylint: disable=missing-class-docstring,missing-function-docstring
 
 from absl.testing import parameterized
 import numpy as np
@@ -418,8 +419,7 @@ class ReconstructTest(test_util.TestCase):
 
     def _reconstruct():
       regularizer = convex_ops.ConvexFunctionTotalVariation(
-          scale=0.001, domain_shape=[28, 384, 384],
-          axis=-3, dtype=tf.complex64)
+          domain_shape=[28, 384, 384], axes=-3, scale=0.001, dtype=tf.complex64)
       return recon_ops.reconstruct_lstsq(
           kspace,
           image_shape=[384, 384],
@@ -511,7 +511,7 @@ class LeastSquaresTest(test_util.TestCase):
     kspace = fft_ops.nufft(image, trajectory)
 
     regularizer = convex_ops.ConvexFunctionTotalVariation(
-        domain_shape=shape, scale=0.2, dtype=tf.complex64) 
+        domain_shape=shape, scale=0.2, dtype=tf.complex64)
 
     recon = recon_ops.reconstruct_lstsq(
         kspace, shape, trajectory=trajectory, density=density,
