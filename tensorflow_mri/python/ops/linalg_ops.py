@@ -612,7 +612,7 @@ class LinearOperatorWavelet(linalg_imaging.LinearOperator):  # pylint: disable=a
       values supported by `tfmri.signal.wavedec`. Defaults to `'symmetric'`.
     level: An `int` >= 0. The decomposition level. If `None` (default),
       the maximum useful level of decomposition will be used (see
-      `tfmri.signal.wavelet_max_level`).
+      `tfmri.signal.max_wavelet_level`).
     axes: A `list` of `int`. The axes over which the DWT is computed. Axes refer
       only to domain dimensions without regard for the batch dimensions.
       Defaults to `None` (all domain dimensions).

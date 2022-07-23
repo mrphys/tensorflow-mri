@@ -204,7 +204,7 @@ def wavedec(data, wavelet, mode='symmetric', level=None, axes=None):
       values supported by `tf.pad`_. Defaults to `'symmetric'`.
     level: An `int` >= 0. The decomposition level. If `None` (default),
       the maximum useful level of decomposition will be used (see
-      `tfmri.signal.wavelet_max_level`).
+      `tfmri.signal.max_wavelet_level`).
     axes: A `list` of `int`. Axes over which to compute the DWT. Axes may not
       be repeated. A value of `None` (the default) selects all axes.
 
@@ -724,7 +724,7 @@ def _match_coeff_dims(a_coeff, d_coeff_dict):  # pylint: disable=missing-functio
   return a_coeff[tuple(slice(s) for s in d_coeff.shape)]
 
 
-@api_util.export("signal.wavelet_max_level")
+@api_util.export("signal.max_wavelet_level")
 def dwt_max_level(shape, wavelet_or_length, axes=None):
   """Computes the maximum useful level of wavelet decomposition.
 
@@ -735,7 +735,7 @@ def dwt_max_level(shape, wavelet_or_length, axes=None):
 
   Examples:
     >>> import tensorflow_mri as tfmri
-    >>> tfmri.signal.wavelet_max_level((64, 32), 'db2')
+    >>> tfmri.signal.max_wavelet_level((64, 32), 'db2')
     3
 
   Args:
@@ -897,7 +897,7 @@ def coeffs_to_tensor(coeffs, padding=0, axes=None):
   return coeff_tensor, coeff_slices
 
 
-@api_util.export("signal.wavelet_tensor_to_coeffs")
+@api_util.export("signal.tensor_to_wavelet_coeffs")
 def tensor_to_coeffs(coeff_tensor, coeff_slices):
   """Extracts wavelet coefficients from tensor into a list.
 
@@ -905,7 +905,7 @@ def tensor_to_coeffs(coeff_tensor, coeff_slices):
     coeff_tensor: A `tf.Tensor` containing all wavelet coefficients. This should
       have been generated via `tfmri.signal.wavelet_coeffs_to_tensor`.
     coeff_slices : A `list` of slices corresponding to each coefficient as
-      obtained from `wavelet_tensor_to_coeffs`.
+      obtained from `tensor_to_wavelet_coeffs`.
 
   Returns:
     The wavelet coefficients in the format expected by `tfmri.signal.waverec`.
@@ -942,7 +942,7 @@ def tensor_to_coeffs(coeff_tensor, coeff_slices):
     >>> image = tfmri.image.phantom()
     >>> coeffs = tfmri.signal.wavedec(image, wavelet='db2', level=3)
     >>> tensor, slices = tfmri.signal.wavelet_coeffs_to_tensor(coeffs)
-    >>> coeffs_from_arr = tfmri.signal.wavelet_tensor_to_coeffs(tensor, slices)
+    >>> coeffs_from_arr = tfmri.signal.tensor_to_wavelet_coeffs(tensor, slices)
     >>> image_recon = tfmri.signal.waverec(coeffs_from_arr, wavelet='db2')
     >>> # image and image_recon are equal
   """

@@ -61,17 +61,12 @@ class ConvexFunction():
   Subclasses may implement the methods `_shape` and `_shape_tensor` to provide
   custom static and dynamic shape information, respectively.
   """
-  @deprecation.deprecated_args(
-      '2022-08-07', 'Use argument `domain_dimension` instead.', ('ndim', None))
   def __init__(self,
                domain_dimension=None,
-               ndim=None,
                scale=None,
                dtype=None,
                name=None):
     """Initialize this `ConvexFunction`."""
-    domain_dimension = deprecation.deprecated_argument_lookup(
-        'domain_dimension', domain_dimension, 'ndim', ndim)
     if isinstance(domain_dimension, tf.compat.v1.Dimension):
       domain_dimension = domain_dimension.value
     self._domain_dimension = check_util.validate_rank(
@@ -242,13 +237,6 @@ class ConvexFunction():
   def domain_dimension(self):
     """The static domain dimension of this `ConvexFunction`."""
     return self.shape[-1]
-
-  @property
-  @deprecation.deprecated(
-      '2022-08-07', 'Use `ConvexFunction.domain_dimension` instead.')
-  def ndim(self):
-    """The number of dimensions of this `ConvexFunction`."""
-    return self.domain_dimension
 
   @property
   def batch_shape(self):
@@ -744,7 +732,7 @@ class ConvexFunctionL1Wavelet(ConvexFunctionLinearOperatorComposition):  # pylin
       values supported by `tfmri.signal.wavedec`. Defaults to `'symmetric'`.
     level: An `int` >= 0. The decomposition level. If `None` (default),
       the maximum useful level of decomposition will be used (see
-      `tfmri.signal.wavelet_max_level`).
+      `tfmri.signal.max_wavelet_level`).
     axes: A `list` of `int`. The axes over which the DWT is computed. Axes refer
       only to domain dimensions without regard for the batch dimensions.
       Defaults to `None` (all domain dimensions).
