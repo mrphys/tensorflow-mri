@@ -14,7 +14,12 @@
 # ==============================================================================
 """Array manipulation operations."""
 
+import numpy as np
 import tensorflow as tf
+import tensorflow.experimental.numpy as tnp
+from tensorflow.python.ops.numpy_ops import np_array_ops
+
+from tensorflow_mri.python.util import api_util
 
 
 def broadcast_static_shapes(*shapes):
@@ -274,3 +279,107 @@ def _compute_static_output_shape(input_shape, target_shape):
           output_shape.as_list(), input_shape.as_list())])
 
   return output_shape
+
+
+@api_util.export("array.update_tensor")
+def update_tensor(tensor, slices, value):
+  """Updates the values of a tensor at the specified slices.
+
+  This operator performs slice assignment.
+
+  .. note::
+    Equivalent to `tensor[slices] = value`.
+
+  .. warning::
+    TensorFlow does not support slice assignment because tensors are immutable.
+    This operator works around this limitation by creating a new tensor, which
+    may have performance implications.
+
+  Args:
+    tensor: A `tf.Tensor`.
+    slices: The indices or slices.
+    value: A `tf.Tensor`.
+
+  Returns:
+    An updated `tf.Tensor` with the same shape and type as `tensor`.
+  """
+  # Using a private implementation in the TensorFlow NumPy API.
+  # pylint: disable=protected-access
+  return _with_index_update_helper(np_array_ops._UpdateMethod.UPDATE,
+                                   tensor, slices, value)
+
+
+def _with_index_update_helper(update_method, a, slice_spec, updates):  # pylint: disable=missing-param-doc
+  """Implementation of ndarray._with_index_*."""
+  # Adapted from tensorflow/python/ops/numpy_ops/np_array_ops.py.
+  # pylint: disable=protected-access
+  if (isinstance(slice_spec, bool) or (isinstance(slice_spec, tf.Tensor) and
+                                       slice_spec.dtype == tf.dtypes.bool) or
+      (isinstance(slice_spec, (np.ndarray, tnp.ndarray)) and
+       slice_spec.dtype == np.bool_)):
+    slice_spec = tnp.nonzero(slice_spec)
+
+  if not isinstance(slice_spec, tuple):
+    slice_spec = np_array_ops._as_spec_tuple(slice_spec)
+
+  return np_array_ops._slice_helper(a, slice_spec, update_method, updates)
+
+
+def map_fn(fn, elems, batch_dims=1, **kwargs):
+  """Transforms `elems` by applying `fn` to each element.
+
+  .. note::
+    Similar to `tf.map_fn`, but it supports unstacking along multiple batch
+    dimensions.
+
+  For the parameters, see `tf.map_fn`. The only difference is that there is an
+  additional `batch_dims` keyword argument which allows specifying the number
+  of batch dimensions. The default is 1, in which case this function is equal
+  to `tf.map_fn`.
+  """
+  # This function works by reshaping any number of batch dimensions into a
+  # single batch dimension, calling the original `tf.map_fn`, and then
+  # restoring the original batch dimensions.
+  static_batch_dims = tf.get_static_value(batch_dims)
+
+  # Get batch shapes.
+  if static_batch_dims is None:
+    # We don't know how many batch dimensions there are statically, so we can't
+    # get the batch shape statically.
+    static_batch_shapes = tf.nest.map_structure(
+        lambda _: tf.TensorShape(None), elems)
+  else:
+    static_batch_shapes = tf.nest.map_structure(
+        lambda x: x.shape[:static_batch_dims], elems)
+  dynamic_batch_shapes = tf.nest.map_structure(
+      lambda x: tf.shape(x)[:batch_dims], elems)
+
+  # Flatten the batch dimensions.
+  elems = tf.nest.map_structure(
+      lambda x: tf.reshape(
+          x, tf.concat([[-1], tf.shape(x)[batch_dims:]], 0)), elems)
+
+  # Process each batch.
+  output = tf.map_fn(fn, elems, **kwargs)
+
+  # Unflatten the batch dimensions.
+  output = tf.nest.map_structure(
+      lambda x, dynamic_batch_shape: tf.reshape(
+          x, tf.concat([dynamic_batch_shape, tf.shape(x)[1:]], 0)),
+      output, dynamic_batch_shapes)
+
+  # Set the static batch shapes on the output, if known.
+  if static_batch_dims is not None:
+    output = tf.nest.map_structure(
+        lambda x, static_batch_shape: tf.ensure_shape(
+            x, static_batch_shape.concatenate(x.shape[static_batch_dims:])),
+        output, static_batch_shapes)
+
+  return output
+
+
+def slice_along_axis(tensor, axis, start, length):
+  """Slices a tensor along the specified axis."""
+  begin = tf.scatter_nd([[axis]], [start], [tensor.shape.rank])
+  size = tf.tensor_scatter_nd_update(tf.shape(tensor), [[axis]], [length])
+  return tf.slice(tensor, begin, size)

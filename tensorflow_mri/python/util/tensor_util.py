@@ -108,3 +108,30 @@ def maybe_get_static_value(tensor):
   if static is not None:
     return static
   return tensor
+
+
+def static_and_dynamic_shapes_from_shape(shape):
+  """Returns static and dynamic shapes from tensor shape.
+
+  Args:
+    shape: This could be a 1D integer tensor, a tensor shape, a list,
+      a tuple or any other valid representation of a tensor shape.
+
+  Returns:
+    A tuple of two objects:
+      - A `tf.TensorShape` containing the static information that could be
+        retrieved from `shape`. This might be a fully defined shape, a partially
+        unknown shape or a fully unknown shape depending on the input. The
+        information in this object is available during graph construction.
+      - A `tf.Tensor` containing dynamic shape information. This always
+        contains the full shape information, but it is only guaranteed to be
+        available at run time.
+
+  Raises:
+    ValueError: If `shape` is not 1D.
+  """
+  static = tf.TensorShape(tf.get_static_value(shape, partial=True))
+  dynamic = tf.convert_to_tensor(shape, tf.int32)
+  if dynamic.shape.rank != 1:
+    raise ValueError(f"Expected shape to be 1D, got {dynamic}.")
+  return static, dynamic

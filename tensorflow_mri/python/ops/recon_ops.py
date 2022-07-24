@@ -59,12 +59,20 @@ def reconstruct_adj(kspace,
   This operator supports batched inputs. All batch shapes should be
   broadcastable with each other.
 
+  This operator supports multicoil imaging. Coil combination is triggered
+  when `sensitivities` is not `None`. If you have multiple coils but wish to
+  reconstruct each coil separately, simply set `sensitivities` to `None`. The
+  coil dimension will then be treated as a standard batch dimension (i.e., it
+  becomes part of `...`).
+
   Args:
     kspace: A `Tensor`. The *k*-space samples. Must have type `complex64` or
       `complex128`. `kspace` can be either Cartesian or non-Cartesian. A
       Cartesian `kspace` must have shape
       `[..., num_coils, *image_shape]`, where `...` are batch dimensions. A
       non-Cartesian `kspace` must have shape `[..., num_coils, num_samples]`.
+      If not multicoil (`sensitivities` is `None`), then the `num_coils` axis
+      must be omitted.
     image_shape: A `TensorShape` or a list of `ints`. Must have length 2 or 3.
       The shape of the reconstructed image[s].
     mask: An optional `Tensor` of type `bool`. The sampling mask. Must have
@@ -155,7 +163,8 @@ def reconstruct_lstsq(kspace,
                       optimizer=None,
                       optimizer_kwargs=None,
                       filter_corners=False,
-                      return_optimizer_state=False):
+                      return_optimizer_state=False,
+                      toeplitz_nufft=False):
   r"""Reconstructs an MR image using a least-squares formulation.
 
   This is an iterative reconstruction method which formulates the image
@@ -239,6 +248,13 @@ def reconstruct_lstsq(kspace,
       *k*-space coverage. Defaults to `False`.
     return_optimizer_state: A `boolean`. If `True`, returns the optimizer
       state along with the reconstructed image.
+    toeplitz_nufft: A `boolean`. If `True`, uses the Toeplitz approach [5]
+      to compute :math:`F^H F x`, where :math:`F` is the non-uniform Fourier
+      operator. If `False`, the same operation is performed using the standard
+      NUFFT operation. The Toeplitz approach might be faster than the direct
+      approach but is slightly less accurate. This argument is only relevant
+      for non-Cartesian reconstruction and will be ignored for Cartesian
+      problems.
 
   Returns:
     A `Tensor`. The reconstructed image. Has the same type as `kspace` and
@@ -282,6 +298,11 @@ def reconstruct_lstsq(kspace,
       correlations. Magnetic Resonance in Medicine: An Official Journal of the
       International Society for Magnetic Resonance in Medicine, 50(5),
       1031-1042.
+
+    .. [5] Fessler, J. A., Lee, S., Olafsson, V. T., Shi, H. R., & Noll, D. C.
+      (2005). Toeplitz-based iterative image reconstruction for MRI with
+      correction for magnetic field inhomogeneity. IEEE Transactions on Signal
+      Processing, 53(9), 3393-3402.
   """  # pylint: disable=line-too-long
   # Choose a default optimizer.
   if optimizer is None:
@@ -312,6 +333,24 @@ def reconstruct_lstsq(kspace,
                                           dynamic_domain=dynamic_domain)
   rank = operator.rank
 
+  # If using Toeplitz NUFFT, we need to use the specialized Gram MRI operator.
+  if toeplitz_nufft and operator.is_non_cartesian:
+    gram_operator = linalg_ops.LinearOperatorGramMRI(
+        image_shape,
+        extra_shape=extra_shape,
+        mask=mask,
+        trajectory=trajectory,
+        density=density,
+        sensitivities=sensitivities,
+        phase=phase,
+        fft_norm='ortho',
+        sens_norm=sens_norm,
+        dynamic_domain=dynamic_domain,
+        toeplitz_nufft=toeplitz_nufft)
+  else:
+    # No Toeplitz NUFFT. In this case don't bother defining the Gram operator.
+    gram_operator = None
+
   # Apply density compensation, if provided.
   if density is not None:
     kspace *= operator._dens_weights_sqrt  # pylint: disable=protected-access
@@ -334,21 +373,25 @@ def reconstruct_lstsq(kspace,
       reg_prior = None
 
     operator_gm = linalg_imaging.LinearOperatorGramMatrix(
-        operator, reg_parameter=reg_parameter, reg_operator=reg_operator)
+        operator, reg_parameter=reg_parameter, reg_operator=reg_operator,
+        gram_operator=gram_operator)
     rhs = initial_image
     # Update the rhs with the a priori estimate, if provided.
     if reg_prior is not None:
       if reg_operator is not None:
         reg_prior = reg_operator.transform(
             reg_operator.transform(reg_prior), adjoint=True)
-      rhs += reg_parameter * reg_prior
+      rhs += tf.cast(reg_parameter, reg_prior.dtype) * reg_prior
     # Solve the (maybe regularized) linear system.
     result = linalg_ops.conjugate_gradient(operator_gm, rhs, **optimizer_kwargs)
     image = result.x
 
   elif optimizer == 'admm':
+    if regularizer is None:
+      raise ValueError("optimizer 'admm' requires a regularizer")
     # Create the least-squares objective.
-    function_f = convex_ops.ConvexFunctionLeastSquares(operator, kspace)
+    function_f = convex_ops.ConvexFunctionLeastSquares(
+        operator, kspace, gram_operator=gram_operator)
     # Configure ADMM formulation depending on regularizer.
     if isinstance(regularizer,
                   convex_ops.ConvexFunctionLinearOperatorComposition):

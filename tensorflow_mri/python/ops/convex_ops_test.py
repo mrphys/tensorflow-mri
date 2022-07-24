@@ -13,12 +13,14 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for module `convex_ops`."""
+# pylint: disable=missing-class-docstring,missing-function-docstring
 
 from absl.testing import parameterized
 import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import convex_ops
+from tensorflow_mri.python.ops import wavelet_ops
 from tensorflow_mri.python.util import test_util
 
 
@@ -34,7 +36,9 @@ class ConvexFunctionL1NormTest(test_util.TestCase):
       ([3., -4.], 1.0, 7.0)
   )
   def test_call(self, x, scale, expected):
-    f = convex_ops.ConvexFunctionL1Norm(scale=scale)
+    domain_dimension = np.asarray(x).shape[-1]
+    f = convex_ops.ConvexFunctionL1Norm(domain_dimension=domain_dimension,
+                                        scale=scale)
     self.assertAllClose(expected, f(x))
 
   @parameterized.parameters(
@@ -45,12 +49,15 @@ class ConvexFunctionL1NormTest(test_util.TestCase):
       ([3., -4.], 2.0, [1., -2.])
   )
   def test_prox(self, x, scale, expected):
-    f = convex_ops.ConvexFunctionL1Norm(scale=scale)
+    domain_dimension = np.asarray(x).shape[-1]
+    f = convex_ops.ConvexFunctionL1Norm(domain_dimension=domain_dimension,
+                                        scale=scale)
     self.assertAllClose(expected, f.prox(x))
 
   def test_conj(self):
-    f = convex_ops.ConvexFunctionL1Norm()
+    f = convex_ops.ConvexFunctionL1Norm(4)
     self.assertIsInstance(f.conj(), convex_ops.ConvexFunctionIndicatorBall)
+    self.assertAllClose(4, f.conj().domain_dimension)
 
 
 @test_util.run_all_in_graph_and_eager_modes
@@ -64,7 +71,9 @@ class ConvexFunctionL2NormTest(test_util.TestCase):
       ([[6., 8.], [4., 3.]], 1.0, [10.0, 5.0])
   )
   def test_call(self, x, scale, expected):
-    f = convex_ops.ConvexFunctionL2Norm(scale=scale)
+    domain_dimension = np.asarray(x).shape[-1]
+    f = convex_ops.ConvexFunctionL2Norm(domain_dimension=domain_dimension,
+                                        scale=scale)
     self.assertAllClose(expected, f(x))
 
   @parameterized.parameters(
@@ -74,7 +83,9 @@ class ConvexFunctionL2NormTest(test_util.TestCase):
       ([[6., 8.], [4., 3.]], 1.0, [[5.4, 7.2], [3.2, 2.4]])
   )
   def test_prox(self, x, scale, expected):
-    f = convex_ops.ConvexFunctionL2Norm(scale=scale)
+    domain_dimension = np.asarray(x).shape[-1]
+    f = convex_ops.ConvexFunctionL2Norm(domain_dimension=domain_dimension,
+                                        scale=scale)
     self.assertAllClose(expected, f.prox(x))
 
 
@@ -89,8 +100,16 @@ class ConvexFunctionL2NormSquaredTest(test_util.TestCase):
       ([[1., 2.], [3., 4.]], 1.0, [5.0, 25.0])
   )
   def test_call(self, x, scale, expected):
-    f = convex_ops.ConvexFunctionL2NormSquared(scale=scale)
+    domain_dimension = np.asarray(x).shape[-1]
+    f = convex_ops.ConvexFunctionL2NormSquared(
+        domain_dimension=domain_dimension, scale=scale)
     self.assertAllClose(expected, f(x))
+
+    # Test shapes too.
+    self.assertIsInstance(f.domain_dimension, int)
+    self.assertIsInstance(f.domain_dimension_tensor(), tf.Tensor)
+    self.assertAllClose(domain_dimension, f.domain_dimension)
+    self.assertAllClose(domain_dimension, f.domain_dimension_tensor())
 
   @parameterized.parameters(
       # x, scale, expected
@@ -98,7 +117,9 @@ class ConvexFunctionL2NormSquaredTest(test_util.TestCase):
       ([1.0, 2.0, 3.0], 2.0, [0.2, 0.4, 0.6])
   )
   def test_prox(self, x, scale, expected):
-    f = convex_ops.ConvexFunctionL2NormSquared(scale=scale)
+    domain_dimension = np.asarray(x).shape[-1]
+    f = convex_ops.ConvexFunctionL2NormSquared(
+        domain_dimension=domain_dimension, scale=scale)
     self.assertAllClose(expected, f.prox(x))
 
 
@@ -119,7 +140,9 @@ class ConvexFunctionIndicatorL1BallTest(test_util.TestCase):
       ([[0.1, -0.5, -0.2], [1., 4., -2.]], 1.0, [0.0, np.inf])
   )
   def test_call(self, x, scale, expected):
-    f = convex_ops.ConvexFunctionIndicatorL1Ball(scale=scale)
+    domain_dimension = np.asarray(x).shape[-1]
+    f = convex_ops.ConvexFunctionIndicatorL1Ball(
+        domain_dimension=domain_dimension, scale=scale)
     self.assertAllClose(expected, f(x))
 
   @parameterized.parameters(
@@ -131,11 +154,13 @@ class ConvexFunctionIndicatorL1BallTest(test_util.TestCase):
       ([[-3., 4.], [0.0, -1.5]], 1., [[0.0, 1.0], [0.0, -1.0]])
   )
   def test_prox(self, x, scale, expected):
-    f = convex_ops.ConvexFunctionIndicatorL1Ball(scale=scale)
+    domain_dimension = np.asarray(x).shape[-1]
+    f = convex_ops.ConvexFunctionIndicatorL1Ball(
+        domain_dimension=domain_dimension, scale=scale)
     self.assertAllClose(expected, f.prox(x))
 
   def test_conj(self):
-    f = convex_ops.ConvexFunctionIndicatorL1Ball()
+    f = convex_ops.ConvexFunctionIndicatorL1Ball(6)
     self.assertIsInstance(f.conj(), convex_ops.ConvexFunctionNorm)
     self.assertEqual(np.inf, f.conj()._order)  # pylint: disable=protected-access
 
@@ -157,7 +182,9 @@ class ConvexFunctionIndicatorL2BallTest(test_util.TestCase):
       ([[0.1, -0.5, -0.2], [1., 4., -2.]], 1.0, [0.0, np.inf])
   )
   def test_call(self, x, scale, expected):
-    f = convex_ops.ConvexFunctionIndicatorL2Ball(scale=scale)
+    domain_dimension = np.asarray(x).shape[-1]
+    f = convex_ops.ConvexFunctionIndicatorL2Ball(
+        domain_dimension=domain_dimension, scale=scale)
     self.assertAllClose(expected, f(x))
 
   @parameterized.parameters(
@@ -169,11 +196,13 @@ class ConvexFunctionIndicatorL2BallTest(test_util.TestCase):
       ([[-3., 4.], [0.0, -1.5]], 1., [[-0.6, 0.8], [0.0, -1.0]])
   )
   def test_prox(self, x, scale, expected):
-    f = convex_ops.ConvexFunctionIndicatorL2Ball(scale=scale)
+    domain_dimension = np.asarray(x).shape[-1]
+    f = convex_ops.ConvexFunctionIndicatorL2Ball(
+        domain_dimension=domain_dimension, scale=scale)
     self.assertAllClose(expected, f.prox(x))
 
   def test_conj(self):
-    f = convex_ops.ConvexFunctionIndicatorL2Ball()
+    f = convex_ops.ConvexFunctionIndicatorL2Ball(8)
     self.assertIsInstance(f.conj(), convex_ops.ConvexFunctionNorm)
     self.assertEqual(2, f.conj()._order)  # pylint: disable=protected-access
 
@@ -297,30 +326,123 @@ class ConvexFunctionTikhonovTest(test_util.TestCase):
 class ConvexFunctionTotalVariationTest(test_util.TestCase):
   """Tests for `ConvexFunctionTotalVariation`."""
   # pylint: disable=missing-function-docstring
-  def test_call(self):
+  def test_2d_all_axes(self):
     x = [[1., 2., 3.],
          [4., 5., 6.]]
     x_flat = tf.reshape(x, [-1])
-    reg1 = convex_ops.ConvexFunctionTotalVariation(scale=0.1,
-                                                   domain_shape=[2, 3],
-                                                   axis=[0, 1])
-    ref1 = 1.3
-    res1 = reg1(x_flat)
-    self.assertAllClose(res1, ref1)
+    expected = 1.3
 
-    reg2 = convex_ops.ConvexFunctionTotalVariation(scale=0.1,
-                                                   domain_shape=[2, 3],
-                                                   axis=1)
-    res2 = reg2(x_flat)
-    ref2 = 0.4
-    self.assertAllClose(res2, ref2)
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[2, 3],
+                                                axes=[0, 1],
+                                                scale=0.1)
+    result = f(x_flat)
+    self.assertAllClose(expected, result)
 
-    reg3 = convex_ops.ConvexFunctionTotalVariation(scale=0.5,
-                                                   domain_shape=[3],
-                                                   axis=-1)
-    res3 = reg3(x)
-    ref3 = [1.0, 1.0]
-    self.assertAllClose(res3, ref3)
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[2, 3],
+                                                axes=None,
+                                                scale=0.1)
+    result = f(x_flat)
+    self.assertAllClose(expected, result)
+
+  def test_2d_single_axis(self):
+    x = [[1., 2., 3.],
+         [4., 5., 6.]]
+    x_flat = tf.reshape(x, [-1])
+    expected = 0.4
+
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[2, 3],
+                                                axes=1,
+                                                scale=0.1)
+    result = f(x_flat)
+    self.assertAllClose(expected, result)
+
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[2, 3],
+                                                axes=[1],
+                                                scale=0.1)
+    result = f(x_flat)
+    self.assertAllClose(expected, result)
+
+    expected = 0.9
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[2, 3],
+                                                axes=[0],
+                                                scale=0.1)
+    result = f(x_flat)
+    self.assertAllClose(expected, result)
+
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[2, 3],
+                                                axes=[-2],
+                                                scale=0.1)
+    result = f(x_flat)
+    self.assertAllClose(expected, result)
+
+  def test_1d_batch(self):
+    x = [[1., 2., 3.],
+         [4., 5., 6.]]
+    expected = [1.0, 1.0]
+
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[3],
+                                                axes=-1,
+                                                scale=0.5)
+    result = f(x)
+    self.assertAllClose(expected, result)
+
+  def test_2d_batch(self):
+    x = tf.constant([[1., 2., 3.],
+                     [4., 5., 6.]])
+    x = tf.stack([x, x * 2])
+    x = tf.reshape(x, [2, -1])
+
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[2, 3],
+                                                axes=1,
+                                                scale=0.1)
+    self.assertAllClose([0.4, 0.8], f(x))
+
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[2, 3],
+                                                axes=[1],
+                                                scale=0.1)
+    self.assertAllClose([0.4, 0.8], f(x))
+
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[2, 3],
+                                                axes=[0],
+                                                scale=0.1)
+    self.assertAllClose([0.9, 1.8], f(x))
+
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[2, 3],
+                                                axes=[-2],
+                                                scale=0.1)
+    self.assertAllClose([0.9, 1.8], f(x))
+
+    f = convex_ops.ConvexFunctionTotalVariation(domain_shape=[2, 3],
+                                                axes=[-2, -1],
+                                                scale=0.1)
+    self.assertAllClose([1.3, 2.6], f(x))
+
+
+class ConvexFunctionL1WaveletTest(test_util.TestCase):
+  @parameterized.named_parameters(
+      ("test0", 'haar', 1, None, 0.1),
+      ("test1", 'haar', 2, None, 0.2),
+      ("test2", 'db2', 1, [-1], 0.3),
+  )
+  def test_general(self, wavelet, level, axes, scale):
+    x = np.arange(24).reshape(4, 6).astype("float32")
+    f = convex_ops.ConvexFunctionL1Wavelet(
+        tf.shape(x), wavelet=wavelet, level=level, axes=axes, scale=scale)
+
+    self.assertIsInstance(f.domain_dimension, int)
+    self.assertIsInstance(f.domain_dimension_tensor(), tf.Tensor)
+    self.assertAllClose(24, f.domain_dimension)
+    self.assertAllClose(24, f.domain_dimension_tensor())
+
+    # Wavelet operator.
+    expected, _ = wavelet_ops.coeffs_to_tensor(
+        wavelet_ops.wavedec(x, wavelet=wavelet, level=level, axes=axes),
+        axes=axes)
+    # L1 norm.
+    expected = tf.math.reduce_sum(tf.math.abs(expected))
+    # Scaling.
+    expected *= scale
+    self.assertAllClose(expected, f(x.flat))
 
 
 if __name__ == '__main__':

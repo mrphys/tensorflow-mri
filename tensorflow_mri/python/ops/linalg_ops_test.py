@@ -13,13 +13,344 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for module `linalg_ops`."""
+# pylint: disable=missing-class-docstring,missing-function-docstring
 
 from absl.testing import parameterized
 import numpy as np
 import tensorflow as tf
 
+from tensorflow_mri.python.ops import fft_ops
+from tensorflow_mri.python.ops import geom_ops
+from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.ops import linalg_ops
+from tensorflow_mri.python.ops import traj_ops
+from tensorflow_mri.python.ops import wavelet_ops
 from tensorflow_mri.python.util import test_util
+
+
+class LinearOperatorNUFFTTest(test_util.TestCase):
+  @parameterized.named_parameters(
+      ("normalized", "ortho"),
+      ("unnormalized", None)
+  )
+  def test_general(self, norm):
+    shape = [8, 12]
+    n_points = 100
+    rank = 2
+    rng = np.random.default_rng()
+    traj = rng.uniform(low=-np.pi, high=np.pi, size=(n_points, rank))
+    traj = traj.astype(np.float32)
+    linop = linalg_ops.LinearOperatorNUFFT(shape, traj, norm=norm)
+
+    self.assertIsInstance(linop.domain_shape, tf.TensorShape)
+    self.assertIsInstance(linop.domain_shape_tensor(), tf.Tensor)
+    self.assertIsInstance(linop.range_shape, tf.TensorShape)
+    self.assertIsInstance(linop.range_shape_tensor(), tf.Tensor)
+    self.assertIsInstance(linop.batch_shape, tf.TensorShape)
+    self.assertIsInstance(linop.batch_shape_tensor(), tf.Tensor)
+    self.assertAllClose(shape, linop.domain_shape)
+    self.assertAllClose(shape, linop.domain_shape_tensor())
+    self.assertAllClose([n_points], linop.range_shape)
+    self.assertAllClose([n_points], linop.range_shape_tensor())
+    self.assertAllClose([], linop.batch_shape)
+    self.assertAllClose([], linop.batch_shape_tensor())
+
+    # Check forward.
+    x = (rng.uniform(size=shape).astype(np.float32) +
+         rng.uniform(size=shape).astype(np.float32) * 1j)
+    expected_forward = fft_ops.nufft(x, traj)
+    if norm:
+      expected_forward /= np.sqrt(np.prod(shape))
+    result_forward = linop.transform(x)
+    self.assertAllClose(expected_forward, result_forward, rtol=1e-5, atol=1e-5)
+
+    # Check adjoint.
+    expected_adjoint = fft_ops.nufft(result_forward, traj, grid_shape=shape,
+                                     transform_type="type_1",
+                                     fft_direction="backward")
+    if norm:
+      expected_adjoint /= np.sqrt(np.prod(shape))
+    result_adjoint = linop.transform(result_forward, adjoint=True)
+    self.assertAllClose(expected_adjoint, result_adjoint, rtol=1e-5, atol=1e-5)
+
+
+  @parameterized.named_parameters(
+      ("normalized", "ortho"),
+      ("unnormalized", None)
+  )
+  def test_with_batch_dim(self, norm):
+    shape = [8, 12]
+    n_points = 100
+    batch_size = 4
+    traj_shape = [batch_size, n_points]
+    rank = 2
+    rng = np.random.default_rng()
+    traj = rng.uniform(low=-np.pi, high=np.pi, size=(*traj_shape, rank))
+    traj = traj.astype(np.float32)
+    linop = linalg_ops.LinearOperatorNUFFT(shape, traj, norm=norm)
+
+    self.assertIsInstance(linop.domain_shape, tf.TensorShape)
+    self.assertIsInstance(linop.domain_shape_tensor(), tf.Tensor)
+    self.assertIsInstance(linop.range_shape, tf.TensorShape)
+    self.assertIsInstance(linop.range_shape_tensor(), tf.Tensor)
+    self.assertIsInstance(linop.batch_shape, tf.TensorShape)
+    self.assertIsInstance(linop.batch_shape_tensor(), tf.Tensor)
+    self.assertAllClose(shape, linop.domain_shape)
+    self.assertAllClose(shape, linop.domain_shape_tensor())
+    self.assertAllClose([n_points], linop.range_shape)
+    self.assertAllClose([n_points], linop.range_shape_tensor())
+    self.assertAllClose([batch_size], linop.batch_shape)
+    self.assertAllClose([batch_size], linop.batch_shape_tensor())
+
+    # Check forward.
+    x = (rng.uniform(size=shape).astype(np.float32) +
+         rng.uniform(size=shape).astype(np.float32) * 1j)
+    expected_forward = fft_ops.nufft(x, traj)
+    if norm:
+      expected_forward /= np.sqrt(np.prod(shape))
+    result_forward = linop.transform(x)
+    self.assertAllClose(expected_forward, result_forward, rtol=1e-5, atol=1e-5)
+
+    # Check adjoint.
+    expected_adjoint = fft_ops.nufft(result_forward, traj, grid_shape=shape,
+                                     transform_type="type_1",
+                                     fft_direction="backward")
+    if norm:
+      expected_adjoint /= np.sqrt(np.prod(shape))
+    result_adjoint = linop.transform(result_forward, adjoint=True)
+    self.assertAllClose(expected_adjoint, result_adjoint, rtol=1e-5, atol=1e-5)
+
+
+  @parameterized.named_parameters(
+      ("normalized", "ortho"),
+      ("unnormalized", None)
+  )
+  def test_with_extra_dim(self, norm):
+    shape = [8, 12]
+    n_points = 100
+    batch_size = 4
+    traj_shape = [batch_size, n_points]
+    rank = 2
+    rng = np.random.default_rng()
+    traj = rng.uniform(low=-np.pi, high=np.pi, size=(*traj_shape, rank))
+    traj = traj.astype(np.float32)
+    linop = linalg_ops.LinearOperatorNUFFT(
+        [batch_size, *shape], traj, norm=norm)
+
+    self.assertIsInstance(linop.domain_shape, tf.TensorShape)
+    self.assertIsInstance(linop.domain_shape_tensor(), tf.Tensor)
+    self.assertIsInstance(linop.range_shape, tf.TensorShape)
+    self.assertIsInstance(linop.range_shape_tensor(), tf.Tensor)
+    self.assertIsInstance(linop.batch_shape, tf.TensorShape)
+    self.assertIsInstance(linop.batch_shape_tensor(), tf.Tensor)
+    self.assertAllClose([batch_size, *shape], linop.domain_shape)
+    self.assertAllClose([batch_size, *shape], linop.domain_shape_tensor())
+    self.assertAllClose([batch_size, n_points], linop.range_shape)
+    self.assertAllClose([batch_size, n_points], linop.range_shape_tensor())
+    self.assertAllClose([], linop.batch_shape)
+    self.assertAllClose([], linop.batch_shape_tensor())
+
+    # Check forward.
+    x = (rng.uniform(size=[batch_size, *shape]).astype(np.float32) +
+         rng.uniform(size=[batch_size, *shape]).astype(np.float32) * 1j)
+    expected_forward = fft_ops.nufft(x, traj)
+    if norm:
+      expected_forward /= np.sqrt(np.prod(shape))
+    result_forward = linop.transform(x)
+    self.assertAllClose(expected_forward, result_forward, rtol=1e-5, atol=1e-5)
+
+    # Check adjoint.
+    expected_adjoint = fft_ops.nufft(result_forward, traj, grid_shape=shape,
+                                     transform_type="type_1",
+                                     fft_direction="backward")
+    if norm:
+      expected_adjoint /= np.sqrt(np.prod(shape))
+    result_adjoint = linop.transform(result_forward, adjoint=True)
+    self.assertAllClose(expected_adjoint, result_adjoint, rtol=1e-5, atol=1e-5)
+
+
+  def test_with_density(self):
+    image_shape = (128, 128)
+    image = image_ops.phantom(shape=image_shape, dtype=tf.complex64)
+    trajectory = traj_ops.radial_trajectory(
+        128, 128, flatten_encoding_dims=True)
+    density = traj_ops.radial_density(
+        128, 128, flatten_encoding_dims=True)
+    weights = tf.cast(tf.math.sqrt(tf.math.reciprocal_no_nan(density)),
+                      tf.complex64)
+
+    linop = linalg_ops.LinearOperatorNUFFT(
+        image_shape, trajectory=trajectory)
+    linop_d = linalg_ops.LinearOperatorNUFFT(
+        image_shape, trajectory=trajectory, density=density)
+
+    # Test forward.
+    kspace = linop.transform(image)
+    kspace_d = linop_d.transform(image)
+    self.assertAllClose(kspace * weights, kspace_d)
+
+    # Test adjoint and precompensate function.
+    recon = linop.transform(linop.precompensate(kspace) * weights * weights,
+                            adjoint=True)
+    recon_d1 = linop_d.transform(kspace_d, adjoint=True)
+    recon_d2 = linop_d.transform(linop_d.precompensate(kspace), adjoint=True)
+    self.assertAllClose(recon, recon_d1)
+    self.assertAllClose(recon, recon_d2)
+
+
+class LinearOperatorGramNUFFTTest(test_util.TestCase):
+  @parameterized.product(
+      density=[False, True],
+      norm=[None, 'ortho'],
+      toeplitz=[False, True],
+      batch=[False, True]
+  )
+  def test_general(self, density, norm, toeplitz, batch):
+    with tf.device('/cpu:0'):
+      image_shape = (128, 128)
+      image = image_ops.phantom(shape=image_shape, dtype=tf.complex64)
+      trajectory = traj_ops.radial_trajectory(
+          128, 129, flatten_encoding_dims=True)
+      if density is True:
+        density = traj_ops.radial_density(
+            128, 129, flatten_encoding_dims=True)
+      else:
+        density = None
+
+      # If testing batches, create new inputs to generate a batch.
+      if batch:
+        image = tf.stack([image, image * 0.5])
+        trajectory = tf.stack([
+            trajectory, geom_ops.rotate_2d(trajectory, [np.pi / 2])])
+        if density is not None:
+          density = tf.stack([density, density])
+
+      linop = linalg_ops.LinearOperatorNUFFT(
+          image_shape, trajectory=trajectory, density=density, norm=norm)
+      linop_gram = linalg_ops.LinearOperatorGramNUFFT(
+          image_shape, trajectory=trajectory, density=density, norm=norm,
+          toeplitz=toeplitz)
+
+      recon = linop.transform(linop.transform(image), adjoint=True)
+      recon_gram = linop_gram.transform(image)
+
+      if norm is None:
+        # Reduce the magnitude of these values to avoid the need to use a large
+        # tolerance.
+        recon /= tf.cast(tf.math.reduce_prod(image_shape), tf.complex64)
+        recon_gram /= tf.cast(tf.math.reduce_prod(image_shape), tf.complex64)
+
+      self.assertAllClose(recon, recon_gram, rtol=1e-4, atol=1e-4)
+
+
+class LinearOperatorFiniteDifferenceTest(test_util.TestCase):
+  """Tests for difference linear operator."""
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+    cls.linop1 = linalg_ops.LinearOperatorFiniteDifference([4])
+    cls.linop2 = linalg_ops.LinearOperatorFiniteDifference([4, 4], axis=-2)
+    cls.matrix1 = tf.convert_to_tensor([[-1, 1, 0, 0],
+                                        [0, -1, 1, 0],
+                                        [0, 0, -1, 1]], dtype=tf.float32)
+
+  def test_transform(self):
+    """Test transform method."""
+    signal = tf.random.normal([4, 4])
+    result = self.linop2.transform(signal)
+    self.assertAllClose(result, np.diff(signal, axis=-2))
+
+  def test_matvec(self):
+    """Test matvec method."""
+    signal = tf.constant([1, 2, 4, 8], dtype=tf.float32)
+    result = tf.linalg.matvec(self.linop1, signal)
+    self.assertAllClose(result, [1, 2, 4])
+    self.assertAllClose(result, np.diff(signal))
+    self.assertAllClose(result, tf.linalg.matvec(self.matrix1, signal))
+
+    signal2 = tf.range(16, dtype=tf.float32)
+    result = tf.linalg.matvec(self.linop2, signal2)
+    self.assertAllClose(result, [4] * 12)
+
+  def test_matvec_adjoint(self):
+    """Test matvec with adjoint."""
+    signal = tf.constant([1, 2, 4], dtype=tf.float32)
+    result = tf.linalg.matvec(self.linop1, signal, adjoint_a=True)
+    self.assertAllClose(result,
+                        tf.linalg.matvec(tf.transpose(self.matrix1), signal))
+
+  def test_shapes(self):
+    """Test shapes."""
+    self._test_all_shapes(self.linop1, [4], [3])
+    self._test_all_shapes(self.linop2, [4, 4], [3, 4])
+
+  def _test_all_shapes(self, linop, domain_shape, range_shape):
+    """Test shapes."""
+    self.assertIsInstance(linop.domain_shape, tf.TensorShape)
+    self.assertAllEqual(linop.domain_shape, domain_shape)
+    self.assertAllEqual(linop.domain_shape_tensor(), domain_shape)
+
+    self.assertIsInstance(linop.range_shape, tf.TensorShape)
+    self.assertAllEqual(linop.range_shape, range_shape)
+    self.assertAllEqual(linop.range_shape_tensor(), range_shape)
+
+
+class LinearOperatorWaveletTest(test_util.TestCase):
+  @parameterized.named_parameters(
+      # name, wavelet, level, axes, domain_shape, range_shape
+      ("test0", "haar", None, None, [6, 6], [7, 7]),
+      ("test1", "haar", 1, None, [6, 6], [6, 6]),
+      ("test2", "haar", None, -1, [6, 6], [6, 7]),
+      ("test3", "haar", None, [-1], [6, 6], [6, 7])
+  )
+  def test_general(self, wavelet, level, axes, domain_shape, range_shape):
+    # Instantiate.
+    linop = linalg_ops.LinearOperatorWavelet(
+        domain_shape, wavelet=wavelet, level=level, axes=axes)
+
+    # Example data.
+    data = np.arange(np.prod(domain_shape)).reshape(domain_shape)
+    data = data.astype("float32")
+
+    # Forward and adjoint.
+    expected_forward, coeff_slices = wavelet_ops.coeffs_to_tensor(
+        wavelet_ops.wavedec(data, wavelet=wavelet, level=level, axes=axes),
+        axes=axes)
+    expected_adjoint = wavelet_ops.waverec(
+        wavelet_ops.tensor_to_coeffs(expected_forward, coeff_slices),
+        wavelet=wavelet, axes=axes)
+
+    # Test shapes.
+    self.assertAllClose(domain_shape, linop.domain_shape)
+    self.assertAllClose(domain_shape, linop.domain_shape_tensor())
+    self.assertAllClose(range_shape, linop.range_shape)
+    self.assertAllClose(range_shape, linop.range_shape_tensor())
+
+    # Test transform.
+    result_forward = linop.transform(data)
+    result_adjoint = linop.transform(result_forward, adjoint=True)
+    self.assertAllClose(expected_forward, result_forward)
+    self.assertAllClose(expected_adjoint, result_adjoint)
+
+  def test_with_batch_inputs(self):
+    """Test batch shape."""
+    axes = [-2, -1]
+    data = np.arange(4 * 8 * 8).reshape(4, 8, 8).astype("float32")
+    linop = linalg_ops.LinearOperatorWavelet((8, 8), wavelet="haar", level=1)
+
+    # Forward and adjoint.
+    expected_forward, coeff_slices = wavelet_ops.coeffs_to_tensor(
+        wavelet_ops.wavedec(data, wavelet='haar', level=1, axes=axes),
+        axes=axes)
+    expected_adjoint = wavelet_ops.waverec(
+        wavelet_ops.tensor_to_coeffs(expected_forward, coeff_slices),
+        wavelet='haar', axes=axes)
+
+    result_forward = linop.transform(data)
+    self.assertAllClose(expected_forward, result_forward)
+
+    result_adjoint = linop.transform(result_forward, adjoint=True)
+    self.assertAllClose(expected_adjoint, result_adjoint)
 
 
 class LinearOperatorMRITest(test_util.TestCase):
@@ -125,6 +456,96 @@ class LinearOperatorMRITest(test_util.TestCase):
     # should not scale the input.
     y = tf.linalg.matvec(linop.H, tf.linalg.matvec(linop, x))
     self.assertAllClose(x, y)
+
+  def test_nufft_with_sensitivities(self):
+    resolution = 128
+    image_shape = [resolution, resolution]
+    num_coils = 4
+    image, sensitivities = image_ops.phantom(
+        shape=image_shape, num_coils=num_coils, dtype=tf.complex64,
+        return_sensitivities=True)
+    image = image_ops.phantom(shape=image_shape, dtype=tf.complex64)
+    trajectory = traj_ops.radial_trajectory(resolution, resolution // 2 + 1,
+                                            flatten_encoding_dims=True)
+    density = traj_ops.radial_density(resolution, resolution // 2 + 1,
+                                      flatten_encoding_dims=True)
+
+    linop = linalg_ops.LinearOperatorMRI(
+        image_shape, trajectory=trajectory, density=density,
+        sensitivities=sensitivities)
+
+    # Test shapes.
+    expected_domain_shape = image_shape
+    self.assertAllClose(expected_domain_shape, linop.domain_shape)
+    self.assertAllClose(expected_domain_shape, linop.domain_shape_tensor())
+    expected_range_shape = [num_coils, (2 * resolution) * (resolution // 2 + 1)]
+    self.assertAllClose(expected_range_shape, linop.range_shape)
+    self.assertAllClose(expected_range_shape, linop.range_shape_tensor())
+
+    # Test forward.
+    weights = tf.cast(tf.math.sqrt(tf.math.reciprocal_no_nan(density)),
+                      tf.complex64)
+    norm = tf.math.sqrt(tf.cast(tf.math.reduce_prod(image_shape), tf.complex64))
+    expected = fft_ops.nufft(image * sensitivities, trajectory) * weights / norm
+    kspace = linop.transform(image)
+    self.assertAllClose(expected, kspace)
+
+    # Test adjoint.
+    expected = tf.math.reduce_sum(
+        fft_ops.nufft(
+            kspace * weights, trajectory, grid_shape=image_shape,
+            transform_type='type_1', fft_direction='backward') / norm *
+        tf.math.conj(sensitivities), axis=-3)
+    recon = linop.transform(kspace, adjoint=True)
+    self.assertAllClose(expected, recon)
+
+
+class LinearOperatorGramMRITest(test_util.TestCase):
+  @parameterized.product(batch=[False, True], extra=[False, True],
+                         toeplitz_nufft=[False, True])
+  def test_general(self, batch, extra, toeplitz_nufft):
+    resolution = 128
+    image_shape = [resolution, resolution]
+    num_coils = 4
+    image, sensitivities = image_ops.phantom(
+        shape=image_shape, num_coils=num_coils, dtype=tf.complex64,
+        return_sensitivities=True)
+    image = image_ops.phantom(shape=image_shape, dtype=tf.complex64)
+    trajectory = traj_ops.radial_trajectory(resolution, resolution // 2 + 1,
+                                            flatten_encoding_dims=True)
+    density = traj_ops.radial_density(resolution, resolution // 2 + 1,
+                                      flatten_encoding_dims=True)
+    if batch:
+      image = tf.stack([image, image * 2])
+      if extra:
+        extra_shape = [2]
+      else:
+        extra_shape = None
+    else:
+      extra_shape = None
+
+    linop = linalg_ops.LinearOperatorMRI(
+        image_shape, extra_shape=extra_shape,
+        trajectory=trajectory, density=density,
+        sensitivities=sensitivities)
+    linop_gram = linalg_ops.LinearOperatorGramMRI(
+        image_shape, extra_shape=extra_shape,
+        trajectory=trajectory, density=density,
+        sensitivities=sensitivities, toeplitz_nufft=toeplitz_nufft)
+
+    # Test shapes.
+    expected_domain_shape = image_shape
+    if extra_shape is not None:
+      expected_domain_shape = extra_shape + image_shape
+    self.assertAllClose(expected_domain_shape, linop_gram.domain_shape)
+    self.assertAllClose(expected_domain_shape, linop_gram.domain_shape_tensor())
+    self.assertAllClose(expected_domain_shape, linop_gram.range_shape)
+    self.assertAllClose(expected_domain_shape, linop_gram.range_shape_tensor())
+
+    # Test transform.
+    expected = linop.transform(linop.transform(image), adjoint=True)
+    self.assertAllClose(expected, linop_gram.transform(image),
+                        rtol=1e-4, atol=1e-4)
 
 
 # Copyright 2019 The TensorFlow Authors. All Rights Reserved.

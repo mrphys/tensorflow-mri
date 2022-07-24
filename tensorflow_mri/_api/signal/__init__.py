@@ -12,3 +12,8 @@ from tensorflow_mri.python.ops.fft_ops import ifftn as ifft
 from tensorflow_nufft.python.ops.nufft_ops import nufft as nufft
 from tensorflow_mri.python.ops.wavelet_ops import dwt as dwt
 from tensorflow_mri.python.ops.wavelet_ops import idwt as idwt
+from tensorflow_mri.python.ops.wavelet_ops import wavedec as wavedec
+from tensorflow_mri.python.ops.wavelet_ops import waverec as waverec
+from tensorflow_mri.python.ops.wavelet_ops import dwt_max_level as max_wavelet_level
+from tensorflow_mri.python.ops.wavelet_ops import coeffs_to_tensor as wavelet_coeffs_to_tensor
+from tensorflow_mri.python.ops.wavelet_ops import tensor_to_coeffs as tensor_to_wavelet_coeffs

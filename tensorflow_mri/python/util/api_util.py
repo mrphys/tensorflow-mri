@@ -23,6 +23,7 @@ _API_SYMBOLS = dict()
 _API_ATTR = '_api_names'
 
 _SUBMODULE_NAMES = [
+    'array',
     'callbacks',
     'coils',
     'convex',
@@ -44,6 +45,7 @@ _SUBMODULE_NAMES = [
 ]
 
 _SUBMODULE_DOCSTRINGS = {
+    'array': "Array processing operations.",
     'callbacks': "Keras callbacks.",
     'coils': "Parallel imaging operations.",
     'convex': "Convex optimization operations.",

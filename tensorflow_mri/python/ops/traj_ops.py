@@ -176,6 +176,8 @@ def radial_trajectory(base_resolution,
   * **sorted**: Like `golden`, but views within each phase are sorted by their
     angle in ascending order. Can be an alternative to `'tiny'` ordering in
     applications where small angle increments are required.
+  * **sorted_half**: Variant of `'sorted'` in which angles are computed on a
+    half range but modified to continuously cover the full range.
 
   This function also supports the following 3D ordering methods:
 
@@ -192,7 +194,7 @@ def radial_trajectory(base_resolution,
     phases: An `int`. The number of phases for cine acquisitions. If `None`,
       this is assumed to be a non-cine acquisition with no time dimension.
     ordering: A `str`. The ordering type. Must be one of: `{'linear',
-      'golden', 'tiny', 'sorted', 'sphere_archimedean'}`.
+      'golden', 'tiny', 'sorted', 'sorted_half', 'sphere_archimedean'}`.
     angle_range: A `str`. The range of the rotation angle. Must be one of:
       `{'full', 'half'}`. If `angle_range` is `'full'`, the full circle/sphere
       is included in the range. If `angle_range` is `'half'`, only a
@@ -359,7 +361,8 @@ def _kspace_trajectory(traj_type,
   # Valid orderings.
   orderings_2d = {'linear', 'golden', 'tiny', 'sorted'} # 2D, radial or spiral
   orderings_3d = set()                                  # 3D, radial or spiral
-  orderings_radial_2d = {'golden_half', 'tiny_half'}    # 2D, radial only
+  orderings_radial_2d = {'golden_half', 'tiny_half',
+                         'sorted_half'}                 # 2D, radial only
   orderings_spiral_2d = set()                           # 2D, spiral only
   orderings_radial_3d = {'sphere_archimedean'}          # 3D, radial only
   orderings_spiral_3d = set()                           # 3D, spiral only
@@ -716,6 +719,29 @@ def _trajectory_angles(views,
   elif ordering == 'sorted':
     angles = _angles_2d(phi * default_max, default_max)
     angles = tf.sort(angles, axis=1)
+  elif ordering == 'sorted_half':
+    if angle_range != 'full':
+      raise ValueError("ordering='sorted_half' requires angle_range='full'")
+    angles = _angles_2d(phi * pi, pi)
+    angles = tf.sort(angles, axis=1)
+    def _scan_fn(prev, curr):
+      # curr is the list of angles for the current phase (1D vector).
+      # prev is the list of angles for the previous phase (1D vector).
+      n = tf.shape(curr)[0]  # length of vector, number of views
+      # Angles are in range [0, pi]. Cover range [0, 2*pi] by replicating the
+      # angles and adding pi.
+      curr = tf.concat([curr, curr + np.pi], 0)
+      # Find the index of the first angle in the current phase that is larger
+      # than the last angle in the previous phase.
+      start = _find_first_greater_than(curr, prev[-1])
+      # Roll the list so that `start` is the first angle.
+      curr = tf.roll(curr, shift=-start, axis=0)
+      # Retrieve the last `n` angles.
+      curr = tf.slice(curr, [0], [n])
+      return curr
+    angles = tf.squeeze(angles, -1)
+    angles = tf.scan(_scan_fn, angles)
+    angles = tf.expand_dims(angles, -1)
   elif ordering == 'tiny':
     angles = _angles_2d(phi_n * default_max, default_max)
   elif ordering == 'tiny_half':
@@ -1005,3 +1031,10 @@ def expand_density(density, samples):
   batch_shape = tf.shape(density)[:-1]
   shape = tf.concat([batch_shape, [-1, samples]], 0)
   return tf.reshape(density, shape)
+
+
+def _find_first_greater_than(x, y):
+  """Returns the index of the first element in `x` that is greater than `y`."""
+  x = x - y
+  x = tf.where(x < 0, np.inf, x)
+  return tf.math.argmin(x)

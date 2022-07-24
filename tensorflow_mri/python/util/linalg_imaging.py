@@ -692,8 +692,7 @@ class LinearOperatorDiag(LinalgImagingMixin, tf.linalg.LinearOperatorDiag): # py
 
 
 @api_util.export("linalg.LinearOperatorGramMatrix")
-class LinearOperatorGramMatrix(LinalgImagingMixin,  # pylint: disable=abstract-method
-                               tf.linalg.LinearOperator):
+class LinearOperatorGramMatrix(LinearOperator):  # pylint: disable=abstract-method
   r"""Linear operator representing the Gram matrix of an operator.
 
   If :math:`A` is a `LinearOperator`, this operator is equivalent to
@@ -716,11 +715,15 @@ class LinearOperatorGramMatrix(LinalgImagingMixin,  # pylint: disable=abstract-m
   :math:`{\mathop{\mathrm{argmin}}_x} {\left \| Ax-b \right \|_2^2 + \lambda \left \| T(x-x_0) \right \|_2^2}`.
 
   Args:
-    operator: A `LinearOperator`.
+    operator: A `tfmri.linalg.LinearOperator`. The operator :math:`A` whose Gram
+      matrix is represented by this linear operator.
     reg_parameter: A `Tensor` of shape `[B1, ..., Bb]` and real dtype.
       The regularization parameter :math:`\lambda`. Defaults to 0.
-    reg_operator: A `LinearOperator`. The regularization transform :math:`T`.
-      Defaults to the identity.
+    reg_operator: A `tfmri.linalg.LinearOperator`. The regularization transform
+      :math:`T`. Defaults to the identity.
+    gram_operator: A `tfmri.linalg.LinearOperator`. The Gram matrix
+      :math:`A^H A`. This may be optionally provided to use a specialized
+      Gram matrix implementation. Defaults to `None`.
     is_non_singular: Expect that this operator is non-singular.
     is_self_adjoint: Expect that this operator is equal to its Hermitian
       transpose.
@@ -735,6 +738,7 @@ class LinearOperatorGramMatrix(LinalgImagingMixin,  # pylint: disable=abstract-m
                operator,
                reg_parameter=None,
                reg_operator=None,
+               gram_operator=None,
                is_non_singular=None,
                is_self_adjoint=True,
                is_positive_definite=True,
@@ -752,8 +756,12 @@ class LinearOperatorGramMatrix(LinalgImagingMixin,  # pylint: disable=abstract-m
     self._operator = operator
     self._reg_parameter = reg_parameter
     self._reg_operator = reg_operator
-    self._composed = LinearOperatorComposition(
-        operators=[self._operator.H, self._operator])
+    self._gram_operator = gram_operator
+    if gram_operator is not None:
+      self._composed = gram_operator
+    else:
+      self._composed = LinearOperatorComposition(
+          operators=[self._operator.H, self._operator])
 
     if not is_self_adjoint:
       raise ValueError("A Gram matrix is always self-adjoint.")
@@ -805,83 +813,3 @@ class LinearOperatorGramMatrix(LinalgImagingMixin,  # pylint: disable=abstract-m
   @property
   def operator(self):
     return self._operator
-
-
-@api_util.export("linalg.LinearOperatorFiniteDifference")
-class LinearOperatorFiniteDifference(LinalgImagingMixin,  # pylint: disable=abstract-method
-                                     tf.linalg.LinearOperator):
-  """Linear operator representing a finite difference matrix.
-
-  Args:
-    domain_shape: A `tf.TensorShape` or list of ints. The shape of the input
-      images.
-    axis: An `int`. The axis along which the finite difference is taken.
-      Defaults to -1.
-    dtype: A `tf.dtypes.DType`. The data type for this operator. Defaults to
-      `float32`.
-    name: A `str`. A name for this operator.
-  """
-  def __init__(self,
-               domain_shape,
-               axis=-1,
-               dtype=tf.dtypes.float32,
-               name="LinearOperatorFiniteDifference"):
-
-    parameters = dict(
-      domain_shape=domain_shape,
-      axis=axis,
-      dtype=dtype,
-      name=name
-    )
-
-    domain_shape = tf.TensorShape(domain_shape)
-    self._axis = check_util.validate_axis(axis, domain_shape.rank,
-                                          max_length=1,
-                                          canonicalize="negative",
-                                          scalar_to_list=False)
-
-    range_shape = domain_shape.as_list()
-    range_shape[self.axis] = range_shape[self.axis] - 1
-    range_shape = tf.TensorShape(range_shape)
-
-    self._domain_shape_value = domain_shape
-    self._range_shape_value = range_shape
-
-    super().__init__(dtype,
-                     is_non_singular=None,
-                     is_self_adjoint=None,
-                     is_positive_definite=None,
-                     is_square=None,
-                     name=name,
-                     parameters=parameters)
-
-  def _transform(self, x, adjoint=False):
-
-    if adjoint:
-      paddings1 = [[0, 0]] * x.shape.rank
-      paddings2 = [[0, 0]] * x.shape.rank
-      paddings1[self.axis] = [1, 0]
-      paddings2[self.axis] = [0, 1]
-      x1 = tf.pad(x, paddings1) # pylint: disable=no-value-for-parameter
-      x2 = tf.pad(x, paddings2) # pylint: disable=no-value-for-parameter
-      x = x1 - x2
-    else:
-      slice1 = [slice(None)] * x.shape.rank
-      slice2 = [slice(None)] * x.shape.rank
-      slice1[self.axis] = slice(1, None)
-      slice2[self.axis] = slice(None, -1)
-      x1 = x[tuple(slice1)]
-      x2 = x[tuple(slice2)]
-      x = x1 - x2
-
-    return x
-
-  def _domain_shape(self):
-    return self._domain_shape_value
-
-  def _range_shape(self):
-    return self._range_shape_value
-
-  @property
-  def axis(self):
-    return self._axis
