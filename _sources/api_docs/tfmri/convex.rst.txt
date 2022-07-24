@@ -17,6 +17,7 @@ Classes
     ConvexFunctionIndicatorL1Ball
     ConvexFunctionIndicatorL2Ball
     ConvexFunctionL1Norm
+    ConvexFunctionL1Wavelet
     ConvexFunctionL2Norm
     ConvexFunctionL2NormSquared
     ConvexFunctionLeastSquares

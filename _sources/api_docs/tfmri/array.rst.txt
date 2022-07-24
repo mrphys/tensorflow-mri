@@ -1,0 +1,24 @@
+tfmri.array
+===========
+
+.. automodule:: tensorflow_mri.array
+
+Classes
+-------
+
+.. autosummary::
+    :toctree: array
+    :template: array/class.rst
+    :nosignatures:
+
+    
+
+Functions
+---------
+
+.. autosummary::
+    :toctree: array
+    :template: array/function.rst
+    :nosignatures:
+
+    update_tensor

@@ -1,0 +1,6 @@
+﻿tfmri.signal.wavedec
+====================
+
+.. currentmodule:: tensorflow_mri.signal
+
+.. autofunction:: wavedec

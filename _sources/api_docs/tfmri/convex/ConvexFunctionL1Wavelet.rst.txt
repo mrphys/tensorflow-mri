@@ -1,0 +1,8 @@
+﻿tfmri.convex.ConvexFunctionL1Wavelet
+====================================
+
+.. currentmodule:: tensorflow_mri.convex
+
+.. autoclass:: ConvexFunctionL1Wavelet
+    :members:
+    :show-inheritance:

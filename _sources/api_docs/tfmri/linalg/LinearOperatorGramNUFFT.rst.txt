@@ -1,0 +1,8 @@
+﻿tfmri.linalg.LinearOperatorGramNUFFT
+====================================
+
+.. currentmodule:: tensorflow_mri.linalg
+
+.. autoclass:: LinearOperatorGramNUFFT
+    :members:
+    :show-inheritance:

@@ -1,0 +1,6 @@
+﻿tfmri.signal.max\_wavelet\_level
+================================
+
+.. currentmodule:: tensorflow_mri.signal
+
+.. autofunction:: max_wavelet_level

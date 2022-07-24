@@ -1,0 +1,6 @@
+﻿tfmri.signal.waverec
+====================
+
+.. currentmodule:: tensorflow_mri.signal
+
+.. autofunction:: waverec

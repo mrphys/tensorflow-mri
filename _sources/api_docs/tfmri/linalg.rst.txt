@@ -17,9 +17,13 @@ Classes
     LinearOperatorComposition
     LinearOperatorDiag
     LinearOperatorFiniteDifference
+    LinearOperatorGramMRI
     LinearOperatorGramMatrix
+    LinearOperatorGramNUFFT
     LinearOperatorMRI
+    LinearOperatorNUFFT
     LinearOperatorScaledIdentity
+    LinearOperatorWavelet
 
 Functions
 ---------

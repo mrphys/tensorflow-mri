@@ -1,0 +1,1492 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>MR image reconstruction &#8212; TensorFlow MRI Documentation</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" href="../../_static/styles/sphinx-book-theme.css?digest=5115cc725059bd94278eecd172e13a965bf8f5a9" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../_static/togglebutton.js"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?digest=9c920249402e914e316237a7dbc6769907cce411"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
+    <link rel="canonical" href="https://mrphys.github.io/tensorflow-mri/guide/recon.html" />
+    <link rel="shortcut icon" href="../../_static/tfmri_icon.svg"/>
+    <link rel="index" title="Index" href="../../genindex/" />
+    <link rel="search" title="Search" href="../../search/" />
+    <link rel="next" title="Contributing" href="../contribute/" />
+    <link rel="prev" title="Optimization" href="../optim/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+<!-- Checkboxes to toggle the left sidebar -->
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
+<label class="overlay overlay-navbar" for="__navigation">
+    <div class="visually-hidden">Toggle navigation sidebar</div>
+</label>
+<!-- Checkboxes to toggle the in-page toc -->
+<input type="checkbox" class="sidebar-toggle" name="__page-toc" id="__page-toc" aria-label="Toggle in-page Table of Contents">
+<label class="overlay overlay-pagetoc" for="__page-toc">
+    <div class="visually-hidden">Toggle in-page Table of Contents</div>
+</label>
+<!-- Headers at the top -->
+<div class="announcement header-item noprint"></div>
+<div class="header header-item noprint"></div>
+
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<!-- Sidebar -->
+<div class="bd-sidebar noprint" id="site-navigation">
+    <div class="bd-sidebar__content">
+        <div class="bd-sidebar__top"><div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="../../">
+      
+        <!-- `logo` is deprecated in Sphinx 4.0, so remove this when we stop supporting 3 -->
+        
+      
+      
+      <img src="../../_static/tfmri_logo.svg" class="logo" alt="logo">
+      
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="../../search/" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <p class="caption" role="heading">
+ <span class="caption-text">
+  Guide
+ </span>
+</p>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../">
+   Guide
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../install/">
+   Installation
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../nufft/">
+   Non-uniform FFT
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../linalg/">
+   Linear algebra
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../optim/">
+   Optimization
+  </a>
+ </li>
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   MRI reconstruction
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../contribute/">
+   Contributing
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../faq/">
+   FAQ
+  </a>
+ </li>
+</ul>
+<p class="caption" role="heading">
+ <span class="caption-text">
+  Tutorials
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../tutorials/">
+   Tutorials
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../tutorials/recon/">
+   Image reconstruction
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../tutorials/recon/cg_sense/">
+     CG-SENSE
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<p class="caption" role="heading">
+ <span class="caption-text">
+  API Documentation
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../api_docs/">
+   API documentation
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../api_docs/tfmri/">
+   tfmri
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+  <label for="toctree-checkbox-2">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/broadcast_dynamic_shapes/">
+     broadcast_dynamic_shapes
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/broadcast_static_shapes/">
+     broadcast_static_shapes
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/cartesian_product/">
+     cartesian_product
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/central_crop/">
+     central_crop
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/meshgrid/">
+     meshgrid
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/ravel_multi_index/">
+     ravel_multi_index
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/resize_with_crop_or_pad/">
+     resize_with_crop_or_pad
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/scale_by_min_max/">
+     scale_by_min_max
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/unravel_index/">
+     unravel_index
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../api_docs/tfmri/array/">
+   tfmri.array
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+  <label for="toctree-checkbox-3">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/array/update_tensor/">
+     update_tensor
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../api_docs/tfmri/callbacks/">
+   tfmri.callbacks
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+  <label for="toctree-checkbox-4">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/callbacks/TensorBoardImages/">
+     TensorBoardImages
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../api_docs/tfmri/coils/">
+   tfmri.coils
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+  <label for="toctree-checkbox-5">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/coils/CoilCompressorSVD/">
+     CoilCompressorSVD
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/coils/combine_coils/">
+     combine_coils
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/coils/compress_coils/">
+     compress_coils
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/coils/estimate_sensitivities/">
+     estimate_sensitivities
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../api_docs/tfmri/convex/">
+   tfmri.convex
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+  <label for="toctree-checkbox-6">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/convex/ConvexFunction/">
+     ConvexFunction
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/convex/ConvexFunctionAffineMappingComposition/">
+     ConvexFunctionAffineMappingComposition
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/convex/ConvexFunctionIndicatorBall/">
+     ConvexFunctionIndicatorBall
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/convex/ConvexFunctionIndicatorL1Ball/">
+     ConvexFunctionIndicatorL1Ball
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/convex/ConvexFunctionIndicatorL2Ball/">
+     ConvexFunctionIndicatorL2Ball
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/convex/ConvexFunctionL1Norm/">
+     ConvexFunctionL1Norm
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/convex/ConvexFunctionL1Wavelet/">
+     ConvexFunctionL1Wavelet
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/convex/ConvexFunctionL2Norm/">
+     ConvexFunctionL2Norm
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/convex/ConvexFunctionL2NormSquared/">
+     ConvexFunctionL2NormSquared
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/convex/ConvexFunctionLeastSquares/">
+     ConvexFunctionLeastSquares
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/convex/ConvexFunctionLinearOperatorComposition/">
+     ConvexFunctionLinearOperatorComposition
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/convex/ConvexFunctionNorm/">
+     ConvexFunctionNorm
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/convex/ConvexFunctionQuadratic/">
+     ConvexFunctionQuadratic
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/convex/ConvexFunctionTikhonov/">
+     ConvexFunctionTikhonov
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/convex/ConvexFunctionTotalVariation/">
+     ConvexFunctionTotalVariation
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/convex/admm_minimize/">
+     admm_minimize
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../api_docs/tfmri/image/">
+   tfmri.image
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+  <label for="toctree-checkbox-7">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/image/extract_glimpses/">
+     extract_glimpses
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/image/gmsd/">
+     gmsd
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/image/gmsd2d/">
+     gmsd2d
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/image/gmsd3d/">
+     gmsd3d
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/image/gradient_magnitude/">
+     gradient_magnitude
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/image/image_gradients/">
+     image_gradients
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/image/phantom/">
+     phantom
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/image/psnr/">
+     psnr
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/image/psnr2d/">
+     psnr2d
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/image/psnr3d/">
+     psnr3d
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/image/ssim/">
+     ssim
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/image/ssim2d/">
+     ssim2d
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/image/ssim2d_multiscale/">
+     ssim2d_multiscale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/image/ssim3d/">
+     ssim3d
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/image/ssim3d_multiscale/">
+     ssim3d_multiscale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/image/ssim_multiscale/">
+     ssim_multiscale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/image/total_variation/">
+     total_variation
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../api_docs/tfmri/initializers/">
+   tfmri.initializers
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+  <label for="toctree-checkbox-8">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/initializers/GlorotNormal/">
+     GlorotNormal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/initializers/GlorotUniform/">
+     GlorotUniform
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/initializers/HeNormal/">
+     HeNormal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/initializers/HeUniform/">
+     HeUniform
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/initializers/LecunNormal/">
+     LecunNormal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/initializers/LecunUniform/">
+     LecunUniform
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/initializers/VarianceScaling/">
+     VarianceScaling
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../api_docs/tfmri/io/">
+   tfmri.io
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+  <label for="toctree-checkbox-9">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/io/encode_gif/">
+     encode_gif
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/io/parse_twix/">
+     parse_twix
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../api_docs/tfmri/layers/">
+   tfmri.layers
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+  <label for="toctree-checkbox-10">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/layers/AveragePooling1D/">
+     AveragePooling1D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/layers/AveragePooling2D/">
+     AveragePooling2D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/layers/AveragePooling3D/">
+     AveragePooling3D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/layers/Conv1D/">
+     Conv1D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/layers/Conv2D/">
+     Conv2D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/layers/Conv3D/">
+     Conv3D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/layers/ConvBlock/">
+     ConvBlock
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/layers/DWT1D/">
+     DWT1D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/layers/DWT2D/">
+     DWT2D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/layers/DWT3D/">
+     DWT3D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/layers/IDWT1D/">
+     IDWT1D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/layers/IDWT2D/">
+     IDWT2D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/layers/IDWT3D/">
+     IDWT3D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/layers/MaxPooling1D/">
+     MaxPooling1D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/layers/MaxPooling2D/">
+     MaxPooling2D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/layers/MaxPooling3D/">
+     MaxPooling3D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/layers/UNet/">
+     UNet
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../api_docs/tfmri/linalg/">
+   tfmri.linalg
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/>
+  <label for="toctree-checkbox-11">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/linalg/LinearOperator/">
+     LinearOperator
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/linalg/LinearOperatorAddition/">
+     LinearOperatorAddition
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/linalg/LinearOperatorAdjoint/">
+     LinearOperatorAdjoint
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/linalg/LinearOperatorComposition/">
+     LinearOperatorComposition
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/linalg/LinearOperatorDiag/">
+     LinearOperatorDiag
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/linalg/LinearOperatorFiniteDifference/">
+     LinearOperatorFiniteDifference
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/linalg/LinearOperatorGramMRI/">
+     LinearOperatorGramMRI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/linalg/LinearOperatorGramMatrix/">
+     LinearOperatorGramMatrix
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/linalg/LinearOperatorGramNUFFT/">
+     LinearOperatorGramNUFFT
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/linalg/LinearOperatorMRI/">
+     LinearOperatorMRI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/linalg/LinearOperatorNUFFT/">
+     LinearOperatorNUFFT
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/linalg/LinearOperatorScaledIdentity/">
+     LinearOperatorScaledIdentity
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/linalg/LinearOperatorWavelet/">
+     LinearOperatorWavelet
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/linalg/conjugate_gradient/">
+     conjugate_gradient
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../api_docs/tfmri/losses/">
+   tfmri.losses
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" type="checkbox"/>
+  <label for="toctree-checkbox-12">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/losses/ConfusionLoss/">
+     ConfusionLoss
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/losses/F1Loss/">
+     F1Loss
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/losses/FocalTverskyLoss/">
+     FocalTverskyLoss
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/losses/IoULoss/">
+     IoULoss
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/losses/SSIMLoss/">
+     SSIMLoss
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/losses/SSIMMultiscaleLoss/">
+     SSIMMultiscaleLoss
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/losses/TverskyLoss/">
+     TverskyLoss
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/losses/ssim_loss/">
+     ssim_loss
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/losses/ssim_multiscale_loss/">
+     ssim_multiscale_loss
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../api_docs/tfmri/math/">
+   tfmri.math
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" type="checkbox"/>
+  <label for="toctree-checkbox-13">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/math/block_soft_threshold/">
+     block_soft_threshold
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/math/extract_from_complex/">
+     extract_from_complex
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/math/indicator_ball/">
+     indicator_ball
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/math/indicator_box/">
+     indicator_box
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/math/indicator_simplex/">
+     indicator_simplex
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/math/make_val_and_grad_fn/">
+     make_val_and_grad_fn
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/math/normalize_no_nan/">
+     normalize_no_nan
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/math/project_onto_ball/">
+     project_onto_ball
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/math/project_onto_box/">
+     project_onto_box
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/math/project_onto_simplex/">
+     project_onto_simplex
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/math/shrinkage/">
+     shrinkage
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/math/soft_threshold/">
+     soft_threshold
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../api_docs/tfmri/metrics/">
+   tfmri.metrics
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" type="checkbox"/>
+  <label for="toctree-checkbox-14">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/metrics/Accuracy/">
+     Accuracy
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/metrics/ConfusionMetric/">
+     ConfusionMetric
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/metrics/F1Score/">
+     F1Score
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/metrics/FBetaScore/">
+     FBetaScore
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/metrics/IoU/">
+     IoU
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/metrics/NegativePredictiveValue/">
+     NegativePredictiveValue
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/metrics/PSNR/">
+     PSNR
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/metrics/PositivePredictiveValue/">
+     PositivePredictiveValue
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/metrics/SSIM/">
+     SSIM
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/metrics/SSIMMultiscale/">
+     SSIMMultiscale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/metrics/TrueNegativeRate/">
+     TrueNegativeRate
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/metrics/TruePositiveRate/">
+     TruePositiveRate
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/metrics/TverskyIndex/">
+     TverskyIndex
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../api_docs/tfmri/models/">
+   tfmri.models
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" type="checkbox"/>
+  <label for="toctree-checkbox-15">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/models/ConvBlock1D/">
+     ConvBlock1D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/models/ConvBlock2D/">
+     ConvBlock2D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/models/ConvBlock3D/">
+     ConvBlock3D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/models/UNet1D/">
+     UNet1D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/models/UNet2D/">
+     UNet2D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/models/UNet3D/">
+     UNet3D
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../api_docs/tfmri/optimize/">
+   tfmri.optimize
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" type="checkbox"/>
+  <label for="toctree-checkbox-16">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/optimize/gradient_descent/">
+     gradient_descent
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/optimize/lbfgs_minimize/">
+     lbfgs_minimize
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../api_docs/tfmri/plot/">
+   tfmri.plot
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" type="checkbox"/>
+  <label for="toctree-checkbox-17">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/plot/close/">
+     close
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/plot/image_sequence/">
+     image_sequence
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/plot/show/">
+     show
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/plot/tiled_image/">
+     tiled_image
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/plot/tiled_image_sequence/">
+     tiled_image_sequence
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../api_docs/tfmri/recon/">
+   tfmri.recon
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" type="checkbox"/>
+  <label for="toctree-checkbox-18">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/recon/adjoint/">
+     adjoint
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/recon/grappa/">
+     grappa
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/recon/least_squares/">
+     least_squares
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/recon/partial_fourier/">
+     partial_fourier
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/recon/sense/">
+     sense
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../api_docs/tfmri/sampling/">
+   tfmri.sampling
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" type="checkbox"/>
+  <label for="toctree-checkbox-19">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/sampling/density_grid/">
+     density_grid
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/sampling/estimate_density/">
+     estimate_density
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/sampling/estimate_radial_density/">
+     estimate_radial_density
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/sampling/expand_density/">
+     expand_density
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/sampling/expand_trajectory/">
+     expand_trajectory
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/sampling/flatten_density/">
+     flatten_density
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/sampling/flatten_trajectory/">
+     flatten_trajectory
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/sampling/radial_density/">
+     radial_density
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/sampling/radial_trajectory/">
+     radial_trajectory
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/sampling/radial_waveform/">
+     radial_waveform
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/sampling/random_mask/">
+     random_mask
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/sampling/spiral_trajectory/">
+     spiral_trajectory
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../api_docs/tfmri/signal/">
+   tfmri.signal
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" type="checkbox"/>
+  <label for="toctree-checkbox-20">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/signal/atanfilt/">
+     atanfilt
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/signal/crop_kspace/">
+     crop_kspace
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/signal/dwt/">
+     dwt
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/signal/fft/">
+     fft
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/signal/filter_kspace/">
+     filter_kspace
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/signal/hamming/">
+     hamming
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/signal/hann/">
+     hann
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/signal/idwt/">
+     idwt
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/signal/ifft/">
+     ifft
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/signal/max_wavelet_level/">
+     max_wavelet_level
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/signal/nufft/">
+     nufft
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/signal/tensor_to_wavelet_coeffs/">
+     tensor_to_wavelet_coeffs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/signal/wavedec/">
+     wavedec
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/signal/wavelet_coeffs_to_tensor/">
+     wavelet_coeffs_to_tensor
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/signal/waverec/">
+     waverec
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../api_docs/tfmri/summary/">
+   tfmri.summary
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-21" name="toctree-checkbox-21" type="checkbox"/>
+  <label for="toctree-checkbox-21">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../api_docs/tfmri/summary/gif/">
+     gif
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+    </div>
+</nav></div>
+        <div class="bd-sidebar__bottom">
+             <!-- To handle the deprecated key -->
+            
+            <div class="navbar_extra_footer">
+            Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+            </div>
+            
+        </div>
+    </div>
+    <div id="rtd-footer-container"></div>
+</div>
+
+
+          
+
+
+          
+<!-- A tiny helper pixel to detect if we've scrolled -->
+<div class="sbt-scroll-pixel-helper"></div>
+<!-- Main content -->
+<div class="col py-0 content-container">
+    
+    <div class="header-article row sticky-top noprint">
+        
+
+
+
+<div class="col py-1 d-flex header-article-main">
+    <div class="header-article__left">
+        
+        <label for="__navigation"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="right"
+title="Toggle navigation"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-bars"></i>
+  </span>
+
+</label>
+
+        
+    </div>
+    <div class="header-article__right">
+<div class="menu-dropdown menu-dropdown-launch-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Launch interactive content">
+      <i class="fas fa-rocket"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="https://colab.research.google.com/github/mrphys/tensorflow-mri/blob/master/tools/docs/guide/recon.ipynb"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Launch on Colab"
+>
+  
+
+<span class="headerbtn__icon-container">
+  
+    <img src="../../_static/images/logo_colab.png">
+  </span>
+<span class="headerbtn__text-container">Colab</span>
+</a>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+
+<button onclick="toggleFullScreen()"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="bottom"
+title="Fullscreen mode"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+<a href="https://github.com/mrphys/tensorflow-mri"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="bottom"
+title="Source repository"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+<div class="menu-dropdown menu-dropdown-download-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Download this page">
+      <i class="fas fa-download"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="../../_sources/guide/recon.ipynb.txt"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Download source file"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="headerbtn__text-container">.ipynb</span>
+</a>
+
+      </li>
+      
+      <li>
+        
+<button onclick="printPdf(this)"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="left"
+title="Print to PDF"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="headerbtn__text-container">.pdf</span>
+</button>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+
+    </div>
+</div>
+
+<!-- Table of contents -->
+<div class="col-md-3 bd-toc show noprint">
+</div>
+    </div>
+    <div class="article row">
+        <div class="col pl-md-3 pl-lg-5 content-container">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>MR image reconstruction</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                    </div>
+                </div>
+            </div>
+            <main id="main-content" role="main">
+                
+              <div>
+                
+  <section class="tex2jax_ignore mathjax_ignore" id="mr-image-reconstruction">
+<h1>MR image reconstruction<a class="headerlink" href="#mr-image-reconstruction" title="Permalink to this headline">#</a></h1>
+<p>Coming soon…</p>
+</section>
+
+
+              </div>
+              
+            </main>
+            <footer class="footer-article noprint">
+                
+    <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+    <a class='left-prev' id="prev-link" href="../optim/" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">Optimization</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="../contribute/" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Contributing</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+            </footer>
+        </div>
+    </div>
+    <div class="footer-content row">
+        <footer class="col footer"><p>
+  
+    By Javier Montalt Tordera<br/>
+  
+      &copy; Copyright 2021 University College London.<br/>
+</p>
+        </footer>
+    </div>
+    
+</div>
+
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+
+
+  </body>
+</html>

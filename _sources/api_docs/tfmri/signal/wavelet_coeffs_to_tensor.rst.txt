@@ -1,0 +1,6 @@
+﻿tfmri.signal.wavelet\_coeffs\_to\_tensor
+========================================
+
+.. currentmodule:: tensorflow_mri.signal
+
+.. autofunction:: wavelet_coeffs_to_tensor

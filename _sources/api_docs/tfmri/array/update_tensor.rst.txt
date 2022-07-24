@@ -1,0 +1,6 @@
+﻿tfmri.array.update\_tensor
+==========================
+
+.. currentmodule:: tensorflow_mri.array
+
+.. autofunction:: update_tensor

@@ -30,4 +30,9 @@ Functions
     hann
     idwt
     ifft
+    max_wavelet_level
     nufft
+    tensor_to_wavelet_coeffs
+    wavedec
+    wavelet_coeffs_to_tensor
+    waverec

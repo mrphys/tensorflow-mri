@@ -9,6 +9,7 @@ Modules
 .. autosummary::
     :nosignatures:
 
+    array
     callbacks
     coils
     convex

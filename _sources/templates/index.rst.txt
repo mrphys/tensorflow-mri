@@ -16,6 +16,11 @@ TensorFlow MRI |release|
 
    Guide <guide>
    Installation <guide/install>
+   Non-uniform FFT <guide/nufft>
+   Linear algebra <guide/linalg>
+   Optimization <guide/optim>
+   MRI reconstruction <guide/recon>
+   Contributing <guide/contribute>
    FAQ <guide/faq>
 
 
