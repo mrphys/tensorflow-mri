@@ -384,7 +384,8 @@ class ReconstructTest(test_util.TestCase):
 
     # Check batch of k-space data and batch of trajectories.
     tavg = tf.math.reduce_mean(image_nonreg, -3)
-    regularizer = convex_ops.ConvexFunctionTikhonov(scale=0.5, prior=tavg)
+    regularizer = convex_ops.ConvexFunctionTikhonov(
+        prior=tavg, scale=0.5, dtype=tf.complex64)
     image = recon_ops.reconstruct_lstsq(kspace=kspace,
                                         image_shape=image_shape,
                                         trajectory=traj,

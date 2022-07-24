@@ -44,8 +44,11 @@ test: $(wildcard tensorflow_mri/python/*.py)
 doctest: $(wildcard tensorflow_mri/python/*.py)
 	$(PYTHON) tools/docs/test_docs.py
 
-lint: $(wildcard tensorflow_mri/python/ops/*.py)
+lint: $(wildcard tensorflow_mri/python/*.py)
 	pylint --rcfile=pylintrc tensorflow_mri/python
+
+api: $(wildcard tensorflow_mri/python/*.py)
+	$(PYTHON) tools/build/create_api.py
 
 clean:
 	rm -rf artifacts/

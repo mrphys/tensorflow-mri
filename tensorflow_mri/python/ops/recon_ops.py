@@ -381,7 +381,7 @@ def reconstruct_lstsq(kspace,
       if reg_operator is not None:
         reg_prior = reg_operator.transform(
             reg_operator.transform(reg_prior), adjoint=True)
-      rhs += reg_parameter * reg_prior
+      rhs += tf.cast(reg_parameter, reg_prior.dtype) * reg_prior
     # Solve the (maybe regularized) linear system.
     result = linalg_ops.conjugate_gradient(operator_gm, rhs, **optimizer_kwargs)
     image = result.x

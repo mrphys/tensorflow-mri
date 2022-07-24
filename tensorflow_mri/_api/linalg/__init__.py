@@ -14,4 +14,5 @@ from tensorflow_mri.python.ops.linalg_ops import LinearOperatorGramNUFFT as Line
 from tensorflow_mri.python.ops.linalg_ops import LinearOperatorFiniteDifference as LinearOperatorFiniteDifference
 from tensorflow_mri.python.ops.linalg_ops import LinearOperatorWavelet as LinearOperatorWavelet
 from tensorflow_mri.python.ops.linalg_ops import LinearOperatorMRI as LinearOperatorMRI
+from tensorflow_mri.python.ops.linalg_ops import LinearOperatorGramMRI as LinearOperatorGramMRI
 from tensorflow_mri.python.ops.linalg_ops import conjugate_gradient as conjugate_gradient

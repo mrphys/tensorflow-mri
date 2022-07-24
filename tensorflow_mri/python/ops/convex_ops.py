@@ -749,12 +749,12 @@ class ConvexFunctionL1Wavelet(ConvexFunctionLinearOperatorComposition):  # pylin
                scale=None,
                dtype=tf.dtypes.float32,
                name=None):
-    operator = linalg_imaging.LinearOperatorWavelet(domain_shape,
-                                                    wavelet,
-                                                    mode=mode,
-                                                    level=level,
-                                                    axes=axes,
-                                                    dtype=dtype)
+    operator = linalg_ops.LinearOperatorWavelet(domain_shape,
+                                                wavelet,
+                                                mode=mode,
+                                                level=level,
+                                                axes=axes,
+                                                dtype=dtype)
     function = ConvexFunctionL1Norm(
         domain_dimension=operator.range_dimension_tensor(),
         scale=scale,

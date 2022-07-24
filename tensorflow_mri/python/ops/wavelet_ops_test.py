@@ -270,7 +270,7 @@ class CoeffsToArrayTest(test_util.TestCase):
         self.assertRaises(ValueError, wavelet_ops.coeffs_to_tensor, coeffs,
                           axes=())
 
-        coeffs2 = pywt.tensor_to_coeffs(coeff_arr, coeff_slices)
+        coeffs2 = pywt.array_to_coeffs(coeff_arr, coeff_slices)
         x1r = wavelet_ops.waverec(coeffs2, wave, mode=mode, axes=axes)
 
         self.assertAllClose(x1, x1r, rtol=1e-4, atol=1e-4)
