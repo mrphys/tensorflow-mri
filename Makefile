@@ -18,6 +18,7 @@ CXXFLAGS += $(TF_CFLAGS) -fPIC -std=c++14
 CXXFLAGS += -I$(ROOT_DIR)
 
 LDFLAGS := $(TF_LDFLAGS)
+LDFLAGS += -lfftw3 -lfftw3f
 LDFLAGS += -l:libspiral_waveform.a
 
 all: lib wheel

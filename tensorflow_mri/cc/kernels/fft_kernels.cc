@@ -35,7 +35,10 @@ limitations under the License.
 #include "tensorflow/core/platform/stream_executor.h"
 #endif  // GOOGLE_CUDA || TENSORFLOW_USE_ROCM
 
+#include "tensorflow_mri/cc/third_party/fftw/fftw.h"
+
 namespace tensorflow {
+namespace mri {
 
 class FFTBase : public OpKernel {
  public:
@@ -166,23 +169,10 @@ class FFTCPU : public FFTBase {
         in.dtype() == DT_COMPLEX128 || out->dtype() == DT_COMPLEX128;
 
     if (!IsReal()) {
-      // Compute the FFT using Eigen.
-      constexpr auto direction =
-          Forward ? Eigen::FFT_FORWARD : Eigen::FFT_REVERSE;
       if (is_complex128) {
-        DCHECK_EQ(in.dtype(), DT_COMPLEX128);
-        DCHECK_EQ(out->dtype(), DT_COMPLEX128);
-        auto input = Tensor(in).flat_inner_dims<complex128, FFTRank + 1>();
-        auto output = out->flat_inner_dims<complex128, FFTRank + 1>();
-        output.device(device) =
-            input.template fft<Eigen::BothParts, direction>(axes);
+        DoComplexFFT<double>(ctx, fft_shape, in, out);
       } else {
-        DCHECK_EQ(in.dtype(), DT_COMPLEX64);
-        DCHECK_EQ(out->dtype(), DT_COMPLEX64);
-        auto input = Tensor(in).flat_inner_dims<complex64, FFTRank + 1>();
-        auto output = out->flat_inner_dims<complex64, FFTRank + 1>();
-        output.device(device) =
-            input.template fft<Eigen::BothParts, direction>(axes);
+        DoComplexFFT<float>(ctx, fft_shape, in, out);
       }
     } else {
       if (IsForward()) {
@@ -206,6 +196,58 @@ class FFTCPU : public FFTBase {
           DoRealBackwardFFT<complex64, float>(ctx, fft_shape, in, out);
         }
       }
+    }
+  }
+
+  template <typename FloatType>
+  void DoComplexFFT(OpKernelContext* ctx, uint64* fft_shape,
+                    const Tensor& in, Tensor* out) {
+    auto device = ctx->eigen_device<CPUDevice>();
+    std::cout << "Using FFTW" << std::endl;
+    std::cout << "numThreads: " << device.numThreads() << std::endl;
+
+    const bool is_complex128 =
+        in.dtype() == DT_COMPLEX128 || out->dtype() == DT_COMPLEX128;
+
+    if (is_complex128) {
+      DCHECK_EQ(in.dtype(), DT_COMPLEX128);
+      DCHECK_EQ(out->dtype(), DT_COMPLEX128);
+    } else {
+      DCHECK_EQ(in.dtype(), DT_COMPLEX64);
+      DCHECK_EQ(out->dtype(), DT_COMPLEX64);
+    }
+
+    auto input = Tensor(in).flat_inner_dims<std::complex<FloatType>, FFTRank + 1>();
+    auto output = out->flat_inner_dims<std::complex<FloatType>, FFTRank + 1>();
+
+    int dim_sizes[FFTRank];
+    int input_distance = 1;
+    int output_distance = 1;
+    int num_points = 1;
+    for (int i = 0; i < FFTRank; ++i) {
+      dim_sizes[i] = fft_shape[i];
+      num_points *= fft_shape[i];
+      input_distance *= input.dimension(i + 1);
+      output_distance *= output.dimension(i + 1);
+    }
+    int batch_size = input.dimension(0);
+
+    constexpr auto fft_sign = Forward ? FFTW_FORWARD : FFTW_BACKWARD;
+    constexpr auto fft_flags = FFTW_ESTIMATE;
+
+    auto fft_plan = fftw::plan_many_dft<FloatType>(
+        FFTRank, dim_sizes, batch_size,
+        reinterpret_cast<fftw::complex<FloatType>*>(input.data()),
+        nullptr, 1, input_distance,
+        reinterpret_cast<fftw::complex<FloatType>*>(output.data()),
+        nullptr, 1, output_distance,
+        fft_sign, fft_flags);
+    fftw::execute<FloatType>(fft_plan);
+    fftw::destroy_plan<FloatType>(fft_plan);
+
+    // FFT normalization.
+    if (fft_sign == FFTW_BACKWARD) {
+      output.device(device) = output / output.constant(num_points);
     }
   }
 
@@ -323,29 +365,18 @@ class FFTCPU : public FFTBase {
   }
 };
 
-REGISTER_KERNEL_BUILDER(Name("FFT").Device(DEVICE_CPU), FFTCPU<true, false, 1>);
-REGISTER_KERNEL_BUILDER(Name("IFFT").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("FFT").Device(DEVICE_CPU).Priority(1),
+                        FFTCPU<true, false, 1>);
+REGISTER_KERNEL_BUILDER(Name("IFFT").Device(DEVICE_CPU).Priority(1),
                         FFTCPU<false, false, 1>);
-REGISTER_KERNEL_BUILDER(Name("FFT2D").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("FFT2D").Device(DEVICE_CPU).Priority(1),
                         FFTCPU<true, false, 2>);
-REGISTER_KERNEL_BUILDER(Name("IFFT2D").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IFFT2D").Device(DEVICE_CPU).Priority(1),
                         FFTCPU<false, false, 2>);
-REGISTER_KERNEL_BUILDER(Name("FFT3D").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("FFT3D").Device(DEVICE_CPU).Priority(1),
                         FFTCPU<true, false, 3>);
-REGISTER_KERNEL_BUILDER(Name("IFFT3D").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IFFT3D").Device(DEVICE_CPU).Priority(1),
                         FFTCPU<false, false, 3>);
-
-REGISTER_KERNEL_BUILDER(Name("RFFT").Device(DEVICE_CPU), FFTCPU<true, true, 1>);
-REGISTER_KERNEL_BUILDER(Name("IRFFT").Device(DEVICE_CPU),
-                        FFTCPU<false, true, 1>);
-REGISTER_KERNEL_BUILDER(Name("RFFT2D").Device(DEVICE_CPU),
-                        FFTCPU<true, true, 2>);
-REGISTER_KERNEL_BUILDER(Name("IRFFT2D").Device(DEVICE_CPU),
-                        FFTCPU<false, true, 2>);
-REGISTER_KERNEL_BUILDER(Name("RFFT3D").Device(DEVICE_CPU),
-                        FFTCPU<true, true, 3>);
-REGISTER_KERNEL_BUILDER(Name("IRFFT3D").Device(DEVICE_CPU),
-                        FFTCPU<false, true, 3>);
 
 #if (defined(GOOGLE_CUDA) && GOOGLE_CUDA) || \
     (defined(TENSORFLOW_USE_ROCM) && TENSORFLOW_USE_ROCM)
@@ -427,208 +458,8 @@ int64_t GetCufftWorkspaceLimit(const string& envvar_in_mb,
   return default_value_in_bytes;
 }
 
-class FFTGPUBase : public FFTBase {
- public:
-  using FFTBase::FFTBase;
 
- protected:
-  static int64_t CufftScratchSize;
-  void DoFFT(OpKernelContext* ctx, const Tensor& in, uint64* fft_shape,
-             Tensor* out) override {
-    auto* stream = ctx->op_device_context()->stream();
-    OP_REQUIRES(ctx, stream, errors::Internal("No GPU stream available."));
-
-    const TensorShape& input_shape = in.shape();
-    const TensorShape& output_shape = out->shape();
-
-    const int fft_rank = Rank();
-    int batch_size = 1;
-    for (int i = 0; i < input_shape.dims() - fft_rank; ++i) {
-      batch_size *= input_shape.dim_size(i);
-    }
-    uint64 input_embed[3];
-    const uint64 input_stride = 1;
-    uint64 input_distance = 1;
-    uint64 output_embed[3];
-    const uint64 output_stride = 1;
-    uint64 output_distance = 1;
-
-    for (int i = 0; i < fft_rank; ++i) {
-      auto dim_offset = input_shape.dims() - fft_rank + i;
-      input_embed[i] = input_shape.dim_size(dim_offset);
-      input_distance *= input_shape.dim_size(dim_offset);
-      output_embed[i] = output_shape.dim_size(dim_offset);
-      output_distance *= output_shape.dim_size(dim_offset);
-    }
-
-    constexpr bool kInPlaceFft = false;
-    const bool is_complex128 =
-        in.dtype() == DT_COMPLEX128 || out->dtype() == DT_COMPLEX128;
-
-    const auto kFftType =
-        IsReal()
-            ? (IsForward()
-                   ? (is_complex128 ? se::fft::Type::kD2Z : se::fft::Type::kR2C)
-                   : (is_complex128 ? se::fft::Type::kZ2D
-                                    : se::fft::Type::kC2R))
-            : (IsForward() ? (is_complex128 ? se::fft::Type::kZ2ZForward
-                                            : se::fft::Type::kC2CForward)
-                           : (is_complex128 ? se::fft::Type::kZ2ZInverse
-                                            : se::fft::Type::kC2CInverse));
-
-    CufftScratchAllocator scratch_allocator(CufftScratchSize, ctx);
-    auto plan =
-        stream->parent()->AsFft()->CreateBatchedPlanWithScratchAllocator(
-            stream, fft_rank, fft_shape, input_embed, input_stride,
-            input_distance, output_embed, output_stride, output_distance,
-            kFftType, kInPlaceFft, batch_size, &scratch_allocator);
-
-    if (IsReal()) {
-      if (IsForward()) {
-        if (is_complex128) {
-          DCHECK_EQ(in.dtype(), DT_DOUBLE);
-          DCHECK_EQ(out->dtype(), DT_COMPLEX128);
-          DoFFTInternal<double, complex128>(ctx, stream, plan.get(), kFftType,
-                                            output_distance, in, out);
-        } else {
-          DCHECK_EQ(in.dtype(), DT_FLOAT);
-          DCHECK_EQ(out->dtype(), DT_COMPLEX64);
-          DoFFTInternal<float, complex64>(ctx, stream, plan.get(), kFftType,
-                                          output_distance, in, out);
-        }
-      } else {
-        if (is_complex128) {
-          DCHECK_EQ(in.dtype(), DT_COMPLEX128);
-          DCHECK_EQ(out->dtype(), DT_DOUBLE);
-          DoFFTInternal<complex128, double>(ctx, stream, plan.get(), kFftType,
-                                            output_distance, in, out);
-        } else {
-          DCHECK_EQ(in.dtype(), DT_COMPLEX64);
-          DCHECK_EQ(out->dtype(), DT_FLOAT);
-          DoFFTInternal<complex64, float>(ctx, stream, plan.get(), kFftType,
-                                          output_distance, in, out);
-        }
-      }
-    } else {
-      if (is_complex128) {
-        DCHECK_EQ(in.dtype(), DT_COMPLEX128);
-        DCHECK_EQ(out->dtype(), DT_COMPLEX128);
-        DoFFTInternal<complex128, complex128>(ctx, stream, plan.get(), kFftType,
-                                              output_distance, in, out);
-      } else {
-        DCHECK_EQ(in.dtype(), DT_COMPLEX64);
-        DCHECK_EQ(out->dtype(), DT_COMPLEX64);
-        DoFFTInternal<complex64, complex64>(ctx, stream, plan.get(), kFftType,
-                                            output_distance, in, out);
-      }
-    }
-  }
-
- private:
-  template <typename T>
-  struct RealTypeFromComplexType {
-    typedef T RealT;
-  };
-
-  template <typename T>
-  struct RealTypeFromComplexType<std::complex<T>> {
-    typedef T RealT;
-  };
-
-  template <typename InT, typename OutT>
-  void DoFFTInternal(OpKernelContext* ctx, se::Stream* stream,
-                     se::fft::Plan* plan, const se::fft::Type fft_type,
-                     const uint64 output_distance, const Tensor& in,
-                     Tensor* out) {
-    const TensorShape& input_shape = in.shape();
-    const TensorShape& output_shape = out->shape();
-    auto src =
-        AsDeviceMemory<InT>(in.flat<InT>().data(), input_shape.num_elements());
-    auto dst = AsDeviceMemory<OutT>(out->flat<OutT>().data(),
-                                    output_shape.num_elements());
-    OP_REQUIRES(
-        ctx, stream->ThenFft(plan, src, &dst).ok(),
-        errors::Internal("fft failed : type=", static_cast<int>(fft_type),
-                         " in.shape=", input_shape.DebugString()));
-    if (!IsForward()) {
-      typedef typename RealTypeFromComplexType<OutT>::RealT RealT;
-      RealT alpha = 1.0 / output_distance;
-      OP_REQUIRES(
-          ctx,
-          stream->ThenBlasScal(output_shape.num_elements(), alpha, &dst, 1)
-              .ok(),
-          errors::Internal("BlasScal failed : in.shape=",
-                           input_shape.DebugString()));
-    }
-  }
-};
-
-int64_t FFTGPUBase::CufftScratchSize = GetCufftWorkspaceLimit(
-    // default value is in bytes despite the name of the environment variable
-    "TF_CUFFT_WORKSPACE_LIMIT_IN_MB", 1LL << 32  // 4GB
-);
-
-template <bool Forward, bool _Real, int FFTRank>
-class FFTGPU : public FFTGPUBase {
- public:
-  static_assert(FFTRank >= 1 && FFTRank <= 3,
-                "Only 1D, 2D and 3D FFTs supported.");
-  explicit FFTGPU(OpKernelConstruction* ctx) : FFTGPUBase(ctx) {}
-
- protected:
-  int Rank() const override { return FFTRank; }
-  bool IsForward() const override { return Forward; }
-  bool IsReal() const override { return _Real; }
-};
-
-// Register GPU kernels with priority 1 so that if a custom FFT CPU kernel is
-// registered with priority 1 (to override the default Eigen CPU kernel), the
-// CPU kernel does not outrank the GPU kernel.
-REGISTER_KERNEL_BUILDER(Name("FFT").Device(DEVICE_GPU).Priority(1),
-                        FFTGPU<true, false, 1>);
-REGISTER_KERNEL_BUILDER(Name("IFFT").Device(DEVICE_GPU).Priority(1),
-                        FFTGPU<false, false, 1>);
-REGISTER_KERNEL_BUILDER(Name("FFT2D").Device(DEVICE_GPU).Priority(1),
-                        FFTGPU<true, false, 2>);
-REGISTER_KERNEL_BUILDER(Name("IFFT2D").Device(DEVICE_GPU).Priority(1),
-                        FFTGPU<false, false, 2>);
-REGISTER_KERNEL_BUILDER(Name("FFT3D").Device(DEVICE_GPU).Priority(1),
-                        FFTGPU<true, false, 3>);
-REGISTER_KERNEL_BUILDER(Name("IFFT3D").Device(DEVICE_GPU).Priority(1),
-                        FFTGPU<false, false, 3>);
-
-REGISTER_KERNEL_BUILDER(
-    Name("RFFT").Device(DEVICE_GPU).HostMemory("fft_length").Priority(1),
-    FFTGPU<true, true, 1>);
-REGISTER_KERNEL_BUILDER(
-    Name("IRFFT").Device(DEVICE_GPU).HostMemory("fft_length").Priority(1),
-    FFTGPU<false, true, 1>);
-REGISTER_KERNEL_BUILDER(
-    Name("RFFT2D").Device(DEVICE_GPU).HostMemory("fft_length").Priority(1),
-    FFTGPU<true, true, 2>);
-REGISTER_KERNEL_BUILDER(
-    Name("IRFFT2D").Device(DEVICE_GPU).HostMemory("fft_length").Priority(1),
-    FFTGPU<false, true, 2>);
-REGISTER_KERNEL_BUILDER(
-    Name("RFFT3D").Device(DEVICE_GPU).HostMemory("fft_length").Priority(1),
-    FFTGPU<true, true, 3>);
-REGISTER_KERNEL_BUILDER(
-    Name("IRFFT3D").Device(DEVICE_GPU).HostMemory("fft_length").Priority(1),
-    FFTGPU<false, true, 3>);
-
-// Deprecated kernels.
-REGISTER_KERNEL_BUILDER(Name("BatchFFT").Device(DEVICE_GPU).Priority(1),
-                        FFTGPU<true, false, 1>);
-REGISTER_KERNEL_BUILDER(Name("BatchIFFT").Device(DEVICE_GPU).Priority(1),
-                        FFTGPU<false, false, 1>);
-REGISTER_KERNEL_BUILDER(Name("BatchFFT2D").Device(DEVICE_GPU).Priority(1),
-                        FFTGPU<true, false, 2>);
-REGISTER_KERNEL_BUILDER(Name("BatchIFFT2D").Device(DEVICE_GPU).Priority(1),
-                        FFTGPU<false, false, 2>);
-REGISTER_KERNEL_BUILDER(Name("BatchFFT3D").Device(DEVICE_GPU).Priority(1),
-                        FFTGPU<true, false, 3>);
-REGISTER_KERNEL_BUILDER(Name("BatchIFFT3D").Device(DEVICE_GPU).Priority(1),
-                        FFTGPU<false, false, 3>);
 #endif  // GOOGLE_CUDA || TENSORFLOW_USE_ROCM
 
-}  // end namespace tensorflow
+}  // namespace mri
+}  // namespace tensorflow

@@ -20,6 +20,13 @@ import tensorflow_nufft as tfft
 from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
+from tensorflow_mri.python.util import sys_util
+
+
+if sys_util.is_op_library_enabled():
+  # Load library in order to register the FFT kernels.
+  _mri_ops = tf.load_op_library(
+      tf.compat.v1.resource_loader.get_path_to_datafile('_mri_ops.so'))
 
 
 @api_util.export("signal.fft")
