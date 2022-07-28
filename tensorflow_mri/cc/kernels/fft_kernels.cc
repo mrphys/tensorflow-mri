@@ -247,10 +247,10 @@ class FFTCPU : public FFTBase {
   mutex mu_;
 };
 
-// Environment variable `TFMRI_USE_FFTW` can be used to specify whether to use
-// the FFTW library for the FFT.
+// Environment variable `TFMRI_USE_CUSTOM_FFT` can be used to specify whether to
+// use custom FFT kernels.
 static bool InitModule() {
-  const char* use_fftw_string = std::getenv("TFMRI_USE_FFTW");
+  const char* use_fftw_string = std::getenv("TFMRI_USE_CUSTOM_FFT");
   bool use_fftw;
   if (use_fftw_string == nullptr) {
     // Default to using FFTW if environment variable is not set.
@@ -269,10 +269,13 @@ static bool InitModule() {
       use_fftw = false;
     } else {
       LOG(FATAL) << "Invalid value for environment variable "
-                 << "TFMRI_USE_FFTW: " << str;
+                 << "TFMRI_USE_CUSTOM_FFT: " << str;
     }
   }
   if (use_fftw) {
+    // Register with priority 1 so that these kernels take precedence over the
+    // default Eigen implementation. Note that core TF registers the FFT GPU
+    // kernels with priority 1 too, so those still take precedence over these.
     REGISTER_KERNEL_BUILDER(Name("FFT").Device(DEVICE_CPU).Priority(1),
                             FFTCPU<true, false, 1>);
     REGISTER_KERNEL_BUILDER(Name("IFFT").Device(DEVICE_CPU).Priority(1),

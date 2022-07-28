@@ -16,6 +16,7 @@ TensorFlow MRI |release|
 
    Guide <guide>
    Installation <guide/install>
+   Fast Fourier transform <guide/fft>
    Non-uniform FFT <guide/nufft>
    Linear algebra <guide/linalg>
    Optimization <guide/optim>
