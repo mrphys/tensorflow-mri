@@ -175,27 +175,8 @@ class FFTCPU : public FFTBase {
         DoComplexFFT<float>(ctx, fft_shape, in, out);
       }
     } else {
-      if (IsForward()) {
-        if (is_complex128) {
-          DCHECK_EQ(in.dtype(), DT_DOUBLE);
-          DCHECK_EQ(out->dtype(), DT_COMPLEX128);
-          DoRealForwardFFT<double, complex128>(ctx, fft_shape, in, out);
-        } else {
-          DCHECK_EQ(in.dtype(), DT_FLOAT);
-          DCHECK_EQ(out->dtype(), DT_COMPLEX64);
-          DoRealForwardFFT<float, complex64>(ctx, fft_shape, in, out);
-        }
-      } else {
-        if (is_complex128) {
-          DCHECK_EQ(in.dtype(), DT_COMPLEX128);
-          DCHECK_EQ(out->dtype(), DT_DOUBLE);
-          DoRealBackwardFFT<complex128, double>(ctx, fft_shape, in, out);
-        } else {
-          DCHECK_EQ(in.dtype(), DT_COMPLEX64);
-          DCHECK_EQ(out->dtype(), DT_FLOAT);
-          DoRealBackwardFFT<complex64, float>(ctx, fft_shape, in, out);
-        }
-      }
+      OP_REQUIRES(ctx, false,
+                  errors::Unimplemented("Real FFT is not implemented"));
     }
   }
 
@@ -203,8 +184,8 @@ class FFTCPU : public FFTBase {
   void DoComplexFFT(OpKernelContext* ctx, uint64* fft_shape,
                     const Tensor& in, Tensor* out) {
     auto device = ctx->eigen_device<CPUDevice>();
-    std::cout << "Using FFTW" << std::endl;
-    std::cout << "numThreads: " << device.numThreads() << std::endl;
+    auto worker_threads = ctx->device()->tensorflow_cpu_worker_threads();
+    auto num_threads = worker_threads->num_threads;
 
     const bool is_complex128 =
         in.dtype() == DT_COMPLEX128 || out->dtype() == DT_COMPLEX128;
@@ -235,15 +216,25 @@ class FFTCPU : public FFTBase {
     constexpr auto fft_sign = Forward ? FFTW_FORWARD : FFTW_BACKWARD;
     constexpr auto fft_flags = FFTW_ESTIMATE;
 
-    auto fft_plan = fftw::plan_many_dft<FloatType>(
-        FFTRank, dim_sizes, batch_size,
-        reinterpret_cast<fftw::complex<FloatType>*>(input.data()),
-        nullptr, 1, input_distance,
-        reinterpret_cast<fftw::complex<FloatType>*>(output.data()),
-        nullptr, 1, output_distance,
-        fft_sign, fft_flags);
+    fftw::plan<FloatType> fft_plan;
+    {
+      mutex_lock l(mu_);
+      fftw::init_threads<FloatType>();
+      fftw::plan_with_nthreads<FloatType>(num_threads);
+      fft_plan = fftw::plan_many_dft<FloatType>(
+          FFTRank, dim_sizes, batch_size,
+          reinterpret_cast<fftw::complex<FloatType>*>(input.data()),
+          nullptr, 1, input_distance,
+          reinterpret_cast<fftw::complex<FloatType>*>(output.data()),
+          nullptr, 1, output_distance,
+          fft_sign, fft_flags);
+    }
     fftw::execute<FloatType>(fft_plan);
-    fftw::destroy_plan<FloatType>(fft_plan);
+    {
+      mutex_lock l(mu_);
+      fftw::destroy_plan<FloatType>(fft_plan);
+      fftw::cleanup_threads<FloatType>();
+    }
 
     // FFT normalization.
     if (fft_sign == FFTW_BACKWARD) {
@@ -251,215 +242,54 @@ class FFTCPU : public FFTBase {
     }
   }
 
-  template <typename RealT, typename ComplexT>
-  void DoRealForwardFFT(OpKernelContext* ctx, uint64* fft_shape,
-                        const Tensor& in, Tensor* out) {
-    // Create the axes (which are always trailing).
-    const auto axes = Eigen::ArrayXi::LinSpaced(FFTRank, 1, FFTRank);
-    auto device = ctx->eigen_device<CPUDevice>();
-    auto input = Tensor(in).flat_inner_dims<RealT, FFTRank + 1>();
-    const auto input_dims = input.dimensions();
-
-    // Slice input to fft_shape on its inner-most dimensions.
-    Eigen::DSizes<Eigen::DenseIndex, FFTRank + 1> input_slice_sizes;
-    input_slice_sizes[0] = input_dims[0];
-    TensorShape temp_shape{input_dims[0]};
-    for (int i = 1; i <= FFTRank; ++i) {
-      input_slice_sizes[i] = fft_shape[i - 1];
-      temp_shape.AddDim(fft_shape[i - 1]);
-    }
-    OP_REQUIRES(ctx, temp_shape.num_elements() > 0,
-                errors::InvalidArgument("Obtained a FFT shape of 0 elements: ",
-                                        temp_shape.DebugString()));
-
-    auto output = out->flat_inner_dims<ComplexT, FFTRank + 1>();
-    const Eigen::DSizes<Eigen::DenseIndex, FFTRank + 1> zero_start_indices;
-
-    // Compute the full FFT using a temporary tensor.
-    Tensor temp;
-    OP_REQUIRES_OK(ctx, ctx->allocate_temp(DataTypeToEnum<ComplexT>::v(),
-                                           temp_shape, &temp));
-    auto full_fft = temp.flat_inner_dims<ComplexT, FFTRank + 1>();
-    full_fft.device(device) =
-        input.slice(zero_start_indices, input_slice_sizes)
-            .template fft<Eigen::BothParts, Eigen::FFT_FORWARD>(axes);
-
-    // Slice away the negative frequency components.
-    output.device(device) =
-        full_fft.slice(zero_start_indices, output.dimensions());
-  }
-
-  template <typename ComplexT, typename RealT>
-  void DoRealBackwardFFT(OpKernelContext* ctx, uint64* fft_shape,
-                         const Tensor& in, Tensor* out) {
-    auto device = ctx->eigen_device<CPUDevice>();
-    // Reconstruct the full FFT and take the inverse.
-    auto input = Tensor(in).flat_inner_dims<ComplexT, FFTRank + 1>();
-    auto output = out->flat_inner_dims<RealT, FFTRank + 1>();
-    const auto input_dims = input.dimensions();
-
-    // Calculate the shape of the temporary tensor for the full FFT and the
-    // region we will slice from input given fft_shape. We slice input to
-    // fft_shape on its inner-most dimensions, except the last (which we
-    // slice to fft_shape[-1] / 2 + 1).
-    Eigen::DSizes<Eigen::DenseIndex, FFTRank + 1> input_slice_sizes;
-    input_slice_sizes[0] = input_dims[0];
-    TensorShape full_fft_shape;
-    full_fft_shape.AddDim(input_dims[0]);
-    for (auto i = 1; i <= FFTRank; i++) {
-      input_slice_sizes[i] =
-          i == FFTRank ? fft_shape[i - 1] / 2 + 1 : fft_shape[i - 1];
-      full_fft_shape.AddDim(fft_shape[i - 1]);
-    }
-    OP_REQUIRES(ctx, full_fft_shape.num_elements() > 0,
-                errors::InvalidArgument("Obtained a FFT shape of 0 elements: ",
-                                        full_fft_shape.DebugString()));
-
-    Tensor temp;
-    OP_REQUIRES_OK(ctx, ctx->allocate_temp(DataTypeToEnum<ComplexT>::v(),
-                                           full_fft_shape, &temp));
-    auto full_fft = temp.flat_inner_dims<ComplexT, FFTRank + 1>();
-
-    // Calculate the starting point and range of the source of
-    // negative frequency part.
-    auto neg_sizes = input_slice_sizes;
-    neg_sizes[FFTRank] = fft_shape[FFTRank - 1] - input_slice_sizes[FFTRank];
-    Eigen::DSizes<Eigen::DenseIndex, FFTRank + 1> neg_target_indices;
-    neg_target_indices[FFTRank] = input_slice_sizes[FFTRank];
-
-    const Eigen::DSizes<Eigen::DenseIndex, FFTRank + 1> start_indices;
-    Eigen::DSizes<Eigen::DenseIndex, FFTRank + 1> neg_start_indices;
-    neg_start_indices[FFTRank] = 1;
-
-    full_fft.slice(start_indices, input_slice_sizes).device(device) =
-        input.slice(start_indices, input_slice_sizes);
-
-    // First, conduct IFFTs on outer dimensions. We save computation (and
-    // avoid touching uninitialized memory) by slicing full_fft to the
-    // subregion we wrote input to.
-    if (FFTRank > 1) {
-      const auto outer_axes =
-          Eigen::ArrayXi::LinSpaced(FFTRank - 1, 1, FFTRank - 1);
-      full_fft.slice(start_indices, input_slice_sizes).device(device) =
-          full_fft.slice(start_indices, input_slice_sizes)
-              .template fft<Eigen::BothParts, Eigen::FFT_REVERSE>(outer_axes);
-    }
-
-    // Reconstruct the full FFT by appending reversed and conjugated
-    // spectrum as the negative frequency part.
-    Eigen::array<bool, FFTRank + 1> reverse_last_axis;
-    for (auto i = 0; i <= FFTRank; i++) {
-      reverse_last_axis[i] = i == FFTRank;
-    }
-
-    if (neg_sizes[FFTRank] != 0) {
-      full_fft.slice(neg_target_indices, neg_sizes).device(device) =
-          full_fft.slice(neg_start_indices, neg_sizes)
-              .reverse(reverse_last_axis)
-              .conjugate();
-    }
-
-    auto inner_axis = Eigen::array<int, 1>{FFTRank};
-    output.device(device) =
-        full_fft.template fft<Eigen::RealPart, Eigen::FFT_REVERSE>(inner_axis);
-  }
-};
-
-REGISTER_KERNEL_BUILDER(Name("FFT").Device(DEVICE_CPU).Priority(1),
-                        FFTCPU<true, false, 1>);
-REGISTER_KERNEL_BUILDER(Name("IFFT").Device(DEVICE_CPU).Priority(1),
-                        FFTCPU<false, false, 1>);
-REGISTER_KERNEL_BUILDER(Name("FFT2D").Device(DEVICE_CPU).Priority(1),
-                        FFTCPU<true, false, 2>);
-REGISTER_KERNEL_BUILDER(Name("IFFT2D").Device(DEVICE_CPU).Priority(1),
-                        FFTCPU<false, false, 2>);
-REGISTER_KERNEL_BUILDER(Name("FFT3D").Device(DEVICE_CPU).Priority(1),
-                        FFTCPU<true, false, 3>);
-REGISTER_KERNEL_BUILDER(Name("IFFT3D").Device(DEVICE_CPU).Priority(1),
-                        FFTCPU<false, false, 3>);
-
-#if (defined(GOOGLE_CUDA) && GOOGLE_CUDA) || \
-    (defined(TENSORFLOW_USE_ROCM) && TENSORFLOW_USE_ROCM)
-
-namespace {
-template <typename T>
-se::DeviceMemory<T> AsDeviceMemory(const T* cuda_memory) {
-  se::DeviceMemoryBase wrapped(const_cast<T*>(cuda_memory));
-  se::DeviceMemory<T> typed(wrapped);
-  return typed;
-}
-
-template <typename T>
-se::DeviceMemory<T> AsDeviceMemory(const T* cuda_memory, uint64 size) {
-  se::DeviceMemoryBase wrapped(const_cast<T*>(cuda_memory), size * sizeof(T));
-  se::DeviceMemory<T> typed(wrapped);
-  return typed;
-}
-
-// A class to provide scratch-space allocator for Stream-Executor Cufft
-// callback. Tensorflow is responsible for releasing the temporary buffers after
-// the kernel finishes.
-// TODO(yangzihao): Refactor redundant code in subclasses of ScratchAllocator
-// into base class.
-class CufftScratchAllocator : public se::ScratchAllocator {
- public:
-  ~CufftScratchAllocator() override {}
-  CufftScratchAllocator(int64_t memory_limit, OpKernelContext* context)
-      : memory_limit_(memory_limit), total_byte_size_(0), context_(context) {}
-  int64_t GetMemoryLimitInBytes() override { return memory_limit_; }
-  se::port::StatusOr<se::DeviceMemory<uint8>> AllocateBytes(
-      int64_t byte_size) override {
-    Tensor temporary_memory;
-    if (byte_size > memory_limit_) {
-      return se::port::StatusOr<se::DeviceMemory<uint8>>();
-    }
-    AllocationAttributes allocation_attr;
-    allocation_attr.retry_on_failure = false;
-    Status allocation_status(context_->allocate_temp(
-        DT_UINT8, TensorShape({byte_size}), &temporary_memory,
-        AllocatorAttributes(), allocation_attr));
-    if (!allocation_status.ok()) {
-      return se::port::StatusOr<se::DeviceMemory<uint8>>();
-    }
-    // Hold the reference of the allocated tensors until the end of the
-    // allocator.
-    allocated_tensors_.push_back(temporary_memory);
-    total_byte_size_ += byte_size;
-    return se::port::StatusOr<se::DeviceMemory<uint8>>(
-        AsDeviceMemory(temporary_memory.flat<uint8>().data(),
-                       temporary_memory.flat<uint8>().size()));
-  }
-  int64_t TotalByteSize() { return total_byte_size_; }
-
  private:
-  int64_t memory_limit_;
-  int64_t total_byte_size_;
-  OpKernelContext* context_;
-  std::vector<Tensor> allocated_tensors_;
+  // Used to control access to FFTW planner.
+  mutex mu_;
 };
 
-}  // end namespace
-
-int64_t GetCufftWorkspaceLimit(const string& envvar_in_mb,
-                               int64_t default_value_in_bytes) {
-  const char* workspace_limit_in_mb_str = getenv(envvar_in_mb.c_str());
-  if (workspace_limit_in_mb_str != nullptr &&
-      strcmp(workspace_limit_in_mb_str, "") != 0) {
-    int64_t scratch_limit_in_mb = -1;
-    Status status = ReadInt64FromEnvVar(envvar_in_mb, default_value_in_bytes,
-                                        &scratch_limit_in_mb);
-    if (!status.ok()) {
-      LOG(WARNING) << "Invalid value for env-var " << envvar_in_mb << ": "
-                   << workspace_limit_in_mb_str;
+// Environment variable `TFMRI_USE_FFTW` can be used to specify whether to use
+// the FFTW library for the FFT.
+static bool InitModule() {
+  const char* use_fftw_string = std::getenv("TFMRI_USE_FFTW");
+  bool use_fftw;
+  if (use_fftw_string == nullptr) {
+    // Default to using FFTW if environment variable is not set.
+    use_fftw = true;
+  } else {
+    // Parse the value of the environment variable.
+    std::string str(use_fftw_string);
+    // To lower-case.
+    std::transform(str.begin(), str.end(), str.begin(),
+                   [](unsigned char c){ return std::tolower(c); });
+    if (str == "y" || str == "yes" || str == "t" || str == "true" ||
+        str == "on" || str == "1") {
+      use_fftw = true;
+    } else if (str == "n" || str == "no" || str == "f" || str == "false" ||
+               str == "off" || str == "0") {
+      use_fftw = false;
     } else {
-      return scratch_limit_in_mb * (1 << 20);
+      LOG(FATAL) << "Invalid value for environment variable "
+                 << "TFMRI_USE_FFTW: " << str;
     }
   }
-  return default_value_in_bytes;
+  if (use_fftw) {
+    REGISTER_KERNEL_BUILDER(Name("FFT").Device(DEVICE_CPU).Priority(1),
+                            FFTCPU<true, false, 1>);
+    REGISTER_KERNEL_BUILDER(Name("IFFT").Device(DEVICE_CPU).Priority(1),
+                            FFTCPU<false, false, 1>);
+    REGISTER_KERNEL_BUILDER(Name("FFT2D").Device(DEVICE_CPU).Priority(1),
+                            FFTCPU<true, false, 2>);
+    REGISTER_KERNEL_BUILDER(Name("IFFT2D").Device(DEVICE_CPU).Priority(1),
+                            FFTCPU<false, false, 2>);
+    REGISTER_KERNEL_BUILDER(Name("FFT3D").Device(DEVICE_CPU).Priority(1),
+                            FFTCPU<true, false, 3>);
+    REGISTER_KERNEL_BUILDER(Name("IFFT3D").Device(DEVICE_CPU).Priority(1),
+                            FFTCPU<false, false, 3>);
+  }
+  return true;
 }
 
-
-#endif  // GOOGLE_CUDA || TENSORFLOW_USE_ROCM
+static bool module_initialized = InitModule();
 
 }  // namespace mri
 }  // namespace tensorflow

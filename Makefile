@@ -14,11 +14,11 @@ TF_LDFLAGS := $(shell $(PYTHON) -c 'import tensorflow as tf; print(" ".join(tf.s
 CFLAGS := -O3 -march=x86-64 -mtune=generic
 
 CXXFLAGS := $(CFLAGS)
-CXXFLAGS += $(TF_CFLAGS) -fPIC -std=c++14
+CXXFLAGS += $(TF_CFLAGS) -fPIC -std=c++14 -fopenmp
 CXXFLAGS += -I$(ROOT_DIR)
 
 LDFLAGS := $(TF_LDFLAGS)
-LDFLAGS += -lfftw3 -lfftw3f
+LDFLAGS += -lfftw3_omp -lfftw3f_omp -lfftw3 -lfftw3f -lm
 LDFLAGS += -l:libspiral_waveform.a
 
 all: lib wheel

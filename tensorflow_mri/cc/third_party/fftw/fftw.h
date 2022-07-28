@@ -141,6 +141,9 @@ struct PlanType<double> {
 };
 
 template<typename FloatType>
+using plan = typename PlanType<FloatType>::Type;
+
+template<typename FloatType>
 inline typename PlanType<FloatType>::Type plan_many_dft(
     int rank, const int *n, int howmany,
     typename ComplexType<FloatType>::Type *in, const int *inembed,
