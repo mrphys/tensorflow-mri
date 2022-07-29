@@ -22,19 +22,21 @@ import collections
 
 import tensorflow as tf
 
+from tensorflow_mri.python.linalg import conjugate_gradient
+from tensorflow_mri.python.linalg import linear_operator_gram_matrix
+from tensorflow_mri.python.linalg import linear_operator_gram_mri
+from tensorflow_mri.python.linalg import linear_operator_mri
 from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import coil_ops
 from tensorflow_mri.python.ops import convex_ops
 from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.ops import image_ops
-from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.ops import math_ops
 from tensorflow_mri.python.ops import optimizer_ops
 from tensorflow_mri.python.ops import signal_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import deprecation
-from tensorflow_mri.python.util import linalg_imaging
 
 
 @api_util.export("recon.adjoint", "recon.adj")
@@ -118,14 +120,14 @@ def reconstruct_adj(kspace,
   kspace = tf.convert_to_tensor(kspace)
 
   # Create the linear operator.
-  operator = linalg_ops.LinearOperatorMRI(image_shape,
-                                          mask=mask,
-                                          trajectory=trajectory,
-                                          density=density,
-                                          sensitivities=sensitivities,
-                                          phase=phase,
-                                          fft_norm='ortho',
-                                          sens_norm=sens_norm)
+  operator = linear_operator_mri.LinearOperatorMRI(image_shape,
+                                                   mask=mask,
+                                                   trajectory=trajectory,
+                                                   density=density,
+                                                   sensitivities=sensitivities,
+                                                   phase=phase,
+                                                   fft_norm='ortho',
+                                                   sens_norm=sens_norm)
   rank = operator.rank
 
   # Apply density compensation, if provided.
@@ -321,21 +323,21 @@ def reconstruct_lstsq(kspace,
   kspace = tf.convert_to_tensor(kspace)
 
   # Create the linear operator.
-  operator = linalg_ops.LinearOperatorMRI(image_shape,
-                                          extra_shape=extra_shape,
-                                          mask=mask,
-                                          trajectory=trajectory,
-                                          density=density,
-                                          sensitivities=sensitivities,
-                                          phase=phase,
-                                          fft_norm='ortho',
-                                          sens_norm=sens_norm,
-                                          dynamic_domain=dynamic_domain)
+  operator = linear_operator_mri.LinearOperatorMRI(image_shape,
+                                                   extra_shape=extra_shape,
+                                                   mask=mask,
+                                                   trajectory=trajectory,
+                                                   density=density,
+                                                   sensitivities=sensitivities,
+                                                   phase=phase,
+                                                   fft_norm='ortho',
+                                                   sens_norm=sens_norm,
+                                                   dynamic_domain=dynamic_domain)
   rank = operator.rank
 
   # If using Toeplitz NUFFT, we need to use the specialized Gram MRI operator.
   if toeplitz_nufft and operator.is_non_cartesian:
-    gram_operator = linalg_ops.LinearOperatorGramMRI(
+    gram_operator = linear_operator_gram_mri.LinearOperatorGramMRI(
         image_shape,
         extra_shape=extra_shape,
         mask=mask,
@@ -372,7 +374,7 @@ def reconstruct_lstsq(kspace,
       reg_operator = None
       reg_prior = None
 
-    operator_gm = linalg_imaging.LinearOperatorGramMatrix(
+    operator_gm = linear_operator_gram_matrix.LinearOperatorGramMatrix(
         operator, reg_parameter=reg_parameter, reg_operator=reg_operator,
         gram_operator=gram_operator)
     rhs = initial_image
@@ -383,7 +385,8 @@ def reconstruct_lstsq(kspace,
             reg_operator.transform(reg_prior), adjoint=True)
       rhs += tf.cast(reg_parameter, reg_prior.dtype) * reg_prior
     # Solve the (maybe regularized) linear system.
-    result = linalg_ops.conjugate_gradient(operator_gm, rhs, **optimizer_kwargs)
+    result = conjugate_gradient.conjugate_gradient(
+        operator_gm, rhs, **optimizer_kwargs)
     image = result.x
 
   elif optimizer == 'admm':

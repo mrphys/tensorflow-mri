@@ -22,7 +22,6 @@ from tensorflow_mri.python.util import io_util
 from tensorflow_mri.python.util import keras_util
 from tensorflow_mri.python.util import layer_util
 from tensorflow_mri.python.util import linalg_ext
-from tensorflow_mri.python.util import linalg_imaging
 from tensorflow_mri.python.util import math_util
 from tensorflow_mri.python.util import model_util
 from tensorflow_mri.python.util import nest_util

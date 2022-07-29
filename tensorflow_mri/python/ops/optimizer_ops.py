@@ -23,8 +23,8 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
+from tensorflow_mri.python.linalg import conjugate_gradient
 from tensorflow_mri.python.ops import convex_ops
-from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import linalg_ext
 from tensorflow_mri.python.util import prefer_static
@@ -508,7 +508,7 @@ def _get_admm_update_fn(function, operator, prox_kwargs=None):
       rhs = (rho * tf.linalg.matvec(operator, v, adjoint_a=True) -
              function.linear_coefficient)
       # Solve the linear system using CG (see ref [1], section 4.3.4).
-      return linalg_ops.conjugate_gradient(ls_operator, rhs, **solver_kwargs).x
+      return conjugate_gradient.conjugate_gradient(ls_operator, rhs, **solver_kwargs).x
 
     return _update_fn
 

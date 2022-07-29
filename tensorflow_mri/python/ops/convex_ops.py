@@ -20,14 +20,16 @@ import contextlib
 import numpy as np
 import tensorflow as tf
 
+from tensorflow_mri.python.linalg import conjugate_gradient
+from tensorflow_mri.python.linalg import linear_operator_finite_difference
+from tensorflow_mri.python.linalg import linear_operator_wavelet
 from tensorflow_mri.python.ops import array_ops
-from tensorflow_mri.python.util import deprecation
-from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.ops import math_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import linalg_ext
-from tensorflow_mri.python.util import linalg_imaging
+from tensorflow_mri.python.linalg import linear_operator
+from tensorflow_mri.python.util import deprecation
 from tensorflow_mri.python.util import tensor_util
 
 
@@ -703,8 +705,9 @@ class ConvexFunctionTotalVariation(ConvexFunctionLinearOperatorComposition):  # 
     # `LinearOperatorFiniteDifference` operates along one axis only. So for
     # multiple axes, we create one operator for each axis and vertically stack
     # them.
-    operators = [linalg_ops.LinearOperatorFiniteDifference(
-        domain_shape, axis=axis, dtype=dtype) for axis in axes]
+    operators = [
+        linear_operator_finite_difference.LinearOperatorFiniteDifference(
+            domain_shape, axis=axis, dtype=dtype) for axis in axes]
     operator = linalg_ext.LinearOperatorVerticalStack(operators)
     function = ConvexFunctionL1Norm(
         domain_dimension=operator.range_dimension_tensor(),
@@ -749,12 +752,12 @@ class ConvexFunctionL1Wavelet(ConvexFunctionLinearOperatorComposition):  # pylin
                scale=None,
                dtype=tf.dtypes.float32,
                name=None):
-    operator = linalg_ops.LinearOperatorWavelet(domain_shape,
-                                                wavelet,
-                                                mode=mode,
-                                                level=level,
-                                                axes=axes,
-                                                dtype=dtype)
+    operator = linear_operator_wavelet.LinearOperatorWavelet(domain_shape,
+                                                             wavelet,
+                                                             mode=mode,
+                                                             level=level,
+                                                             axes=axes,
+                                                             dtype=dtype)
     function = ConvexFunctionL1Norm(
         domain_dimension=operator.range_dimension_tensor(),
         scale=scale,
@@ -834,7 +837,8 @@ class ConvexFunctionQuadratic(ConvexFunction):  # pylint: disable=abstract-metho
       rhs -= self._linear_coefficient
 
     solver_kwargs = solver_kwargs or {}
-    state = linalg_ops.conjugate_gradient(self._operator, rhs, **solver_kwargs)
+    state = conjugate_gradient.conjugate_gradient(
+        self._operator, rhs, **solver_kwargs)
 
     return state.x
 
@@ -918,7 +922,7 @@ class ConvexFunctionLeastSquares(ConvexFunctionQuadratic):  # pylint: disable=ab
     name: A name for this `ConvexFunction`.
   """
   def __init__(self, operator, rhs, gram_operator=None, scale=None, name=None):
-    if isinstance(operator, linalg_imaging.LinalgImagingMixin):
+    if isinstance(operator, linear_operator.LinearOperatorMixin):
       rhs = operator.flatten_range_shape(rhs)
     if gram_operator:
       quadratic_coefficient = gram_operator

@@ -12,16 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for module `util.linalg_imaging`."""
+"""Tests for module `linear_operator`."""
 # pylint: disable=missing-class-docstring,missing-function-docstring
 
 import tensorflow as tf
 
-from tensorflow_mri.python.util import linalg_imaging
+from tensorflow_mri.python.linalg import linear_operator
 from tensorflow_mri.python.util import test_util
 
 
-class LinearOperatorAppendColumn(linalg_imaging.LinalgImagingMixin,  # pylint: disable=abstract-method
+class LinearOperatorAppendColumn(linear_operator.LinearOperatorMixin,  # pylint: disable=abstract-method
                                  tf.linalg.LinearOperator):
   """Linear operator which appends a column of zeros to the input.
 
@@ -50,8 +50,8 @@ class LinearOperatorAppendColumn(linalg_imaging.LinalgImagingMixin,  # pylint: d
     return self._range_shape_value
 
 
-class LinalgImagingMixin(test_util.TestCase):
-  """Tests for `linalg_ops.LinalgImagingMixin`."""
+class LinearOperatorMixin(test_util.TestCase):
+  """Tests for `LinearOperatorMixin`."""
   @classmethod
   def setUpClass(cls):
     # Test shapes.
@@ -115,7 +115,7 @@ class LinalgImagingMixin(test_util.TestCase):
   def test_adjoint(self):
     """Test `adjoint` method."""
     self.assertIsInstance(self.linop.adjoint(),
-                          linalg_imaging.LinalgImagingMixin)
+                          linear_operator.LinearOperatorMixin)
     self.assertAllClose(self.linop.adjoint() @ self.y_col, self.x_col)
     self.assertAllClose(self.linop.adjoint().domain_shape, self.range_shape)
     self.assertAllClose(self.linop.adjoint().range_shape, self.domain_shape)
@@ -126,7 +126,7 @@ class LinalgImagingMixin(test_util.TestCase):
 
   def test_adjoint_property(self):
     """Test `H` property."""
-    self.assertIsInstance(self.linop.H, linalg_imaging.LinalgImagingMixin)
+    self.assertIsInstance(self.linop.H, linear_operator.LinearOperatorMixin)
     self.assertAllClose(self.linop.H @ self.y_col, self.x_col)
     self.assertAllClose(self.linop.H.domain_shape, self.range_shape)
     self.assertAllClose(self.linop.H.range_shape, self.domain_shape)
@@ -145,85 +145,3 @@ class LinalgImagingMixin(test_util.TestCase):
       tf.linalg.matmul(self.linop, invalid_x)
     with self.assertRaisesRegex(ValueError, message):
       self.linop @ invalid_x  # pylint: disable=pointless-statement
-
-
-class LinearOperatorDiagTest(test_util.TestCase):
-  """Tests for `linalg_imaging.LinearOperatorDiag`."""
-  def test_transform(self):
-    """Test `transform` method."""
-    diag = tf.constant([[1., 2.], [3., 4.]])
-    diag_linop = linalg_imaging.LinearOperatorDiag(diag, rank=2)
-    x = tf.constant([[2., 2.], [2., 2.]])
-    self.assertAllClose([[2., 4.], [6., 8.]], diag_linop.transform(x))
-
-  def test_transform_adjoint(self):
-    """Test `transform` method with adjoint."""
-    diag = tf.constant([[1., 2.], [3., 4.]])
-    diag_linop = linalg_imaging.LinearOperatorDiag(diag, rank=2)
-    x = tf.constant([[2., 2.], [2., 2.]])
-    self.assertAllClose([[2., 4.], [6., 8.]],
-                        diag_linop.transform(x, adjoint=True))
-
-  def test_transform_complex(self):
-    """Test `transform` method with complex values."""
-    diag = tf.constant([[1. + 1.j, 2. + 2.j], [3. + 3.j, 4. + 4.j]],
-                       dtype=tf.complex64)
-    diag_linop = linalg_imaging.LinearOperatorDiag(diag, rank=2)
-    x = tf.constant([[2., 2.], [2., 2.]], dtype=tf.complex64)
-    self.assertAllClose([[2. + 2.j, 4. + 4.j], [6. + 6.j, 8. + 8.j]],
-                        diag_linop.transform(x))
-
-  def test_transform_adjoint_complex(self):
-    """Test `transform` method with adjoint and complex values."""
-    diag = tf.constant([[1. + 1.j, 2. + 2.j], [3. + 3.j, 4. + 4.j]],
-                       dtype=tf.complex64)
-    diag_linop = linalg_imaging.LinearOperatorDiag(diag, rank=2)
-    x = tf.constant([[2., 2.], [2., 2.]], dtype=tf.complex64)
-    self.assertAllClose([[2. - 2.j, 4. - 4.j], [6. - 6.j, 8. - 8.j]],
-                        diag_linop.transform(x, adjoint=True))
-
-  def test_shapes(self):
-    """Test shapes."""
-    diag = tf.constant([[1., 2.], [3., 4.]])
-    diag_linop = linalg_imaging.LinearOperatorDiag(diag, rank=2)
-    self.assertIsInstance(diag_linop.domain_shape, tf.TensorShape)
-    self.assertIsInstance(diag_linop.range_shape, tf.TensorShape)
-    self.assertAllEqual([2, 2], diag_linop.domain_shape)
-    self.assertAllEqual([2, 2], diag_linop.range_shape)
-
-  def test_tensor_shapes(self):
-    """Test tensor shapes."""
-    diag = tf.constant([[1., 2.], [3., 4.]])
-    diag_linop = linalg_imaging.LinearOperatorDiag(diag, rank=2)
-    self.assertIsInstance(diag_linop.domain_shape_tensor(), tf.Tensor)
-    self.assertIsInstance(diag_linop.range_shape_tensor(), tf.Tensor)
-    self.assertAllEqual([2, 2], diag_linop.domain_shape_tensor())
-    self.assertAllEqual([2, 2], diag_linop.range_shape_tensor())
-
-  def test_batch_shapes(self):
-    """Test batch shapes."""
-    diag = tf.constant([[1., 2., 3.], [4., 5., 6.]])
-    diag_linop = linalg_imaging.LinearOperatorDiag(diag, rank=1)
-    self.assertIsInstance(diag_linop.domain_shape, tf.TensorShape)
-    self.assertIsInstance(diag_linop.range_shape, tf.TensorShape)
-    self.assertIsInstance(diag_linop.batch_shape, tf.TensorShape)
-    self.assertAllEqual([3], diag_linop.domain_shape)
-    self.assertAllEqual([3], diag_linop.range_shape)
-    self.assertAllEqual([2], diag_linop.batch_shape)
-
-  def test_tensor_batch_shapes(self):
-    """Test tensor batch shapes."""
-    diag = tf.constant([[1., 2., 3.], [4., 5., 6.]])
-    diag_linop = linalg_imaging.LinearOperatorDiag(diag, rank=1)
-    self.assertIsInstance(diag_linop.domain_shape_tensor(), tf.Tensor)
-    self.assertIsInstance(diag_linop.range_shape_tensor(), tf.Tensor)
-    self.assertIsInstance(diag_linop.batch_shape_tensor(), tf.Tensor)
-    self.assertAllEqual([3], diag_linop.domain_shape)
-    self.assertAllEqual([3], diag_linop.range_shape)
-    self.assertAllEqual([2], diag_linop.batch_shape)
-
-  def test_name(self):
-    """Test names."""
-    diag = tf.constant([[1., 2.], [3., 4.]])
-    diag_linop = linalg_imaging.LinearOperatorDiag(diag, rank=2)
-    self.assertEqual("LinearOperatorDiag", diag_linop.name)

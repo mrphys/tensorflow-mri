@@ -12,23 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Linear algebra for images.
-
-Contains the imaging mixin and imaging extensions of basic linear operators.
-"""
+"""Base linear operator."""
 
 import abc
 
 import tensorflow as tf
 
-from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.util import api_util
-from tensorflow_mri.python.util import check_util
-from tensorflow_mri.python.util import linalg_ext
 from tensorflow_mri.python.util import tensor_util
 
 
-class LinalgImagingMixin(tf.linalg.LinearOperator):
+class LinearOperatorMixin(tf.linalg.LinearOperator):
   """Mixin for linear operators meant to operate on images."""
   def transform(self, x, adjoint=False, name="transform"):
     """Transform a batch of images.
@@ -87,7 +81,7 @@ class LinalgImagingMixin(tf.linalg.LinearOperator):
   def adjoint(self, name="adjoint"):
     """Returns the adjoint of this linear operator.
 
-    The returned operator is a valid `LinalgImagingMixin` instance.
+    The returned operator is a valid `LinearOperatorMixin` instance.
 
     Calling `self.adjoint()` and `self.H` are equivalent.
 
@@ -95,7 +89,7 @@ class LinalgImagingMixin(tf.linalg.LinearOperator):
       name: A name for this operation.
 
     Returns:
-      A `LinearOperator` derived from `LinalgImagingMixin`, which
+      A `LinearOperator` derived from `LinearOperatorMixin`, which
       represents the adjoint of this linear operator.
     """
     if self.is_self_adjoint:
@@ -270,7 +264,7 @@ class LinalgImagingMixin(tf.linalg.LinearOperator):
 
 
 @api_util.export("linalg.LinearOperator")
-class LinearOperator(LinalgImagingMixin, tf.linalg.LinearOperator):  # pylint: disable=abstract-method
+class LinearOperator(LinearOperatorMixin, tf.linalg.LinearOperator):  # pylint: disable=abstract-method
   r"""Base class defining a [batch of] linear operator[s].
 
   Provides access to common matrix operations without the need to materialize
@@ -369,7 +363,7 @@ class LinearOperator(LinalgImagingMixin, tf.linalg.LinearOperator):  # pylint: d
 
 
 @api_util.export("linalg.LinearOperatorAdjoint")
-class LinearOperatorAdjoint(LinalgImagingMixin,  # pylint: disable=abstract-method
+class LinearOperatorAdjoint(LinearOperatorMixin,  # pylint: disable=abstract-method
                             tf.linalg.LinearOperatorAdjoint):
   """Linear operator representing the adjoint of another operator.
 
@@ -415,401 +409,3 @@ class LinearOperatorAdjoint(LinalgImagingMixin,  # pylint: disable=abstract-meth
 
   def _batch_shape_tensor(self):
     return self.operator.batch_shape_tensor()
-
-
-@api_util.export("linalg.LinearOperatorComposition")
-class LinearOperatorComposition(LinalgImagingMixin,  # pylint: disable=abstract-method
-                                tf.linalg.LinearOperatorComposition):
-  """Composes one or more linear operators.
-
-  `LinearOperatorComposition` is initialized with a list of operators
-  :math:`A_1, A_2, ..., A_J` and represents their composition
-  :math:`A_1 A_2 ... A_J`.
-
-  .. note:
-    Similar to `tf.linalg.LinearOperatorComposition`_, but with imaging
-    extensions.
-
-  Args:
-    operators: A `list` of `LinearOperator` objects, each with the same `dtype`
-      and composable shape.
-    is_non_singular: Expect that this operator is non-singular.
-    is_self_adjoint: Expect that this operator is equal to its Hermitian
-      transpose.
-    is_positive_definite: Expect that this operator is positive definite,
-      meaning the quadratic form :math:`x^H A x` has positive real part for all
-      nonzero :math:`x`. Note that we do not require the operator to be
-      self-adjoint to be positive-definite.
-    is_square: Expect that this operator acts like square [batch] matrices.
-    name: A name for this `LinearOperator`.  Default is the individual
-      operators names joined with `_o_`.
-
-  .. _tf.linalg.LinearOperatorComposition: https://www.tensorflow.org/api_docs/python/tf/linalg/LinearOperatorComposition
-  """
-  def _transform(self, x, adjoint=False):
-    # pylint: disable=protected-access
-    if adjoint:
-      transform_order_list = self.operators
-    else:
-      transform_order_list = list(reversed(self.operators))
-
-    result = transform_order_list[0]._transform(x, adjoint=adjoint)
-    for operator in transform_order_list[1:]:
-      result = operator._transform(result, adjoint=adjoint)
-    return result
-
-  def _domain_shape(self):
-    return self.operators[-1].domain_shape
-
-  def _range_shape(self):
-    return self.operators[0].range_shape
-
-  def _batch_shape(self):
-    return array_ops.broadcast_static_shapes(
-        *[operator.batch_shape for operator in self.operators])
-
-  def _domain_shape_tensor(self):
-    return self.operators[-1].domain_shape_tensor()
-
-  def _range_shape_tensor(self):
-    return self.operators[0].range_shape_tensor()
-
-  def _batch_shape_tensor(self):
-    return array_ops.broadcast_dynamic_shapes(
-        *[operator.batch_shape_tensor() for operator in self.operators])
-
-
-@api_util.export("linalg.LinearOperatorAddition")
-class LinearOperatorAddition(LinalgImagingMixin,  # pylint: disable=abstract-method
-                             linalg_ext.LinearOperatorAddition):
-  """Adds one or more linear operators.
-
-  `LinearOperatorAddition` is initialized with a list of operators
-  :math:`A_1, A_2, ..., A_J` and represents their addition
-  :math:`A_1 + A_2 + ... + A_J`.
-
-  Args:
-    operators: A `list` of `LinearOperator` objects, each with the same `dtype`
-      and shape.
-    is_non_singular: Expect that this operator is non-singular.
-    is_self_adjoint: Expect that this operator is equal to its Hermitian
-      transpose.
-    is_positive_definite: Expect that this operator is positive definite,
-      meaning the quadratic form :math:`x^H A x` has positive real part for all
-      nonzero :math:`x`. Note that we do not require the operator to be
-      self-adjoint to be positive-definite.
-    is_square: Expect that this operator acts like square [batch] matrices.
-    name: A name for this `LinearOperator`.  Default is the individual
-      operators names joined with `_p_`.
-  """
-  def _transform(self, x, adjoint=False):
-    # pylint: disable=protected-access
-    result = self.operators[0]._transform(x, adjoint=adjoint)
-    for operator in self.operators[1:]:
-      result += operator._transform(x, adjoint=adjoint)
-    return result
-
-  def _domain_shape(self):
-    return self.operators[0].domain_shape
-
-  def _range_shape(self):
-    return self.operators[0].range_shape
-
-  def _batch_shape(self):
-    return array_ops.broadcast_static_shapes(
-        *[operator.batch_shape for operator in self.operators])
-
-  def _domain_shape_tensor(self):
-    return self.operators[0].domain_shape_tensor()
-
-  def _range_shape_tensor(self):
-    return self.operators[0].range_shape_tensor()
-
-  def _batch_shape_tensor(self):
-    return array_ops.broadcast_dynamic_shapes(
-        *[operator.batch_shape_tensor() for operator in self.operators])
-
-
-@api_util.export("linalg.LinearOperatorScaledIdentity")
-class LinearOperatorScaledIdentity(LinalgImagingMixin,  # pylint: disable=abstract-method
-                                   tf.linalg.LinearOperatorScaledIdentity):
-  """Linear operator representing a scaled identity matrix.
-
-  .. note:
-    Similar to `tf.linalg.LinearOperatorScaledIdentity`_, but with imaging
-    extensions.
-
-  Args:
-    shape: Non-negative integer `Tensor`. The shape of the operator.
-    multiplier: A `Tensor` of shape `[B1, ..., Bb]`, or `[]` (a scalar).
-    is_non_singular: Expect that this operator is non-singular.
-    is_self_adjoint: Expect that this operator is equal to its hermitian
-      transpose.
-    is_positive_definite: Expect that this operator is positive definite,
-      meaning the quadratic form `x^H A x` has positive real part for all
-      nonzero `x`.  Note that we do not require the operator to be
-      self-adjoint to be positive-definite.  See:
-      https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices
-    is_square:  Expect that this operator acts like square [batch] matrices.
-    assert_proper_shapes: Python `bool`.  If `False`, only perform static
-      checks that initialization and method arguments have proper shape.
-      If `True`, and static checks are inconclusive, add asserts to the graph.
-    name: A name for this `LinearOperator`.
-
-  .. _tf.linalg.LinearOperatorScaledIdentity: https://www.tensorflow.org/api_docs/python/tf/linalg/LinearOperatorScaledIdentity
-  """
-  def __init__(self,
-               shape,
-               multiplier,
-               is_non_singular=None,
-               is_self_adjoint=None,
-               is_positive_definite=None,
-               is_square=True,
-               assert_proper_shapes=False,
-               name="LinearOperatorScaledIdentity"):
-
-    self._domain_shape_tensor_value = tensor_util.convert_shape_to_tensor(
-        shape, name="shape")
-    self._domain_shape_value = tf.TensorShape(tf.get_static_value(
-        self._domain_shape_tensor_value))
-
-    super().__init__(
-        num_rows=tf.math.reduce_prod(shape),
-        multiplier=multiplier,
-        is_non_singular=is_non_singular,
-        is_self_adjoint=is_self_adjoint,
-        is_positive_definite=is_positive_definite,
-        is_square=is_square,
-        assert_proper_shapes=assert_proper_shapes,
-        name=name)
-
-  def _transform(self, x, adjoint=False):
-    domain_rank = tf.size(self.domain_shape_tensor())
-    multiplier_shape = tf.concat([
-        tf.shape(self.multiplier),
-        tf.ones((domain_rank,), dtype=tf.int32)], 0)
-    multiplier_matrix = tf.reshape(self.multiplier, multiplier_shape)
-    if adjoint:
-      multiplier_matrix = tf.math.conj(multiplier_matrix)
-    return x * multiplier_matrix
-
-  def _domain_shape(self):
-    return self._domain_shape_value
-
-  def _range_shape(self):
-    return self._domain_shape_value
-
-  def _batch_shape(self):
-    return self.multiplier.shape
-
-  def _domain_shape_tensor(self):
-    return self._domain_shape_tensor_value
-
-  def _range_shape_tensor(self):
-    return self._domain_shape_tensor_value
-
-  def _batch_shape_tensor(self):
-    return tf.shape(self.multiplier)
-
-
-@api_util.export("linalg.LinearOperatorDiag")
-class LinearOperatorDiag(LinalgImagingMixin, tf.linalg.LinearOperatorDiag): # pylint: disable=abstract-method
-  """Linear operator representing a square diagonal matrix.
-
-  This operator acts like a [batch] diagonal matrix `A` with shape
-  `[B1, ..., Bb, N, N]` for some `b >= 0`.  The first `b` indices index a
-  batch member. For every batch index `(i1, ..., ib)`, `A[i1, ..., ib, : :]` is
-  an `N x N` matrix. This matrix `A` is not materialized, but for
-  purposes of broadcasting this shape will be relevant.
-
-  .. note:
-    Similar to `tf.linalg.LinearOperatorDiag`_, but with imaging extensions.
-
-  Args:
-    diag: A `tf.Tensor` of shape `[B1, ..., Bb, *S]`.
-    rank: An `int`. The rank of `S`. Must be <= `diag.shape.rank`.
-    is_non_singular: Expect that this operator is non-singular.
-    is_self_adjoint: Expect that this operator is equal to its Hermitian
-      transpose. If `diag` is real, this is auto-set to `True`.
-    is_positive_definite: Expect that this operator is positive definite,
-      meaning the quadratic form :math:`x^H A x` has positive real part for all
-      nonzero :math:`x`.  Note that we do not require the operator to be
-      self-adjoint to be positive-definite.
-    is_square: Expect that this operator acts like square [batch] matrices.
-    name: A name for this `LinearOperator`.
-
-  .. _tf.linalg.LinearOperatorDiag: https://www.tensorflow.org/api_docs/python/tf/linalg/LinearOperatorDiag
-  """
-  # pylint: disable=invalid-unary-operand-type
-  def __init__(self,
-               diag,
-               rank,
-               is_non_singular=None,
-               is_self_adjoint=None,
-               is_positive_definite=None,
-               is_square=True,
-               name='LinearOperatorDiag'):
-    # pylint: disable=invalid-unary-operand-type
-    diag = tf.convert_to_tensor(diag, name='diag')
-    self._rank = check_util.validate_rank(rank, name='rank', accept_none=False)
-    if self._rank > diag.shape.rank:
-      raise ValueError(
-          f"Argument `rank` must be <= `diag.shape.rank`, but got: {rank}")
-
-    self._shape_tensor_value = tf.shape(diag)
-    self._shape_value = diag.shape
-    batch_shape = self._shape_tensor_value[:-self._rank]
-
-    super().__init__(
-        diag=tf.reshape(diag, tf.concat([batch_shape, [-1]], 0)),
-        is_non_singular=is_non_singular,
-        is_self_adjoint=is_self_adjoint,
-        is_positive_definite=is_positive_definite,
-        is_square=is_square,
-        name=name)
-
-  def _transform(self, x, adjoint=False):
-    diag = tf.math.conj(self.diag) if adjoint else self.diag
-    return tf.reshape(diag, self.domain_shape_tensor()) * x
-
-  def _domain_shape(self):
-    return self._shape_value[-self._rank:]
-
-  def _range_shape(self):
-    return self._shape_value[-self._rank:]
-
-  def _batch_shape(self):
-    return self._shape_value[:-self._rank]
-
-  def _domain_shape_tensor(self):
-    return self._shape_tensor_value[-self._rank:]
-
-  def _range_shape_tensor(self):
-    return self._shape_tensor_value[-self._rank:]
-
-  def _batch_shape_tensor(self):
-    return self._shape_tensor_value[:-self._rank]
-
-
-@api_util.export("linalg.LinearOperatorGramMatrix")
-class LinearOperatorGramMatrix(LinearOperator):  # pylint: disable=abstract-method
-  r"""Linear operator representing the Gram matrix of an operator.
-
-  If :math:`A` is a `LinearOperator`, this operator is equivalent to
-  :math:`A^H A`.
-
-  The Gram matrix of :math:`A` appears in the normal equation
-  :math:`A^H A x = A^H b` associated with the least squares problem
-  :math:`{\mathop{\mathrm{argmin}}_x} {\left \| Ax-b \right \|_2^2}`.
-
-  This operator is self-adjoint and positive definite. Therefore, linear systems
-  defined by this linear operator can be solved using the conjugate gradient
-  method.
-
-  This operator supports the optional addition of a regularization parameter
-  :math:`\lambda` and a transform matrix :math:`T`. If these are provided,
-  this operator becomes :math:`A^H A + \lambda T^H T`. This appears
-  in the regularized normal equation
-  :math:`\left ( A^H A + \lambda T^H T \right ) x = A^H b + \lambda T^H T x_0`,
-  associated with the regularized least squares problem
-  :math:`{\mathop{\mathrm{argmin}}_x} {\left \| Ax-b \right \|_2^2 + \lambda \left \| T(x-x_0) \right \|_2^2}`.
-
-  Args:
-    operator: A `tfmri.linalg.LinearOperator`. The operator :math:`A` whose Gram
-      matrix is represented by this linear operator.
-    reg_parameter: A `Tensor` of shape `[B1, ..., Bb]` and real dtype.
-      The regularization parameter :math:`\lambda`. Defaults to 0.
-    reg_operator: A `tfmri.linalg.LinearOperator`. The regularization transform
-      :math:`T`. Defaults to the identity.
-    gram_operator: A `tfmri.linalg.LinearOperator`. The Gram matrix
-      :math:`A^H A`. This may be optionally provided to use a specialized
-      Gram matrix implementation. Defaults to `None`.
-    is_non_singular: Expect that this operator is non-singular.
-    is_self_adjoint: Expect that this operator is equal to its Hermitian
-      transpose.
-    is_positive_definite: Expect that this operator is positive definite,
-      meaning the quadratic form :math:`x^H A x` has positive real part for all
-      nonzero :math:`x`.  Note that we do not require the operator to be
-      self-adjoint to be positive-definite.
-    is_square: Expect that this operator acts like square [batch] matrices.
-    name: A name for this `LinearOperator`.
-  """
-  def __init__(self,
-               operator,
-               reg_parameter=None,
-               reg_operator=None,
-               gram_operator=None,
-               is_non_singular=None,
-               is_self_adjoint=True,
-               is_positive_definite=True,
-               is_square=True,
-               name=None):
-    parameters = dict(
-        operator=operator,
-        reg_parameter=reg_parameter,
-        reg_operator=reg_operator,
-        is_non_singular=is_non_singular,
-        is_self_adjoint=is_self_adjoint,
-        is_positive_definite=is_positive_definite,
-        is_square=is_square,
-        name=name)
-    self._operator = operator
-    self._reg_parameter = reg_parameter
-    self._reg_operator = reg_operator
-    self._gram_operator = gram_operator
-    if gram_operator is not None:
-      self._composed = gram_operator
-    else:
-      self._composed = LinearOperatorComposition(
-          operators=[self._operator.H, self._operator])
-
-    if not is_self_adjoint:
-      raise ValueError("A Gram matrix is always self-adjoint.")
-    if not is_positive_definite:
-      raise ValueError("A Gram matrix is always positive-definite.")
-    if not is_square:
-      raise ValueError("A Gram matrix is always square.")
-
-    if self._reg_parameter is not None:
-      reg_operator_gm = LinearOperatorScaledIdentity(
-          shape=self._operator.domain_shape,
-          multiplier=tf.cast(self._reg_parameter, self._operator.dtype))
-      if self._reg_operator is not None:
-        reg_operator_gm = LinearOperatorComposition(
-            operators=[reg_operator_gm,
-                       self._reg_operator.H,
-                       self._reg_operator])
-      self._composed = LinearOperatorAddition(
-          operators=[self._composed, reg_operator_gm])
-
-    super().__init__(operator.dtype,
-                     is_non_singular=is_non_singular,
-                     is_self_adjoint=is_self_adjoint,
-                     is_positive_definite=is_positive_definite,
-                     is_square=is_square,
-                     parameters=parameters)
-
-  def _transform(self, x, adjoint=False):
-    return self._composed.transform(x, adjoint=adjoint)
-
-  def _domain_shape(self):
-    return self.operator.domain_shape
-
-  def _range_shape(self):
-    return self.operator.domain_shape
-
-  def _batch_shape(self):
-    return self.operator.batch_shape
-
-  def _domain_shape_tensor(self):
-    return self.operator.domain_shape_tensor()
-
-  def _range_shape_tensor(self):
-    return self.operator.domain_shape_tensor()
-
-  def _batch_shape_tensor(self):
-    return self.operator.batch_shape_tensor()
-
-  @property
-  def operator(self):
-    return self._operator
