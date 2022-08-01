@@ -660,7 +660,11 @@ def radial_waveform(base_resolution, readout_os=2.0, rank=2):
 
 
 if sys_util.is_op_library_enabled():
-  spiral_waveform = _mri_ops.spiral_waveform
+  spiral_waveform = api_util.export("sampling.spiral_waveform")(
+      _mri_ops.spiral_waveform)
+else:
+  # Stub to prevent import errors when the op is not available.
+  spiral_waveform = None
 
 
 def _trajectory_angles(views,

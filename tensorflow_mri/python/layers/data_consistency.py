@@ -14,114 +14,106 @@
 # ==============================================================================
 """Data consistency layers."""
 
+import inspect
+
 import tensorflow as tf
 
 from tensorflow_mri.python.linalg import linear_operator
 
 
-class LeastSquaresGradientDescentStep(tf.keras.layers.Layer):
-
+class LeastSquaresGradientDescent(tf.keras.layers.Layer):
+  """Least squares gradient descent layer.
+  """
   def __init__(self,
                operator,
                scale_initializer=1.0,
                dtype=None,
                **kwargs):
-
-    if not isinstance(operator, linear_operator.LinearOperator):
+    if isinstance(operator, linear_operator.LinearOperator):
+      # operator is a class instance.
+      self.operator = operator
+      self._operator_is_class = False
+      self._operator_is_instance = True
+    elif (inspect.isclass(operator) and
+          issubclass(operator, linear_operator.LinearOperator)):
+      # operator is a class.
+      self.operator = operator
+      self._operator_is_class = True
+      self._operator_is_instance = False
+    else:
       raise TypeError(
-          f"operator must be a `tfmri.linalg.LinearOperator` or a subclass "
-          f"thereof, but got type: {type(operator)}")
-    self.operator = operator
+          f"operator must be a subclass of `tfmri.linalg.LinearOperator` "
+          f"or an instance thereof, but got type: {type(operator)}")
+
     if isinstance(scale_initializer, (float, int)):
       self.scale_initializer = tf.keras.initializers.Constant(scale_initializer)
     else:
       self.scale_initializer = tf.keras.initializers.get(scale_initializer)
-    if dtype is not None:
-      if tf.as_dtype(dtype) != self.operator.dtype:
-        raise ValueError(
-            f"dtype must be the same as the operator's dtype, but got "
-            f"dtype: {dtype} and operator's dtype: {self.operator.dtype}")
-    else:
-      dtype = self.operator.dtype
+
+    if self._operator_is_instance:
+      if dtype is not None:
+        if tf.as_dtype(dtype) != self.operator.dtype:
+          raise ValueError(
+              f"dtype must be the same as the operator's dtype, but got "
+              f"dtype: {dtype} and operator's dtype: {self.operator.dtype}")
+      else:
+        dtype = self.operator.dtype
+
     super().__init__(dtype=dtype, **kwargs)
 
   def build(self, input_shape):
     self.scale = self.add_weight(
         name='scale',
         shape=(),
-        dtype=self.dtype.real_dtype,
+        dtype=tf.as_dtype(self.dtype).real_dtype,
         initializer=self.scale_initializer,
         trainable=self.trainable,
         constraint=tf.keras.constraints.NonNeg())
     super().build(input_shape)
 
   def call(self, inputs):
-    x, y, args, kwargs = self._parse_inputs(inputs)
-    if args or kwargs:
-      raise ValueError(
-          f"unexpected arguments in call when GradientDescentStep has a "
-          f"predefined operator: {args}, {kwargs}")
-    operator = self.operator
-    return x - self.scale * operator.transform(
-        operator.transform(x) - y, adjoint=True)
+    x, b, args, kwargs = self._parse_inputs(inputs)
+    if self._operator_is_class:
+      # operator is a class. Instantiate using any additional arguments.
+      operator = self.operator(*args, **kwargs)
+    else:
+      # operator is an instance, so we can use it directly.
+      if args or kwargs:
+        raise ValueError(
+            f"unexpected arguments in call when linear operator is a class "
+            f"instance: {args}, {kwargs}")
+      operator = self.operator
+    return x - tf.cast(self.scale, self.dtype) * operator.transform(
+        operator.transform(x) - b, adjoint=True)
 
   def _parse_inputs(self, inputs):
+    """Parses the inputs to the call method."""
     if isinstance(inputs, dict):
-      if 'x' not in inputs or 'y' not in inputs:
+      if 'x' not in inputs or 'b' not in inputs:
         raise ValueError(
             f"inputs dictionary must at least contain the keys 'x' and "
-            f"'y', but got keys: {inputs.keys()}")
-      x = inputs.pop('x')
-      y = inputs.pop('y')
-      args, kwargs = (), inputs
+            f"'b', but got keys: {inputs.keys()}")
+      x = inputs['x']
+      b = inputs['b']
+      args, kwargs = (), {k: v for k, v in inputs.items()
+                          if k not in {'x', 'b'}}
     elif isinstance(inputs, tuple):
       if len(inputs) < 2:
         raise ValueError(
             f"inputs tuple must contain at least two elements, "
-            f"x and y, but got tuple with length: {len(inputs)}")
+            f"x and b, but got tuple with length: {len(inputs)}")
       x = inputs[0]
-      y = inputs[1]
+      b = inputs[1]
       args, kwargs = inputs[2:], {}
     else:
       raise TypeError("inputs must be a tuple or a dictionary.")
-    return x, y, args, kwargs
+    return x, b, args, kwargs
 
   def get_config(self):
     config = {
         'operator': self.operator,
-        'scale_initializer': tf.keras.initializers.serialize(self.scale_initializer)
+        'scale_initializer': tf.keras.initializers.serialize(
+            self.scale_initializer)
     }
     base_config = super().get_config()
     return {**config, **base_config}
-
-  # @classmethod
-  # def from_config(cls, config):
-  #   config = config.copy()
-  #   operator = deserialize_linear_operator(config.pop('operator'))
-  #   return cls(operator, **config)
-
-
-
-# def serialize_linear_operator(operator):
-#   if isinstance(operator, linear_operator.LinearOperator):
-#     return {
-#         'class_name': operator.__class__.__name__,
-#         'config': operator.parameters
-#     }
-#   raise TypeError(
-#       f"operator must be a `tfmri.linalg.LinearOperator` or a subclass "
-#       f"thereof, but got type: {type(operator)}")
-
-
-# def deserialize_linear_operator(config):
-#   if (not isinstance(config, dict) or
-#       set(config.keys()) != {'class_name', 'config'}):
-#     raise ValueError(
-#         f"config must be a dictionary with keys 'class_name' and 'config', "
-#         f"but got: {config}")
-#   class_name = config['class_name']
-#   config = config['config']
-#   if class_name == 'LinearOperator':
-#     return linear_operator.LinearOperator(**config)
-#   raise ValueError(
-#       f"unexpected class name in serialized linear operator: {class_name}")

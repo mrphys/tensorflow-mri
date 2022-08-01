@@ -15,8 +15,10 @@
 """Base linear operator."""
 
 import abc
+import functools
 
 import tensorflow as tf
+from tensorflow.python.ops.linalg import linear_operator
 
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import tensor_util
@@ -409,3 +411,7 @@ class LinearOperatorAdjoint(LinearOperatorMixin,  # pylint: disable=abstract-met
 
   def _batch_shape_tensor(self):
     return self.operator.batch_shape_tensor()
+
+
+make_composite_tensor = functools.partial(
+    linear_operator.make_composite_tensor, module_name="tfmri.linalg")
