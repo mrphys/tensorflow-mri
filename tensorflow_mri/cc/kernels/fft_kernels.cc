@@ -185,7 +185,7 @@ class FFTCPU : public FFTBase {
                     const Tensor& in, Tensor* out) {
     auto device = ctx->eigen_device<CPUDevice>();
     auto worker_threads = ctx->device()->tensorflow_cpu_worker_threads();
-    auto num_threads = worker_threads->num_threads;
+    auto num_threads = worker_threads->num_threads;   
 
     const bool is_complex128 =
         in.dtype() == DT_COMPLEX128 || out->dtype() == DT_COMPLEX128;
@@ -216,11 +216,22 @@ class FFTCPU : public FFTBase {
     constexpr auto fft_sign = Forward ? FFTW_FORWARD : FFTW_BACKWARD;
     constexpr auto fft_flags = FFTW_ESTIMATE;
 
-    fftw::plan<FloatType> fft_plan;
+    #pragma omp critical
     {
-      mutex_lock l(mu_);
-      fftw::init_threads<FloatType>();
-      fftw::plan_with_nthreads<FloatType>(num_threads);
+      static bool is_fftw_initialized = false;
+      if (!is_fftw_initialized) {
+        // Set up threading for FFTW. Should be done only once.
+        #ifdef _OPENMP
+        fftw::init_threads<FloatType>();
+        fftw::plan_with_nthreads<FloatType>(num_threads);
+        #endif
+        is_fftw_initialized = true;
+      }
+    }
+
+    fftw::plan<FloatType> fft_plan;
+    #pragma omp critical
+    {
       fft_plan = fftw::plan_many_dft<FloatType>(
           FFTRank, dim_sizes, batch_size,
           reinterpret_cast<fftw::complex<FloatType>*>(input.data()),
@@ -229,12 +240,27 @@ class FFTCPU : public FFTBase {
           nullptr, 1, output_distance,
           fft_sign, fft_flags);
     }
+
     fftw::execute<FloatType>(fft_plan);
+
+    #pragma omp critical
     {
-      mutex_lock l(mu_);
       fftw::destroy_plan<FloatType>(fft_plan);
-      fftw::cleanup_threads<FloatType>();
     }
+
+    // Wait until all threads are done using FFTW, then clean up the FFTW state,
+    // which only needs to be done once.
+    #ifdef _OPENMP
+    #pragma omp barrier
+    #pragma omp critical
+    {
+      static bool is_fftw_finalized = false;
+      if (!is_fftw_finalized) {
+        fftw::cleanup_threads<FloatType>();
+        is_fftw_finalized = true;
+      }
+    }
+    #endif  // _OPENMP
 
     // FFT normalization.
     if (fft_sign == FFTW_BACKWARD) {
