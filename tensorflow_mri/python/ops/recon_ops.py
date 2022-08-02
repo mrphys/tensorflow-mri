@@ -75,10 +75,10 @@ def reconstruct_adj(kspace,
       non-Cartesian `kspace` must have shape `[..., num_coils, num_samples]`.
       If not multicoil (`sensitivities` is `None`), then the `num_coils` axis
       must be omitted.
-    image_shape: A `TensorShape` or a list of `ints`. Must have length 2 or 3.
+    image_shape: A 1D integer `tf.Tensor`. Must have length 2 or 3.
       The shape of the reconstructed image[s].
     mask: An optional `Tensor` of type `bool`. The sampling mask. Must have
-      shape `[..., image_shape]`. `mask` should be passed for reconstruction
+      shape `[..., *image_shape]`. `mask` should be passed for reconstruction
       from undersampled Cartesian *k*-space. For each point, `mask` should be
       `True` if the corresponding *k*-space sample was measured and `False`
       otherwise.

@@ -134,9 +134,17 @@ def filter_kspace(kspace,
   is_cartesian = trajectory is None
   if is_cartesian:
     filter_rank = filter_rank or kspace.shape.rank
-    vecs = [tf.linspace(-np.pi, np.pi - (2.0 * np.pi / s), s)
-            for s in kspace.shape[-filter_rank:]]  # pylint: disable=invalid-unary-operand-type
-    trajectory = array_ops.meshgrid(*vecs)
+    vecs = tf.TensorArray(dtype=kspace.dtype.real_dtype,
+                          size=filter_rank,
+                          infer_shape=False,
+                          clear_after_read=False)
+    for i in range(-filter_rank, 0):
+      size = tf.shape(kspace)[i]
+      pi = tf.cast(np.pi, kspace.dtype.real_dtype)
+      low = -pi
+      high = pi - (2.0 * pi / tf.cast(size, kspace.dtype.real_dtype))
+      vecs = vecs.write(i + filter_rank, tf.linspace(low, high, size))
+    trajectory = array_ops.dynamic_meshgrid(vecs)
 
   if not callable(filter_fn):
     # filter_fn not a callable, so should be an enum value. Get the

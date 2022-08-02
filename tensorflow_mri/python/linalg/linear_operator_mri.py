@@ -52,9 +52,9 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
   vectorize operations when possible.
 
   Args:
-    image_shape: A `tf.TensorShape` or a list of `ints`. The shape of the images
+    image_shape: A 1D integer `tf.Tensor`. The shape of the images
       that this operator acts on. Must have length 2 or 3.
-    extra_shape: An optional `tf.TensorShape` or list of `ints`. Additional
+    extra_shape: An optional 1D integer `tf.Tensor`. Additional
       dimensions that should be included within the operator domain. Note that
       `extra_shape` is not needed to reconstruct independent batches of images.
       However, it is useful when this operator is used as part of a
@@ -133,22 +133,22 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
           f"`dtype` must be `complex64` or `complex128`, but got: {str(dtype)}")
 
     # Set image shape, rank and extra shape.
-    image_shape = tf.TensorShape(image_shape)
-    rank = image_shape.rank
-    if rank not in (2, 3):
-      raise ValueError(
-          f"Rank must be 2 or 3, but got: {rank}")
-    if not image_shape.is_fully_defined():
-      raise ValueError(
-          f"`image_shape` must be fully defined, but got {image_shape}")
-    self._rank = rank
-    self._image_shape = image_shape
+    self._image_shape_static, self._image_shape_dynamic = (
+        tensor_util.static_and_dynamic_shapes_from_shape(image_shape))
+    self._rank = self._image_shape_static.rank
+    if self._rank not in (2, 3):
+      raise ValueError(f"Rank must be 2 or 3, but got: {self._rank}")
     self._image_axes = list(range(-self._rank, 0))  # pylint: disable=invalid-unary-operand-type
-    self._extra_shape = tf.TensorShape(extra_shape or [])
+    self._extra_shape_static, self._extra_shape_dynamic = (
+        tensor_util.static_and_dynamic_shapes_from_shape(extra_shape or []))
 
     # Set initial batch shape, then update according to inputs.
-    batch_shape = self._extra_shape
-    batch_shape_tensor = tensor_util.convert_shape_to_tensor(batch_shape)
+    # We include the "extra" dimensions in the batch shape for now, so that
+    # they are also included in the broadcasting operations below. However,
+    # note that the "extra" dimensions are not in fact part of the batch shape
+    # and they will be removed later.
+    self._batch_shape_static = self._extra_shape_static
+    self._batch_shape_dynamic = self._extra_shape_dynamic
 
     # Set sampling mask after checking dtype and static shape.
     if mask is not None:
@@ -156,14 +156,15 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
       if mask.dtype != tf.bool:
         raise TypeError(
             f"`mask` must have dtype `bool`, but got: {str(mask.dtype)}")
-      if not mask.shape[-self._rank:].is_compatible_with(self._image_shape):
+      if not mask.shape[-self._rank:].is_compatible_with(
+          self._image_shape_static):
         raise ValueError(
             f"Expected the last dimensions of `mask` to be compatible with "
-            f"{self._image_shape}], but got: {mask.shape[-self._rank:]}")
-      batch_shape = tf.broadcast_static_shape(
-          batch_shape, mask.shape[:-self._rank])
-      batch_shape_tensor = tf.broadcast_dynamic_shape(
-          batch_shape_tensor, tf.shape(mask)[:-self._rank])
+            f"{self._image_shape_static}], but got: {mask.shape[-self._rank:]}")
+      self._batch_shape_static = tf.broadcast_static_shape(
+          self._batch_shape_static, mask.shape[:-self._rank])
+      self._batch_shape_dynamic = tf.broadcast_dynamic_shape(
+          self._batch_shape_dynamic, tf.shape(mask)[:-self._rank])
     self._mask = mask
 
     # Set sampling trajectory after checking dtype and static shape.
@@ -179,10 +180,10 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
         raise ValueError(
             f"Expected the last dimension of `trajectory` to be "
             f"{self._rank}, but got {trajectory.shape[-1]}")
-      batch_shape = tf.broadcast_static_shape(
-          batch_shape, trajectory.shape[:-2])
-      batch_shape_tensor = tf.broadcast_dynamic_shape(
-          batch_shape_tensor, tf.shape(trajectory)[:-2])
+      self._batch_shape_static = tf.broadcast_static_shape(
+          self._batch_shape_static, trajectory.shape[:-2])
+      self._batch_shape_dynamic = tf.broadcast_dynamic_shape(
+          self._batch_shape_dynamic, tf.shape(trajectory)[:-2])
     self._trajectory = trajectory
 
     # Set sampling density after checking dtype and static shape.
@@ -198,10 +199,10 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
         raise ValueError(
             f"Expected the last dimension of `density` to be "
             f"{self._trajectory.shape[-2]}, but got {density.shape[-1]}")
-      batch_shape = tf.broadcast_static_shape(
-          batch_shape, density.shape[:-1])
-      batch_shape_tensor = tf.broadcast_dynamic_shape(
-        batch_shape_tensor, tf.shape(density)[:-1])
+      self._batch_shape_static = tf.broadcast_static_shape(
+          self._batch_shape_static, density.shape[:-1])
+      self._batch_shape_dynamic = tf.broadcast_dynamic_shape(
+          self._batch_shape_dynamic, tf.shape(density)[:-1])
     self._density = density
 
     # Set sensitivity maps after checking dtype and static shape.
@@ -212,15 +213,15 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
             f"Expected `sensitivities` to have dtype `{str(dtype)}`, but got: "
             f"{str(sensitivities.dtype)}")
       if not sensitivities.shape[-self._rank:].is_compatible_with(
-          self._image_shape):
+          self._image_shape_static):
         raise ValueError(
             f"Expected the last dimensions of `sensitivities` to be "
-            f"compatible with {self._image_shape}, but got: "
+            f"compatible with {self._image_shape_static}, but got: "
             f"{sensitivities.shape[-self._rank:]}")
-      batch_shape = tf.broadcast_static_shape(
-          batch_shape, sensitivities.shape[:-(self._rank + 1)])
-      batch_shape_tensor = tf.broadcast_dynamic_shape(
-          batch_shape_tensor, tf.shape(sensitivities)[:-(self._rank + 1)])
+      self._batch_shape_static = tf.broadcast_static_shape(
+          self._batch_shape_static, sensitivities.shape[:-(self._rank + 1)])
+      self._batch_shape_dynamic = tf.broadcast_dynamic_shape(
+          self._batch_shape_dynamic, tf.shape(sensitivities)[:-(self._rank + 1)])
     self._sensitivities = sensitivities
 
     if phase is not None:
@@ -230,20 +231,24 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
             f"Expected `phase` to have dtype `{str(dtype.real_dtype)}`, "
             f"but got: {str(phase.dtype)}")
       if not phase.shape[-self._rank:].is_compatible_with(
-          self._image_shape):
+          self._image_shape_static):
         raise ValueError(
             f"Expected the last dimensions of `phase` to be "
-            f"compatible with {self._image_shape}, but got: "
+            f"compatible with {self._image_shape_static}, but got: "
             f"{phase.shape[-self._rank:]}")
-      batch_shape = tf.broadcast_static_shape(
-          batch_shape, phase.shape[:-self._rank])
-      batch_shape_tensor = tf.broadcast_dynamic_shape(
-          batch_shape_tensor, tf.shape(phase)[:-self._rank])
+      self._batch_shape_static = tf.broadcast_static_shape(
+          self._batch_shape_static, phase.shape[:-self._rank])
+      self._batch_shape_dynamic = tf.broadcast_dynamic_shape(
+          self._batch_shape_dynamic, tf.shape(phase)[:-self._rank])
     self._phase = phase
 
     # Set batch shapes.
-    self._batch_shape_value = batch_shape
-    self._batch_shape_tensor_value = batch_shape_tensor
+    extra_dims = self._extra_shape_static.rank
+    if extra_dims is None:
+      raise ValueError("rank of `extra_shape` must be known statically.")
+    if extra_dims > 0:
+      self._batch_shape_static = self._batch_shape_static[:-extra_dims]
+      self._batch_shape_dynamic = self._batch_shape_dynamic[:-extra_dims]
 
     # If multicoil, add coil dimension to mask, trajectory and density.
     if self._sensitivities is not None:
@@ -271,7 +276,8 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
         fft_norm, {None, 'ortho'}, 'fft_norm')
     if self._fft_norm == 'ortho':  # Compute normalization factors.
       self._fft_norm_factor = tf.math.reciprocal(
-          tf.math.sqrt(tf.cast(self._image_shape.num_elements(), dtype)))
+          tf.math.sqrt(tf.cast(
+              tf.math.reduce_prod(self._image_shape_dynamic), dtype)))
 
     # Normalize coil sensitivities.
     self._sens_norm = sens_norm
@@ -321,7 +327,7 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
       if self.is_non_cartesian:  # Non-Cartesian imaging, use NUFFT.
         if not self._skip_nufft:
           x = fft_ops.nufft(x, self._trajectory,
-                            grid_shape=self._image_shape,
+                            grid_shape=self._image_shape_dynamic,
                             transform_type='type_1',
                             fft_direction='backward')
           if self._fft_norm is not None:
@@ -387,31 +393,48 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
     return x
 
   def _domain_shape(self):
-    """Returns the shape of the domain space of this operator."""
-    return self._extra_shape.concatenate(self._image_shape)
+    """Returns the static shape of the domain space of this operator."""
+    return self._extra_shape_static.concatenate(self._image_shape_static)
+
+  def _domain_shape_tensor(self):
+    """Returns the dynamic shape of the domain space of this operator."""
+    return tf.concat([self._extra_shape_dynamic, self._image_shape_dynamic], 0)
 
   def _range_shape(self):
     """Returns the shape of the range space of this operator."""
     if self.is_cartesian:
-      range_shape = self._image_shape.as_list()
+      range_shape = self._image_shape_static.as_list()
     else:
       range_shape = [self._trajectory.shape[-2]]
     if self.is_multicoil:
       range_shape = [self.num_coils] + range_shape
-    return self._extra_shape.concatenate(range_shape)
+    return self._extra_shape_static.concatenate(range_shape)
+
+  def _range_shape_tensor(self):
+    if self.is_cartesian:
+      range_shape = self._image_shape_dynamic
+    else:
+      range_shape = [tf.shape(self._trajectory)[-2]]
+    if self.is_multicoil:
+      range_shape = tf.concat([[self.num_coils_tensor()], range_shape], 0)
+    return tf.concat([self._extra_shape_dynamic, range_shape], 0)
 
   def _batch_shape(self):
     """Returns the static batch shape of this operator."""
-    return self._batch_shape_value[:-self._extra_shape.rank or None]  # pylint: disable=invalid-unary-operand-type
+    return self._batch_shape_static
 
   def _batch_shape_tensor(self):
     """Returns the dynamic batch shape of this operator."""
-    return self._batch_shape_tensor_value[:-self._extra_shape.rank or None]  # pylint: disable=invalid-unary-operand-type
+    return self._batch_shape_dynamic
 
   @property
   def image_shape(self):
     """The image shape."""
-    return self._image_shape
+    return self._image_shape_static
+
+  def image_shape_tensor(self):
+    """The image shape as a tensor."""
+    return self._image_shape_dynamic
 
   @property
   def rank(self):
@@ -455,12 +478,23 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
 
   @property
   def num_coils(self):
-    """The number of coils."""
+    """The number of coils, computed statically."""
     if self._sensitivities is None:
       return None
     return self._sensitivities.shape[-(self._rank + 1)]
 
+  def num_coils_tensor(self):
+    """The number of coils, computed dynamically."""
+    if self._sensitivities is None:
+      return tf.convert_to_tensor(-1, dtype=tf.int32)
+    return tf.shape(self._sensitivities)[-(self._rank + 1)]
+
   @property
   def _composite_tensor_fields(self):
-    return ("image_shape", "mask", "trajectory", "density", "sensitivities",
+    return ("image_shape",
+            "extra_shape",
+            "mask",
+            "trajectory",
+            "density",
+            "sensitivities",
             "fft_norm")

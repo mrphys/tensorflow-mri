@@ -130,7 +130,15 @@ def static_and_dynamic_shapes_from_shape(shape):
   Raises:
     ValueError: If `shape` is not 1D.
   """
-  static = tf.TensorShape(tf.get_static_value(shape, partial=True))
+  static = tf.get_static_value(shape, partial=True)
+  if (static is None and
+      isinstance(shape, tf.Tensor) and
+      shape.shape.is_fully_defined()):
+    # This is a special case in which `shape` is a `tf.Tensor` with unknown
+    # values but known shape. In this case `tf.get_static_value` will simply
+    # return None, but we can still infer the rank if we're a bit smarter.
+    static = [None] * shape.shape[0]
+  static = tf.TensorShape(static)
   dynamic = tf.convert_to_tensor(shape, tf.int32)
   if dynamic.shape.rank != 1:
     raise ValueError(f"Expected shape to be 1D, got {dynamic}.")

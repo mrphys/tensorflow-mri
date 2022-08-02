@@ -17,30 +17,19 @@
 
 import tensorflow as tf
 
+from tensorflow_mri.python.linalg import linear_operator_mri
 from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.ops import image_ops
-from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.ops import traj_ops
 from tensorflow_mri.python.util import test_util
 
 
 class LinearOperatorMRITest(test_util.TestCase):
   """Tests for MRI linear operator."""
-  @classmethod
-  def setUpClass(cls):
-    super().setUpClass()
-    cls.linop1 = linalg_ops.LinearOperatorMRI([2, 2], fft_norm=None)
-    cls.linop2 = linalg_ops.LinearOperatorMRI(
-        [2, 2], mask=[[False, False], [True, True]], fft_norm=None)
-    cls.linop3 = linalg_ops.LinearOperatorMRI(
-        [2, 2], mask=[[[True, True], [False, False]],
-                      [[False, False], [True, True]],
-                      [[False, True], [True, False]]], fft_norm=None)
-
   def test_fft(self):
     """Test FFT operator."""
     # Test init.
-    linop = linalg_ops.LinearOperatorMRI([2, 2], fft_norm=None)
+    linop = linear_operator_mri.LinearOperatorMRI([2, 2], fft_norm=None)
 
     # Test matvec.
     signal = tf.constant([1, 2, 4, 4], dtype=tf.complex64)
@@ -66,7 +55,7 @@ class LinearOperatorMRITest(test_util.TestCase):
   def test_fft_with_mask(self):
     """Test FFT operator with mask."""
     # Test init.
-    linop = linalg_ops.LinearOperatorMRI(
+    linop = linear_operator_mri.LinearOperatorMRI(
         [2, 2], mask=[[False, False], [True, True]], fft_norm=None)
 
     # Test matvec.
@@ -93,7 +82,7 @@ class LinearOperatorMRITest(test_util.TestCase):
   def test_fft_with_batch_mask(self):
     """Test FFT operator with batch mask."""
     # Test init.
-    linop = linalg_ops.LinearOperatorMRI(
+    linop = linear_operator_mri.LinearOperatorMRI(
         [2, 2], mask=[[[True, True], [False, False]],
                       [[False, False], [True, True]],
                       [[False, True], [True, False]]], fft_norm=None)
@@ -121,7 +110,7 @@ class LinearOperatorMRITest(test_util.TestCase):
 
   def test_fft_norm(self):
     """Test FFT normalization."""
-    linop = linalg_ops.LinearOperatorMRI([2, 2], fft_norm='ortho')
+    linop = linear_operator_mri.LinearOperatorMRI([2, 2], fft_norm='ortho')
     x = tf.constant([1 + 2j, 2 - 2j, -1 - 6j, 3 + 4j], dtype=tf.complex64)
     # With norm='ortho', subsequent application of the operator and its adjoint
     # should not scale the input.
@@ -141,7 +130,7 @@ class LinearOperatorMRITest(test_util.TestCase):
     density = traj_ops.radial_density(resolution, resolution // 2 + 1,
                                       flatten_encoding_dims=True)
 
-    linop = linalg_ops.LinearOperatorMRI(
+    linop = linear_operator_mri.LinearOperatorMRI(
         image_shape, trajectory=trajectory, density=density,
         sensitivities=sensitivities)
 

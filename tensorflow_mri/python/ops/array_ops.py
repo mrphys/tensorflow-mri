@@ -90,6 +90,66 @@ def meshgrid(*args):
   return tf.stack(tf.meshgrid(*args, indexing='ij'), axis=-1)
 
 
+@api_util.export("array.meshgrid")
+def dynamic_meshgrid(vecs):
+  """Return coordinate matrices from coordinate vectors.
+
+  Make N-D coordinate arrays for vectorized evaluations of N-D scalar/vector
+  fields over N-D grids, given one-dimensional coordinate arrays
+  `x1, x2, ..., xn`.
+
+  .. note::
+    Similar to `tf.meshgrid`, but uses matrix indexing, supports dynamic tensor
+    arrays and returns a stacked tensor (along axis -1) instead of a list of
+    tensors.
+
+  Args:
+    vecs: A `tf.TensorArray` containing the coordinate vectors.
+
+  Returns:
+    A `Tensor` of shape `[M1, M2, ..., Mn, N]`, where `N` is the number of
+    tensors in `vecs` and `Mi = tf.size(args[i])`.
+  """
+  if not isinstance(vecs, tf.TensorArray):
+    # Fall back to static implementation.
+    return meshgrid(*vecs)
+
+  # Compute shape of the output grid.
+  output_shape = tf.TensorArray(
+      dtype=tf.int32, size=vecs.size(), element_shape=())
+
+  def _cond(i, vecs, shape):  # pylint:disable=unused-argument
+    return i < vecs.size()
+  def _body(i, vecs, shape):
+    vec = vecs.read(i)
+    shape = shape.write(i, tf.shape(vec)[0])
+    return i + 1, vecs, shape
+
+  _, _, output_shape = tf.while_loop(_cond, _body, [0, vecs, output_shape])
+  output_shape = output_shape.stack()
+
+  # Compute output grid.
+  output_grid = tf.TensorArray(dtype=vecs.dtype, size=vecs.size())
+
+  def _cond(i, vecs, grid):  # pylint:disable=unused-argument
+    return i < vecs.size()
+  def _body(i, vecs, grid):
+    vec = vecs.read(i)
+    vec_shape = tf.ones(shape=[vecs.size()], dtype=tf.int32)
+    vec_shape = tf.tensor_scatter_nd_update(vec_shape, [[i]], [-1])
+    vec = tf.reshape(vec, vec_shape)
+    grid = grid.write(i, tf.broadcast_to(vec, output_shape))
+    return i + 1, vecs, grid
+
+  _, _, output_grid = tf.while_loop(_cond, _body, [0, vecs, output_grid])
+  output_grid = output_grid.stack()
+
+  perm = tf.concat([tf.range(1, vecs.size() + 1), [0]], 0)
+  output_grid = tf.transpose(output_grid, perm)
+
+  return output_grid
+
+
 def ravel_multi_index(multi_indices, dims):
   """Converts an array of multi-indices into an array of flat indices.
 
