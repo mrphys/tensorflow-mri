@@ -17,6 +17,7 @@
 from absl.testing import parameterized
 import tensorflow as tf
 
+from tensorflow_mri.python.activations import complex_activations
 from tensorflow_mri.python.models import conv_blocks
 from tensorflow_mri.python.util import model_util
 from tensorflow_mri.python.util import test_util
@@ -39,6 +40,22 @@ class ConvBlockTest(test_util.TestCase):
     features = block(inputs)
 
     self.assertAllEqual(features.shape, [1] + [128] * rank + [filters])
+
+
+  def test_complex_valued(self):
+    inputs = tf.dtypes.complex(
+        tf.random.stateless_normal(shape=(2, 32, 32, 4), seed=[12, 34]),
+        tf.random.stateless_normal(shape=(2, 32, 32, 4), seed=[56, 78]))
+
+    block = conv_blocks.ConvBlock2D(
+        filters=[6, 6],
+        kernel_size=3,
+        activation=complex_activations.complex_relu,
+        dtype=tf.complex64)
+
+    result = block(inputs)
+    self.assertAllClose((2, 32, 32, 6), result.shape)
+    self.assertDTypeEqual(result, tf.complex64)
 
 
   def test_serialize_deserialize(self):

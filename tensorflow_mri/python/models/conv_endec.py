@@ -168,7 +168,8 @@ class UNet(tf.keras.Model):
         bn_epsilon=self._bn_epsilon,
         use_dropout=self._use_dropout,
         dropout_rate=self._dropout_rate,
-        dropout_type=self._dropout_type)
+        dropout_type=self._dropout_type,
+        dtype=self.dtype)
 
     # Configure pooling layer.
     if self._use_tight_frame:
@@ -179,7 +180,8 @@ class UNet(tf.keras.Model):
       pool_config = dict(
           pool_size=self._pool_size,
           strides=self._pool_size,
-          padding='same')
+          padding='same',
+          dtype=self.dtype)
     pool_layer = layer_util.get_nd_layer(pool_name, self._rank)
 
     # Configure upsampling layer.
@@ -199,7 +201,8 @@ class UNet(tf.keras.Model):
     else:
       upsamp_name = 'UpSampling'
       upsamp_config = dict(
-          size=self._pool_size)
+          size=self._pool_size,
+          dtype=self.dtype)
     upsamp_layer = layer_util.get_nd_layer(upsamp_name, self._rank)
 
     if tf.keras.backend.image_data_format() == 'channels_last':

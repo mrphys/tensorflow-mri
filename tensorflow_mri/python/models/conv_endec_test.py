@@ -18,6 +18,7 @@
 from absl.testing import parameterized
 import tensorflow as tf
 
+from tensorflow_mri.python.activations import complex_activations
 from tensorflow_mri.python.models import conv_endec
 from tensorflow_mri.python.util import test_util
 
@@ -83,6 +84,22 @@ class UNetTest(test_util.TestCase):
     for layer in layers:
       if hasattr(layer, 'use_bias'):
         self.assertEqual(use_bias, layer.use_bias)
+
+
+  def test_complex_valued(self):
+    inputs = tf.dtypes.complex(
+        tf.random.stateless_normal(shape=(2, 32, 32, 4), seed=[12, 34]),
+        tf.random.stateless_normal(shape=(2, 32, 32, 4), seed=[56, 78]))
+
+    block = conv_endec.UNet2D(
+        filters=[4, 8],
+        kernel_size=3,
+        activation=complex_activations.complex_relu,
+        dtype=tf.complex64)
+
+    result = block(inputs)
+    self.assertAllClose((2, 32, 32, 4), result.shape)
+    self.assertDTypeEqual(result, tf.complex64)
 
 
   def test_serialize_deserialize(self):

@@ -67,8 +67,7 @@ def density_grid(shape,
   generate a boolean sampling mask.
 
   Args:
-    shape: A `tf.TensorShape` or a list of `ints`. The shape of the output
-      density grid.
+    shape: A 1D integer `tf.Tensor`. The shape of the output density grid.
     inner_density: A `float` between 0.0 and 1.0. The density of the inner
       region.
     outer_density: A `float` between 0.0 and 1.0. The density of the outer
@@ -85,13 +84,17 @@ def density_grid(shape,
     A tensor containing the density grid.
   """
   with tf.name_scope(name or 'density_grid'):
-    shape = tf.TensorShape(shape).as_list()
+    shape = tf.convert_to_tensor(shape, dtype=tf.int32)
+    inner_density = tf.convert_to_tensor(inner_density)
+    outer_density = tf.convert_to_tensor(outer_density)
+    inner_cutoff = tf.convert_to_tensor(inner_cutoff)
+    outer_cutoff = tf.convert_to_tensor(outer_cutoff)
     transition_type = check_util.validate_enum(
         transition_type, ['linear', 'quadratic', 'hann'],
         name='transition_type')
 
-    vecs = [tf.linspace(-1.0, 1.0 - 2.0 / n, n) for n in shape]
-    grid = array_ops.meshgrid(*vecs)
+    grid = frequency_grid(
+        shape, max_val=tf.constant(1.0, dtype=inner_density.dtype))
     radius = tf.norm(grid, axis=-1)
 
     scaled_radius = (outer_cutoff - radius) / (outer_cutoff - inner_cutoff)
@@ -107,6 +110,44 @@ def density_grid(shape,
     density = tf.where(radius > outer_cutoff, outer_density, density)
 
     return density
+
+
+@api_util.export("sampling.frequency_grid")
+def frequency_grid(shape, max_val=1.0):
+  """Returns a frequency grid.
+
+  Creates a grid of frequencies between `-max_val` and `max_val` of the
+  specified shape. For even shapes, the output grid is asymmetric
+  with the zero-frequency component at `n // 2 + 1`.
+
+  Args:
+    shape: A 1D integer `tf.Tensor`. The shape of the output frequency grid.
+    max_val: A `tf.Tensor`. The maximum frequency. Must be of floating point
+      dtype.
+
+  Returns:
+    A tensor of shape [*shape, tf.size(shape)] such that `tensor[..., i]`
+    contains the frequencies along axis `i`. Has the same dtype as `max_val`.
+  """
+  shape = tf.convert_to_tensor(shape, dtype=tf.int32)
+  max_val = tf.convert_to_tensor(max_val)
+  dtype = max_val.dtype
+
+  vecs = tf.TensorArray(dtype=dtype,
+                        size=tf.size(shape),
+                        infer_shape=False,
+                        clear_after_read=False)
+
+  def _cond(i, vecs):
+    return tf.less(i, tf.size(shape))
+  def _body(i, vecs):
+    step = (2.0 * max_val) / tf.cast(shape[i], dtype)
+    low = -max_val
+    high = tf.cond(shape[i] % 2 == 0, lambda: max_val - step, lambda: max_val)
+    return i + 1, vecs.write(i, tf.linspace(low, high, shape[i]))
+  _, vecs = tf.while_loop(_cond, _body, [0, vecs])
+
+  return array_ops.dynamic_meshgrid(vecs)
 
 
 @api_util.export("sampling.random_mask")
@@ -137,12 +178,18 @@ def random_sampling_mask(shape, density=1.0, seed=None, rng=None, name=None):
   with tf.name_scope(name or 'sampling_mask'):
     if seed is not None and rng is not None:
       raise ValueError("Cannot provide both `seed` and `rng`.")
+    density = tf.convert_to_tensor(density)
     counts = tf.ones(shape, dtype=density.dtype)
     if seed is not None:  # Use stateless RNG.
       mask = tf.random.stateless_binomial(shape, seed, counts, density)
     else:  # Use stateful RNG.
-      rng = rng or tf.random.get_global_generator()
-      mask = rng.binomial(shape, counts, density)
+      with tf.init_scope():
+        rng = rng or tf.random.get_global_generator().split(1)[0]
+      # As of TF 2.9, `binomial` does not have a GPU implementation.
+      # mask = rng.binomial(shape, counts, density)
+      # Therefore, we use a uniform distribution instead. If the generated
+      # value is less than the density, the point is sampled.
+      mask = tf.math.less(rng.uniform(shape, dtype=density.dtype), density)
     return tf.cast(mask, tf.bool)
 
 
@@ -660,8 +707,9 @@ def radial_waveform(base_resolution, readout_os=2.0, rank=2):
 
 
 if sys_util.is_op_library_enabled():
+  spiral_waveform = _mri_ops.spiral_waveform
   spiral_waveform = api_util.export("sampling.spiral_waveform")(
-      _mri_ops.spiral_waveform)
+      spiral_waveform)
 else:
   # Stub to prevent import errors when the op is not available.
   spiral_waveform = None

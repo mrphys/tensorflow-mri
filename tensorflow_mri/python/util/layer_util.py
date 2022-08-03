@@ -17,6 +17,8 @@
 import tensorflow as tf
 
 from tensorflow_mri.python.layers import convolutional
+from tensorflow_mri.python.layers import pooling
+from tensorflow_mri.python.layers import reshaping
 from tensorflow_mri.python.layers import signal_layers
 
 
@@ -41,9 +43,9 @@ def get_nd_layer(name, rank):
 
 
 _ND_LAYERS = {
-    ('AveragePooling', 1): tf.keras.layers.AveragePooling1D,
-    ('AveragePooling', 2): tf.keras.layers.AveragePooling2D,
-    ('AveragePooling', 3): tf.keras.layers.AveragePooling3D,
+    ('AveragePooling', 1): pooling.AveragePooling1D,
+    ('AveragePooling', 2): pooling.AveragePooling2D,
+    ('AveragePooling', 3): pooling.AveragePooling3D,
     ('Conv', 1): convolutional.Conv1D,
     ('Conv', 2): convolutional.Conv2D,
     ('Conv', 3): convolutional.Conv3D,
@@ -72,17 +74,17 @@ _ND_LAYERS = {
     ('IDWT', 3): signal_layers.IDWT3D,
     ('LocallyConnected', 1): tf.keras.layers.LocallyConnected1D,
     ('LocallyConnected', 2): tf.keras.layers.LocallyConnected2D,
-    ('MaxPool', 1): tf.keras.layers.MaxPool1D,
-    ('MaxPool', 2): tf.keras.layers.MaxPool2D,
-    ('MaxPool', 3): tf.keras.layers.MaxPool3D,
+    ('MaxPool', 1): pooling.MaxPooling1D,
+    ('MaxPool', 2): pooling.MaxPooling2D,
+    ('MaxPool', 3): pooling.MaxPooling3D,
     ('SeparableConv', 1): tf.keras.layers.SeparableConv1D,
     ('SeparableConv', 2): tf.keras.layers.SeparableConv2D,
     ('SpatialDropout', 1): tf.keras.layers.SpatialDropout1D,
     ('SpatialDropout', 2): tf.keras.layers.SpatialDropout2D,
     ('SpatialDropout', 3): tf.keras.layers.SpatialDropout3D,
-    ('UpSampling', 1): tf.keras.layers.UpSampling1D,
-    ('UpSampling', 2): tf.keras.layers.UpSampling2D,
-    ('UpSampling', 3): tf.keras.layers.UpSampling3D,
+    ('UpSampling', 1): reshaping.UpSampling1D,
+    ('UpSampling', 2): reshaping.UpSampling2D,
+    ('UpSampling', 3): reshaping.UpSampling3D,
     ('ZeroPadding', 1): tf.keras.layers.ZeroPadding1D,
     ('ZeroPadding', 2): tf.keras.layers.ZeroPadding2D,
     ('ZeroPadding', 3): tf.keras.layers.ZeroPadding3D

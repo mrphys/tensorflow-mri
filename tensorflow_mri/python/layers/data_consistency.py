@@ -19,8 +19,10 @@ import inspect
 import tensorflow as tf
 
 from tensorflow_mri.python.linalg import linear_operator
+from tensorflow_mri.python.util import api_util
 
 
+@api_util.export("layers.LeastSquaresGradientDescent")
 class LeastSquaresGradientDescent(tf.keras.layers.Layer):
   """Least squares gradient descent layer.
   """

@@ -2,4 +2,5 @@
 # Do not edit.
 """Array processing operations."""
 
+from tensorflow_mri.python.ops.array_ops import dynamic_meshgrid as meshgrid
 from tensorflow_mri.python.ops.array_ops import update_tensor as update_tensor

@@ -26,7 +26,7 @@ from tensorflow_mri.python.util import io_util
 from tensorflow_mri.python.util import test_util
 
 
-class DensityGridTest():
+class DensityGridTest(test_util.TestCase):
   """Tests for `density_grid`."""
   @parameterized.product(transition_type=['linear', 'quadratic', 'hann'])
   def test_density(self, transition_type):  # pylint: disable=missing-function-docstring
@@ -46,6 +46,60 @@ class DensityGridTest():
                                     inner_cutoff=0.3, outer_cutoff=0.8,
                                     transition_type=transition_type)
     self.assertAllClose(expected[transition_type], density)
+
+
+class FrequencyGridTest(test_util.TestCase):
+  def test_frequency_grid_even(self):
+    result = traj_ops.frequency_grid([4])
+    expected = [[-1.0], [-0.5], [0], [0.5]]
+    self.assertDTypeEqual(result, np.float32)
+    self.assertAllClose(expected, result)
+
+  def test_frequency_grid_odd(self):
+    result = traj_ops.frequency_grid([5])
+    expected = [[-1.0], [-0.5], [0], [0.5], [1.0]]
+    self.assertAllClose(expected, result)
+
+  def test_frequency_grid_max_val(self):
+    result = traj_ops.frequency_grid([4], max_val=2.0)
+    expected = [[-2.0], [-1.0], [0], [1.0]]
+    self.assertAllClose(expected, result)
+
+  def test_frequency_grid_2d(self):
+    result = traj_ops.frequency_grid([4, 8])
+    expected = [[[-1.  , -1.  ],
+                 [-1.  , -0.75],
+                 [-1.  , -0.5 ],
+                 [-1.  , -0.25],
+                 [-1.  ,  0.  ],
+                 [-1.  ,  0.25],
+                 [-1.  ,  0.5 ],
+                 [-1.  ,  0.75]],
+                [[-0.5 , -1.  ],
+                 [-0.5 , -0.75],
+                 [-0.5 , -0.5 ],
+                 [-0.5 , -0.25],
+                 [-0.5 ,  0.  ],
+                 [-0.5 ,  0.25],
+                 [-0.5 ,  0.5 ],
+                 [-0.5 ,  0.75]],
+                [[ 0.  , -1.  ],
+                 [ 0.  , -0.75],
+                 [ 0.  , -0.5 ],
+                 [ 0.  , -0.25],
+                 [ 0.  ,  0.  ],
+                 [ 0.  ,  0.25],
+                 [ 0.  ,  0.5 ],
+                 [ 0.  ,  0.75]],
+                [[ 0.5 , -1.  ],
+                 [ 0.5 , -0.75],
+                 [ 0.5 , -0.5 ],
+                 [ 0.5 , -0.25],
+                 [ 0.5 ,  0.  ],
+                 [ 0.5 ,  0.25],
+                 [ 0.5 ,  0.5 ],
+                 [ 0.5 ,  0.75]]]
+    self.assertAllClose(expected, result)
 
 
 class RadialTrajectoryTest(test_util.TestCase):
