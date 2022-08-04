@@ -22,6 +22,7 @@ from tensorflow_mri.python.ops.traj_ops import *
 from tensorflow_mri import python
 
 # Import submodules.
+from tensorflow_mri._api import activations
 from tensorflow_mri._api import array
 from tensorflow_mri._api import callbacks
 from tensorflow_mri._api import coils

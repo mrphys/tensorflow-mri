@@ -10,7 +10,7 @@ from tensorflow_mri.python.ops.traj_ops import spiral_trajectory as spiral_traje
 from tensorflow_mri.python.ops.traj_ops import radial_density as radial_density
 from tensorflow_mri.python.ops.traj_ops import estimate_radial_density as estimate_radial_density
 from tensorflow_mri.python.ops.traj_ops import radial_waveform as radial_waveform
-# from 1c67b1db4cb5c043d469006db82e3356e63fbfcc import spiral_waveform as spiral_waveform
+from tensorflow_mri.python.ops.traj_ops import spiral_waveform as spiral_waveform
 from tensorflow_mri.python.ops.traj_ops import estimate_density as estimate_density
 from tensorflow_mri.python.ops.traj_ops import flatten_trajectory as flatten_trajectory
 from tensorflow_mri.python.ops.traj_ops import flatten_density as flatten_density

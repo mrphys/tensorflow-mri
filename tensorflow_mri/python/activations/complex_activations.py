@@ -14,8 +14,6 @@
 # ==============================================================================
 """Complex-valued activations."""
 
-import functools
-
 import tensorflow as tf
 
 from tensorflow_mri.python.util import api_util
@@ -27,7 +25,6 @@ def complexified(split='real_imag'):
     raise ValueError(
         f"split must be one of 'real_imag' or 'abs_angle', but got: {split}")
   def decorator(func):
-    @functools.wraps(func)
     def wrapper(x, *args, **kwargs):
       x = tf.convert_to_tensor(x)
       if x.dtype.is_complex:
@@ -38,9 +35,89 @@ def complexified(split='real_imag'):
           return tf.dtypes.complex(func(tf.math.real(x), *args, **kwargs),
                                    func(tf.math.imag(x), *args, **kwargs))
       return func(x, *args, **kwargs)
+
     return wrapper
   return decorator
 
 
+
 complex_relu = api_util.export("activations.complex_relu")(
     complexified(split='real_imag')(tf.keras.activations.relu))
+complex_relu.__doc__ = (
+    """Applies the rectified linear unit activation function.
+
+    With default values, this returns the standard ReLU activation:
+    `max(x, 0)`, the element-wise maximum of 0 and the input tensor.
+
+    Modifying default parameters allows you to use non-zero thresholds,
+    change the max value of the activation, and to use a non-zero multiple of
+    the input for values below the threshold.
+
+    If passed a complex-valued tensor, the ReLU activation is independently
+    applied to its real and imaginary parts, i.e., the function returns
+    `relu(real(x)) + 1j * relu(imag(x))`.
+
+    .. note::
+      This activation does not preserve the phase of complex inputs.
+
+    If passed a real-valued tensor, this function falls back to the standard
+    `tf.keras.activations.relu`_.
+
+    Args:
+      x: The input `tf.Tensor`. Can be real or complex.
+      alpha: A `float` that governs the slope for values lower than the
+        threshold.
+      max_value: A `float` that sets the saturation threshold (the largest value
+        the function will return).
+      threshold: A `float` giving the threshold value of the activation function
+        below which values will be damped or set to zero.
+
+    Returns:
+      A `tf.Tensor` of the same shape and dtype of input `x`.
+
+    .. _tf.keras.activations.relu: https://www.tensorflow.org/api_docs/python/tf/keras/activations/relu
+    """
+)
+
+
+mod_relu = api_util.export("activations.mod_relu")(
+    complexified(split='abs_angle')(tf.keras.activations.relu))
+mod_relu.__doc__ = (
+    """Applies the rectified linear unit activation function.
+
+    With default values, this returns the standard ReLU activation:
+    `max(x, 0)`, the element-wise maximum of 0 and the input tensor.
+
+    Modifying default parameters allows you to use non-zero thresholds,
+    change the max value of the activation, and to use a non-zero multiple of
+    the input for values below the threshold.
+
+    If passed a complex-valued tensor, the ReLU activation is applied to its
+    magnitude, i.e., the function returns `relu(abs(x)) * exp(1j * angle(x))`.
+
+    .. note::
+      This activation preserves the phase of complex inputs.
+
+    .. warning::
+      With default parameters, this activation is linear, since the magnitude
+      of the input is never negative. Usually you will want to set one or more
+      of the provided parameters to non-default values.
+
+    If passed a real-valued tensor, this function falls back to the standard
+    `tf.keras.activations.relu`_.
+
+    Args:
+      x: The input `tf.Tensor`. Can be real or complex.
+      alpha: A `float` that governs the slope for values lower than the
+        threshold.
+      max_value: A `float` that sets the saturation threshold (the largest value
+        the function will return).
+      threshold: A `float` giving the threshold value of the activation function
+        below which values will be damped or set to zero.
+
+    Returns:
+      A `tf.Tensor` of the same shape and dtype of input `x`.
+
+    .. _tf.keras.activations.relu: https://www.tensorflow.org/api_docs/python/tf/keras/activations/relu
+    """
+)

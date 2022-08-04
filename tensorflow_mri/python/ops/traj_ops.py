@@ -707,9 +707,10 @@ def radial_waveform(base_resolution, readout_os=2.0, rank=2):
 
 
 if sys_util.is_op_library_enabled():
-  spiral_waveform = _mri_ops.spiral_waveform
   spiral_waveform = api_util.export("sampling.spiral_waveform")(
-      spiral_waveform)
+      _mri_ops.spiral_waveform)
+  # Set the object's module to current module for correct API import.
+  spiral_waveform.__module__ = __name__
 else:
   # Stub to prevent import errors when the op is not available.
   spiral_waveform = None
