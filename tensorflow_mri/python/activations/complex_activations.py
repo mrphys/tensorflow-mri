@@ -19,7 +19,7 @@ import tensorflow as tf
 from tensorflow_mri.python.util import api_util
 
 
-def complexified(split='real_imag'):
+def complexified(name, split='real_imag'):
   """Returns a decorator to create complex-valued activations."""
   if split not in ('real_imag', 'abs_angle'):
     raise ValueError(
@@ -35,14 +35,14 @@ def complexified(split='real_imag'):
           return tf.dtypes.complex(func(tf.math.real(x), *args, **kwargs),
                                    func(tf.math.imag(x), *args, **kwargs))
       return func(x, *args, **kwargs)
-
+    wrapper.__name__ = name
     return wrapper
   return decorator
 
 
 
 complex_relu = api_util.export("activations.complex_relu")(
-    complexified(split='real_imag')(tf.keras.activations.relu))
+    complexified(name='complex_relu', split='real_imag')(tf.keras.activations.relu))
 complex_relu.__doc__ = (
     """Applies the rectified linear unit activation function.
 
@@ -81,7 +81,7 @@ complex_relu.__doc__ = (
 
 
 mod_relu = api_util.export("activations.mod_relu")(
-    complexified(split='abs_angle')(tf.keras.activations.relu))
+    complexified(name='mod_relu', split='abs_angle')(tf.keras.activations.relu))
 mod_relu.__doc__ = (
     """Applies the rectified linear unit activation function.
 

@@ -2,5 +2,5 @@
 # Do not edit.
 """Activation functions."""
 
-from tensorflow_mri.python.activations.complex_activations import wrapper as complex_relu
-from tensorflow_mri.python.activations.complex_activations import wrapper as mod_relu
+from tensorflow_mri.python.activations.complex_activations import complex_relu as complex_relu
+from tensorflow_mri.python.activations.complex_activations import mod_relu as mod_relu

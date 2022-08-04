@@ -29,6 +29,7 @@ class LeastSquaresGradientDescent(tf.keras.layers.Layer):
   def __init__(self,
                operator,
                scale_initializer=1.0,
+               handle_channel_axis=True,
                dtype=None,
                **kwargs):
     if isinstance(operator, linear_operator.LinearOperator):
@@ -61,6 +62,8 @@ class LeastSquaresGradientDescent(tf.keras.layers.Layer):
       else:
         dtype = self.operator.dtype
 
+    self.handle_channel_axis = handle_channel_axis
+
     super().__init__(dtype=dtype, **kwargs)
 
   def build(self, input_shape):
@@ -85,8 +88,14 @@ class LeastSquaresGradientDescent(tf.keras.layers.Layer):
             f"unexpected arguments in call when linear operator is a class "
             f"instance: {args}, {kwargs}")
       operator = self.operator
-    return x - tf.cast(self.scale, self.dtype) * operator.transform(
+    if self.handle_channel_axis:
+      x = tf.squeeze(x, axis=-1)
+    print(x.shape, operator.domain_shape, operator.range_shape)
+    x -= tf.cast(self.scale, self.dtype) * operator.transform(
         operator.transform(x) - b, adjoint=True)
+    if self.handle_channel_axis:
+      x = tf.expand_dims(x, axis=-1)
+    return x
 
   def _parse_inputs(self, inputs):
     """Parses the inputs to the call method."""
