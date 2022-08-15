@@ -88,6 +88,9 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
       or `'ortho'`. Defaults to `'ortho'`.
     sens_norm: A `boolean`. Whether to normalize coil sensitivities. Defaults to
       `True`.
+    intensity_correction: A `boolean`. Whether to correct for overall receiver
+      coil sensitivity. Defaults to `True`. Has no effect if `sens_norm` is also
+      `True`.
     dynamic_domain: A `str`. The domain of the dynamic dimension, if present.
       Must be one of `'time'` or `'frequency'`. May only be provided together
       with a non-scalar `extra_shape`. The dynamic dimension is the last
@@ -108,6 +111,7 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
                phase=None,
                fft_norm='ortho',
                sens_norm=True,
+               intensity_correction=True,
                dynamic_domain=None,
                dtype=tf.complex64,
                name=None):
@@ -122,6 +126,7 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
         phase=phase,
         fft_norm=fft_norm,
         sens_norm=sens_norm,
+        intensity_correction=intensity_correction,
         dynamic_domain=dynamic_domain,
         dtype=dtype,
         name=name)
@@ -285,6 +290,12 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
       self._sensitivities = math_ops.normalize_no_nan(
           self._sensitivities, axis=-(self._rank + 1))
 
+    # Intensity correction.
+    self._intensity_correction = intensity_correction
+    if self._sensitivities is not None and self._intensity_correction:
+      self._intensity_weights_sqrt = tf.math.reciprocal_no_nan(
+          tf.math.sqrt(tf.norm(self._sensitivities, axis=-(self._rank + 1))))
+
     # Set dynamic domain.
     if dynamic_domain is not None and self._extra_shape.rank == 0:
       raise ValueError(
@@ -349,6 +360,10 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
         x *= tf.math.conj(self._phase_rotator)
         x = tf.cast(tf.math.real(x), self.dtype)
 
+      # Apply intensity correction.
+      if self.is_multicoil and self._intensity_correction:
+        x *= self._intensity_weights_sqrt
+
       # Apply FFT along dynamic axis, if necessary.
       if self.is_dynamic and self.dynamic_domain == 'frequency':
         x = fft_ops.fftn(x, axes=[self.dynamic_axis],
@@ -356,10 +371,14 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
 
     else:  # Forward operator.
 
-      # Apply FFT along dynamic axis, if necessary.
+      # Apply IFFT along dynamic axis, if necessary.
       if self.is_dynamic and self.dynamic_domain == 'frequency':
         x = fft_ops.ifftn(x, axes=[self.dynamic_axis],
                           norm='ortho', shift=True)
+
+      # Apply intensity correction.
+      if self.is_multicoil and self._intensity_correction:
+        x *= self._intensity_weights_sqrt
 
       # Add phase to real-valued image if reconstruction is phase-constrained.
       if self.is_phase_constrained:
@@ -390,6 +409,30 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
       if self._density is not None and not self._skip_nufft:
         x *= self._dens_weights_sqrt
 
+    return x
+
+  def _preprocess(self, x, adjoint=False):
+    if adjoint:
+      if self._density is not None:
+        x *= self._dens_weights_sqrt
+    else:
+      raise NotImplementedError(
+          "`_preprocess` not implemented for forward transform.")
+    return x
+
+  def _postprocess(self, x, adjoint=False):
+    if adjoint:
+      # Apply temporal Fourier operator, if necessary.
+      if self.is_dynamic and self.dynamic_domain == 'frequency':
+        x = fft_ops.ifftn(x, axes=[self.dynamic_axis],
+                          norm='ortho', shift=True)
+
+      # Apply intensity correction, if necessary.
+      if self.is_multicoil and self._intensity_correction:
+        x *= self._intensity_weights_sqrt
+    else:
+      raise NotImplementedError(
+          "`_postprocess` not implemented for forward transform.")
     return x
 
   def _domain_shape(self):

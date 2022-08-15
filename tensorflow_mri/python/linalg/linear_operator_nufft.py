@@ -50,12 +50,12 @@ class LinearOperatorNUFFT(linear_operator.LinearOperator):  # pylint: disable=ab
 
   Notes:
     In MRI, sampling density compensation is typically performed during the
-    adjoint transform. However, in order to maintain the validity of the linear
-    operator, this operator applies the compensation orthogonally, i.e.,
+    adjoint transform. However, in order to maintain certain properties of the
+    linear operator, this operator applies the compensation orthogonally, i.e.,
     it scales the data by the square root of `density` in both forward and
     adjoint transforms. If you are using this operator to compute the adjoint
     and wish to apply the full compensation, you can do so via the
-    `precompensate` method.
+    `preprocess` method.
 
     >>> import tensorflow as tf
     >>> import tensorflow_mri as tfmri
@@ -75,7 +75,7 @@ class LinearOperatorNUFFT(linear_operator.LinearOperator):  # pylint: disable=ab
     >>> # (square root of weights).
     >>> image = linop.transform(kspace, adjoint=True)
     >>> # This reconstructs the image with full compensation.
-    >>> image = linop.transform(linop.precompensate(kspace), adjoint=True)
+    >>> image = linop.transform(linop.preprocess(kspace, adjoint=True), adjoint=True)
   """
   def __init__(self,
                domain_shape,
@@ -222,9 +222,21 @@ class LinearOperatorNUFFT(linear_operator.LinearOperator):  # pylint: disable=ab
         x *= self._weights_sqrt
     return x
 
-  def precompensate(self, x):
-    if self.density is not None:
-      return x * self._weights_sqrt
+  def _preprocess(self, x, adjoint=False):
+    if adjoint:
+      if self.density is not None:
+        x *= self._weights_sqrt
+    else:
+      raise NotImplementedError(
+          "_preprocess not implemented for forward transform.")
+    return x
+
+  def _postprocess(self, x, adjoint=False):
+    if adjoint:
+      pass  # nothing to do
+    else:
+      raise NotImplementedError(
+          "_postprocess not implemented for forward transform.")
     return x
 
   def _domain_shape(self):

@@ -128,24 +128,15 @@ def reconstruct_adj(kspace,
                                                    phase=phase,
                                                    fft_norm='ortho',
                                                    sens_norm=sens_norm)
-  rank = operator.rank
 
-  # Apply density compensation, if provided.
-  if density is not None:
-    dens_weights_sqrt = tf.math.sqrt(tf.math.reciprocal_no_nan(density))
-    dens_weights_sqrt = tf.cast(dens_weights_sqrt, kspace.dtype)
-    if operator.is_multicoil:
-      dens_weights_sqrt = tf.expand_dims(dens_weights_sqrt, axis=-2)
-    kspace *= dens_weights_sqrt
+  # Apply preprocessing.
+  kspace = operator.preprocess(kspace, adjoint=True)
 
   # Compute zero-filled image using the adjoint operator.
-  image = operator.H.transform(kspace)
+  image = operator.transform(kspace, adjoint=True)
 
-  # Apply intensity correction, if requested.
-  if operator.is_multicoil and sens_norm:
-    sens_weights_sqrt = tf.math.reciprocal_no_nan(
-        tf.norm(sensitivities, axis=-(rank + 1), keepdims=False))
-    image *= sens_weights_sqrt
+  # Apply post-processing.
+  image = operator.postprocess(image, adjoint=True)
 
   return image
 
@@ -354,8 +345,7 @@ def reconstruct_lstsq(kspace,
     gram_operator = None
 
   # Apply density compensation, if provided.
-  if density is not None:
-    kspace *= operator._dens_weights_sqrt  # pylint: disable=protected-access
+  kspace = operator.preprocess(kspace, adjoint=True)
 
   initial_image = operator.H.transform(kspace)
 
@@ -441,16 +431,7 @@ def reconstruct_lstsq(kspace,
   else:
     raise ValueError(f"Unknown optimizer: {optimizer}")
 
-  # Apply temporal Fourier operator, if necessary.
-  if operator.is_dynamic and operator.dynamic_domain == 'frequency':
-    image = fft_ops.ifftn(image, axes=[operator.dynamic_axis],
-                          norm='ortho', shift=True)
-
-  # Apply intensity correction, if requested.
-  if operator.is_multicoil and sens_norm:
-    sens_weights_sqrt = tf.math.reciprocal_no_nan(
-        tf.norm(sensitivities, axis=-(rank + 1), keepdims=False))
-    image *= sens_weights_sqrt
+  image = operator.postprocess(image, adjoint=True)
 
   # If necessary, filter the image to remove k-space corners. This can be
   # done if the trajectory has circular coverage and does not cover the k-space

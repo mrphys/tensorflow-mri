@@ -187,11 +187,13 @@ class LinearOperatorNUFFTTest(test_util.TestCase):
     kspace_d = linop_d.transform(image)
     self.assertAllClose(kspace * weights, kspace_d)
 
-    # Test adjoint and precompensate function.
-    recon = linop.transform(linop.precompensate(kspace) * weights * weights,
-                            adjoint=True)
+    # Test adjoint and preprocess function.
+    recon = linop.transform(
+        linop.preprocess(kspace, adjoint=True) * weights * weights,
+        adjoint=True)
     recon_d1 = linop_d.transform(kspace_d, adjoint=True)
-    recon_d2 = linop_d.transform(linop_d.precompensate(kspace), adjoint=True)
+    recon_d2 = linop_d.transform(linop_d.preprocess(kspace, adjoint=True),
+                                 adjoint=True)
     self.assertAllClose(recon, recon_d1)
     self.assertAllClose(recon, recon_d2)
 

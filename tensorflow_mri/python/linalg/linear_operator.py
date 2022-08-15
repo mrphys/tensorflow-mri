@@ -27,18 +27,18 @@ from tensorflow_mri.python.util import tensor_util
 class LinearOperatorMixin(tf.linalg.LinearOperator):
   """Mixin for linear operators meant to operate on images."""
   def transform(self, x, adjoint=False, name="transform"):
-    """Transform a batch of images.
+    """Transforms a batch of inputs.
 
-    Applies this operator to a batch of non-vectorized images `x`.
+    Applies this operator to a batch of non-vectorized inputs `x`.
 
     Args:
-      x: A `Tensor` with compatible shape and same dtype as `self`.
+      x: A `tf.Tensor` with compatible shape and same dtype as `self`.
       adjoint: A `boolean`. If `True`, transforms the input using the adjoint
         of the operator, instead of the operator itself.
       name: A name for this operation.
 
     Returns:
-      The transformed `Tensor` with the same `dtype` as `self`.
+      The transformed `tf.Tensor` with the same `dtype` as `self`.
     """
     with self._name_scope(name):  # pylint: disable=not-callable
       x = tf.convert_to_tensor(x, name="x")
@@ -46,6 +46,54 @@ class LinearOperatorMixin(tf.linalg.LinearOperator):
       input_shape = self.range_shape if adjoint else self.domain_shape
       input_shape.assert_is_compatible_with(x.shape[-input_shape.rank:])  # pylint: disable=invalid-unary-operand-type
       return self._transform(x, adjoint=adjoint)
+
+  def preprocess(self, x, adjoint=False, name="preprocess"):
+    """Preprocesses a batch of inputs.
+
+    This method should be called **before** applying the operator via
+    `transform`, `matvec` or `matmul`. The `adjoint` flag should be set to the
+    same value as the `adjoint` flag passed to `transform`, `matvec` or
+    `matmul`.
+
+    Args:
+      x: A `tf.Tensor` with compatible shape and same dtype as `self`.
+      adjoint: A `boolean`. If `True`, preprocesses the input in preparation
+        for applying the adjoint.
+      name: A name for this operation.
+
+    Returns:
+      The preprocessed `tf.Tensor` with the same `dtype` as `self`.
+    """
+    with self._name_scope(name):
+      x = tf.convert_to_tensor(x, name="x")
+      self._check_input_dtype(x)
+      input_shape = self.range_shape if adjoint else self.domain_shape
+      input_shape.assert_is_compatible_with(x.shape[-input_shape.rank:])  # pylint: disable=invalid-unary-operand-type
+      return self._preprocess(x, adjoint=adjoint)
+
+  def postprocess(self, x, adjoint=False, name="postprocess"):
+    """Postprocesses a batch of inputs.
+
+    This method should be called **after** applying the operator via
+    `transform`, `matvec` or `matmul`. The `adjoint` flag should be set to the
+    same value as the `adjoint` flag passed to `transform`, `matvec` or
+    `matmul`.
+
+    Args:
+      x: A `tf.Tensor` with compatible shape and same dtype as `self`.
+      adjoint: A `boolean`. If `True`, postprocesses the input after applying
+        the adjoint.
+      name: A name for this operation.
+
+    Returns:
+      The preprocessed `tf.Tensor` with the same `dtype` as `self`.
+    """
+    with self._name_scope(name):
+      x = tf.convert_to_tensor(x, name="x")
+      self._check_input_dtype(x)
+      input_shape = self.range_shape if adjoint else self.domain_shape
+      input_shape.assert_is_compatible_with(x.shape[-input_shape.rank:])  # pylint: disable=invalid-unary-operand-type
+      return self._postprocess(x, adjoint=adjoint)
 
   @property
   def domain_shape(self):
@@ -105,6 +153,14 @@ class LinearOperatorMixin(tf.linalg.LinearOperator):
   def _transform(self, x, adjoint=False):
     # Subclasses must override this method.
     raise NotImplementedError("Method `_transform` is not implemented.")
+
+  def _preprocess(self, x, adjoint=False):
+    # Subclasses may override this method.
+    return x
+
+  def _postprocess(self, x, adjoint=False):
+    # Subclasses may override this method.
+    return x
 
   def _matvec(self, x, adjoint=False):
     # Default implementation of `_matvec` for imaging operator. The vectorized
@@ -326,6 +382,20 @@ class LinearOperator(LinearOperatorMixin, tf.linalg.LinearOperator):  # pylint: 
   `expand_range_dimension` may be used to expand vectorized inputs/outputs to
   their full-shaped form.
 
+  **Preprocessing and post-processing**
+
+  It can sometimes be useful to modify a linear operator in order to maintain
+  certain mathematical properties, such as Hermitian symmetry or positive
+  definiteness (e.g., [1]). As a result of these modifications the linear
+  operator may no longer accurately represent the physical system under
+  consideration. This can be compensated through the use of a pre-processing
+  step and/or post-processing step. To this end linear operators expose a
+  `preprocess` method and a `postprocess` method. The user may define their
+  behavior by overriding the `_preprocess` and/or `_postprocess` methods. If
+  not overriden, the default behavior is to apply the identity. In the context
+  of optimization methods, these steps typically only need to be applied at the
+  beginning or at the end of the optimization.
+
   **Subclassing**
 
   Subclasses must always define `_transform`, which implements this operator's
@@ -357,6 +427,9 @@ class LinearOperator(LinearOperatorMixin, tf.linalg.LinearOperator):  # pylint: 
       self-adjoint to be positive-definite.
     is_square: Expect that this operator acts like square [batch] matrices.
     name: A name for this `LinearOperator`.
+
+  References:
+    .. [1] https://onlinelibrary.wiley.com/doi/full/10.1002/mrm.1241
 
   .. _tf.linalg.LinearOperator: https://www.tensorflow.org/api_docs/python/tf/linalg/LinearOperator
   .. _tf.linalg.matvec: https://www.tensorflow.org/api_docs/python/tf/linalg/matvec
@@ -393,6 +466,14 @@ class LinearOperatorAdjoint(LinearOperatorMixin,  # pylint: disable=abstract-met
   def _transform(self, x, adjoint=False):
     # pylint: disable=protected-access
     return self.operator._transform(x, adjoint=(not adjoint))
+
+  def _preprocess(self, x, adjoint=False):
+    # pylint: disable=protected-access
+    return self.operator._preprocess(x, adjoint=(not adjoint))
+
+  def _postprocess(self, x, adjoint=False):
+    # pylint: disable=protected-access
+    return self.operator._postprocess(x, adjoint=(not adjoint))
 
   def _domain_shape(self):
     return self.operator.range_shape
