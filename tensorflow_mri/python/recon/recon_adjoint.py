@@ -45,13 +45,13 @@ def recon_adjoint(data, operator):
 
 @api_util.export("recon.adjoint", "recon.adj")
 def recon_adjoint_mri(kspace,
-                     image_shape,
-                     mask=None,
-                     trajectory=None,
-                     density=None,
-                     sensitivities=None,
-                     phase=None,
-                     sens_norm=True):
+                      image_shape,
+                      mask=None,
+                      trajectory=None,
+                      density=None,
+                      sensitivities=None,
+                      phase=None,
+                      sens_norm=True):
   r"""Reconstructs an MR image using the adjoint MRI operator.
 
   Given *k*-space data :math:`b`, this function estimates the corresponding
@@ -130,4 +130,4 @@ def recon_adjoint_mri(kspace,
                                                    phase=phase,
                                                    fft_norm='ortho',
                                                    sens_norm=sens_norm)
-  return adjoint(kspace, operator)
+  return recon_adjoint(kspace, operator)

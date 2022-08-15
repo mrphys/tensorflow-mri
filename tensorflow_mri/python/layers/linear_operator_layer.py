@@ -63,12 +63,16 @@ class LinearOperatorLayer(tf.keras.layers.Layer):
     elif isinstance(inputs, dict):
       # Parse inputs if passed a dict.
       if self._input_indices is None:
-        input_indices = tuple(inputs.keys())[0]
+        input_indices = (tuple(inputs.keys())[0],)
       else:
         input_indices = self._input_indices
       main = {k: inputs[k] for k in input_indices}
       args = ()
       kwargs = {k: v for k, v in inputs.items() if k not in input_indices}
+
+    # Unpack single input.
+    if len(input_indices) == 1:
+      main = main[input_indices[0]]
 
     # Create operator.
     if self._operator_instance is None:
@@ -87,7 +91,7 @@ class LinearOperatorLayer(tf.keras.layers.Layer):
     base_config = super().get_config()
     config = {
         'operator': self.get_input_operator(),
-        'input_indices': self._input_indices,
+        'input_indices': self._input_indices
     }
     return {**config, **base_config}
 

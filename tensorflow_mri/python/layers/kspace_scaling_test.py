@@ -26,16 +26,27 @@ class KSpaceScalingTest(test_util.TestCase):
   def test_kspace_scaling(self):
     """Tests the k-space scaling layer."""
     layer = kspace_scaling.KSpaceScaling()
-    image_shape = [4, 4]
+    image_shape = tf.convert_to_tensor([4, 4])
 
     kspace = tf.dtypes.complex(
         tf.random.stateless_normal(shape=image_shape, seed=[11, 22]),
         tf.random.stateless_normal(shape=image_shape, seed=[12, 34]))
-    inputs = (kspace, image_shape)
-
-    result = layer(inputs)
 
     image = recon_adjoint.recon_adjoint_mri(kspace, image_shape)
-    expected = kspace / tf.math.reduce_max(tf.math.abs(image))
+    expected = kspace / tf.cast(tf.math.reduce_max(tf.math.abs(image)),
+                                kspace.dtype)
 
+    # Test with tuple inputs.
+    inputs = (kspace, image_shape)
+    result = layer(inputs)
+    self.assertAllClose(expected, result)
+
+    # Test with dict inputs.
+    inputs = {'kspace': kspace, 'image_shape': image_shape}
+    result = layer(inputs)
+    self.assertAllClose(expected, result)
+
+    # Test (de)serialization.
+    layer = kspace_scaling.KSpaceScaling.from_config(layer.get_config())
+    result = layer(inputs)
     self.assertAllClose(expected, result)
