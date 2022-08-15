@@ -39,108 +39,6 @@ from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import deprecation
 
 
-@api_util.export("recon.adjoint", "recon.adj")
-def reconstruct_adj(kspace,
-                    image_shape,
-                    mask=None,
-                    trajectory=None,
-                    density=None,
-                    sensitivities=None,
-                    phase=None,
-                    sens_norm=True):
-  r"""Reconstructs an MR image using the adjoint MRI operator.
-
-  Given *k*-space data :math:`b`, this function estimates the corresponding
-  image as :math:`x = A^H b`, where :math:`A` is the MRI linear operator.
-
-  This operator supports Cartesian and non-Cartesian *k*-space data.
-
-  Additional density compensation and intensity correction steps are applied
-  depending on the input arguments.
-
-  This operator supports batched inputs. All batch shapes should be
-  broadcastable with each other.
-
-  This operator supports multicoil imaging. Coil combination is triggered
-  when `sensitivities` is not `None`. If you have multiple coils but wish to
-  reconstruct each coil separately, simply set `sensitivities` to `None`. The
-  coil dimension will then be treated as a standard batch dimension (i.e., it
-  becomes part of `...`).
-
-  Args:
-    kspace: A `Tensor`. The *k*-space samples. Must have type `complex64` or
-      `complex128`. `kspace` can be either Cartesian or non-Cartesian. A
-      Cartesian `kspace` must have shape
-      `[..., num_coils, *image_shape]`, where `...` are batch dimensions. A
-      non-Cartesian `kspace` must have shape `[..., num_coils, num_samples]`.
-      If not multicoil (`sensitivities` is `None`), then the `num_coils` axis
-      must be omitted.
-    image_shape: A 1D integer `tf.Tensor`. Must have length 2 or 3.
-      The shape of the reconstructed image[s].
-    mask: An optional `Tensor` of type `bool`. The sampling mask. Must have
-      shape `[..., *image_shape]`. `mask` should be passed for reconstruction
-      from undersampled Cartesian *k*-space. For each point, `mask` should be
-      `True` if the corresponding *k*-space sample was measured and `False`
-      otherwise.
-    trajectory: An optional `Tensor` of type `float32` or `float64`. Must have
-      shape `[..., num_samples, rank]`. `trajectory` should be passed for
-      reconstruction from non-Cartesian *k*-space.
-    density: An optional `Tensor` of type `float32` or `float64`. The sampling
-      densities. Must have shape `[..., num_samples]`. This input is only
-      relevant for non-Cartesian MRI reconstruction. If passed, the MRI linear
-      operator will include sampling density compensation. If `None`, the MRI
-      operator will not perform sampling density compensation.
-    sensitivities: An optional `Tensor` of type `complex64` or `complex128`.
-      The coil sensitivity maps. Must have shape
-      `[..., num_coils, *image_shape]`. If provided, a multi-coil parallel
-      imaging reconstruction will be performed.
-    phase: An optional `Tensor` of type `float32` or `float64`. Must have shape
-      `[..., *image_shape]`. A phase estimate for the reconstructed image. If
-      provided, a phase-constrained reconstruction will be performed. This
-      improves the conditioning of the reconstruction problem in applications
-      where there is no interest in the phase data. However, artefacts may
-      appear if an inaccurate phase estimate is passed.
-    sens_norm: A `boolean`. Whether to normalize coil sensitivities. Defaults to
-      `True`.
-
-  Returns:
-    A `Tensor`. The reconstructed image. Has the same type as `kspace` and
-    shape `[..., *image_shape]`, where `...` is the broadcasted batch shape of
-    all inputs.
-
-  Notes:
-    Reconstructs an image by applying the adjoint MRI operator to the *k*-space
-    data. This typically involves an inverse FFT or a (density-compensated)
-    NUFFT, and coil combination for multicoil inputs. This type of
-    reconstruction is often called zero-filled reconstruction, because missing
-    *k*-space samples are assumed to be zero. Therefore, the resulting image is
-    likely to display aliasing artefacts if *k*-space is not sufficiently
-    sampled according to the Nyquist criterion.
-  """
-  kspace = tf.convert_to_tensor(kspace)
-
-  # Create the linear operator.
-  operator = linear_operator_mri.LinearOperatorMRI(image_shape,
-                                                   mask=mask,
-                                                   trajectory=trajectory,
-                                                   density=density,
-                                                   sensitivities=sensitivities,
-                                                   phase=phase,
-                                                   fft_norm='ortho',
-                                                   sens_norm=sens_norm)
-
-  # Apply preprocessing.
-  kspace = operator.preprocess(kspace, adjoint=True)
-
-  # Compute zero-filled image using the adjoint operator.
-  image = operator.transform(kspace, adjoint=True)
-
-  # Apply post-processing.
-  image = operator.postprocess(image, adjoint=True)
-
-  return image
-
-
 @api_util.export("recon.least_squares", "recon.lstsq")
 def reconstruct_lstsq(kspace,
                       image_shape,
@@ -206,7 +104,8 @@ def reconstruct_lstsq(kspace,
       densities. Must have shape `[..., num_samples]`. This input is only
       relevant for non-Cartesian MRI reconstruction. If passed, the MRI linear
       operator will include sampling density compensation. If `None`, the MRI
-      operator will not perform sampling density compensation.
+      operator will not perform sampling density compensation. Providing
+      `density` may speed up convergence but results in suboptimal SNR.
     sensitivities: An optional `Tensor` of type `complex64` or `complex128`.
       The coil sensitivity maps. Must have shape
       `[..., num_coils, *image_shape]`. If provided, a multi-coil parallel

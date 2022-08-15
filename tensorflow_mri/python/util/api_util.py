@@ -62,7 +62,7 @@ _SUBMODULE_DOCSTRINGS = {
     'models': "Keras models.",
     'optimize': "Optimization operations.",
     'plot': "Plotting utilities.",
-    'recon': "Image reconstruction.",
+    'recon': "Signal reconstruction.",
     'sampling': "k-space sampling operations.",
     'signal': "Signal processing operations.",
     'summary': "Tensorboard summaries."

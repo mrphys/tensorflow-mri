@@ -39,65 +39,6 @@ class ReconstructTest(test_util.TestCase):
     cls.data.update(io_util.read_hdf5('tests/data/recon_ops_data_2.h5'))
     cls.data.update(io_util.read_hdf5('tests/data/recon_ops_data_3.h5'))
 
-  def test_adj_fft(self):
-    """Test simple FFT recon."""
-    kspace = self.data['fft/kspace']
-    sens = self.data['fft/sens']
-    image_shape = kspace.shape[-2:]
-
-    # Test single-coil.
-    image = recon_ops.reconstruct_adj(kspace[0, ...], image_shape)
-    expected = fft_ops.ifftn(kspace[0, ...], norm='ortho', shift=True)
-
-    self.assertAllClose(expected, image)
-
-    # Test multi-coil.
-    image = recon_ops.reconstruct_adj(kspace, image_shape, sensitivities=sens)
-    expected = fft_ops.ifftn(kspace, axes=[-2, -1], norm='ortho', shift=True)
-    scale = tf.math.reduce_sum(sens * tf.math.conj(sens), axis=0)
-    expected = tf.math.divide_no_nan(
-        tf.math.reduce_sum(expected * tf.math.conj(sens), axis=0), scale)
-
-    self.assertAllClose(expected, image)
-
-  def test_adj_nufft(self):
-    """Test simple NUFFT recon."""
-    kspace = self.data['nufft/kspace']
-    sens = self.data['nufft/sens']
-    traj = self.data['nufft/traj']
-    dens = self.data['nufft/dens']
-    image_shape = [144, 144]
-    fft_norm_factor = tf.cast(tf.math.sqrt(144. * 144.), tf.complex64)
-
-    # Save us some typing.
-    inufft = lambda src, pts: tfft.nufft(src, pts,
-                                         grid_shape=[144, 144],
-                                         transform_type='type_1',
-                                         fft_direction='backward')
-
-    # Test single-coil.
-    image = recon_ops.reconstruct_adj(kspace[0, ...], image_shape,
-                                      trajectory=traj,
-                                      density=dens)
-
-    expected = inufft(kspace[0, ...] / tf.cast(dens, tf.complex64), traj)
-    expected /= fft_norm_factor
-
-    self.assertAllClose(expected, image)
-
-    # Test multi-coil.
-    image = recon_ops.reconstruct_adj(kspace, image_shape,
-                                      trajectory=traj,
-                                      density=dens,
-                                      sensitivities=sens)
-    expected = inufft(kspace / dens, traj)
-    expected /= fft_norm_factor
-    scale = tf.math.reduce_sum(sens * tf.math.conj(sens), axis=0)
-    expected = tf.math.divide_no_nan(
-        tf.math.reduce_sum(expected * tf.math.conj(sens), axis=0), scale)
-
-    self.assertAllClose(expected, image)
-
   @test_util.run_in_graph_and_eager_modes
   def test_inufft_2d(self):
     """Test inverse NUFFT method with 2D phantom."""

@@ -12,16 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for module `linalg_ops`."""
+"""Tests for module `linear_operator_gram_nufft`."""
 # pylint: disable=missing-class-docstring,missing-function-docstring
 
 from absl.testing import parameterized
 import numpy as np
 import tensorflow as tf
 
+from tensorflow_mri.python.linalg import linear_operator_gram_nufft
+from tensorflow_mri.python.linalg import linear_operator_nufft
 from tensorflow_mri.python.ops import geom_ops
 from tensorflow_mri.python.ops import image_ops
-from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.ops import traj_ops
 from tensorflow_mri.python.util import test_util
 
@@ -53,9 +54,9 @@ class LinearOperatorGramNUFFTTest(test_util.TestCase):
         if density is not None:
           density = tf.stack([density, density])
 
-      linop = linalg_ops.LinearOperatorNUFFT(
+      linop = linear_operator_nufft.LinearOperatorNUFFT(
           image_shape, trajectory=trajectory, density=density, norm=norm)
-      linop_gram = linalg_ops.LinearOperatorGramNUFFT(
+      linop_gram = linear_operator_gram_nufft.LinearOperatorGramNUFFT(
           image_shape, trajectory=trajectory, density=density, norm=norm,
           toeplitz=toeplitz)
 

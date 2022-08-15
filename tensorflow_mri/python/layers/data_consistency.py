@@ -90,7 +90,6 @@ class LeastSquaresGradientDescent(tf.keras.layers.Layer):
       operator = self.operator
     if self.handle_channel_axis:
       x = tf.squeeze(x, axis=-1)
-    print(x.shape, operator.domain_shape, operator.range_shape)
     x -= tf.cast(self.scale, self.dtype) * operator.transform(
         operator.transform(x) - b, adjoint=True)
     if self.handle_channel_axis:
