@@ -166,6 +166,7 @@ def filter_kspace(kspace,
                   filter_fn='hamming',
                   filter_rank=None,
                   filter_kwargs=None,
+                  separable=False,
                   name=None):
   """Filter *k*-space.
 
@@ -177,12 +178,19 @@ def filter_kspace(kspace,
       number of spatial dimensions. If `None`, `kspace` is assumed to be
       Cartesian.
     filter_fn: A `str` (one of `'rect'`, `'hamming'`, `'hann'` or `'atanfilt'`)
-      or a callable that accepts a coordinate array and returns corresponding
-      filter values.
+      or a callable that accepts a coordinates array and returns corresponding
+      filter values. The passed coordinates array will have shape `kspace.shape`
+      if `separable=False` and `[*kspace.shape, N]` if `separable=True`.
     filter_rank: An `int`. The rank of the filter. Only relevant if *k*-space is
       Cartesian. Defaults to `kspace.shape.rank`.
     filter_kwargs: A `dict`. Additional keyword arguments to pass to the
       filtering function.
+    separable: A `boolean`. If `True`, the input *k*-space will be filtered
+      using an N-D separable window instead of a circularly symmetric window.
+      If `filter_fn` has one of the default string values, the function is
+      automatically made separable. If `filter_fn` is a custom callable, it is
+      the responsibility of the user to ensure that the passed callable is
+      appropriate.
     name: Name to use for the scope.
 
   Returns:
@@ -210,6 +218,11 @@ def filter_kspace(kspace,
         vecs = vecs.write(i + filter_rank, tf.linspace(low, high, size))
       trajectory = array_ops.dynamic_meshgrid(vecs)
 
+    # For non-separable filters, use the frequency magnitude (circularly
+    # symmetric filter).
+    if not separable:
+      trajectory = tf.norm(trajectory, axis=-1)
+
     if not callable(filter_fn):
       # filter_fn not a callable, so should be an enum value. Get the
       # corresponding function.
@@ -222,10 +235,15 @@ def filter_kspace(kspace,
           'hann': hann,
           'atanfilt': atanfilt
       }[filter_fn]
-    filter_kwargs = filter_kwargs or {}
 
-    traj_norm = tf.norm(trajectory, axis=-1)
-    return kspace * tf.cast(filter_fn(traj_norm, **filter_kwargs), kspace.dtype)
+      if separable:
+        # The above functions are 1D. If `separable` is `True`, make them N-D
+        # by wrapping them with `separable_filter`.
+        filter_fn = separable_filter(filter_fn)
+
+    filter_kwargs = filter_kwargs or {}  # Make sure it's a dict.
+    filter_values = filter_fn(trajectory, **filter_kwargs)
+    return kspace * tf.cast(filter_values, kspace.dtype)
 
 
 @api_util.export("signal.crop_kspace")
