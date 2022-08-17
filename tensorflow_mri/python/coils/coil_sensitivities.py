@@ -46,7 +46,11 @@ def coil_sensitivities(kspace,
                                     ))
 
   # Reconstruct image.
-  inputs = operator.transform(kspace, adjoint=True)
+  inputs = operator.postprocess(
+      operator.transform(
+          operator.preprocess(kspace, adjoint=True),
+          adjoint=True),
+      adjoint=True)
 
   # ESPIRiT method takes in k-space data, so convert back to k-space in this
   # case.

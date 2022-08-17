@@ -14,6 +14,7 @@
 # ==============================================================================
 """Convolutional encoder-decoder models."""
 
+import inspect
 import string
 
 import tensorflow as tf
@@ -368,3 +369,14 @@ class UNet3D(UNet):
 UNet1D.__doc__ = UNET_DOC_TEMPLATE.substitute(rank=1)
 UNet2D.__doc__ = UNET_DOC_TEMPLATE.substitute(rank=2)
 UNet3D.__doc__ = UNET_DOC_TEMPLATE.substitute(rank=3)
+
+
+# Set explicit signatures for the UNetND objects. Otherwise they will appear as
+# (*args, **kwargs) in the docs.
+signature = inspect.signature(UNet.__init__)
+parameters = signature.parameters
+parameters = [v for k, v in parameters.items() if k not in ('self', 'rank')]
+signature = signature.replace(parameters=parameters)
+UNet1D.__signature__ = signature
+UNet2D.__signature__ = signature
+UNet3D.__signature__ = signature

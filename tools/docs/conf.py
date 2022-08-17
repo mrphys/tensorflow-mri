@@ -161,8 +161,9 @@ def linkcode_resolve(domain, info):
   Returns:
     The GitHub URL to the object, or `None` if not relevant.
   """
-  if info['fullname'] == 'nufft':
-    # Can't provide link for nufft, since it lives in external package.
+  custom_ops = {'nufft', 'spiral_waveform'}
+  if info['fullname'] in custom_ops:
+    # Can't provide link to source for custom ops.
     return None
 
   # Obtain fully-qualified name of object.
