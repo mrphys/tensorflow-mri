@@ -82,7 +82,7 @@ class FilterTest(test_util.TestCase):
                 [0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  ],
                 [0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  ]]
 
-    separable_rect = signal_ops.separable_filter(signal_ops.rect)
+    separable_rect = signal_ops.separable_window(signal_ops.rect)
 
     result = separable_rect(x, (1.0, 0.5))
     self.assertAllClose(expected, result)

@@ -131,17 +131,18 @@ def rect(arg, cutoff=np.pi, name=None):
                     half, tf.where(tf.math.abs(arg) < cutoff, one, zero))
 
 
-def separable_filter(func):
-  """Returns a function that computes a separable filter.
+@api_util.export("signal.separable_window")
+def separable_window(func):
+  """Returns a function that computes a separable window.
 
   This function creates a separable N-D filters as the outer product of 1D
   filters along different dimensions.
 
   Args:
-    func: A 1D filter function. Must have signature `func(x, *args, **kwargs)`.
+    func: A 1D window function. Must have signature `func(x, *args, **kwargs)`.
 
   Returns:
-    A function that computes a separable filter. Has signature
+    A function that computes a separable window. Has signature
     `func(x, *args, **kwargs)`, where `x` is a `tf.Tensor` of shape `[..., N]`
     and each element of `args` and `kwargs is a `tf.Tensor` of shape `[N, ...]`,
     which will be unpacked along the first dimension.
@@ -238,8 +239,8 @@ def filter_kspace(kspace,
 
       if separable:
         # The above functions are 1D. If `separable` is `True`, make them N-D
-        # by wrapping them with `separable_filter`.
-        filter_fn = separable_filter(filter_fn)
+        # by wrapping them with `separable_window`.
+        filter_fn = separable_window(filter_fn)
 
     filter_kwargs = filter_kwargs or {}  # Make sure it's a dict.
     filter_values = filter_fn(trajectory, **filter_kwargs)
