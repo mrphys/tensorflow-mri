@@ -152,12 +152,14 @@ def separable_window(func):
     args = tuple(tf.convert_to_tensor(arg) for arg in args)
     kwargs = {k: tf.convert_to_tensor(v) for k, v in kwargs.items()}
     def fn(accumulator, current):
-      index, value = accumulator
-      args, kwargs = current
-      return index + 1, value * func(x[..., index], *args, **kwargs)
+      x, args, kwargs = current
+      return accumulator * func(x, *args, **kwargs)
+    # Move last axis to front.
+    perm = tf.concat([[tf.rank(x) - 1], tf.range(0, tf.rank(x) - 1)], 0)
+    x = tf.transpose(x, perm)
+    # Initialize as 1.0.
     initializer = tf.constant(1.0, dtype=x.dtype)
-    _, out = tf.foldl(fn, (args, kwargs), initializer=(0, initializer))
-    return out
+    return tf.foldl(fn, (x, args, kwargs), initializer=initializer)
   return wrapper
 
 
