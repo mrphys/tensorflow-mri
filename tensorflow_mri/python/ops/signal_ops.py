@@ -138,22 +138,24 @@ def separable_filter(func):
   filters along different dimensions.
 
   Args:
-    func: A 1D filter function. Must have signature `func(x, *args)`.
+    func: A 1D filter function. Must have signature `func(x, *args, **kwargs)`.
 
   Returns:
-    A function that computes a separable filter. Has signature `func(x, *args)`,
-    where `x` is a `tf.Tensor` of shape `[..., N]` and each element of `args` is
-    a `tf.Tensor` of shape `[N, ...]`. Each element of `*args` will be unpacked
-    along the first dimension.
+    A function that computes a separable filter. Has signature
+    `func(x, *args, **kwargs)`, where `x` is a `tf.Tensor` of shape `[..., N]`
+    and each element of `args` and `kwargs is a `tf.Tensor` of shape `[N, ...]`,
+    which will be unpacked along the first dimension.
   """
-  def wrapper(x, *args):
+  def wrapper(x, *args, **kwargs):
     # Convert each input to a tensor.
     args = tuple(tf.convert_to_tensor(arg) for arg in args)
+    kwargs = {k: tf.convert_to_tensor(v) for k, v in kwargs.items()}
     def fn(accumulator, current):
       index, value = accumulator
-      return index + 1, value * func(x[..., index], *current)
+      args, kwargs = current
+      return index + 1, value * func(x[..., index], *args, **kwargs)
     initializer = tf.constant(1.0, dtype=x.dtype)
-    _, out = tf.foldl(fn, args, initializer=(0, initializer))
+    _, out = tf.foldl(fn, (args, kwargs), initializer=(0, initializer))
     return out
   return wrapper
 

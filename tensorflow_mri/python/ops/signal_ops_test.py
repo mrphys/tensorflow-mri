@@ -72,9 +72,6 @@ class FilterTest(test_util.TestCase):
     x = array_ops.meshgrid(
         [-2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0],
         [-2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0])
-
-    separable_rect = signal_ops.separable_filter(signal_ops.rect)
-    result = separable_rect(x, (1.0, 0.5))
     expected = [[0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  ],
                 [0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  ],
                 [0.  , 0.  , 0.  , 0.25, 0.5 , 0.25, 0.  , 0.  , 0.  ],
@@ -84,6 +81,13 @@ class FilterTest(test_util.TestCase):
                 [0.  , 0.  , 0.  , 0.25, 0.5 , 0.25, 0.  , 0.  , 0.  ],
                 [0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  ],
                 [0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  ]]
+
+    separable_rect = signal_ops.separable_filter(signal_ops.rect)
+
+    result = separable_rect(x, (1.0, 0.5))
+    self.assertAllClose(expected, result)
+
+    result = separable_rect(x, cutoff=(1.0, 0.5))
     self.assertAllClose(expected, result)
 
 
