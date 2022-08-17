@@ -103,7 +103,7 @@ def psnr(img1,
     img2 = tf.image.convert_image_dtype(img2, tf.float32)
 
     # Resolve batch and image dimensions.
-    batch_dims, image_dims = _resolve_batch_and_image_dims(
+    batch_dims, image_dims = resolve_batch_and_image_dims(
         img1, batch_dims, image_dims)
 
     mse = tf.math.reduce_mean(
@@ -262,7 +262,7 @@ def ssim(img1,
     img2 = tf.image.convert_image_dtype(img2, tf.float32)
 
     # Resolve batch and image dimensions.
-    batch_dims, image_dims = _resolve_batch_and_image_dims(
+    batch_dims, image_dims = resolve_batch_and_image_dims(
         img1, batch_dims, image_dims)
 
     # Check shapes.
@@ -493,7 +493,7 @@ def ssim_multiscale(img1,
     img2 = tf.image.convert_image_dtype(img2, tf.dtypes.float32)
 
     # Resolve batch and image dimensions.
-    batch_dims, image_dims = _resolve_batch_and_image_dims(
+    batch_dims, image_dims = resolve_batch_and_image_dims(
         img1, batch_dims, image_dims)
 
     # Shape checking.
@@ -933,7 +933,7 @@ def image_gradients(image, method='sobel', norm=False,
   """
   with tf.name_scope(name or 'image_gradients'):
     image = tf.convert_to_tensor(image)
-    batch_dims, image_dims = _resolve_batch_and_image_dims(
+    batch_dims, image_dims = resolve_batch_and_image_dims(
         image, batch_dims, image_dims)
 
     kernels = _gradient_operators(
@@ -1322,7 +1322,7 @@ def _validate_iqa_inputs(img1, img2, max_val, batch_dims, image_dims):
   img2 = tf.image.convert_image_dtype(img2, tf.float32)
 
   # Resolve batch and image dimensions.
-  batch_dims, image_dims = _resolve_batch_and_image_dims(
+  batch_dims, image_dims = resolve_batch_and_image_dims(
       img1, batch_dims, image_dims)
 
   # Check that the image shapes are compatible.
@@ -1974,7 +1974,7 @@ def extract_and_scale_complex_part(value, part, max_val):
   return value
 
 
-def _resolve_batch_and_image_dims(image, batch_dims, image_dims):
+def resolve_batch_and_image_dims(image, batch_dims, image_dims):
   """Resolves `batch_dims` and `image_dims` for a given `image`.
 
   Args:

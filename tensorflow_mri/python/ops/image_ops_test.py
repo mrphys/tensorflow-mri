@@ -870,7 +870,7 @@ class PhantomTest(test_util.TestCase):
 
 
 class TestResolveBatchAndImageDims(test_util.TestCase):
-  """Tests for `_resolve_batch_and_image_dims`."""
+  """Tests for `resolve_batch_and_image_dims`."""
   # pylint: disable=missing-function-docstring
   @parameterized.parameters(
       # rank, batch_dims, image_dims, expected_batch_dims, expected_image_dims
@@ -885,7 +885,7 @@ class TestResolveBatchAndImageDims(test_util.TestCase):
       self, rank, input_batch_dims, input_image_dims,
       expected_batch_dims, expected_image_dims):
     image = tf.zeros((4,) * rank)
-    batch_dims, image_dims = image_ops._resolve_batch_and_image_dims(  # pylint: disable=protected-access
+    batch_dims, image_dims = image_ops.resolve_batch_and_image_dims(  # pylint: disable=protected-access
         image, input_batch_dims, input_image_dims)
     self.assertEqual(expected_batch_dims, batch_dims)
     self.assertEqual(expected_image_dims, image_dims)

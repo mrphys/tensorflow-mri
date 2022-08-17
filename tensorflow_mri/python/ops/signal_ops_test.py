@@ -60,6 +60,13 @@ class FilterTest(test_util.TestCase):
     result = signal_ops.atanfilt(x)
     self.assertAllClose(expected, result)
 
+  def test_rect(self):
+    """Test rectangular function."""
+    x = [-3.1, -1.3, -0.2, 0.0, 0.4, 1.0, 3.1]
+    expected = [0.0, 0.0, 1.0, 1.0, 1.0, 0.5, 0.0]
+    result = signal_ops.rect(x, cutoff=1.0)
+    self.assertAllClose(expected, result)
+
 
 class KSpaceFilterTest(test_util.TestCase):
   """Test k-space filters."""

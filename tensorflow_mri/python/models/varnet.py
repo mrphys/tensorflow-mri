@@ -15,27 +15,32 @@
 
 import tensorflow as tf
 
+from tensorflow_mri.python.layers import kspace_scaling
 from tensorflow_mri.python.util import api_util
 
 
 class VarNet(tf.keras.Model):
   def __init__(self,
                rank,
-               kspace_index='kspace',
+               kspace_index=None,
                scale_kspace=True,
                **kwargs):
-    super(VarNet, self).__init__(**kwargs)
+    super().__init__(**kwargs)
     self.rank = rank
+    self.kspace_index = kspace_index
     self.scale_kspace = scale_kspace
+    if self.scale_kspace:
+      self._kspace_scaling_layer = kspace_scaling.KSpaceScaling(
+          kspace_index=self.kspace_index)
+    else:
+      self._kspace_scaling_layer = None
 
   def call(self, inputs):
-    kspace = inputs['kspace']
-    kwargs = {k: inputs[k] for k in inputs.keys() if k != 'kspace'}
+    if self.scale_kspace:
+      kspace = self._kspace_scaling_layer(inputs)
 
-    if 'image_shape' not in kwargs:
-      kwargs['image_shape'] = tf.shape(kspace)[-2:]
-
-    kspace = KSpaceScaling()({'kspace': kspace, **kwargs})
+    if self.scale_kspace:
+      sensitivities = CoilSensitivityEstimation()
     kwargs['sensitivities'] = CoilSensitivities()({'kspace': kspace, **kwargs})
 
     zfill = ReconAdjoint()({'kspace': kspace, **kwargs})

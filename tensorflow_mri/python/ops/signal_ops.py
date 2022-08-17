@@ -99,6 +99,36 @@ def atanfilt(arg, cutoff=np.pi, beta=100.0, name=None):
     return 0.5 + (1.0 / np.pi) * tf.math.atan(beta * (cutoff - arg) / cutoff)
 
 
+@api_util.export("signal.rect")
+def rect(arg, cutoff=np.pi, name=None):
+  """Returns the rectangular function.
+
+  The rectangular function is defined as:
+
+  .. math::
+    \operatorname{rect}(x) = \Pi(t) =
+      \left\{\begin{array}{rl}
+        0, & \text{if } |x| > \pi \\
+        \frac{1}{2}, & \text{if } |x| = \pi \\
+        1, & \text{if } |x| < \pi.
+      \end{array}\right.
+
+  Args:
+    arg: Input tensor.
+    cutoff: A `float` in the range [0, pi]. The cutoff frequency of the filter.
+    name: Name to use for the scope.
+
+  Returns:
+    A `Tensor` of shape `arg.shape`.
+  """
+  with tf.name_scope(name or 'rect'):
+    one = tf.constant(1.0, dtype=arg.dtype)
+    zero = tf.constant(0.0, dtype=arg.dtype)
+    half = tf.constant(0.5, dtype=arg.dtype)
+    return tf.where(tf.math.abs(arg) == cutoff,
+                    half, tf.where(tf.math.abs(arg) < cutoff, one, zero))
+
+
 @api_util.export("signal.filter_kspace")
 def filter_kspace(kspace,
                   trajectory=None,
@@ -114,9 +144,9 @@ def filter_kspace(kspace,
     trajectory: A `Tensor` of shape `kspace.shape + [N]`, where `N` is the
       number of spatial dimensions. If `None`, `kspace` is assumed to be
       Cartesian.
-    filter_fn: A `str` (one of `'hamming'`, `'hann'` or `'atanfilt'`) or a
-      callable that accepts a coordinate array and returns corresponding filter
-      values.
+    filter_fn: A `str` (one of `'rect'`, `'hamming'`, `'hann'` or `'atanfilt'`)
+      or a callable that accepts a coordinate array and returns corresponding
+      filter values.
     filter_rank: An `int`. The rank of the filter. Only relevant if *k*-space is
       Cartesian. Defaults to `kspace.shape.rank`.
     filter_kwargs: A `dict`. Additional keyword arguments to pass to the
@@ -150,9 +180,10 @@ def filter_kspace(kspace,
     # filter_fn not a callable, so should be an enum value. Get the
     # corresponding function.
     filter_fn = check_util.validate_enum(
-        filter_fn, valid_values={'hamming', 'hann', 'atanfilt'},
+        filter_fn, valid_values={'rect', 'hamming', 'hann', 'atanfilt'},
         name='filter_fn')
     filter_fn = {
+        'rect': rect,
         'hamming': hamming,
         'hann': hann,
         'atanfilt': atanfilt
