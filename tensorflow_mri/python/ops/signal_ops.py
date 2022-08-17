@@ -114,14 +114,16 @@ def rect(arg, cutoff=np.pi, name=None):
       \end{array}\right.
 
   Args:
-    arg: Input tensor.
-    cutoff: A `float` in the range [0, pi]. The cutoff frequency of the filter.
+    arg: The input `tf.Tensor`.
+    cutoff: A scalar `tf.Tensor` in the range `[0, pi]`.
+      The cutoff frequency of the filter.
     name: Name to use for the scope.
 
   Returns:
-    A `Tensor` of shape `arg.shape`.
+    A `tf.Tensor` with the same shape and type as `arg`.
   """
   with tf.name_scope(name or 'rect'):
+    arg = tf.convert_to_tensor(arg)
     one = tf.constant(1.0, dtype=arg.dtype)
     zero = tf.constant(0.0, dtype=arg.dtype)
     half = tf.constant(0.5, dtype=arg.dtype)
@@ -129,12 +131,40 @@ def rect(arg, cutoff=np.pi, name=None):
                     half, tf.where(tf.math.abs(arg) < cutoff, one, zero))
 
 
+def separable_filter(func):
+  """Returns a function that computes a separable filter.
+
+  This function creates a separable N-D filters as the outer product of 1D
+  filters along different dimensions.
+
+  Args:
+    func: A 1D filter function. Must have signature `func(x, *args)`.
+
+  Returns:
+    A function that computes a separable filter. Has signature `func(x, *args)`,
+    where `x` is a `tf.Tensor` of shape `[..., N]` and each element of `args` is
+    a `tf.Tensor` of shape `[N, ...]`. Each element of `*args` will be unpacked
+    along the first dimension.
+  """
+  def wrapper(x, *args):
+    # Convert each input to a tensor.
+    args = tuple(tf.convert_to_tensor(arg) for arg in args)
+    def fn(accumulator, current):
+      index, value = accumulator
+      return index + 1, value * func(x[..., index], *current)
+    initializer = tf.constant(1.0, dtype=x.dtype)
+    _, out = tf.foldl(fn, args, initializer=(0, initializer))
+    return out
+  return wrapper
+
+
 @api_util.export("signal.filter_kspace")
 def filter_kspace(kspace,
                   trajectory=None,
                   filter_fn='hamming',
                   filter_rank=None,
-                  filter_kwargs=None):
+                  filter_kwargs=None,
+                  name=None):
   """Filter *k*-space.
 
   Multiplies *k*-space by a filtering function.
@@ -151,47 +181,49 @@ def filter_kspace(kspace,
       Cartesian. Defaults to `kspace.shape.rank`.
     filter_kwargs: A `dict`. Additional keyword arguments to pass to the
       filtering function.
+    name: Name to use for the scope.
 
   Returns:
     A `Tensor` of shape `kspace.shape`. The filtered *k*-space.
   """
-  kspace = tf.convert_to_tensor(kspace)
-  if trajectory is not None:
-    kspace, trajectory = check_util.verify_compatible_trajectory(
-        kspace, trajectory)
+  with tf.name_scope(name or 'filter_kspace'):
+    kspace = tf.convert_to_tensor(kspace)
+    if trajectory is not None:
+      kspace, trajectory = check_util.verify_compatible_trajectory(
+          kspace, trajectory)
 
-  # Make a "trajectory" for Cartesian k-spaces.
-  is_cartesian = trajectory is None
-  if is_cartesian:
-    filter_rank = filter_rank or kspace.shape.rank
-    vecs = tf.TensorArray(dtype=kspace.dtype.real_dtype,
-                          size=filter_rank,
-                          infer_shape=False,
-                          clear_after_read=False)
-    for i in range(-filter_rank, 0):
-      size = tf.shape(kspace)[i]
-      pi = tf.cast(np.pi, kspace.dtype.real_dtype)
-      low = -pi
-      high = pi - (2.0 * pi / tf.cast(size, kspace.dtype.real_dtype))
-      vecs = vecs.write(i + filter_rank, tf.linspace(low, high, size))
-    trajectory = array_ops.dynamic_meshgrid(vecs)
+    # Make a "trajectory" for Cartesian k-spaces.
+    is_cartesian = trajectory is None
+    if is_cartesian:
+      filter_rank = filter_rank or kspace.shape.rank
+      vecs = tf.TensorArray(dtype=kspace.dtype.real_dtype,
+                            size=filter_rank,
+                            infer_shape=False,
+                            clear_after_read=False)
+      for i in range(-filter_rank, 0):
+        size = tf.shape(kspace)[i]
+        pi = tf.cast(np.pi, kspace.dtype.real_dtype)
+        low = -pi
+        high = pi - (2.0 * pi / tf.cast(size, kspace.dtype.real_dtype))
+        vecs = vecs.write(i + filter_rank, tf.linspace(low, high, size))
+      trajectory = array_ops.dynamic_meshgrid(vecs)
 
-  if not callable(filter_fn):
-    # filter_fn not a callable, so should be an enum value. Get the
-    # corresponding function.
-    filter_fn = check_util.validate_enum(
-        filter_fn, valid_values={'rect', 'hamming', 'hann', 'atanfilt'},
-        name='filter_fn')
-    filter_fn = {
-        'rect': rect,
-        'hamming': hamming,
-        'hann': hann,
-        'atanfilt': atanfilt
-    }[filter_fn]
-  filter_kwargs = filter_kwargs or {}
+    if not callable(filter_fn):
+      # filter_fn not a callable, so should be an enum value. Get the
+      # corresponding function.
+      filter_fn = check_util.validate_enum(
+          filter_fn, valid_values={'rect', 'hamming', 'hann', 'atanfilt'},
+          name='filter_fn')
+      filter_fn = {
+          'rect': rect,
+          'hamming': hamming,
+          'hann': hann,
+          'atanfilt': atanfilt
+      }[filter_fn]
+    filter_kwargs = filter_kwargs or {}
 
-  traj_norm = tf.norm(trajectory, axis=-1)
-  return kspace * tf.cast(filter_fn(traj_norm, **filter_kwargs), kspace.dtype)
+    traj_norm = tf.norm(trajectory, axis=-1)
+    return kspace * tf.cast(filter_fn(traj_norm, **filter_kwargs), kspace.dtype)
 
 
 @api_util.export("signal.crop_kspace")

@@ -67,6 +67,25 @@ class FilterTest(test_util.TestCase):
     result = signal_ops.rect(x, cutoff=1.0)
     self.assertAllClose(expected, result)
 
+  def test_separable_rect(self):
+    """Test separable rectangular function."""
+    x = array_ops.meshgrid(
+        [-2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0],
+        [-2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0])
+
+    separable_rect = signal_ops.separable_filter(signal_ops.rect)
+    result = separable_rect(x, (1.0, 0.5))
+    expected = [[0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  ],
+                [0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  ],
+                [0.  , 0.  , 0.  , 0.25, 0.5 , 0.25, 0.  , 0.  , 0.  ],
+                [0.  , 0.  , 0.  , 0.5 , 1.  , 0.5 , 0.  , 0.  , 0.  ],
+                [0.  , 0.  , 0.  , 0.5 , 1.  , 0.5 , 0.  , 0.  , 0.  ],
+                [0.  , 0.  , 0.  , 0.5 , 1.  , 0.5 , 0.  , 0.  , 0.  ],
+                [0.  , 0.  , 0.  , 0.25, 0.5 , 0.25, 0.  , 0.  , 0.  ],
+                [0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  ],
+                [0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  ]]
+    self.assertAllClose(expected, result)
+
 
 class KSpaceFilterTest(test_util.TestCase):
   """Test k-space filters."""
@@ -149,6 +168,7 @@ class KSpaceFilterTest(test_util.TestCase):
     result = signal_ops.filter_kspace(
         kspace, trajectory=traj, filter_fn=filter_fn)
     self.assertAllClose(expected, result)
+
 
 if __name__ == '__main__':
   tf.test.main()

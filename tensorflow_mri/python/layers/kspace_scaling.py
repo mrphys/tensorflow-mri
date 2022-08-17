@@ -19,8 +19,11 @@ import tensorflow as tf
 from tensorflow_mri.python.layers import linear_operator_layer
 from tensorflow_mri.python.linalg import linear_operator_mri
 from tensorflow_mri.python.recon import recon_adjoint
+from tensorflow_mri.python.util import api_util
 
 
+@api_util.export("layers.KSpaceScaling")
+@tf.keras.utils.register_keras_serializable(package="MRI")
 class KSpaceScaling(linear_operator_layer.LinearOperatorLayer):
   """K-space scaling layer.
 
@@ -28,6 +31,7 @@ class KSpaceScaling(linear_operator_layer.LinearOperatorLayer):
   values between 0 and 1.
   """
   def __init__(self,
+               calib_region,
                operator=linear_operator_mri.LinearOperatorMRI,
                kspace_index=None,
                **kwargs):
@@ -47,6 +51,7 @@ class KSpaceScaling(linear_operator_layer.LinearOperatorLayer):
       The scaled k-space data.
     """
     kspace, operator = self.parse_inputs(inputs)
+    # kspace = 
     image = recon_adjoint.recon_adjoint(kspace, operator)
     return kspace / tf.cast(tf.math.reduce_max(tf.math.abs(image)),
                             kspace.dtype)
