@@ -14,10 +14,12 @@
 # ==============================================================================
 """*k*-space scaling layer."""
 
+import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.layers import linear_operator_layer
 from tensorflow_mri.python.linalg import linear_operator_mri
+from tensorflow_mri.python.ops import signal_ops
 from tensorflow_mri.python.recon import recon_adjoint
 from tensorflow_mri.python.util import api_util
 
@@ -28,15 +30,18 @@ class KSpaceScaling(linear_operator_layer.LinearOperatorLayer):
   """K-space scaling layer.
 
   This layer scales the *k*-space data so that the adjoint reconstruction has
-  values between 0 and 1.
+  magnitude values in the approximate `[0, 1]` range.
   """
   def __init__(self,
-               calib_region,
+               calib_window='rect',
+               calib_region=0.1 * np.pi,
                operator=linear_operator_mri.LinearOperatorMRI,
                kspace_index=None,
                **kwargs):
     """Initializes the layer."""
     super().__init__(operator=operator, input_indices=kspace_index, **kwargs)
+    self.calib_window = calib_window
+    self.calib_region = calib_region
 
   def call(self, inputs):
     """Applies the layer.
@@ -51,8 +56,16 @@ class KSpaceScaling(linear_operator_layer.LinearOperatorLayer):
       The scaled k-space data.
     """
     kspace, operator = self.parse_inputs(inputs)
-    # kspace = 
-    image = recon_adjoint.recon_adjoint(kspace, operator)
+    filtered_kspace = signal_ops.filter_kspace(
+        kspace,
+        operator.trajectory,
+        filter_fn=self.calib_window,
+        filter_rank=operator.rank,
+        filter_kwargs=dict(
+            cutoff=self.calib_region
+        ),
+        separable=isinstance(self.calib_region, (list, tuple)))
+    image = recon_adjoint.recon_adjoint(filtered_kspace, operator)
     return kspace / tf.cast(tf.math.reduce_max(tf.math.abs(image)),
                             kspace.dtype)
 

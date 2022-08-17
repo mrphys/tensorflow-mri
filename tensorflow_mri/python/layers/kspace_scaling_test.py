@@ -32,7 +32,14 @@ class KSpaceScalingTest(test_util.TestCase):
         tf.random.stateless_normal(shape=image_shape, seed=[11, 22]),
         tf.random.stateless_normal(shape=image_shape, seed=[12, 34]))
 
-    image = recon_adjoint.recon_adjoint_mri(kspace, image_shape)
+    # This mask simulates the default filtering operation.
+    mask = tf.constant([[False, False, False, False],
+                        [False, False, False, False],
+                        [False, False, True, False],
+                        [False, False, False, False]], dtype=tf.bool)
+
+    filtered_kspace = tf.where(mask, kspace, tf.zeros_like(kspace))
+    image = recon_adjoint.recon_adjoint_mri(filtered_kspace, image_shape)
     expected = kspace / tf.cast(tf.math.reduce_max(tf.math.abs(image)),
                                 kspace.dtype)
 
