@@ -91,7 +91,7 @@ class LinearOperatorMixin(tf.linalg.LinearOperator):
     with self._name_scope(name):
       x = tf.convert_to_tensor(x, name="x")
       self._check_input_dtype(x)
-      input_shape = self.range_shape if adjoint else self.domain_shape
+      input_shape = self.domain_shape if adjoint else self.range_shape
       input_shape.assert_is_compatible_with(x.shape[-input_shape.rank:])  # pylint: disable=invalid-unary-operand-type
       return self._postprocess(x, adjoint=adjoint)
 
