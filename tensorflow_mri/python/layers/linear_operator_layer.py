@@ -66,13 +66,13 @@ class LinearOperatorLayer(tf.keras.layers.Layer):
         input_indices = (tuple(inputs.keys())[0],)
       else:
         input_indices = self._input_indices
-      main = {k: inputs[k] for k in input_indices}
+      main = tuple(inputs[i] for i in input_indices)
       args = ()
       kwargs = {k: v for k, v in inputs.items() if k not in input_indices}
 
     # Unpack single input.
-    if len(input_indices) == 1:
-      main = main[input_indices[0]]
+    if len(main) == 1:
+      main = main[0]
 
     # Create operator.
     if self._operator_instance is None:

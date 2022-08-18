@@ -68,3 +68,22 @@ class LossFunctionWrapper(tf.keras.losses.Loss):
 
 def is_tensor_or_variable(x):
   return tf.is_tensor(x) or isinstance(x, tf.Variable)
+
+
+def complexx():
+  """Returns the default complex dtype, as a string.
+
+  The default complex dtype is the complex equivalent of the default
+  float type, which can be obtained as `tf.keras.backend.floatx()`.
+
+  To change the default complex dtype, change the default float type via
+  `tf.keras.backend.set_floatx()`.
+
+  Returns:
+    The current default complex dtype, as a string.
+  """
+  complex_dtypes = {
+      'float32': 'complex64',
+      'float64': 'complex128'
+  }
+  return tf.dtypes.as_dtype(complex_dtypes[tf.keras.backend.floatx()]).name

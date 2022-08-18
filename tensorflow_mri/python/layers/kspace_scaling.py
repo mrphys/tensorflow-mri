@@ -22,6 +22,7 @@ from tensorflow_mri.python.linalg import linear_operator_mri
 from tensorflow_mri.python.ops import signal_ops
 from tensorflow_mri.python.recon import recon_adjoint
 from tensorflow_mri.python.util import api_util
+from tensorflow_mri.python.util import keras_util
 
 
 @api_util.export("layers.KSpaceScaling")
@@ -39,7 +40,10 @@ class KSpaceScaling(linear_operator_layer.LinearOperatorLayer):
                kspace_index=None,
                **kwargs):
     """Initializes the layer."""
-    super().__init__(operator=operator, input_indices=kspace_index, **kwargs)
+    kwargs['dtype'] = kwargs.get('dtype') or keras_util.complexx()
+    super().__init__(operator=operator,
+                     input_indices=kspace_index,
+                     **kwargs)
     self.calib_window = calib_window
     self.calib_region = calib_region
 

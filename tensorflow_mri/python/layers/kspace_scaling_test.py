@@ -26,6 +26,8 @@ class KSpaceScalingTest(test_util.TestCase):
   def test_kspace_scaling(self):
     """Tests the k-space scaling layer."""
     layer = kspace_scaling.KSpaceScaling()
+    self.assertEqual(layer.dtype, "complex64")
+
     image_shape = tf.convert_to_tensor([4, 4])
 
     kspace = tf.dtypes.complex(

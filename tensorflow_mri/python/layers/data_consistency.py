@@ -19,6 +19,7 @@ import tensorflow as tf
 from tensorflow_mri.python.layers import linear_operator_layer
 from tensorflow_mri.python.linalg import linear_operator_mri
 from tensorflow_mri.python.util import api_util
+from tensorflow_mri.python.util import keras_util
 
 
 @api_util.export("layers.LeastSquaresGradientDescent")
@@ -32,6 +33,7 @@ class LeastSquaresGradientDescent(linear_operator_layer.LinearOperatorLayer):
                image_index='image',
                kspace_index='kspace',
                **kwargs):
+    kwargs['dtype'] = kwargs.get('dtype') or keras_util.complexx()
     super().__init__(operator=operator,
                      input_indices=(image_index, kspace_index),
                      **kwargs)
@@ -55,7 +57,7 @@ class LeastSquaresGradientDescent(linear_operator_layer.LinearOperatorLayer):
     (image, kspace), operator = self.parse_inputs(inputs)
     if self.ignore_channels:
       image = tf.squeeze(image, axis=-1)
-    image -= tf.cast(self.scale, self.dtype) * operator.transform(
+    image -= tf.cast(self.scale, image.dtype) * operator.transform(
         operator.transform(image) - kspace, adjoint=True)
     if self.ignore_channels:
       image = tf.expand_dims(image, axis=-1)
