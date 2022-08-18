@@ -1,4 +1,4 @@
-# Copyright 2022 University College London. All Rights Reserved.
+# Copyright 2022 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,69 +13,77 @@
 # limitations under the License.
 # ==============================================================================
 
+import numpy as np
 import tensorflow as tf
 
+from tensorflow_mri.python.layers import coil_sensitivities
+from tensorflow_mri.python.layers import data_consistency
 from tensorflow_mri.python.layers import kspace_scaling
+from tensorflow_mri.python.layers import recon_adjoint
 from tensorflow_mri.python.util import api_util
+from tensorflow_mri.python.util import model_util
 
 
 class VarNet(tf.keras.Model):
   def __init__(self,
                rank,
-               kspace_index=None,
+               num_iterations=10,
+               calib_region=0.1 * np.pi,
+               reg_network='UNet',
                scale_kspace=True,
+               estimate_sensitivities=True,
+               kspace_index=None,
                **kwargs):
     super().__init__(**kwargs)
     self.rank = rank
-    self.kspace_index = kspace_index
+    self.num_iterations = num_iterations
+    self.calib_region = calib_region
+    self.reg_network = reg_network
     self.scale_kspace = scale_kspace
+    self.estimate_sensitivities = estimate_sensitivities
+    self.kspace_index = kspace_index
     if self.scale_kspace:
       self._kspace_scaling_layer = kspace_scaling.KSpaceScaling(
+          calib_region=self.calib_region,
           kspace_index=self.kspace_index)
     else:
       self._kspace_scaling_layer = None
+    if self.estimate_sensitivities:
+      self._coil_sensitivities_layer = (
+          coil_sensitivities.CoilSensitivityEstimation(
+              calib_region=self.calib_region,
+              kspace_index=self.kspace_index)
+      )
+    self._recon_adjoint_layer = recon_adjoint.ReconAdjoint(
+        kspace_index=self.kspace_index)
+
+    lsgd_layer_class = data_consistency.LeastSquaresGradientDescent()
+    reg_network_class = model_util.get_nd_model(self.reg_network, rank)
+
+    reg_network_kwargs = {}
+    self._lsgd_layers = [lsgd_layer_class(name=f'lsgd_{i}')
+                         for i in range(self.num_iterations)]
+    self._reg_layers = [reg_network_class(**reg_network_kwargs, name=f'reg_{i}')
+                        for i in range(self.num_iterations)]
 
   def call(self, inputs):
-    if self.scale_kspace:
-      kspace = self._kspace_scaling_layer(inputs)
+    x = inputs
 
     if self.scale_kspace:
-      sensitivities = CoilSensitivityEstimation()
-    kwargs['sensitivities'] = CoilSensitivities()({'kspace': kspace, **kwargs})
+      x['kspace'] = self._kspace_scaling_layer(x)
 
-    zfill = ReconAdjoint()({'kspace': kspace, **kwargs})
+    if self.estimate_sensitivities:
+      x['sensitivities'] = self._coil_sensitivities_layer(x)
+
+    zfill = self._recon_adjoint_layer(x)
 
     image = zfill
-    for i in range(num_iterations):
-      image = tfmri.models.UNet2D(
-          filters=[32, 64, 128],
-          kernel_size=3,
-          activation=tfmri.activations.complex_relu,
-          out_channels=1,
-          dtype=tf.complex64,
-          name=f'reg_{i}')(image)
-      image = tfmri.layers.LeastSquaresGradientDescent(
-          operator=tfmri.linalg.LinearOperatorMRI,
-          dtype=tf.complex64,
-          name=f'lsgd_{i}')(
-              {'x': image, 'b': kspace, **kwargs})
+    for lsgd, reg in zip(self._lsgd_layers, self._reg_layers):
+      image = reg(image)
+      image = lsgd({'image': image, **x})
 
     outputs = {'zfill': zfill, 'image': image}
-    return tf.keras.Model(inputs=inputs, outputs=outputs)
-
-  def parse_inputs(self, inputs):
-    if isinstance(inputs, dict):
-      kspace = inputs[self.kspace_index]
-      args = ()
-      kwargs = {k: inputs[k] for k in inputs.keys() if k != self.kspace_index}
-    elif isinstance(inputs, tuple):
-      kspace = inputs[0]
-      args = inputs[1:]
-      kwargs = {}
-    else:
-      raise TypeError(
-          f"inputs must be a dict or a tuple, but got type: {type(inputs)}")
-    return kspace, args, kwargs
+    return outputs
 
 
 @api_util.export("models.VarNet1D")
