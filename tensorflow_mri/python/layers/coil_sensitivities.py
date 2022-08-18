@@ -14,26 +14,33 @@
 # ==============================================================================
 """*k*-space scaling layer."""
 
-import tensorflow as tf
+import numpy as np
 
 from tensorflow_mri.python.layers import linear_operator_layer
 from tensorflow_mri.python.linalg import linear_operator_mri
-from tensorflow_mri.python.recon import recon_adjoint
-from tensorflow_mri.python.ops import signal_ops
+from tensorflow_mri.python.coils import coil_sensitivities
 
 
 class CoilSensitivityEstimation(linear_operator_layer.LinearOperatorLayer):
   """Coil sensitivity estimation layer.
 
-  This layer scales the *k*-space data so that the adjoint reconstruction has
-  values between 0 and 1.
+  This layer extracts a calibration region and estimates the coil sensitivity
+  maps.
   """
   def __init__(self,
+               calib_window='rect',
+               calib_region=0.1 * np.pi,
+               calib_method='walsh',
+               calib_kwargs=None,
                operator=linear_operator_mri.LinearOperatorMRI,
                kspace_index=None,
                **kwargs):
     """Initializes the layer."""
     super().__init__(operator=operator, input_indices=kspace_index, **kwargs)
+    self.calib_window = calib_window
+    self.calib_region = calib_region
+    self.calib_method = calib_method
+    self.calib_kwargs = calib_kwargs
 
   def call(self, inputs):
     """Applies the layer.
@@ -48,14 +55,16 @@ class CoilSensitivityEstimation(linear_operator_layer.LinearOperatorLayer):
       The scaled k-space data.
     """
     kspace, operator = self.parse_inputs(inputs)
-    filter_fn = lambda x: signal_ops.hamming(calib_region * x)
-    kspace = signal_ops.filter_kspace(kspace,
-                                      trajectory=operator.trajectory,
-                                      filter_fn=filter_fn,
-                                      filter_rank=operator.rank)
-    image = recon_adjoint.recon_adjoint(kspace, operator)
-    return kspace / tf.cast(tf.math.reduce_max(tf.math.abs(image)),
-                            kspace.dtype)
+    return (
+        coil_sensitivities.extract_calibration_data_and_estimate_sensitivities(
+            kspace,
+            operator,
+            calib_window=self.calib_window,
+            calib_region=self.calib_region,
+            calib_method=self.calib_method,
+            calib_kwargs=self.calib_kwargs
+        )
+    )
 
   def get_config(self):
     """Returns the config of the layer.
@@ -63,8 +72,14 @@ class CoilSensitivityEstimation(linear_operator_layer.LinearOperatorLayer):
     Returns:
       A `dict` describing the layer configuration.
     """
-    config = super().get_config()
-    kspace_index = config.pop('input_indices')
-    if kspace_index is not None:
-      kspace_index = kspace_index[0]
-    return config
+    config = {
+        'calib_window': self.calib_window,
+        'calib_region': self.calib_region,
+        'calib_method': self.calib_method,
+        'calib_kwargs': self.calib_kwargs
+    }
+    base_config = super().get_config()
+    kspace_index = base_config.pop('input_indices')
+    config['kspace_index'] = (
+        kspace_index[0] if kspace_index is not None else None)
+    return {**config, **base_config}

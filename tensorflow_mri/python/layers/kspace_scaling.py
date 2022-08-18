@@ -75,8 +75,12 @@ class KSpaceScaling(linear_operator_layer.LinearOperatorLayer):
     Returns:
       A `dict` describing the layer configuration.
     """
-    config = super().get_config()
-    kspace_index = config.pop('input_indices')
-    if kspace_index is not None:
-      kspace_index = kspace_index[0]
-    return config
+    config = {
+        'calib_window': self.calib_window,
+        'calib_region': self.calib_region
+    }
+    base_config = super().get_config()
+    kspace_index = base_config.pop('input_indices')
+    config['kspace_index'] = (
+        kspace_index[0] if kspace_index is not None else None)
+    return {**config, **base_config}

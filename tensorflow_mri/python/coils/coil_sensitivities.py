@@ -22,55 +22,55 @@ import tensorflow as tf
 from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.ops import signal_ops
+from tensorflow_mri.python.recon import recon_adjoint
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 
 
-@api_util.export("coils.custom_sensitivities")
-def coil_sensitivities(kspace,
-                       operator,
-                       calib_filter='rect',
-                       calib_region=None,
-                       method='walsh',
-                       **kwargs):
+@api_util.export("coils.extract_calibration_data_and_estimate_sensitivities")
+def extract_calibration_data_and_estimate_sensitivities(
+    kspace,
+    operator,
+    calib_window='rect',
+    calib_region=0.1 * np.pi,
+    calib_method='walsh',
+    calib_kwargs=None):
+  # For convenience.
   rank = operator.rank
-  calib_region = canonicalize_calib_region(calib_region, rank)
 
   # Low-pass filtering.
-  kspace = signal_ops.filter_kspace(kspace,
-                                    trajectory=operator.trajectory,
-                                    filter_fn=calib_filter,
-                                    filter_rank=rank,
-                                    filter_kwargs=dict(
-                                        cutoff=min(calib_region)
-                                    ))
+  kspace = signal_ops.filter_kspace(
+      kspace,
+      trajectory=operator.trajectory,
+      filter_fn=calib_window,
+      filter_rank=rank,
+      filter_kwargs=dict(
+          cutoff=calib_region
+      ),
+      separable=isinstance(calib_region, (list, tuple)))
 
   # Reconstruct image.
-  inputs = operator.postprocess(
-      operator.transform(
-          operator.preprocess(kspace, adjoint=True),
-          adjoint=True),
-      adjoint=True)
+  calib_data = recon_adjoint.recon_adjoint(kspace, operator)
 
   # ESPIRiT method takes in k-space data, so convert back to k-space in this
   # case.
-  if method == 'espirit':
+  if calib_method == 'espirit':
     axes = list(range(-rank, 0))
     inputs = fft_ops.fftn(inputs, axes=axes, norm='ortho', shift=True)
 
   # Reshape to single batch dimension.
-  batch_shape_static = inputs.shape[:-(rank + 1)]
-  batch_shape = tf.shape(inputs)[:-(rank + 1)]
-  input_shape = tf.shape(inputs)[-(rank + 1):]
-  inputs = tf.reshape(inputs, tf.concat([[-1], input_shape], 0))
+  batch_shape_static = calib_data.shape[:-(rank + 1)]
+  batch_shape = tf.shape(calib_data)[:-(rank + 1)]
+  calib_shape = tf.shape(calib_data)[-(rank + 1):]
+  calib_data = tf.reshape(calib_data, tf.concat([[-1], calib_shape], 0))
 
   # Apply estimation for each element in batch.
   sensitivities = tf.map_fn(
       functools.partial(estimate_coil_sensitivities,
                         coil_axis=-(rank + 1),
-                        method=method,
-                        **kwargs),
-      inputs)
+                        method=calib_method,
+                        **(calib_kwargs or {})),
+      calib_data)
 
   # Restore batch shape.
   output_shape = tf.shape(sensitivities)[1:]
