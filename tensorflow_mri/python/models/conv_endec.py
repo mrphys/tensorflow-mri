@@ -77,6 +77,10 @@ UNET_DOC_TEMPLATE = string.Template(
       `use_dropout` is `True`. Defaults to `'standard'`.
     use_tight_frame: A `boolean`. If `True`, creates a tight frame U-Net as
       described in [2]. Defaults to `False`.
+    use_resize_and_concatenate: A `boolean`. If `True`, the upsampled feature
+      maps are resized (by cropping) to match the shape of the incoming
+      skip connection prior to concatenation. This enables more flexible input
+      shapes. Defaults to `True`.
     **kwargs: Additional keyword arguments to be passed to base class.
 
   References:
