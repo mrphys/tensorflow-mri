@@ -17,6 +17,7 @@
 import tensorflow as tf
 
 from tensorflow_mri.python.layers import convolutional
+from tensorflow_mri.python.layers import padding
 from tensorflow_mri.python.layers import pooling
 from tensorflow_mri.python.layers import reshaping
 from tensorflow_mri.python.layers import signal_layers
@@ -60,6 +61,9 @@ _ND_LAYERS = {
     ('Cropping', 3): tf.keras.layers.Cropping3D,
     ('DepthwiseConv', 1): tf.keras.layers.DepthwiseConv1D,
     ('DepthwiseConv', 2): tf.keras.layers.DepthwiseConv2D,
+    ('DivisorPadding', 1): padding.DivisorPadding1D,
+    ('DivisorPadding', 2): padding.DivisorPadding2D,
+    ('DivisorPadding', 3): padding.DivisorPadding3D,
     ('DWT', 1): signal_layers.DWT1D,
     ('DWT', 2): signal_layers.DWT2D,
     ('DWT', 3): signal_layers.DWT3D,

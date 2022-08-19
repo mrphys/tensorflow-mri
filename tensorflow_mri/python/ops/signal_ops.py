@@ -158,7 +158,7 @@ def separable_window(func):
     perm = tf.concat([[tf.rank(x) - 1], tf.range(0, tf.rank(x) - 1)], 0)
     x = tf.transpose(x, perm)
     # Initialize as 1.0.
-    initializer = tf.constant(1.0, dtype=x.dtype)
+    initializer = tf.ones_like(x[0, ...])
     return tf.foldl(fn, (x, args, kwargs), initializer=initializer)
   return wrapper
 

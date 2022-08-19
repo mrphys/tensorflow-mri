@@ -16,5 +16,6 @@ from tensorflow_mri.python.ops.signal_ops import hann as hann
 from tensorflow_mri.python.ops.signal_ops import hamming as hamming
 from tensorflow_mri.python.ops.signal_ops import atanfilt as atanfilt
 from tensorflow_mri.python.ops.signal_ops import rect as rect
+from tensorflow_mri.python.ops.signal_ops import separable_window as separable_window
 from tensorflow_mri.python.ops.signal_ops import filter_kspace as filter_kspace
 from tensorflow_mri.python.ops.signal_ops import crop_kspace as crop_kspace

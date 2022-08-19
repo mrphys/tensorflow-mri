@@ -2,6 +2,7 @@
 # Do not edit.
 """Parallel imaging operations."""
 
+from tensorflow_mri.python.coils.coil_sensitivities import extract_calibration_data_and_estimate_sensitivities as extract_calibration_data_and_estimate_sensitivities
 from tensorflow_mri.python.coils.coil_sensitivities import estimate_coil_sensitivities as estimate_sensitivities
 from tensorflow_mri.python.ops.coil_ops import combine_coils as combine_coils
 from tensorflow_mri.python.ops.coil_ops import compress_coils as compress_coils

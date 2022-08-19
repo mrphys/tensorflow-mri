@@ -16,6 +16,7 @@
 
 import matplotlib as mpl
 import matplotlib.animation as ani
+import matplotlib.colors as mcol
 import matplotlib.pyplot as plt
 import matplotlib.tight_bbox as tight_bbox
 import numpy as np
@@ -245,7 +246,8 @@ def plot_tiled_image(images,
                      aspect=1.77,  # 16:9
                      grid_shape=None,
                      fig_title=None,
-                     subplot_titles=None):
+                     subplot_titles=None,
+                     show_colorbar=False):
   r"""Plots one or more images in a grid.
 
   Args:
@@ -261,7 +263,9 @@ def plot_tiled_image(images,
     norm: A `matplotlib.colors.Normalize`_. Used to scale scalar data to the
       [0, 1] range before mapping to colors using `cmap`. By default, a linear
       scaling mapping the lowest value to 0 and the highest to 1 is used. This
-      parameter is ignored for RGB(A) data.
+      parameter is ignored for RGB(A) data. Can be set to `'global'`, in which
+      case a global `Normalize` instance is used for all of the images in the
+      tile.
     fig_size: A `tuple` of `float`s. Width and height of the figure in inches.
     dpi: A `float`. The resolution of the figure in dots per inch.
     bg_color: A `color`_. The background color.
@@ -278,6 +282,7 @@ def plot_tiled_image(images,
       grid. If `None`, the grid shape is computed from `aspect`.
     fig_title: A `str`. The title of the figure.
     subplot_titles: A `list` of `str`s. The titles of the subplots.
+    show_colorbar: A `bool`. If `True`, a colorbar is displayed.
 
   Returns:
     A `list` of `matplotlib.image.AxesImage`_ objects.
@@ -303,6 +308,10 @@ def plot_tiled_image(images,
                           figsize=fig_size, dpi=dpi,
                           facecolor=bg_color, layout=layout)
 
+  # Global normalization mode.
+  if norm == 'global':
+    norm = mcol.Normalize(vmin=images.min(), vmax=images.max())
+
   artists = []
   for row, col in np.ndindex(grid_rows, grid_cols):  # For each tile.
     tile_idx = row * grid_cols + col  # Index of current tile.
@@ -325,6 +334,9 @@ def plot_tiled_image(images,
                        animated=True)
     artists.append(artist)
   artists.append(artists)
+
+  if show_colorbar:
+    fig.colorbar(artists[0], ax=axs.ravel().tolist())
 
   if fig_title is not None:
     fig.suptitle(fig_title)

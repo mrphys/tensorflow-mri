@@ -14,8 +14,22 @@
 # ==============================================================================
 """Model utilities."""
 
+import tensorflow as tf
+
 from tensorflow_mri.python.models import conv_blocks
 from tensorflow_mri.python.models import conv_endec
+
+
+class GraphLikeModel(tf.keras.Model):
+  """A model with graph-like structure.
+
+  Adds a method `functional` that returns a functional model with the same
+  structure as the current model. Functional models have some advantages over
+  subclassing as described in
+  https://www.tensorflow.org/guide/keras/functional#when_to_use_the_functional_api.
+  """
+  def functional(self, inputs):
+    return tf.keras.Model(inputs, self.call(inputs))
 
 
 def get_nd_model(name, rank):

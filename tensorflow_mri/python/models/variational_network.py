@@ -27,7 +27,7 @@ from tensorflow_mri.python.util import keras_util
 from tensorflow_mri.python.util import model_util
 
 
-class VarNet(tf.keras.Model):
+class VarNet(model_util.GraphLikeModel):
   def __init__(self,
                rank,
                num_iterations=10,
@@ -37,6 +37,9 @@ class VarNet(tf.keras.Model):
                scale_kspace=True,
                estimate_sensitivities=True,
                view_complex_as_real=False,
+               return_multicoil=False,
+               return_zerofilled=False,
+               return_sensitivities=False,
                kspace_index=None,
                **kwargs):
     kwargs['dtype'] = kwargs.get('dtype') or keras_util.complexx()
@@ -49,6 +52,9 @@ class VarNet(tf.keras.Model):
     self.scale_kspace = scale_kspace
     self.estimate_sensitivities = estimate_sensitivities
     self.view_complex_as_real = view_complex_as_real
+    self.return_zerofilled = return_zerofilled
+    self.return_multicoil = return_multicoil
+    self.return_sensitivities = return_sensitivities
     self.kspace_index = kspace_index
 
     if self.scale_kspace:
@@ -116,7 +122,17 @@ class VarNet(tf.keras.Model):
       image = reg(image)
       image = lsgd({'image': image, **x})
 
-    outputs = {'zfill': zfill, 'image': image}
+    outputs = {'image': image}
+
+    if self.return_zerofilled:
+      outputs['zerofilled'] = zfill
+    if self.return_multicoil:
+      outputs['multicoil'] = (
+          tf.expand_dims(image, -(self.rank + 2)) *
+          tf.expand_dims(x['sensitivities'], -1))
+    if self.return_sensitivities:
+      outputs['sensitivities'] = x['sensitivities']
+
     return outputs
 
 

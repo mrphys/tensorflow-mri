@@ -19,6 +19,7 @@ import string
 
 import tensorflow as tf
 
+from tensorflow_mri.python.layers import concatenate
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import model_util  # pylint: disable=cyclic-import
@@ -116,6 +117,7 @@ class UNet(tf.keras.Model):
                dropout_rate=0.3,
                dropout_type='standard',
                use_tight_frame=False,
+               use_resize_and_concatenate=True,
                **kwargs):
     """Creates a UNet model."""
     super().__init__(**kwargs)
@@ -144,6 +146,7 @@ class UNet(tf.keras.Model):
     self._dropout_type = check_util.validate_enum(
         dropout_type, {'standard', 'spatial'}, 'dropout_type')
     self._use_tight_frame = use_tight_frame
+    self._use_resize_and_concatenate = use_resize_and_concatenate
     self._dwt_kwargs = {}
     self._dwt_kwargs['format_dict'] = False
     self._scales = len(filters)
@@ -206,6 +209,12 @@ class UNet(tf.keras.Model):
           dtype=self.dtype)
     upsamp_layer = layer_util.get_nd_layer(upsamp_name, self._rank)
 
+    # Configure concatenation layer.
+    if self._use_resize_and_concatenate:
+      concat_layer = concatenate.ResizeAndConcatenate
+    else:
+      concat_layer = tf.keras.layers.Concatenate
+
     if tf.keras.backend.image_data_format() == 'channels_last':
       self._channel_axis = -1
     else:
@@ -237,8 +246,7 @@ class UNet(tf.keras.Model):
           # components for 3D.
           self._detail_upsamps.append([upsamp_layer(**upsamp_config)
                                        for _ in range(2 ** self._rank - 1)])
-        self._concats.append(
-            tf.keras.layers.Concatenate(axis=self._channel_axis))
+        self._concats.append(concat_layer(axis=self._channel_axis))
         self._dec_blocks.append(block_layer(**block_config))
 
     # Configure output block.
@@ -284,7 +292,11 @@ class UNet(tf.keras.Model):
     # Decoder.
     for scale in range(self._scales - 2, -1, -1):
       x = self._upsamps[scale](x)
-      concat_inputs = [x, cache[scale]]
+      if self._use_resize_and_concatenate:
+        concat_inputs = [cache[scale], x]
+      else:
+        # For backwards compatibility.
+        concat_inputs = [x, cache[scale]]
       if self._use_tight_frame:
         # Upsample detail components too.
         d = [up(d) for d, up in zip(
@@ -331,7 +343,8 @@ class UNet(tf.keras.Model):
         'use_dropout': self._use_dropout,
         'dropout_rate': self._dropout_rate,
         'dropout_type': self._dropout_type,
-        'use_tight_frame': self._use_tight_frame
+        'use_tight_frame': self._use_tight_frame,
+        'use_resize_and_concatenate': self._use_resize_and_concatenate
     }
     base_config = super().get_config()
     return {**base_config, **config}
@@ -342,6 +355,8 @@ class UNet(tf.keras.Model):
       # Old config format. Convert to new format.
       config['filters'] = [config.pop('base_filters') * (2 ** scale)
                            for scale in config.pop('scales')]
+    if 'use_resize_and_concatenate' not in config:
+      config['use_resize_and_concatenate'] = False
     return super().from_config(config)
 
 
