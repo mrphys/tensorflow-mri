@@ -146,8 +146,10 @@ class TensorBoardImages(tf.keras.callbacks.Callback):
       if len(images) >= self.max_images:
         break
 
-    # Stack all the images.
-    images = tf.stack(images)
+    # Stack all the images. Converting to tensor is required to avoid unexpected
+    # casting (e.g., without it, a list of NumPy arrays of uint8 inputs returns
+    # an int32 tensor).
+    images = tf.stack([tf.convert_to_tensor(image) for image in images])
 
     # Keep only selected slice, if requested.
     if isinstance(self.volume_mode, int):
