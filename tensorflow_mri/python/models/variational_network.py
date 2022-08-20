@@ -24,6 +24,7 @@ from tensorflow_mri.python.layers import kspace_scaling
 from tensorflow_mri.python.layers import recon_adjoint
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import keras_util
+from tensorflow_mri.python.util import layer_util
 from tensorflow_mri.python.util import model_util
 
 
@@ -34,6 +35,10 @@ class VarNet(model_util.GraphLikeModel):
                calib_region=0.1 * np.pi,
                reg_network='UNet',
                reg_network_kwargs=None,
+               sens_network='UNet',
+               sens_network_kwargs=None,
+               compress_coils=True,
+               coil_compression_kwargs=None,
                scale_kspace=True,
                estimate_sensitivities=True,
                view_complex_as_real=False,
@@ -49,6 +54,10 @@ class VarNet(model_util.GraphLikeModel):
     self.calib_region = calib_region
     self.reg_network = reg_network
     self.reg_network_kwargs = reg_network_kwargs or {}
+    self.sens_network = sens_network
+    self.sens_network_kwargs = sens_network_kwargs or {}
+    self.compress_coils = compress_coils
+    self.coil_compression_kwargs = coil_compression_kwargs or {}
     self.scale_kspace = scale_kspace
     self.estimate_sensitivities = estimate_sensitivities
     self.view_complex_as_real = view_complex_as_real
@@ -56,6 +65,15 @@ class VarNet(model_util.GraphLikeModel):
     self.return_multicoil = return_multicoil
     self.return_sensitivities = return_sensitivities
     self.kspace_index = kspace_index
+
+    if self.compress_coils:
+      coil_compression_kwargs = _get_default_coil_compression_kwargs()
+      coil_compression_kwargs.update(self.coil_compression_kwargs)
+      self._coil_compression_layer = layer_util.get_nd_layer(
+          'CoilCompression', self.rank)(
+              calib_region=self.calib_region,
+              coil_compression_kwargs=coil_compression_kwargs,
+              kspace_index=self.kspace_index)
 
     if self.scale_kspace:
       self._kspace_scaling_layer = kspace_scaling.KSpaceScaling(
@@ -65,11 +83,12 @@ class VarNet(model_util.GraphLikeModel):
       self._kspace_scaling_layer = None
 
     if self.estimate_sensitivities:
-      self._coil_sensitivities_layer = (
-          coil_sensitivities.CoilSensitivityEstimation(
+      self._coil_sensitivities_layer = layer_util.get_nd_layer(
+          'CoilSensitivityEstimation', self.rank)(
               calib_region=self.calib_region,
+              sens_network=self.sens_network,
+              sens_network_kwargs=self.sens_network_kwargs,
               kspace_index=self.kspace_index)
-      )
 
     self._recon_adjoint_layer = recon_adjoint.ReconAdjoint(
         kspace_index=self.kspace_index)
@@ -79,7 +98,7 @@ class VarNet(model_util.GraphLikeModel):
 
     reg_network_class = model_util.get_nd_model(self.reg_network, rank)
     reg_network_kwargs = dict(
-        filters=[32, 64, 128, 256],
+        filters=[32, 64, 128],
         kernel_size=3,
         activation=complex_activations.complex_relu,
         out_channels=2 if self.view_complex_as_real else 1,
@@ -109,6 +128,9 @@ class VarNet(model_util.GraphLikeModel):
         x['image_shape'] = tf.ensure_shape(
             image_shape[0], image_shape.shape[1:])
 
+    if self.compress_coils:
+      x['kspace'] = self._coil_compression_layer(x)
+
     if self.scale_kspace:
       x['kspace'] = self._kspace_scaling_layer(x)
 
@@ -136,13 +158,6 @@ class VarNet(model_util.GraphLikeModel):
     return outputs
 
 
-@api_util.export("models.VarNet1D")
-@tf.keras.utils.register_keras_serializable(package='MRI')
-class VarNet1D(VarNet):
-  def __init__(self, *args, **kwargs):
-    super().__init__(1, *args, **kwargs)
-
-
 @api_util.export("models.VarNet2D")
 @tf.keras.utils.register_keras_serializable(package='MRI')
 class VarNet2D(VarNet):
@@ -155,3 +170,9 @@ class VarNet2D(VarNet):
 class VarNet3D(VarNet):
   def __init__(self, *args, **kwargs):
     super().__init__(3, *args, **kwargs)
+
+
+def _get_default_coil_compression_kwargs():
+  return {
+      'out_coils': 12
+  }

@@ -16,6 +16,8 @@
 
 import tensorflow as tf
 
+from tensorflow_mri.python.layers import coil_compression
+from tensorflow_mri.python.layers import coil_sensitivities
 from tensorflow_mri.python.layers import convolutional
 from tensorflow_mri.python.layers import padding
 from tensorflow_mri.python.layers import pooling
@@ -47,6 +49,10 @@ _ND_LAYERS = {
     ('AveragePooling', 1): pooling.AveragePooling1D,
     ('AveragePooling', 2): pooling.AveragePooling2D,
     ('AveragePooling', 3): pooling.AveragePooling3D,
+    ('CoilCompression', 2): coil_compression.CoilCompression2D,
+    ('CoilCompression', 3): coil_compression.CoilCompression3D,
+    ('CoilSensitivityEstimation', 2): coil_sensitivities.CoilSensitivityEstimation2D,
+    ('CoilSensitivityEstimation', 3): coil_sensitivities.CoilSensitivityEstimation3D,
     ('Conv', 1): convolutional.Conv1D,
     ('Conv', 2): convolutional.Conv2D,
     ('Conv', 3): convolutional.Conv3D,

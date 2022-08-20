@@ -12,7 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Operators for coil arrays."""
-
-from tensorflow_mri.python.coils import coil_compression
-from tensorflow_mri.python.coils import coil_sensitivities
+"""Tests for coil compression."""

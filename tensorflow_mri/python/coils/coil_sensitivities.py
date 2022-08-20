@@ -27,36 +27,39 @@ from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 
 
-@api_util.export("coils.extract_calibration_data_and_estimate_sensitivities")
-def extract_calibration_data_and_estimate_sensitivities(
+@api_util.export("coils.estimate_sensitivities_with_calibration_data")
+def estimate_sensitivities_with_calibration_data(
     kspace,
     operator,
+    calib_data=None,
     calib_window='rect',
     calib_region=0.1 * np.pi,
-    calib_method='walsh',
-    calib_kwargs=None):
+    method='walsh',
+    **kwargs):
   # For convenience.
   rank = operator.rank
 
-  # Low-pass filtering.
-  kspace = signal_ops.filter_kspace(
-      kspace,
-      trajectory=operator.trajectory,
-      filter_fn=calib_window,
-      filter_rank=rank,
-      filter_kwargs=dict(
-          cutoff=calib_region
-      ),
-      separable=isinstance(calib_region, (list, tuple)))
+  if calib_data is None:
+    # Calibration data was not provided. Get calibration data by low-pass
+    # filtering the input k-space.
+    calib_data = signal_ops.filter_kspace(
+        kspace,
+        trajectory=operator.trajectory,
+        filter_fn=calib_window,
+        filter_rank=rank,
+        filter_kwargs=dict(
+            cutoff=calib_region
+        ),
+        separable=isinstance(calib_region, (list, tuple)))
 
   # Reconstruct image.
-  calib_data = recon_adjoint.recon_adjoint(kspace, operator)
+  calib_data = recon_adjoint.recon_adjoint(calib_data, operator)
 
   # ESPIRiT method takes in k-space data, so convert back to k-space in this
   # case.
-  if calib_method == 'espirit':
+  if method == 'espirit':
     axes = list(range(-rank, 0))
-    inputs = fft_ops.fftn(inputs, axes=axes, norm='ortho', shift=True)
+    calib_data = fft_ops.fftn(calib_data, axes=axes, norm='ortho', shift=True)
 
   # Reshape to single batch dimension.
   batch_shape_static = calib_data.shape[:-(rank + 1)]
@@ -68,8 +71,8 @@ def extract_calibration_data_and_estimate_sensitivities(
   sensitivities = tf.map_fn(
       functools.partial(estimate_coil_sensitivities,
                         coil_axis=-(rank + 1),
-                        method=calib_method,
-                        **(calib_kwargs or {})),
+                        method=method,
+                        **kwargs),
       calib_data)
 
   # Restore batch shape.
@@ -81,22 +84,6 @@ def extract_calibration_data_and_estimate_sensitivities(
       sensitivities, batch_shape_static.concatenate(output_shape_static))
 
   return sensitivities
-
-
-def canonicalize_calib_region(calib_region, rank):
-  if isinstance(calib_region, float):
-    calib_region = (calib_region,) * rank
-  if isinstance(calib_region, list):
-    calib_region = tuple(calib_region)
-  if not isinstance(calib_region, tuple):
-    raise TypeError(
-        f"calib_region must be a float or a tuple, "
-        f"but got {type(calib_region)}")
-  if len(calib_region) != rank:
-    raise ValueError(
-        f"calib_region has length {len(calib_region)}, "
-        f"but expected length {rank}")
-  return calib_region
 
 
 @api_util.export("coils.estimate_sensitivities")

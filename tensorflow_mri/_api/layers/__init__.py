@@ -8,6 +8,8 @@ from tensorflow_mri.python.layers.convolutional import Conv2D as Conv2D
 from tensorflow_mri.python.layers.convolutional import Conv2D as Convolution2D
 from tensorflow_mri.python.layers.convolutional import Conv3D as Conv3D
 from tensorflow_mri.python.layers.convolutional import Conv3D as Convolution3D
+from tensorflow_mri.python.layers.coil_sensitivities import CoilSensitivityEstimation2D as CoilSensitivityEstimation2D
+from tensorflow_mri.python.layers.coil_sensitivities import CoilSensitivityEstimation3D as CoilSensitivityEstimation3D
 from tensorflow_mri.python.layers.conv_blocks import ConvBlock as ConvBlock
 from tensorflow_mri.python.layers.conv_endec import UNet as UNet
 from tensorflow_mri.python.layers.data_consistency import LeastSquaresGradientDescent as LeastSquaresGradientDescent
@@ -34,3 +36,5 @@ from tensorflow_mri.python.layers.signal_layers import DWT3D as DWT3D
 from tensorflow_mri.python.layers.signal_layers import IDWT1D as IDWT1D
 from tensorflow_mri.python.layers.signal_layers import IDWT2D as IDWT2D
 from tensorflow_mri.python.layers.signal_layers import IDWT3D as IDWT3D
+from tensorflow_mri.python.layers.coil_compression import CoilCompression2D as CoilCompression2D
+from tensorflow_mri.python.layers.coil_compression import CoilCompression3D as CoilCompression3D

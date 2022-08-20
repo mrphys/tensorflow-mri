@@ -12,33 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Coil sensitivities layers."""
+"""Coil compression layers."""
 
 import numpy as np
 import tensorflow as tf
 
-from tensorflow_mri.python.activations import complex_activations
-from tensorflow_mri.python.coils import coil_sensitivities
+from tensorflow_mri.python.coils import coil_compression
 from tensorflow_mri.python.layers import linear_operator_layer
 from tensorflow_mri.python.linalg import linear_operator_mri
 from tensorflow_mri.python.util import api_util
-from tensorflow_mri.python.util import model_util
 
 
-class CoilSensitivityEstimation(linear_operator_layer.LinearOperatorLayer):
-  """Coil sensitivity estimation layer.
+class CoilCompression(linear_operator_layer.LinearOperatorLayer):
+  """Coil compression layer.
 
-  This layer extracts a calibration region and estimates the coil sensitivity
-  maps.
+  This layer extracts a calibration region and compresses the coils.
   """
   def __init__(self,
                rank,
                calib_window='rect',
                calib_region=0.1 * np.pi,
-               calib_method='walsh',
-               calib_kwargs=None,
-               sens_network='UNet',
-               sens_network_kwargs=None,
+               coil_compression_method='svd',
+               coil_compression_kwargs=None,
                operator=linear_operator_mri.LinearOperatorMRI,
                kspace_index=None,
                **kwargs):
@@ -47,19 +42,8 @@ class CoilSensitivityEstimation(linear_operator_layer.LinearOperatorLayer):
     self.rank = rank
     self.calib_window = calib_window
     self.calib_region = calib_region
-    self.calib_method = calib_method
-    self.calib_kwargs = calib_kwargs or {}
-    self.sens_network = sens_network
-    self.sens_network_kwargs = sens_network_kwargs or {}
-
-    sens_network_kwargs = _default_sens_network_kwargs(self.sens_network)
-    sens_network_kwargs.update(self.sens_network_kwargs)
-
-    if self.sens_network is not None:
-      sens_network_class = model_util.get_nd_model(self.sens_network, rank)
-      sens_network_kwargs = sens_network_kwargs.copy()
-      self._sens_network_layer = tf.keras.layers.TimeDistributed(
-          sens_network_class(**sens_network_kwargs))
+    self.coil_compression_method = coil_compression_method
+    self.coil_compression_kwargs = coil_compression_kwargs or {}
 
   def call(self, inputs):
     """Applies the layer.
@@ -74,21 +58,13 @@ class CoilSensitivityEstimation(linear_operator_layer.LinearOperatorLayer):
       The scaled k-space data.
     """
     kspace, operator = self.parse_inputs(inputs)
-    sensitivities = (
-        coil_sensitivities.estimate_sensitivities_with_calibration_data(
-            kspace,
-            operator,
-            calib_window=self.calib_window,
-            calib_region=self.calib_region,
-            method=self.calib_method,
-            **self.calib_kwargs
-        )
-    )
-    if self.sens_network is not None:
-      sensitivities = tf.expand_dims(sensitivities, axis=-1)
-      sensitivities = self._sens_network_layer(sensitivities)
-      sensitivities = tf.squeeze(sensitivities, axis=-1)
-    return sensitivities
+    return coil_compression.compress_coils_with_calibration_data(
+        kspace,
+        operator,
+        calib_window=self.calib_window,
+        calib_region=self.calib_region,
+        method=self.coil_compression_method,
+        **self.coil_compression_kwargs)
 
   def get_config(self):
     """Returns the config of the layer.
@@ -99,10 +75,8 @@ class CoilSensitivityEstimation(linear_operator_layer.LinearOperatorLayer):
     config = {
         'calib_window': self.calib_window,
         'calib_region': self.calib_region,
-        'calib_method': self.calib_method,
-        'calib_kwargs': self.calib_kwargs,
-        'sens_network': self.sens_network,
-        'sens_network_kwargs': self.sens_network_kwargs
+        'coil_compression_method': self.coil_compression_method,
+        'coil_compression_kwargs': self.coil_compression_kwargs
     }
     base_config = super().get_config()
     kspace_index = base_config.pop('input_indices')
@@ -111,27 +85,15 @@ class CoilSensitivityEstimation(linear_operator_layer.LinearOperatorLayer):
     return {**config, **base_config}
 
 
-@api_util.export("layers.CoilSensitivityEstimation2D")
+@api_util.export("layers.CoilCompression2D")
 @tf.keras.utils.register_keras_serializable(package='MRI')
-class CoilSensitivityEstimation2D(CoilSensitivityEstimation):
+class CoilCompression2D(CoilCompression):
   def __init__(self, *args, **kwargs):
     super().__init__(2, *args, **kwargs)
 
 
-@api_util.export("layers.CoilSensitivityEstimation3D")
+@api_util.export("layers.CoilCompression3D")
 @tf.keras.utils.register_keras_serializable(package='MRI')
-class CoilSensitivityEstimation3D(CoilSensitivityEstimation):
+class CoilCompression3D(CoilCompression):
   def __init__(self, *args, **kwargs):
     super().__init__(3, *args, **kwargs)
-
-
-def _default_sens_network_kwargs(name):
-  return {
-      'UNet': dict(
-          filters=[32, 64, 128],
-          kernel_size=3,
-          activation=complex_activations.complex_relu,
-          out_channels=1,
-          dtype=tf.complex64
-      )
-  }.get(name, {})
