@@ -49,42 +49,33 @@ class LinearOperatorLayer(tf.keras.layers.Layer):
     method. It returns the inputs and an instance of the linear operator to be
     used.
     """
-    if isinstance(inputs, tuple):
-      # Parse inputs if passed a tuple.
-      if self._input_indices is None:
-        input_indices = (0,)
-      else:
-        input_indices = self._input_indices
-      main = tuple(inputs[i] for i in input_indices)
-      args = tuple(inputs[i] for i in range(len(inputs))
-                   if i not in input_indices)
-      kwargs = {}
+    if self._operator_instance is None:
+      # operator is a class.
+      if not isinstance(inputs, dict):
+        raise ValueError(
+            f"Layer {self.name} expected a mapping. "
+            f"Received: {inputs}")
 
-    elif isinstance(inputs, dict):
-      # Parse inputs if passed a dict.
       if self._input_indices is None:
         input_indices = (tuple(inputs.keys())[0],)
       else:
         input_indices = self._input_indices
+
       main = tuple(inputs[i] for i in input_indices)
-      args = ()
       kwargs = {k: v for k, v in inputs.items() if k not in input_indices}
 
-    # Unpack single input.
-    if len(main) == 1:
-      main = main[0]
+      # Unpack single input.
+      if len(main) == 1:
+        main = main[0]
 
-    # Create operator.
-    if self._operator_instance is None:
-      # No instance was provided, so create one.
-      operator = self._operator_class(*args, **kwargs)
+      # Instantiate the operator.
+      operator = self._operator_class(**kwargs)
+
     else:
-      # Instance was provided, so use it.
-      if args or kwargs:
-        raise ValueError(
-            "`args` and `kwargs` cannot be used when an instance of "
-            "`tfmri.linalg.LinearOperator` was provided. Check your inputs.")
+      # Inputs.
+      main = inputs
       operator = self._operator_instance
+
     return main, operator
 
   def get_config(self):

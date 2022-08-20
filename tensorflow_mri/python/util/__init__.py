@@ -17,6 +17,7 @@
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import deprecation
+from tensorflow_mri.python.util import doc_util
 from tensorflow_mri.python.util import import_util
 from tensorflow_mri.python.util import io_util
 from tensorflow_mri.python.util import keras_util
