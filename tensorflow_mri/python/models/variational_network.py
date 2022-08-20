@@ -76,11 +76,10 @@ class VarNet(model_util.GraphLikeModel):
               kspace_index=self.kspace_index)
 
     if self.scale_kspace:
-      self._kspace_scaling_layer = kspace_scaling.KSpaceScaling(
-          calib_region=self.calib_region,
-          kspace_index=self.kspace_index)
-    else:
-      self._kspace_scaling_layer = None
+      self._kspace_scaling_layer = layer_util.get_nd_layer(
+          'KSpaceScaling', self.rank)(
+              calib_region=self.calib_region,
+              kspace_index=self.kspace_index)
 
     if self.estimate_sensitivities:
       self._coil_sensitivities_layer = layer_util.get_nd_layer(
@@ -90,8 +89,9 @@ class VarNet(model_util.GraphLikeModel):
               sens_network_kwargs=self.sens_network_kwargs,
               kspace_index=self.kspace_index)
 
-    self._recon_adjoint_layer = recon_adjoint.ReconAdjoint(
-        kspace_index=self.kspace_index)
+    self._recon_adjoint_layer = layer_util.get_nd_layer(
+        'ReconAdjoint', self.rank)(
+            kspace_index=self.kspace_index)
 
     lsgd_layer_class = data_consistency.LeastSquaresGradientDescent
     lsgd_layers_kwargs = {}
@@ -113,7 +113,7 @@ class VarNet(model_util.GraphLikeModel):
         for i in range(self.num_iterations)]
 
   def call(self, inputs):
-    x = inputs
+    x = {k: v for k, v in inputs.items()}
 
     if 'image_shape' in x:
       image_shape = x['image_shape']

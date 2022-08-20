@@ -23,14 +23,13 @@ from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import keras_util
 
 
-@api_util.export("layers.ReconAdjoint")
-@tf.keras.utils.register_keras_serializable(package="MRI")
 class ReconAdjoint(linear_operator_layer.LinearOperatorLayer):
   """Adjoint reconstruction layer.
 
   This layer reconstructs a signal using the adjoint of the system operator.
   """
   def __init__(self,
+               rank,
                channel_dimension=True,
                operator=linear_operator_mri.LinearOperatorMRI,
                kspace_index=None,
@@ -38,6 +37,7 @@ class ReconAdjoint(linear_operator_layer.LinearOperatorLayer):
     """Initializes the layer."""
     kwargs['dtype'] = kwargs.get('dtype') or keras_util.complexx()
     super().__init__(operator=operator, input_indices=kspace_index, **kwargs)
+    self.rank = rank
     self.channel_dimension = channel_dimension
 
   def call(self, inputs):
@@ -72,3 +72,17 @@ class ReconAdjoint(linear_operator_layer.LinearOperatorLayer):
     config['kspace_index'] = (
         kspace_index[0] if kspace_index is not None else None)
     return {**config, **base_config}
+
+
+@api_util.export("layers.ReconAdjoint2D")
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class ReconAdjoint2D(ReconAdjoint):
+  def __init__(self, *args, **kwargs):
+    super().__init__(2, *args, **kwargs)
+
+
+@api_util.export("layers.ReconAdjoint3D")
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class ReconAdjoint3D(ReconAdjoint):
+  def __init__(self, *args, **kwargs):
+    super().__init__(3, *args, **kwargs)

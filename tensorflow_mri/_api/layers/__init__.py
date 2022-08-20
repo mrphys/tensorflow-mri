@@ -13,7 +13,8 @@ from tensorflow_mri.python.layers.coil_sensitivities import CoilSensitivityEstim
 from tensorflow_mri.python.layers.conv_blocks import ConvBlock as ConvBlock
 from tensorflow_mri.python.layers.conv_endec import UNet as UNet
 from tensorflow_mri.python.layers.data_consistency import LeastSquaresGradientDescent as LeastSquaresGradientDescent
-from tensorflow_mri.python.layers.kspace_scaling import KSpaceScaling as KSpaceScaling
+from tensorflow_mri.python.layers.kspace_scaling import KSpaceScaling2D as KSpaceScaling2D
+from tensorflow_mri.python.layers.kspace_scaling import KSpaceScaling3D as KSpaceScaling3D
 from tensorflow_mri.python.layers.pooling import AveragePooling1D as AveragePooling1D
 from tensorflow_mri.python.layers.pooling import AveragePooling1D as AvgPool1D
 from tensorflow_mri.python.layers.pooling import AveragePooling2D as AveragePooling2D
@@ -26,7 +27,8 @@ from tensorflow_mri.python.layers.pooling import MaxPooling2D as MaxPooling2D
 from tensorflow_mri.python.layers.pooling import MaxPooling2D as MaxPool2D
 from tensorflow_mri.python.layers.pooling import MaxPooling3D as MaxPooling3D
 from tensorflow_mri.python.layers.pooling import MaxPooling3D as MaxPool3D
-from tensorflow_mri.python.layers.recon_adjoint import ReconAdjoint as ReconAdjoint
+from tensorflow_mri.python.layers.recon_adjoint import ReconAdjoint2D as ReconAdjoint2D
+from tensorflow_mri.python.layers.recon_adjoint import ReconAdjoint3D as ReconAdjoint3D
 from tensorflow_mri.python.layers.reshaping import UpSampling1D as UpSampling1D
 from tensorflow_mri.python.layers.reshaping import UpSampling2D as UpSampling2D
 from tensorflow_mri.python.layers.reshaping import UpSampling3D as UpSampling3D

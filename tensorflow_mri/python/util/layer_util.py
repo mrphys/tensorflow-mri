@@ -19,8 +19,10 @@ import tensorflow as tf
 from tensorflow_mri.python.layers import coil_compression
 from tensorflow_mri.python.layers import coil_sensitivities
 from tensorflow_mri.python.layers import convolutional
+from tensorflow_mri.python.layers import kspace_scaling
 from tensorflow_mri.python.layers import padding
 from tensorflow_mri.python.layers import pooling
+from tensorflow_mri.python.layers import recon_adjoint
 from tensorflow_mri.python.layers import reshaping
 from tensorflow_mri.python.layers import signal_layers
 
@@ -82,11 +84,15 @@ _ND_LAYERS = {
     ('IDWT', 1): signal_layers.IDWT1D,
     ('IDWT', 2): signal_layers.IDWT2D,
     ('IDWT', 3): signal_layers.IDWT3D,
+    ('KSpaceScaling', 2): kspace_scaling.KSpaceScaling2D,
+    ('KSpaceScaling', 3): kspace_scaling.KSpaceScaling3D,
     ('LocallyConnected', 1): tf.keras.layers.LocallyConnected1D,
     ('LocallyConnected', 2): tf.keras.layers.LocallyConnected2D,
     ('MaxPool', 1): pooling.MaxPooling1D,
     ('MaxPool', 2): pooling.MaxPooling2D,
     ('MaxPool', 3): pooling.MaxPooling3D,
+    ('ReconAdjoint', 2): recon_adjoint.ReconAdjoint2D,
+    ('ReconAdjoint', 3): recon_adjoint.ReconAdjoint3D,
     ('SeparableConv', 1): tf.keras.layers.SeparableConv1D,
     ('SeparableConv', 2): tf.keras.layers.SeparableConv2D,
     ('SpatialDropout', 1): tf.keras.layers.SpatialDropout1D,

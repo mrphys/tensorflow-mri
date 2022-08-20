@@ -25,8 +25,6 @@ from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import keras_util
 
 
-@api_util.export("layers.KSpaceScaling")
-@tf.keras.utils.register_keras_serializable(package="MRI")
 class KSpaceScaling(linear_operator_layer.LinearOperatorLayer):
   """K-space scaling layer.
 
@@ -34,6 +32,7 @@ class KSpaceScaling(linear_operator_layer.LinearOperatorLayer):
   magnitude values in the approximate `[0, 1]` range.
   """
   def __init__(self,
+               rank,
                calib_window='rect',
                calib_region=0.1 * np.pi,
                operator=linear_operator_mri.LinearOperatorMRI,
@@ -44,6 +43,7 @@ class KSpaceScaling(linear_operator_layer.LinearOperatorLayer):
     super().__init__(operator=operator,
                      input_indices=kspace_index,
                      **kwargs)
+    self.rank = rank
     self.calib_window = calib_window
     self.calib_region = calib_region
 
@@ -88,3 +88,17 @@ class KSpaceScaling(linear_operator_layer.LinearOperatorLayer):
     config['kspace_index'] = (
         kspace_index[0] if kspace_index is not None else None)
     return {**config, **base_config}
+
+
+@api_util.export("layers.KSpaceScaling2D")
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class KSpaceScaling2D(KSpaceScaling):
+  def __init__(self, *args, **kwargs):
+    super().__init__(2, *args, **kwargs)
+
+
+@api_util.export("layers.KSpaceScaling3D")
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class KSpaceScaling3D(KSpaceScaling):
+  def __init__(self, *args, **kwargs):
+    super().__init__(3, *args, **kwargs)

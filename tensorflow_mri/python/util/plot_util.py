@@ -125,7 +125,7 @@ def plot_tiled_image_sequence(images,
                               layout=None,
                               bbox_inches=None,
                               pad_inches=0.1,
-                              aspect=1.77,  # 16:9
+                              aspect=None,
                               grid_shape=None,
                               fig_title=None,
                               subplot_titles=None):
@@ -157,8 +157,9 @@ def plot_tiled_image_sequence(images,
       try to figure out the tight bbox of the figure.
     pad_inches: A `float`. Amount of padding around the figure when bbox_inches
       is `'tight'`. Defaults to 0.1.
-    aspect: A `float`. The desired aspect ratio of the overall figure. Ignored
-      if `grid_shape` is specified.
+    aspect: A `float`. The desired aspect ratio of the overall figure. If
+      `None`, defaults to the aspect ratio of `fig_size`. Ignored if
+      `grid_shape` is specified.
     grid_shape: A `tuple` of `float`s. The number of rows and columns in the
       grid. If `None`, the grid shape is computed from `aspect`.
     fig_title: A `str`. The title of the figure.
@@ -176,6 +177,12 @@ def plot_tiled_image_sequence(images,
   """
   images = _preprocess_image(images, part=part, expected_ndim=(4, 5))
   num_tiles, num_frames, image_rows, image_cols = images.shape[:4]
+
+  if fig_size is None:
+    fig_size = mpl.rcParams['figure.figsize']
+
+  if aspect is None:
+    aspect = fig_size[0] / fig_size[1]
 
   # Compute the number of rows and cols for tile.
   if grid_shape is not None:
@@ -243,7 +250,7 @@ def plot_tiled_image(images,
                      layout=None,
                      bbox_inches=None,
                      pad_inches=0.1,
-                     aspect=1.77,  # 16:9
+                     aspect=None,
                      grid_shape=None,
                      fig_title=None,
                      subplot_titles=None,
@@ -276,8 +283,9 @@ def plot_tiled_image(images,
       try to figure out the tight bbox of the figure.
     pad_inches: A `float`. Amount of padding around the figure when bbox_inches
       is `'tight'`. Defaults to 0.1.
-    aspect: A `float`. The desired aspect ratio of the overall figure. Ignored
-      if `grid_shape` is specified.
+    aspect: A `float`. The desired aspect ratio of the overall figure. If
+      `None`, defaults to the aspect ratio of `fig_size`. Ignored if
+      `grid_shape` is specified.
     grid_shape: A `tuple` of `float`s. The number of rows and columns in the
       grid. If `None`, the grid shape is computed from `aspect`.
     fig_title: A `str`. The title of the figure.
@@ -296,6 +304,12 @@ def plot_tiled_image(images,
   """
   images = _preprocess_image(images, part=part, expected_ndim=(3, 4))
   num_tiles, image_rows, image_cols = images.shape[:3]
+
+  if fig_size is None:
+    fig_size = mpl.rcParams['figure.figsize']
+
+  if aspect is None:
+    aspect = fig_size[0] / fig_size[1]
 
   # Compute the number of rows and cols for tile.
   if grid_shape is not None:
