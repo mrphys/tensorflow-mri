@@ -193,6 +193,183 @@ def random_sampling_mask(shape, density=1.0, seed=None, rng=None, name=None):
     return tf.cast(mask, tf.bool)
 
 
+@api_util.export("sampling.central_mask")
+def central_mask(shape, center_size, name=None):
+  """Returns a central sampling mask.
+
+  This function returns a boolean tensor of zeros with a central region of ones.
+
+  .. tip::
+    Use this function to extract the calibration region from a Cartesian
+    *k*-space.
+
+  .. tip::
+    In MRI, one of the spatial frequency dimensions (readout dimension) is
+    typically fully sampled. In this case, you might want to create a mask that
+    has one less dimension than the corresponding *k*-space (e.g., 1D mask for
+    2D images or 2D mask for 3D images).
+
+  .. note::
+    The central region is always evenly shaped for even mask dimensions and
+    oddly shaped for odd mask dimensions. This avoids phase artefacts when
+    using the resulting mask to sample the frequency domain.
+
+  Example:
+    >>> import tensorflow as tfmri
+    >>> mask = tfmri.sampling.central_mask([8], [4])
+    >>> mask.numpy()
+    array([False, False, True, True, True, True, False, False])
+
+  Args:
+    shape: A 1D integer `tf.Tensor`. The shape of the output mask.
+    center_size: A 1D `tf.Tensor` of integer or floating point dtype. The size
+      of the center region. If `center_size` has integer dtype, its i-th value
+      must be in the range `[0, shape[i]]` and will be interpreted as the number
+      of samples in the center region along axis `i`. If `center_size` has
+      floating point dtype, its i-th value must be in the range `[0, 1]` and
+      will be interpreted as the fraction of samples in the center region along
+      axis `i`.
+    name: A `str`. A name for this op.
+
+  Returns:
+    A boolean `tf.Tensor` containing the sampling mask.
+
+  Raises:
+    TypeError: If `center_size` is not of integer or floating point dtype.
+  """
+  with tf.name_scope(name or 'central_mask'):
+    shape = tf.convert_to_tensor(shape, dtype=tf.int32)
+    center_size = tf.convert_to_tensor(center_size)
+
+    if not center_size.dtype.is_integer and not center_size.dtype.is_floating:
+      raise TypeError(
+          "`center_size` must be of integer of floating point dtype.")
+
+    if center_size.dtype.is_floating:
+      # Input is floating point, interpret as fraction and convert to integer.
+      center_size = center_size * tf.cast(shape, center_size.dtype)
+      center_size = tf.cast(center_size + 0.5, tf.int32)
+
+    # Make sure that `center_size` is even for even shape and odd for odd shape.
+    center_size = (center_size // 2) * 2 + shape % 2
+    # Make sure that `center_size` is not bigger than the shape.
+    center_size = tf.math.minimum(center_size, shape)
+
+    # Create mask by first creating a central region of ones, and then padding
+    # with zeros to the specified shape.
+    mask = tf.ones(center_size, dtype=tf.bool)
+    paddings = tf.stack([(shape - center_size) // 2,
+                         (shape - center_size) // 2], axis=-1)
+    mask = tf.pad(mask, paddings, constant_values=False)
+    return mask
+
+
+@api_util.export("sampling.biphasic_mask")
+def biphasic_mask(shape,
+                  acceleration,
+                  central_size,
+                  mask_type='equispaced',
+                  offset=0,
+                  rng=None,
+                  name=None):
+  """Returns a biphasic sampling mask.
+
+  A biphasic sampling mask has a fully sampled central region and a partially
+  sampled peripheral region. The peripheral may be sampled uniformly or
+  randomly.
+
+  .. tip::
+    This type of mask describes the most commonly used sampling patterns in
+    Cartesian MRI.
+
+  .. tip::
+    In MRI, one of the spatial frequency dimensions (readout dimension) is
+    typically fully sampled. In this case, you might want to create a mask that
+    has one less dimension than the corresponding *k*-space (e.g., 1D mask for
+    2D images or 2D mask for 3D images).
+
+  .. note::
+    The central region is always evenly shaped for even mask dimensions and
+    oddly shaped for odd mask dimensions. This avoids phase artefacts when
+    using the resulting mask to sample the frequency domain.
+
+  Example:
+    >>> import tensorflow as tfmri
+    >>> mask = tfmri.sampling.biphasic_mask([8], [2], [2])
+    >>> mask.numpy()
+    array([True, False, True, True, True, False, True, False])
+
+  Args:
+    shape: A 1D integer `tf.Tensor`. The shape of the output mask.
+    acceleration: A 1D integer `tf.Tensor`. The acceleration factor on the
+      peripheral region along each axis.
+    central_size: A 1D integer `tf.Tensor`. The size of the central region
+      along each axis.
+    mask_type: A `str`. The type of sampling to use on the peripheral region.
+      Must be one of `'equispaced'` or `'random'`. If `'equispaced'`, the
+      peripheral region is sampled uniformly. If `'random'`, the peripheral
+      region is sampled randomly with the expected acceleration value. Defaults
+      to `'equispaced'`.
+    offset: A 1D integer `tf.Tensor`. The offset of the first sample along
+      each axis. Only relevant when `mask_type` is `'equispaced'`. Can also
+      have the value `'random'`, in which case the offset is selected randomly.
+      Defaults to 0.
+    rng: A `tf.random.Generator`. The random number generator to use. If not
+      provided, the global random number generator will be used.
+    name: A `str`. A name for this op.
+
+  Returns:
+    A boolean `tf.Tensor` containing the sampling mask.
+
+  Raises:
+    ValueError: If `mask_type` is not one of `'equispaced'` or `'random'`.
+  """
+  with tf.name_scope(name or 'biphasic_mask'):
+    shape = tf.convert_to_tensor(shape, dtype=tf.int32)
+    acceleration = tf.convert_to_tensor(acceleration)
+    rank = tf.size(shape)
+
+    # If no RNG was passed, use the global RNG.
+    with tf.init_scope():
+      rng = rng or tf.random.get_global_generator().split(1)[0]
+
+    # Allow scalar ints as offset.
+    if isinstance(offset, int):
+      offset = tf.ones([rank], dtype=tf.int32) * offset
+    elif offset == 'random':
+      offset = tf.map_fn(lambda maxval: rng.uniform([], minval=0, maxval=maxval,
+                                                    dtype=tf.int32),
+                         acceleration, dtype=tf.int32)
+    else:
+      offset = tf.convert_to_tensor(offset, dtype=tf.int32)
+
+    def fn(accum, elems):
+      axis, mask = accum
+      size, accel, off = elems
+
+      if mask_type == 'equispaced':
+        mask_1d = tf.tile(tf.scatter_nd([[off]], [True], [accel]),
+                          multiples=[(size + accel - 1) // accel])[:size]
+
+      elif mask_type == 'random':
+        density = 1.0 / tf.cast(accel, tf.float32)
+        mask_1d = rng.uniform(shape=[size], dtype=tf.float32) < density
+
+      else:
+        raise ValueError(f"Unknown mask type: {mask_type}")
+
+      bcast_shape = tf.tensor_scatter_nd_update(
+          tf.ones([rank], dtype=tf.int32), [[axis]], [size])
+      mask_1d = tf.reshape(mask_1d, bcast_shape)
+      mask &= mask_1d
+      return axis + 1, mask
+
+    _, mask = tf.foldl(fn, (shape, acceleration, offset),
+                       initializer=(0, tf.ones(shape, dtype=tf.bool)))
+
+    return tf.math.logical_or(mask, central_mask(shape, central_size))
+
+
 @api_util.export("sampling.radial_trajectory")
 def radial_trajectory(base_resolution,
                       views=1,

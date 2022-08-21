@@ -102,6 +102,89 @@ class FrequencyGridTest(test_util.TestCase):
     self.assertAllClose(expected, result)
 
 
+class CentralMaskTest(test_util.TestCase):
+  def test_central_mask(self):
+    result = traj_ops.central_mask([8], [4])
+    expected = [0, 0, 1, 1, 1, 1, 0, 0]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.central_mask([9], [5])
+    expected = [0, 0, 1, 1, 1, 1, 1, 0, 0]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.central_mask([8], [0.5])
+    expected = [0, 0, 1, 1, 1, 1, 0, 0]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.central_mask([9], [0.5])
+    expected = [0, 0, 1, 1, 1, 1, 1, 0, 0]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.central_mask([8], [5])
+    expected = [0, 0, 1, 1, 1, 1, 0, 0]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.central_mask([4, 8], [2, 4])
+    expected = [[0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 1, 1, 0, 0],
+                [0, 0, 1, 1, 1, 1, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0]]
+    self.assertAllClose(expected, result)
+
+  
+class BiphasicMaskTest(test_util.TestCase):
+  def test_biphasic_mask(self):
+    result = traj_ops.biphasic_mask([16], [4], [0])
+    expected = [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.biphasic_mask([16], [4], [4])
+    expected = [1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.biphasic_mask([16], [2], [6])
+    expected = [1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.biphasic_mask([16], [2], [6])
+    expected = [1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.biphasic_mask([16], [4], [0], offset=1)
+    expected = [0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.biphasic_mask([4, 8], [2, 2], [0, 0])
+    expected = [[1, 0, 1, 0, 1, 0, 1, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 1, 0, 1, 0, 1, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0]]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.biphasic_mask([4, 8], [2, 2], [0, 0], offset=[1, 0])
+    expected = [[0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 1, 0, 1, 0, 1, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 1, 0, 1, 0, 1, 0]]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.biphasic_mask([4, 8], [2, 3], [0, 0], offset=[1, 0])
+    expected = [[0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 0, 1, 0, 0, 1, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 0, 1, 0, 0, 1, 0]]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.biphasic_mask([4, 8], [2, 2], [2, 2])
+    expected = [[1, 0, 1, 0, 1, 0, 1, 0],
+                [0, 0, 0, 1, 1, 0, 0, 0],
+                [1, 0, 1, 1, 1, 0, 1, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0]]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.biphasic_mask([16], [4], [0], mask_type='random')
+
+
 class RadialTrajectoryTest(test_util.TestCase):
   """Radial trajectory tests."""
   @classmethod
