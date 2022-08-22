@@ -33,8 +33,7 @@ class VarNet(graph_like_model.GraphLikeModel):
                num_iterations=10,
                calib_window=None,
                reg_network='auto',
-               sens_network='UNet',
-               sens_network_kwargs=None,
+               sens_network='auto',
                compress_coils=True,
                coil_compression_kwargs=None,
                scale_kspace=True,
@@ -53,7 +52,6 @@ class VarNet(graph_like_model.GraphLikeModel):
     self.calib_window = calib_window
     self.reg_network = reg_network
     self.sens_network = sens_network
-    self.sens_network_kwargs = sens_network_kwargs or {}
     self.compress_coils = compress_coils
     self.coil_compression_kwargs = coil_compression_kwargs or {}
     self.scale_kspace = scale_kspace
@@ -85,7 +83,7 @@ class VarNet(graph_like_model.GraphLikeModel):
           'CoilSensitivityEstimation', self.rank)(
               calib_window=self.calib_window,
               sens_network=self.sens_network,
-              sens_network_kwargs=self.sens_network_kwargs,
+              reinterpret_complex=self.reinterpret_complex,
               kspace_index=self.kspace_index)
 
     self._recon_adjoint_layer = layer_util.get_nd_layer(
