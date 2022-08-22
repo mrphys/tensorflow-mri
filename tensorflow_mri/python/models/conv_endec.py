@@ -14,7 +14,6 @@
 # ==============================================================================
 """Convolutional encoder-decoder models."""
 
-import inspect
 import string
 
 import tensorflow as tf
@@ -22,6 +21,7 @@ import tensorflow as tf
 from tensorflow_mri.python.layers import concatenate
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
+from tensorflow_mri.python.util import doc_util
 from tensorflow_mri.python.util import model_util  # pylint: disable=cyclic-import
 from tensorflow_mri.python.util import layer_util
 
@@ -322,6 +322,14 @@ class UNet(tf.keras.Model):
 
     return x
 
+  def compute_output_shape(self, input_shape):
+    input_shape = tf.TensorShape(input_shape)
+    if self._out_channels is not None:
+      out_channels = self._out_channels
+    else:
+      out_channels = self._filters[0]
+    return input_shape[:-1].concatenate([out_channels])
+
   def get_config(self):
     """Returns model configuration for serialization."""
     config = {
@@ -390,12 +398,6 @@ UNet2D.__doc__ = UNET_DOC_TEMPLATE.substitute(rank=2)
 UNet3D.__doc__ = UNET_DOC_TEMPLATE.substitute(rank=3)
 
 
-# Set explicit signatures for the UNetND objects. Otherwise they will appear as
-# (*args, **kwargs) in the docs.
-signature = inspect.signature(UNet.__init__)
-parameters = signature.parameters
-parameters = [v for k, v in parameters.items() if k not in ('self', 'rank')]
-signature = signature.replace(parameters=parameters)
-UNet1D.__signature__ = signature
-UNet2D.__signature__ = signature
-UNet3D.__signature__ = signature
+UNet1D.__signature__ = doc_util.get_nd_layer_signature(UNet)
+UNet2D.__signature__ = doc_util.get_nd_layer_signature(UNet)
+UNet3D.__signature__ = doc_util.get_nd_layer_signature(UNet)
