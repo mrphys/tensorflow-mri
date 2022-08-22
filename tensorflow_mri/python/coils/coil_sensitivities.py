@@ -32,10 +32,11 @@ def estimate_sensitivities_with_calibration_data(
     kspace,
     operator,
     calib_data=None,
-    calib_window='rect',
-    calib_region=0.1 * np.pi,
+    calib_window=None,
     method='walsh',
     **kwargs):
+  method = 'lowpass'
+
   # For convenience.
   rank = operator.rank
 
@@ -47,13 +48,13 @@ def estimate_sensitivities_with_calibration_data(
         trajectory=operator.trajectory,
         filter_fn=calib_window,
         filter_rank=rank,
-        filter_kwargs=dict(
-            cutoff=calib_region
-        ),
-        separable=isinstance(calib_region, (list, tuple)))
+        separable=True)
 
   # Reconstruct image.
   calib_data = recon_adjoint.recon_adjoint(calib_data, operator)
+
+  if method == 'lowpass':
+    return calib_data
 
   # ESPIRiT method takes in k-space data, so convert back to k-space in this
   # case.

@@ -29,8 +29,7 @@ def compress_coils_with_calibration_data(
     kspace,
     operator,
     calib_data=None,
-    calib_window='rect',
-    calib_region=0.1 * np.pi,
+    calib_window=None,
     method='svd',
     **kwargs):
   # For convenience.
@@ -44,10 +43,7 @@ def compress_coils_with_calibration_data(
         trajectory=operator.trajectory,
         filter_fn=calib_window,
         filter_rank=rank,
-        filter_kwargs=dict(
-            cutoff=calib_region
-        ),
-        separable=isinstance(calib_region, (list, tuple)))
+        separable=True)
 
   # Reshape to single batch dimension.
   coil_axis = -2 if operator.is_non_cartesian else -(rank + 1)

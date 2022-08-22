@@ -1,4 +1,4 @@
-# Copyright 2022 University College London. All Rights Reserved.
+# Copyright 2022 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,9 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Keras models."""
 
-from tensorflow_mri.python.models import conv_blocks
-from tensorflow_mri.python.models import conv_endec
-from tensorflow_mri.python.models import graph_like_model
-from tensorflow_mri.python.models import variational_network
+import tensorflow as tf
+
+
+class GraphLikeModel(tf.keras.Model):
+  """A model with graph-like structure.
+
+  Adds a method `functional` that returns a functional model with the same
+  structure as the current model. Functional models have some advantages over
+  subclassing as described in
+  https://www.tensorflow.org/guide/keras/functional#when_to_use_the_functional_api.
+  """
+  def functional(self, inputs):
+    return tf.keras.Model(inputs, self.call(inputs))

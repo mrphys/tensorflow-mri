@@ -49,8 +49,7 @@ class CoilSensitivitiesTest(test_util.TestCase):
         image_shape=image_shape, mask=mask)
 
     sens = coil_sensitivities.coil_sensitivities(kspace,
-                                                 operator,
-                                                 calib_region=0.1 * np.pi)
+                                                 operator)
 
     expected = [
        [[0.43218857-4.6583355e-09j, 0.43218845-8.7869850e-11j,

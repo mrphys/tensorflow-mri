@@ -30,8 +30,7 @@ class CoilCompression(linear_operator_layer.LinearOperatorLayer):
   """
   def __init__(self,
                rank,
-               calib_window='rect',
-               calib_region=0.1 * np.pi,
+               calib_window,
                coil_compression_method='svd',
                coil_compression_kwargs=None,
                operator=linear_operator_mri.LinearOperatorMRI,
@@ -41,7 +40,6 @@ class CoilCompression(linear_operator_layer.LinearOperatorLayer):
     super().__init__(operator=operator, input_indices=kspace_index, **kwargs)
     self.rank = rank
     self.calib_window = calib_window
-    self.calib_region = calib_region
     self.coil_compression_method = coil_compression_method
     self.coil_compression_kwargs = coil_compression_kwargs or {}
 
@@ -62,7 +60,6 @@ class CoilCompression(linear_operator_layer.LinearOperatorLayer):
         kspace,
         operator,
         calib_window=self.calib_window,
-        calib_region=self.calib_region,
         method=self.coil_compression_method,
         **self.coil_compression_kwargs)
 
@@ -74,7 +71,6 @@ class CoilCompression(linear_operator_layer.LinearOperatorLayer):
     """
     config = {
         'calib_window': self.calib_window,
-        'calib_region': self.calib_region,
         'coil_compression_method': self.coil_compression_method,
         'coil_compression_kwargs': self.coil_compression_kwargs
     }

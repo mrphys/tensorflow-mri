@@ -8,3 +8,5 @@ from tensorflow_mri.python.models.conv_blocks import ConvBlock3D as ConvBlock3D
 from tensorflow_mri.python.models.conv_endec import UNet1D as UNet1D
 from tensorflow_mri.python.models.conv_endec import UNet2D as UNet2D
 from tensorflow_mri.python.models.conv_endec import UNet3D as UNet3D
+from tensorflow_mri.python.models.variational_network import VarNet2D as VarNet2D
+from tensorflow_mri.python.models.variational_network import VarNet3D as VarNet3D

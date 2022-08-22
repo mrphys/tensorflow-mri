@@ -343,6 +343,10 @@ def biphasic_mask(shape,
     else:
       offset = tf.convert_to_tensor(offset, dtype=tf.int32)
 
+    # Initialize mask.
+    mask = tf.ones(shape, dtype=tf.bool)
+    static_shape = mask.shape
+
     def fn(accum, elems):
       axis, mask = accum
       size, accel, off = elems
@@ -362,10 +366,10 @@ def biphasic_mask(shape,
           tf.ones([rank], dtype=tf.int32), [[axis]], [size])
       mask_1d = tf.reshape(mask_1d, bcast_shape)
       mask &= mask_1d
-      return axis + 1, mask
+      return axis + 1, tf.ensure_shape(mask, static_shape)
 
     _, mask = tf.foldl(fn, (shape, acceleration, offset),
-                       initializer=(0, tf.ones(shape, dtype=tf.bool)))
+                       initializer=(0, mask))
 
     return tf.math.logical_or(mask, central_mask(shape, central_size))
 

@@ -14,7 +14,6 @@
 # ==============================================================================
 """*k*-space scaling layer."""
 
-import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.layers import linear_operator_layer
@@ -33,8 +32,7 @@ class KSpaceScaling(linear_operator_layer.LinearOperatorLayer):
   """
   def __init__(self,
                rank,
-               calib_window='rect',
-               calib_region=0.1 * np.pi,
+               calib_window,
                operator=linear_operator_mri.LinearOperatorMRI,
                kspace_index=None,
                **kwargs):
@@ -45,7 +43,6 @@ class KSpaceScaling(linear_operator_layer.LinearOperatorLayer):
                      **kwargs)
     self.rank = rank
     self.calib_window = calib_window
-    self.calib_region = calib_region
 
   def call(self, inputs):
     """Applies the layer.
@@ -65,10 +62,7 @@ class KSpaceScaling(linear_operator_layer.LinearOperatorLayer):
         operator.trajectory,
         filter_fn=self.calib_window,
         filter_rank=operator.rank,
-        filter_kwargs=dict(
-            cutoff=self.calib_region
-        ),
-        separable=isinstance(self.calib_region, (list, tuple)))
+        separable=True)
     image = recon_adjoint.recon_adjoint(filtered_kspace, operator)
     return kspace / tf.cast(tf.math.reduce_max(tf.math.abs(image)),
                             kspace.dtype)
@@ -80,8 +74,7 @@ class KSpaceScaling(linear_operator_layer.LinearOperatorLayer):
       A `dict` describing the layer configuration.
     """
     config = {
-        'calib_window': self.calib_window,
-        'calib_region': self.calib_region
+        'calib_window': self.calib_window
     }
     base_config = super().get_config()
     kspace_index = base_config.pop('input_indices')

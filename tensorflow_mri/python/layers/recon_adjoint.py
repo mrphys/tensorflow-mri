@@ -20,6 +20,7 @@ import tensorflow as tf
 
 from tensorflow_mri.python.layers import linear_operator_layer
 from tensorflow_mri.python.linalg import linear_operator_mri
+from tensorflow_mri.python.ops import math_ops
 from tensorflow_mri.python.recon import recon_adjoint
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import doc_util
@@ -52,6 +53,8 @@ DOCSTRING = string.Template(
       If `True`, the output has shape `[*batch_shape, ${dim_names}, 1]`.
       If `False`, the output has shape `[*batch_shape, ${dim_names}]`.
       Defaults to `True`.
+    reinterpret_complex: A `boolean`. Whether to reinterpret a complex-valued
+      output image as a dual-channel real image. Defaults to `False`.
     operator: A subclass of `tfmri.linalg.LinearOperator` or an instance
       thereof. The system operator. This object may be a class or an instance.
 
@@ -70,6 +73,7 @@ class ReconAdjoint(linear_operator_layer.LinearOperatorLayer):
   def __init__(self,
                rank,
                expand_channel_dim=True,
+               reinterpret_complex=False,
                operator=linear_operator_mri.LinearOperatorMRI,
                kspace_index=None,
                **kwargs):
@@ -77,17 +81,21 @@ class ReconAdjoint(linear_operator_layer.LinearOperatorLayer):
     super().__init__(operator=operator, input_indices=kspace_index, **kwargs)
     self.rank = rank
     self.expand_channel_dim = expand_channel_dim
+    self.reinterpret_complex = reinterpret_complex
 
   def call(self, inputs):
     kspace, operator = self.parse_inputs(inputs)
     image = recon_adjoint.recon_adjoint(kspace, operator)
     if self.expand_channel_dim:
       image = tf.expand_dims(image, axis=-1)
+    if self.reinterpret_complex:
+      image = math_ops.view_as_real(image, stacked=False)
     return image
 
   def get_config(self):
     config = {
-        'expand_channel_dim': self.expand_channel_dim
+        'expand_channel_dim': self.expand_channel_dim,
+        'reinterpret_complex': self.reinterpret_complex
     }
     base_config = super().get_config()
     input_indices = base_config.pop('input_indices')

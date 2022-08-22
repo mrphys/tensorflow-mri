@@ -19,11 +19,15 @@ import inspect
 import tensorflow as tf
 
 from tensorflow_mri.python.linalg import linear_operator
+from tensorflow_mri.python.linalg import linear_operator_mri
 
 
 class LinearOperatorLayer(tf.keras.layers.Layer):
   """A layer that uses a linear operator (abstract base class)."""
-  def __init__(self, operator, input_indices, **kwargs):
+  def __init__(self,
+               operator=linear_operator_mri.LinearOperatorMRI,
+               input_indices=None,
+               **kwargs):
     super().__init__(**kwargs)
 
     if isinstance(operator, linear_operator.LinearOperator):
@@ -93,3 +97,18 @@ class LinearOperatorLayer(tf.keras.layers.Layer):
     else:
       operator = self._operator_instance
     return operator
+
+
+class LinearTransform(LinearOperatorLayer):
+  """A layer that applies a linear transform to its inputs."""
+  def __init__(self,
+               adjoint=False,
+               operator=linear_operator_mri.LinearOperatorMRI,
+               input_indices=None,
+               **kwargs):
+    super().__init__(operator=operator, input_indices=input_indices, **kwargs)
+    self.adjoint = adjoint
+
+  def call(self, inputs):
+    main, operator = self.parse_inputs(inputs)
+    return operator.transform(main, adjoint=self.adjoint)

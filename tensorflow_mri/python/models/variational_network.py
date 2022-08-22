@@ -18,32 +18,31 @@ import tensorflow as tf
 import warnings
 
 from tensorflow_mri.python.activations import complex_activations
-from tensorflow_mri.python.layers import coil_sensitivities
-from tensorflow_mri.python.layers import data_consistency
-from tensorflow_mri.python.layers import kspace_scaling
-from tensorflow_mri.python.layers import recon_adjoint
+from tensorflow_mri.python.layers import data_consistency, linear_operator_layer
+from tensorflow_mri.python.models import graph_like_model
+from tensorflow_mri.python.ops import coil_ops, math_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import keras_util
 from tensorflow_mri.python.util import layer_util
 from tensorflow_mri.python.util import model_util
 
 
-class VarNet(model_util.GraphLikeModel):
+class VarNet(graph_like_model.GraphLikeModel):
   def __init__(self,
                rank,
                num_iterations=10,
-               calib_region=0.1 * np.pi,
-               reg_network='UNet',
-               reg_network_kwargs=None,
+               calib_window=None,
+               reg_network='auto',
                sens_network='UNet',
                sens_network_kwargs=None,
                compress_coils=True,
                coil_compression_kwargs=None,
                scale_kspace=True,
                estimate_sensitivities=True,
-               view_complex_as_real=False,
+               reinterpret_complex=False,
+               return_rss=False,
                return_multicoil=False,
-               return_zerofilled=False,
+               return_zfill=False,
                return_sensitivities=False,
                kspace_index=None,
                **kwargs):
@@ -51,17 +50,17 @@ class VarNet(model_util.GraphLikeModel):
     super().__init__(**kwargs)
     self.rank = rank
     self.num_iterations = num_iterations
-    self.calib_region = calib_region
+    self.calib_window = calib_window
     self.reg_network = reg_network
-    self.reg_network_kwargs = reg_network_kwargs or {}
     self.sens_network = sens_network
     self.sens_network_kwargs = sens_network_kwargs or {}
     self.compress_coils = compress_coils
     self.coil_compression_kwargs = coil_compression_kwargs or {}
     self.scale_kspace = scale_kspace
     self.estimate_sensitivities = estimate_sensitivities
-    self.view_complex_as_real = view_complex_as_real
-    self.return_zerofilled = return_zerofilled
+    self.reinterpret_complex = reinterpret_complex
+    self.return_rss = return_rss
+    self.return_zfill = return_zfill
     self.return_multicoil = return_multicoil
     self.return_sensitivities = return_sensitivities
     self.kspace_index = kspace_index
@@ -71,39 +70,46 @@ class VarNet(model_util.GraphLikeModel):
       coil_compression_kwargs.update(self.coil_compression_kwargs)
       self._coil_compression_layer = layer_util.get_nd_layer(
           'CoilCompression', self.rank)(
-              calib_region=self.calib_region,
+              calib_window=self.calib_window,
               coil_compression_kwargs=coil_compression_kwargs,
               kspace_index=self.kspace_index)
 
     if self.scale_kspace:
       self._kspace_scaling_layer = layer_util.get_nd_layer(
           'KSpaceScaling', self.rank)(
-              calib_region=self.calib_region,
+              calib_window=self.calib_window,
               kspace_index=self.kspace_index)
 
     if self.estimate_sensitivities:
       self._coil_sensitivities_layer = layer_util.get_nd_layer(
           'CoilSensitivityEstimation', self.rank)(
-              calib_region=self.calib_region,
+              calib_window=self.calib_window,
               sens_network=self.sens_network,
               sens_network_kwargs=self.sens_network_kwargs,
               kspace_index=self.kspace_index)
 
     self._recon_adjoint_layer = layer_util.get_nd_layer(
         'ReconAdjoint', self.rank)(
+            reinterpret_complex=self.reinterpret_complex,
             kspace_index=self.kspace_index)
 
     lsgd_layer_class = data_consistency.LeastSquaresGradientDescent
-    lsgd_layers_kwargs = {}
-
-    reg_network_class = model_util.get_nd_model(self.reg_network, rank)
-    reg_network_kwargs = dict(
-        filters=[32, 64, 128],
-        kernel_size=3,
-        activation=complex_activations.complex_relu,
-        out_channels=2 if self.view_complex_as_real else 1,
-        dtype=tf.float32 if self.view_complex_as_real else tf.complex64
+    lsgd_layers_kwargs = dict(
+        reinterpret_complex=self.reinterpret_complex
     )
+
+    if reg_network == 'auto':
+      reg_network_class = model_util.get_nd_model('UNet', rank)
+      reg_network_kwargs = dict(
+          filters=[32, 64, 128],
+          kernel_size=3,
+          activation=('relu' if self.reinterpret_complex
+                      else complex_activations.complex_relu),
+          out_channels=2 if self.reinterpret_complex else 1,
+          use_deconv=True,
+          dtype=(tf.as_dtype(self.dtype).real_dtype.name
+                 if self.reinterpret_complex else self.dtype)
+      )
 
     self._lsgd_layers = [
         lsgd_layer_class(**lsgd_layers_kwargs, name=f'lsgd_{i}')
@@ -111,6 +117,9 @@ class VarNet(model_util.GraphLikeModel):
     self._reg_layers = [
         reg_network_class(**reg_network_kwargs, name=f'reg_{i}')
         for i in range(self.num_iterations)]
+
+    self._forward_layer = linear_operator_layer.LinearTransform(adjoint=False)
+    self._adjoint_layer = linear_operator_layer.LinearTransform(adjoint=True)
 
   def call(self, inputs):
     x = {k: v for k, v in inputs.items()}
@@ -144,14 +153,26 @@ class VarNet(model_util.GraphLikeModel):
       image = reg(image)
       image = lsgd({'image': image, **x})
 
+    if self.reinterpret_complex:
+      zfill = math_ops.view_as_complex(image, stacked=False)
+      image = math_ops.view_as_complex(image, stacked=False)
+
+    if self.return_multicoil or self.return_rss:
+      multicoil = (tf.expand_dims(image, -(self.rank + 2)) *
+                   tf.expand_dims(x['sensitivities'], -1))
+
+    if self.return_rss:
+      rss = tf.math.abs(
+          coil_ops.combine_coils(multicoil, coil_axis=-(self.rank + 2)))
+
     outputs = {'image': image}
 
-    if self.return_zerofilled:
-      outputs['zerofilled'] = zfill
+    if self.return_rss:
+      outputs['rss'] = rss
+    if self.return_zfill:
+      outputs['zfill'] = zfill
     if self.return_multicoil:
-      outputs['multicoil'] = (
-          tf.expand_dims(image, -(self.rank + 2)) *
-          tf.expand_dims(x['sensitivities'], -1))
+      outputs['multicoil'] = multicoil
     if self.return_sensitivities:
       outputs['sensitivities'] = x['sensitivities']
 

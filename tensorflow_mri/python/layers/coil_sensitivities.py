@@ -33,8 +33,7 @@ class CoilSensitivityEstimation(linear_operator_layer.LinearOperatorLayer):
   """
   def __init__(self,
                rank,
-               calib_window='rect',
-               calib_region=0.1 * np.pi,
+               calib_window,
                calib_method='walsh',
                calib_kwargs=None,
                sens_network='UNet',
@@ -46,7 +45,6 @@ class CoilSensitivityEstimation(linear_operator_layer.LinearOperatorLayer):
     super().__init__(operator=operator, input_indices=kspace_index, **kwargs)
     self.rank = rank
     self.calib_window = calib_window
-    self.calib_region = calib_region
     self.calib_method = calib_method
     self.calib_kwargs = calib_kwargs or {}
     self.sens_network = sens_network
@@ -79,7 +77,6 @@ class CoilSensitivityEstimation(linear_operator_layer.LinearOperatorLayer):
             kspace,
             operator,
             calib_window=self.calib_window,
-            calib_region=self.calib_region,
             method=self.calib_method,
             **self.calib_kwargs
         )
@@ -98,7 +95,6 @@ class CoilSensitivityEstimation(linear_operator_layer.LinearOperatorLayer):
     """
     config = {
         'calib_window': self.calib_window,
-        'calib_region': self.calib_region,
         'calib_method': self.calib_method,
         'calib_kwargs': self.calib_kwargs,
         'sens_network': self.sens_network,

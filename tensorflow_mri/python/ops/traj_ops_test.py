@@ -131,6 +131,13 @@ class CentralMaskTest(test_util.TestCase):
                 [0, 0, 0, 0, 0, 0, 0, 0]]
     self.assertAllClose(expected, result)
 
+    result = traj_ops.central_mask([4, 8], [1.0, 0.5])
+    expected = [[0, 0, 1, 1, 1, 1, 0, 0],
+                [0, 0, 1, 1, 1, 1, 0, 0],
+                [0, 0, 1, 1, 1, 1, 0, 0],
+                [0, 0, 1, 1, 1, 1, 0, 0]]
+    self.assertAllClose(expected, result)
+
   
 class BiphasicMaskTest(test_util.TestCase):
   def test_biphasic_mask(self):
