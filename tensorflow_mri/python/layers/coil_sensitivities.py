@@ -68,7 +68,7 @@ class CoilSensitivityEstimation(linear_operator_layer.LinearOperatorLayer):
       self._sens_network_layer = tf.keras.layers.TimeDistributed(
           sens_network_class(**sens_network_kwargs))
     else:
-      self._sens_network_layer = sens_network
+      self._sens_network_layer = tf.keras.layers.TimeDistributed(sens_network)
 
   def call(self, inputs):
     """Applies the layer.

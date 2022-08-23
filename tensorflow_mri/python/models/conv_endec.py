@@ -111,6 +111,7 @@ class UNet(tf.keras.Model):
                bias_regularizer=None,
                use_batch_norm=False,
                use_sync_bn=False,
+               use_instance_norm=False,
                bn_momentum=0.99,
                bn_epsilon=0.001,
                out_channels=None,
@@ -139,6 +140,7 @@ class UNet(tf.keras.Model):
     self._bias_regularizer = bias_regularizer
     self._use_batch_norm = use_batch_norm
     self._use_sync_bn = use_sync_bn
+    self._use_instance_norm = use_instance_norm
     self._bn_momentum = bn_momentum
     self._bn_epsilon = bn_epsilon
     self._out_channels = out_channels
@@ -172,6 +174,7 @@ class UNet(tf.keras.Model):
         bias_regularizer=self._bias_regularizer,
         use_batch_norm=self._use_batch_norm,
         use_sync_bn=self._use_sync_bn,
+        use_instance_norm=self._use_instance_norm,
         bn_momentum=self._bn_momentum,
         bn_epsilon=self._bn_epsilon,
         use_dropout=self._use_dropout,
@@ -346,6 +349,7 @@ class UNet(tf.keras.Model):
         'bias_regularizer': self._bias_regularizer,
         'use_batch_norm': self._use_batch_norm,
         'use_sync_bn': self._use_sync_bn,
+        'use_instance_norm': self._use_instance_norm,
         'bn_momentum': self._bn_momentum,
         'bn_epsilon': self._bn_epsilon,
         'out_channels': self._out_channels,

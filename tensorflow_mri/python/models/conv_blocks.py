@@ -33,9 +33,11 @@ import itertools
 import string
 
 import tensorflow as tf
+import tensorflow_addons as tfa
 
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
+from tensorflow_mri.python.util import doc_util
 from tensorflow_mri.python.util import layer_util
 
 
@@ -109,6 +111,7 @@ class ConvBlock(tf.keras.Model):
                bias_regularizer=None,
                use_batch_norm=False,
                use_sync_bn=False,
+               use_instance_norm=False,
                bn_momentum=0.99,
                bn_epsilon=0.001,
                use_residual=False,
@@ -131,6 +134,7 @@ class ConvBlock(tf.keras.Model):
     self._bias_regularizer = bias_regularizer
     self._use_batch_norm = use_batch_norm
     self._use_sync_bn = use_sync_bn
+    self._use_instance_norm = use_instance_norm
     self._bn_momentum = bn_momentum
     self._bn_epsilon = bn_epsilon
     self._use_residual = use_residual
@@ -139,6 +143,9 @@ class ConvBlock(tf.keras.Model):
     self._dropout_type = check_util.validate_enum(
         dropout_type, {'standard', 'spatial'}, 'dropout_type')
     self._num_layers = len(self._filters)
+
+    if use_batch_norm and use_instance_norm:
+      raise ValueError('Cannot use both batch and instance normalization.')
 
     conv = layer_util.get_nd_layer('Conv', self._rank)
 
@@ -179,8 +186,11 @@ class ConvBlock(tf.keras.Model):
       if self._use_batch_norm:
         self._norms.append(
             bn(axis=self._channel_axis,
-              momentum=self._bn_momentum,
-              epsilon=self._bn_epsilon))
+               momentum=self._bn_momentum,
+               epsilon=self._bn_epsilon))
+      if self._use_instance_norm:
+        self._norms.append(tfa.layers.InstanceNormalization(
+            axis=self._channel_axis))
       if self._use_dropout:
         self._dropouts.append(dropout(rate=self._dropout_rate))
 
@@ -199,7 +209,7 @@ class ConvBlock(tf.keras.Model):
       # Convolution.
       x = conv(x)
       # Batch normalization.
-      if self._use_batch_norm:
+      if self._use_batch_norm or self._use_instance_norm:
         x = norm(x, training=training)
       # Activation.
       if i == self._num_layers - 1: # Last layer.
@@ -230,6 +240,7 @@ class ConvBlock(tf.keras.Model):
         'bias_regularizer': self._bias_regularizer,
         'use_batch_norm': self._use_batch_norm,
         'use_sync_bn': self._use_sync_bn,
+        'use_instance_norm': self._use_instance_norm,
         'bn_momentum': self._bn_momentum,
         'bn_epsilon': self._bn_epsilon,
         'use_residual': self._use_residual,
@@ -265,3 +276,8 @@ class ConvBlock3D(ConvBlock):
 ConvBlock1D.__doc__ = CONV_BLOCK_DOC_TEMPLATE.substitute(rank=1)
 ConvBlock2D.__doc__ = CONV_BLOCK_DOC_TEMPLATE.substitute(rank=2)
 ConvBlock3D.__doc__ = CONV_BLOCK_DOC_TEMPLATE.substitute(rank=3)
+
+
+ConvBlock1D.__signature__ = doc_util.get_nd_layer_signature(ConvBlock)
+ConvBlock2D.__signature__ = doc_util.get_nd_layer_signature(ConvBlock)
+ConvBlock3D.__signature__ = doc_util.get_nd_layer_signature(ConvBlock)

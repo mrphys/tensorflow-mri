@@ -30,7 +30,7 @@ from tensorflow_mri.python.util import model_util
 class VarNet(graph_like_model.GraphLikeModel):
   def __init__(self,
                rank,
-               num_iterations=10,
+               num_iterations=12,
                calib_window=None,
                reg_network='auto',
                sens_network='auto',
@@ -63,6 +63,30 @@ class VarNet(graph_like_model.GraphLikeModel):
     self.return_sensitivities = return_sensitivities
     self.kspace_index = kspace_index
 
+    lsgd_layer_class = data_consistency.LeastSquaresGradientDescent
+    lsgd_layers_kwargs = dict(
+        reinterpret_complex=self.reinterpret_complex
+    )
+
+    if self.reg_network == 'auto':
+      reg_network_class = model_util.get_nd_model('UNet', rank)
+      reg_network_kwargs = dict(
+          filters=[32, 64, 128],
+          kernel_size=3,
+          activation=(tf.keras.layers.LeakyReLU(alpha=0.2)
+                      if self.reinterpret_complex
+                      else complex_activations.complex_relu),
+          out_channels=2 if self.reinterpret_complex else 1,
+          kernel_initializer='he_uniform',
+          use_deconv=True,
+          use_instance_norm=True,
+          dtype=(tf.as_dtype(self.dtype).real_dtype.name
+                 if self.reinterpret_complex else self.dtype)
+      )
+
+    if self.sens_network == 'auto':
+      sens_network = reg_network_class(**reg_network_kwargs)
+
     if self.compress_coils:
       coil_compression_kwargs = _get_default_coil_compression_kwargs()
       coil_compression_kwargs.update(self.coil_compression_kwargs)
@@ -82,7 +106,7 @@ class VarNet(graph_like_model.GraphLikeModel):
       self._coil_sensitivities_layer = layer_util.get_nd_layer(
           'CoilSensitivityEstimation', self.rank)(
               calib_window=self.calib_window,
-              sens_network=self.sens_network,
+              sens_network=sens_network,
               reinterpret_complex=self.reinterpret_complex,
               kspace_index=self.kspace_index)
 
@@ -91,24 +115,6 @@ class VarNet(graph_like_model.GraphLikeModel):
             reinterpret_complex=self.reinterpret_complex,
             kspace_index=self.kspace_index)
 
-    lsgd_layer_class = data_consistency.LeastSquaresGradientDescent
-    lsgd_layers_kwargs = dict(
-        reinterpret_complex=self.reinterpret_complex
-    )
-
-    if reg_network == 'auto':
-      reg_network_class = model_util.get_nd_model('UNet', rank)
-      reg_network_kwargs = dict(
-          filters=[32, 64, 128],
-          kernel_size=3,
-          activation=('relu' if self.reinterpret_complex
-                      else complex_activations.complex_relu),
-          out_channels=2 if self.reinterpret_complex else 1,
-          use_deconv=True,
-          dtype=(tf.as_dtype(self.dtype).real_dtype.name
-                 if self.reinterpret_complex else self.dtype)
-      )
-
     self._lsgd_layers = [
         lsgd_layer_class(**lsgd_layers_kwargs, name=f'lsgd_{i}')
         for i in range(self.num_iterations)]
@@ -116,8 +122,8 @@ class VarNet(graph_like_model.GraphLikeModel):
         reg_network_class(**reg_network_kwargs, name=f'reg_{i}')
         for i in range(self.num_iterations)]
 
-    self._forward_layer = linear_operator_layer.LinearTransform(adjoint=False)
-    self._adjoint_layer = linear_operator_layer.LinearTransform(adjoint=True)
+    # self._forward_layer = linear_operator_layer.LinearTransform(adjoint=False)
+    # self._adjoint_layer = linear_operator_layer.LinearTransform(adjoint=True)
 
   def call(self, inputs):
     x = {k: v for k, v in inputs.items()}
