@@ -23,7 +23,6 @@ from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import keras_util
 
 
-@api_util.export("layers.LeastSquaresGradientDescent")
 class LeastSquaresGradientDescent(linear_operator_layer.LinearOperatorLayer):
   """Least squares gradient descent layer.
   """

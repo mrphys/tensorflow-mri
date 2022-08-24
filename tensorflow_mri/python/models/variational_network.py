@@ -13,7 +13,8 @@
 # limitations under the License.
 # ==============================================================================
 
-import numpy as np
+import string
+
 import tensorflow as tf
 import warnings
 
@@ -27,7 +28,41 @@ from tensorflow_mri.python.util import layer_util
 from tensorflow_mri.python.util import model_util
 
 
-class VarNet(graph_like_model.GraphLikeModel):
+class VarNet(tf.keras.Model):
+  """${rank}-D variational network.
+
+  This model can be used to reconstruct MR images from *k*-space measurements.
+  The architecture consists of an interleaved cascade of gradient descent (GD)
+  steps and neural networks (NNs). The GD steps incorporate the MRI encoding
+  operator and they minimize the error between the current *k*-space estimate
+  and the *k*-space measurements (data consistency). The NNs act as a
+  regularization term.
+
+  This model is flexible. It supports Cartesian and non-Cartesian data and
+  single and multicoil inputs. The corresponding encoding operator is
+  auto-constructed internally based on the available inputs. See
+  `tfmri.linalg.LinearOperatorMRI` for more details on how this operator
+  is constructed.
+
+  Notes:
+    Test note.
+
+  References:
+    1. Sriram A, Zbontar J, Murrell T, Defazio A, Zitnick CL, Yakubova N,
+       Knoll F, Johnson P. End-to-end variational networks for accelerated MRI
+       reconstruction. InInternational Conference on Medical Image Computing
+       and Computer-Assisted Intervention 2020 Oct 4 (pp. 64-73). Springer,
+       Cham.
+    2. Hammernik K, Klatzer T, Kobler E, Recht MP, Sodickson DK, Pock T,
+       Knoll F. Learning a variational network for reconstruction of
+       accelerated MRI data. Magnetic resonance in medicine.
+       2018 Jun;79(6):3055-71.
+    3. Schlemper J, Salehi SS, Kundu P, Lazarus C, Dyvorne H, Rueckert D,
+       Sofka M. Nonuniform variational network: deep learning for accelerated
+       nonuniform MR image reconstruction. InInternational Conference on
+       Medical Image Computing and Computer-Assisted Intervention 2019 Oct 13
+       (pp. 57-64). Springer, Cham.
+  """
   def __init__(self,
                rank,
                num_iterations=12,
@@ -195,6 +230,10 @@ class VarNet2D(VarNet):
 class VarNet3D(VarNet):
   def __init__(self, *args, **kwargs):
     super().__init__(3, *args, **kwargs)
+
+
+VarNet2D.__doc__ = string.Template(VarNet.__doc__).substitute(rank=2)
+VarNet3D.__doc__ = string.Template(VarNet.__doc__).substitute(rank=3)
 
 
 def _get_default_coil_compression_kwargs():
