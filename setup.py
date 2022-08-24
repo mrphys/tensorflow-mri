@@ -26,7 +26,7 @@ ABOUT = {}
 with open(path.join(ROOT, "tensorflow_mri/__about__.py")) as f:
     exec(f.read(), ABOUT)
 
-with open(path.join(ROOT, "README.rst"), encoding='utf-8') as f:
+with open(path.join(ROOT, "README.md"), encoding='utf-8') as f:
     LONG_DESCRIPTION = f.read()
 
 with open(path.join(ROOT, "requirements.txt")) as f:
@@ -42,7 +42,7 @@ class BinaryDistribution(Distribution):
 
     def has_ext_modules(self):
         return True
-    
+
     def is_pure(self):
         return False
 
@@ -51,7 +51,7 @@ setup(
     version=ABOUT['__version__'],
     description=ABOUT['__summary__'],
     long_description=LONG_DESCRIPTION,
-    long_description_content_type="text/x-rst",
+    long_description_content_type="text/markdown",
     author=ABOUT['__author__'],
     author_email=ABOUT['__email__'],
     url=ABOUT['__uri__'],
@@ -80,5 +80,5 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
     license=ABOUT['__license__'],
-    keywords=['tensorflow', 'mri', 'machine learning', 'ml']   
+    keywords=['tensorflow', 'mri', 'machine learning', 'ml']
 )

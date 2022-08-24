@@ -1,5 +1,4 @@
-TensorFlow MRI tutorials
-========================
+# Tutorials
 
 All TensorFlow MRI tutorials are written as Jupyter notebooks.
 

@@ -27,21 +27,27 @@ from tensorflow_mri.python.util import api_util
 
 
 CLASS_TEMPLATE = string.Template(
-"""${module}.{{ objname | escape | underline }}${underline}
+"""# ${module}.{{ objname }}
 
-.. currentmodule:: {{ module }}
+```{currentmodule} {{ module }}
+```
 
-.. auto{{ objtype }}:: {{ objname }}
-    :members:
-    :show-inheritance:
+```{auto{{ objtype }}} {{ objname }}
+---
+members:
+show-inheritance:
+---
+```
 """)
 
 FUNCTION_TEMPLATE = string.Template(
-"""${module}.{{ objname | escape | underline }}${underline}
+"""# ${module}.{{ objname }}
 
-.. currentmodule:: {{ module }}
+```{currentmodule} {{ module }}
+```
 
-.. auto{{ objtype }}:: {{ objname }}
+```{auto{{ objtype }}} {{ objname }}
+```
 """)
 
 NAMESPACES = api_util.get_submodule_names()
@@ -61,13 +67,11 @@ for namespace in NAMESPACES:
     module = f'tfmri.{namespace}'
 
   # Substitute the templates for this module.
-  class_template = CLASS_TEMPLATE.substitute(
-      module=module, underline='=' * (len(module) + 1))
-  function_template = FUNCTION_TEMPLATE.substitute(
-      module=module, underline='=' * (len(module) + 1))
+  class_template = CLASS_TEMPLATE.substitute(module=module)
+  function_template = FUNCTION_TEMPLATE.substitute(module=module)
 
   # Write template files.
-  with open(os.path.join(TEMPLATE_PATH, namespace, 'class.rst'), 'w') as f:
+  with open(os.path.join(TEMPLATE_PATH, namespace, 'class.md'), 'w') as f:
     f.write(class_template)
-  with open(os.path.join(TEMPLATE_PATH, namespace, 'function.rst'), 'w') as f:
+  with open(os.path.join(TEMPLATE_PATH, namespace, 'function.md'), 'w') as f:
     f.write(function_template)

@@ -1,5 +1,4 @@
-Frequently Asked Questions
-==========================
+# Frequently asked questions
 
 **When trying to install TensorFlow MRI, I get an error about OpenEXR which
 includes:
@@ -10,6 +9,8 @@ OpenEXR is needed by TensorFlow Graphics, which is a dependency of TensorFlow
 MRI. This issue can be fixed by installing the OpenEXR library. On
 Debian/Ubuntu:
 
-.. code-block:: console
+```
+apt install libopenexr-dev
+```
 
-    $ apt install libopenexr-dev
+Depending on your environment, you might need sudo access.

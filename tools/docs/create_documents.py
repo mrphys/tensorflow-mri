@@ -34,78 +34,79 @@ from tensorflow_mri.python.util import api_util
 os.makedirs(os.path.join(API_DOCS_PATH, 'tfmri'), exist_ok=True)
 
 # Read the index template.
-with open(os.path.join(TEMPLATES_PATH, 'index.rst'), 'r') as f:
+with open(os.path.join(TEMPLATES_PATH, 'index.md'), 'r') as f:
   INDEX_TEMPLATE = string.Template(f.read())
 
 TFMRI_DOC_TEMPLATE = string.Template(
-"""tfmri
-=====
+"""# tfmri
 
-.. automodule:: tensorflow_mri
+```{automodule} tensorflow_mri
+```
 
-Modules
--------
+## Modules
 
-.. autosummary::
-    :nosignatures:
+```{autosummary}
+---
+nosignatures:
+---
+${namespaces}
+```
 
-    ${namespaces}
+## Classes
 
+```{autosummary}
+---
+toctree: tfmri
+nosignatures:
+---
+```
 
-Classes
--------
+## Functions
 
-.. autosummary::
-    :toctree: tfmri
-    :template: ops/class.rst
-    :nosignatures:
-
-
-
-Functions
----------
-
-.. autosummary::
-    :toctree: tfmri
-    :template: ops/function.rst
-    :nosignatures:
-
-    broadcast_dynamic_shapes
-    broadcast_static_shapes
-    cartesian_product
-    central_crop
-    meshgrid
-    ravel_multi_index
-    resize_with_crop_or_pad
-    scale_by_min_max
-    unravel_index
+```{autosummary}
+---
+toctree: tfmri
+nosignatures:
+---
+broadcast_dynamic_shapes
+broadcast_static_shapes
+cartesian_product
+central_crop
+meshgrid
+ravel_multi_index
+resize_with_crop_or_pad
+scale_by_min_max
+unravel_index
+```
 """)
 
 MODULE_DOC_TEMPLATE = string.Template(
-"""tfmri.${module}
-======${underline}
+"""# tfmri.${module}
 
-.. automodule:: tensorflow_mri.${module}
+```{automodule} tensorflow_mri.${module}
+```
 
-Classes
--------
+## Classes
 
-.. autosummary::
-    :toctree: ${module}
-    :template: ${module}/class.rst
-    :nosignatures:
+```{autosummary}
+---
+toctree: ${module}
+template: ${module}/class.md
+nosignatures:
+---
+${classes}
+```
 
-    ${classes}
+## Functions
 
-Functions
----------
-
-.. autosummary::
-    :toctree: ${module}
-    :template: ${module}/function.rst
-    :nosignatures:
-
-    ${functions}
+```{autosummary}
+---
+toctree: ${module}
+template: ${module}/function.md
+nosignatures:
+---
+${functions}
+```
 """)
 
 
@@ -128,28 +129,27 @@ for name, symbol in api_util.get_api_symbols().items():
 
 # Write namespace templates.
 for name, module in modules.items():
-  classes = '\n    '.join(sorted(set(module.classes)))
-  functions = '\n    '.join(sorted(set(module.functions)))
+  classes = '\n'.join(sorted(set(module.classes)))
+  functions = '\n'.join(sorted(set(module.functions)))
 
-  filename = os.path.join(API_DOCS_PATH, f'tfmri/{name}.rst')
+  filename = os.path.join(API_DOCS_PATH, f'tfmri/{name}.md')
   with open(filename, 'w') as f:
     f.write(MODULE_DOC_TEMPLATE.substitute(
         module=name,
-        underline='=' * len(name),
         classes=classes,
         functions=functions))
 
-# Write top-level API doc tfmri.rst.
-filename = os.path.join(API_DOCS_PATH, 'tfmri.rst')
+# Write top-level API doc tfmri.md.
+filename = os.path.join(API_DOCS_PATH, 'tfmri.md')
 with open(filename, 'w') as f:
   namespaces = api_util.get_submodule_names()
   f.write(TFMRI_DOC_TEMPLATE.substitute(
-      namespaces='\n    '.join(sorted(namespaces))))
+      namespaces='\n'.join(sorted(namespaces))))
 
-# Write index.rst.
-filename = os.path.join(DOCS_PATH, 'index.rst')
+# Write index.md.
+filename = os.path.join(DOCS_PATH, 'index.md')
 with open(filename, 'w') as f:
   namespaces = api_util.get_submodule_names()
   namespaces = ['api_docs/tfmri/' + namespace for namespace in namespaces]
   f.write(INDEX_TEMPLATE.substitute(
-      namespaces='\n   '.join(sorted(namespaces))))
+      namespaces='\n'.join(sorted(namespaces))))

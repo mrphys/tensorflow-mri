@@ -37,6 +37,7 @@ import conf_helper
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 sys.path.insert(0, path.abspath('../..'))
+sys.path.insert(0, path.abspath('extensions'))
 
 
 # -- Project information -----------------------------------------------------
@@ -61,12 +62,11 @@ version = '.'.join(map(str, (_version.major, _version.minor)))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-  'sphinx.ext.autodoc',
-  'sphinx.ext.napoleon',
-  'sphinx.ext.autosummary',
   'sphinx.ext.linkcode',
   'sphinx.ext.autosectionlabel',
   'myst_nb',
+  'myst_autodoc',
+  'myst_autosummary',
   'sphinx_sitemap'
 ]
 
@@ -76,7 +76,7 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'templates']
 
 # Do not add full qualification to objects' signatures.
 add_module_names = False
@@ -124,6 +124,7 @@ html_baseurl = 'https://mrphys.github.io/tensorflow-mri/'
 sitemap_url_scheme = '{link}'
 
 # For autosummary generation.
+autosummary_generate = True
 autosummary_filename_map = conf_helper.AutosummaryFilenameMap()
 
 # -- Options for MyST ----------------------------------------------------------
@@ -134,6 +135,7 @@ myst_enable_extensions = [
     "deflist",
     "dollarmath",
     "html_image",
+    "substitution"
 ]
 
 # https://myst-nb.readthedocs.io/en/latest/authoring/basics.html
@@ -142,6 +144,11 @@ source_suffix = [
     '.md',
     '.ipynb'
 ]
+
+# https://myst-parser.readthedocs.io/en/latest/syntax/optional.html#substitutions-with-jinja2
+myst_substitutions = {
+    'release': release
+}
 
 # Do not execute notebooks.
 # https://myst-nb.readthedocs.io/en/latest/computation/execute.html
@@ -267,63 +274,6 @@ LINK_REPL = r"`\g<link_text>`_"
 
 def process_docstring(app, what, name, obj, options, lines):  # pylint: disable=missing-param-doc,unused-argument
   """Process autodoc docstrings."""
-  # Replace Note: and Warning: by RST equivalents.
-  rst_lines = []
-  admonition_lines = None
-  for line in lines:
-    if admonition_lines is None:
-      # We are not in an admonition right now. Check if this line will start
-      # one.
-      if (line.strip().startswith('Warning:') or
-          line.strip().startswith('Note:')):
-        # This line starts an admonition.
-        label_position = line.index(':')
-        admonition_type = line[:label_position].strip().lower()
-        admonition_content = line[label_position + 1:].strip()
-        leading_whitespace = ' ' * (len(line) - len(line.lstrip()))
-        extra_indentation = '  '
-        admonition_lines = [f"{leading_whitespace}.. {admonition_type}::"]
-        admonition_lines.append(
-            leading_whitespace + extra_indentation + admonition_content)
-      else:
-        # This line does not start an admonition. It's just a regular line.
-        # Add it to the new lines.
-        rst_lines.append(line)
-    else:
-      # Check if this is the end of the admonition.
-      if line.strip() == '':
-        # Line is empty, so the end of the admonition. Add admonition and
-        # finish.
-        rst_lines.extend(admonition_lines)
-        admonition_lines = None
-      else:
-        # This is an admonition line. Add to list of admonition lines.
-        admonition_lines.append(extra_indentation + line)
-  # If we reached the end and we are still in an admonition, add it.
-  if admonition_lines is not None:
-    rst_lines.extend(admonition_lines)
-
-  # Replace markdown literal markers (`) by ReST literal markers (``).
-  myst = '\n'.join(rst_lines)
-  text = myst.replace('`', '``')
-  text = text.replace(':math:``', ':math:`')
-
-  # Correct inline code followed by word characters.
-  text = CODE_LETTER_PATTERN.sub(CODE_LETTER_REPL, text)
-  # Add links to some common types.
-  for k in COMMON_TYPES_LINKS:
-    text = COMMON_TYPES_PATTERNS[k].sub(COMMON_TYPES_REPLACEMENTS[k], text)
-  # Add links to TFMRI objects.
-  for match in TFMRI_OBJECTS_PATTERN.finditer(text):
-    name = match.group('name')
-    url = get_doc_url(name)
-    pattern = rf"``{name}``"
-    repl = rf"`{name} <{url}>`_"
-    text = text.replace(pattern, repl)
-
-  # Correct double quotes.
-  text = LINK_PATTERN.sub(LINK_REPL, text)
-  lines[:] = text.splitlines()
 
 
 def get_doc_url(name):
