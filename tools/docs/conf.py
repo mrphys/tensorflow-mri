@@ -62,11 +62,11 @@ version = '.'.join(map(str, (_version.major, _version.minor)))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-  'sphinx.ext.linkcode',
-  'sphinx.ext.autosectionlabel',
   'myst_nb',
   'myst_autodoc',
   'myst_autosummary',
+  'myst_napoleon',
+  'sphinx.ext.linkcode',
   'sphinx_sitemap'
 ]
 
@@ -134,6 +134,7 @@ myst_enable_extensions = [
     "colon_fence",
     "deflist",
     "dollarmath",
+    "fieldlist",
     "html_image",
     "substitution"
 ]
@@ -251,29 +252,22 @@ COMMON_TYPES_LINKS = {
     'np.ndarray': 'https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html',
     'np.inf': 'https://numpy.org/doc/stable/reference/constants.html#numpy.inf',
     'np.nan': 'https://numpy.org/doc/stable/reference/constants.html#numpy.nan',
-    # TensorFlow types.
-    'tf.Tensor': 'https://www.tensorflow.org/api_docs/python/tf/Tensor',
-    'tf.TensorShape': 'https://www.tensorflow.org/api_docs/python/tf/TensorShape',
-    'tf.dtypes.DType': 'https://www.tensorflow.org/api_docs/python/tf/dtypes/DType'
 }
-
-TFMRI_OBJECTS_PATTERN = re.compile(r"``(?P<name>tfmri.[a-zA-Z0-9_.]+)``")
-
-COMMON_TYPES_PATTERNS = {
-    k: re.compile(rf"``{k}``")for k in COMMON_TYPES_LINKS}
-
-COMMON_TYPES_REPLACEMENTS = {
-    k: rf"`{k} <{v}>`_" for k, v in COMMON_TYPES_LINKS.items()}
-
-CODE_LETTER_PATTERN = re.compile(r"``(?P<code>\w+)``(?P<letter>[a-zA-Z])")
-CODE_LETTER_REPL = r"``\g<code>``\ \g<letter>"
-
-LINK_PATTERN = re.compile(r"``(?P<link_text>[\w\.]+)``_")
-LINK_REPL = r"`\g<link_text>`_"
 
 
 def process_docstring(app, what, name, obj, options, lines):  # pylint: disable=missing-param-doc,unused-argument
   """Process autodoc docstrings."""
+  # Regular expression.
+  tf_symbol_re = re.compile(r"`(?P<symbol>tf\.[a-zA-Z0-9_.]+)`")
+  # Iterate line by line.
+  for lineno, line in enumerate(lines):
+
+    m = tf_symbol_re.match(line)
+    if m:
+      symbol = m.group('symbol')
+      link = f"https://www.tensorflow.org/api_docs/python/{symbol.replace('.', '/')}"
+      lines[lineno] = line.replace(f"`{symbol}`", f"[`{symbol}`]({link})")
+
 
 
 def get_doc_url(name):

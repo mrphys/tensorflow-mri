@@ -4,5 +4,5 @@
 ---
 hidden:
 ---
-<!-- CG-SENSE <recon/cg_sense.ipynb> -->
+CG-SENSE <recon/cg_sense.ipynb>
 ```

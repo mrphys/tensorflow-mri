@@ -14,8 +14,14 @@ TensorFlow MRI is not yet available for Windows or macOS.
 
 Each TensorFlow MRI release is compiled against a specific version of
 TensorFlow. To ensure compatibility, it is recommended to install matching
-versions of TensorFlow and TensorFlow MRI according to the
-{ref}`TensorFlow compatibility table`.
+versions of TensorFlow and TensorFlow MRI according to the table below.
+
+```{include} ../../../README.md
+---
+start-after: start-compatibility-table
+end-before: end-compatibility-table
+---
+```
 
 ```{warning}
 Each TensorFlow MRI version aims to target and support the latest TensorFlow
@@ -63,19 +69,9 @@ To get started without installing anything on your system, you can use
 [Google Colab](https://colab.research.google.com/notebooks/welcome.ipynb).
 Simply create a new notebook and use ``pip`` to install TensorFlow MRI.
 
-```python
+```
 !pip install tensorflow-mri
 ```
 
 The Colab environment is already configured to run TensorFlow and has GPU
 support.
-
-
-### TensorFlow compatibility table
-
-```{include} ../../../README.md
----
-start-after: start-compatibility-table
-end-before: end-compatibility-table
----
-```

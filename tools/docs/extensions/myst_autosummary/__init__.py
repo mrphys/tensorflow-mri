@@ -98,7 +98,6 @@ class Autosummary(autosummary.Autosummary):
         method of the parent class and convert the syntax with a
         regular expression after it's been generated.)
         """
-        logger.info('get_table')
         table_spec = sphinx.addnodes.tabular_col_spec()
         table_spec['spec'] = r'\X{1}{2}\X{1}{2}'
 
@@ -146,15 +145,12 @@ def get_md_suffix(app):
 
 
 def process_generate_options(app):
-    logger.info("============ process_generate_options ============")
     genfiles = app.config.autosummary_generate
-    logger.info(f"============ genfiles={genfiles} ============")
 
     if genfiles is True:
         env = app.builder.env
         genfiles = [env.doc2path(x, base=None) for x in env.found_docs
                     if os.path.isfile(env.doc2path(x))]
-        logger.info(f"============ genfiles={genfiles} ============")
     elif genfiles is False:
         pass
     else:
@@ -171,7 +167,6 @@ def process_generate_options(app):
         return
 
     suffix = get_md_suffix(app)
-    logger.info(f"============ suffix={suffix} ============")
 
     if suffix is None:
         logger.warning(__('autosummary generats .rst files internally. '

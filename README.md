@@ -1,17 +1,11 @@
-.. image:: https://raw.githubusercontent.com/mrphys/tensorflow-mri/v0.6.0/tools/assets/tfmr_logo.svg?sanitize=true
-  :align: center
-  :scale: 100 %
-  :alt: TFMRI logo
+<div align="center">
+  <img src="https://raw.githubusercontent.com/mrphys/tensorflow-mri/v0.21.0/tools/assets/tfmri_logo.svg?sanitize=true">
+</div>
 
-|
-
-[![PyPI](https://badge.fury.io/py/tensorflow-mri)
-.. |build| image:: https://github.com/mrphys/tensorflow-mri/actions/workflows/build-package.yml/badge.svg
-    :target: https://github.com/mrphys/tensorflow-mri/actions/workflows/build-package.yml
-.. |docs| image:: https://img.shields.io/badge/api-reference-blue.svg
-    :target: https://mrphys.github.io/tensorflow-mri/
-.. |doi| image:: https://zenodo.org/badge/388094708.svg
-    :target: https://zenodo.org/badge/latestdoi/388094708
+[![PyPI](https://badge.fury.io/py/tensorflow-mri.svg)](https://badge.fury.io/py/tensorflow-mri)
+[![Build](https://github.com/mrphys/tensorflow-mri/actions/workflows/build-package.yml/badge.svg)](https://github.com/mrphys/tensorflow-mri/actions/workflows/build-package.yml)
+[![Docs](https://img.shields.io/badge/api-reference-blue.svg)](https://mrphys.github.io/tensorflow-mri/)
+[![DOI](https://zenodo.org/badge/388094708.svg)](https://zenodo.org/badge/latestdoi/388094708)
 
 % start-intro
 
@@ -81,11 +75,11 @@ TensorFlow MRI contains operators for:
   gradient descent, L-BFGS.
 - And more, e.g., supporting array manipulation and math tasks.
 
-% end-intro
+<!-- end-intro -->
 
 ## Installation
 
-% start-install
+<!-- start-install -->
 
 You can install TensorFlow MRI with ``pip``:
 
@@ -101,37 +95,19 @@ Each TensorFlow MRI release is compiled against a specific version of
 TensorFlow. To ensure compatibility, it is recommended to install matching
 versions of TensorFlow and TensorFlow MRI according to the table below.
 
-% start-compatibility-table
+<!-- start-compatibility-table -->
 
-======================  ========================  ============
-TensorFlow MRI Version  TensorFlow Compatibility  Release Date
-======================  ========================  ============
-v0.22.0                 v2.9.x                    Jul 24, 2022
-v0.21.0                 v2.9.x                    Jul 24, 2022
-v0.20.0                 v2.9.x                    Jun 18, 2022
-v0.19.0                 v2.9.x                    Jun 1, 2022
-v0.18.0                 v2.8.x                    May 6, 2022
-v0.17.0                 v2.8.x                    Apr 22, 2022
-v0.16.0                 v2.8.x                    Apr 13, 2022
-v0.15.0                 v2.8.x                    Apr 1, 2022
-v0.14.0                 v2.8.x                    Mar 29, 2022
-v0.13.0                 v2.8.x                    Mar 15, 2022
-v0.12.0                 v2.8.x                    Mar 14, 2022
-v0.11.0                 v2.8.x                    Mar 10, 2022
-v0.10.0                 v2.8.x                    Mar 3, 2022
-v0.9.0                  v2.7.x                    Dec 3, 2021
-v0.8.0                  v2.7.x                    Nov 11, 2021
-v0.7.0                  v2.6.x                    Nov 3, 2021
-v0.6.2                  v2.6.x                    Oct 13, 2021
-v0.6.1                  v2.6.x                    Sep 30, 2021
-v0.6.0                  v2.6.x                    Sep 28, 2021
-v0.5.0                  v2.6.x                    Aug 29, 2021
-v0.4.0                  v2.6.x                    Aug 18, 2021
-======================  ========================  ============
+| TensorFlow MRI Version | TensorFlow Compatibility | Release Date |
+| ---------------------- | ------------------------ | ------------ |
+| v0.22.0                | v2.9.x                   | Jul 24, 2022 |
+| v0.21.0                | v2.9.x                   | Jul 24, 2022 |
+| v0.20.0                | v2.9.x                   | Jun 18, 2022 |
+| v0.19.0                | v2.9.x                   | Jun 1, 2022  |
+| v0.18.0                | v2.8.x                   | May 6, 2022  |
 
-% end-compatibility-table
+<!-- end-compatibility-table -->
 
-% end-install
+<!-- end-install -->
 
 ## Documentation
 
@@ -146,10 +122,7 @@ describing your problem. We're here to help!
 
 ## Credits
 
-If you like this software, star the repository! |stars|
-
-.. |stars| image:: https://img.shields.io/github/stars/mrphys/tensorflow-mri?style=social
-    :target: https://github.com/mrphys/tensorflow-mri/stargazers
+If you like this software, star the repository! [![Stars](https://img.shields.io/github/stars/mrphys/tensorflow-mri?style=social)](https://github.com/mrphys/tensorflow-mri/stargazers)
 
 If you find this software useful in your research, you can cite TensorFlow MRI
 using its [Zenodo record](https://doi.org/10.5281/zenodo.5151590).

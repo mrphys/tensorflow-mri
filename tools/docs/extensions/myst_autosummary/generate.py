@@ -355,7 +355,6 @@ def generate_autosummary_docs(sources: List[str], output_dir: str = None,
                               suffix: str = '.rst', base_path: str = None,
                               imported_members: bool = False, app: Any = None,
                               overwrite: bool = True, encoding: str = 'utf-8') -> None:
-    logger.info('===== generate_autosummary_docs =====')
     showed_sources = sorted(sources)
     if len(showed_sources) > 20:
         showed_sources = showed_sources[:10] + ['...'] + showed_sources[-10:]
@@ -372,7 +371,6 @@ def generate_autosummary_docs(sources: List[str], output_dir: str = None,
 
     # read
     items = find_autosummary_in_files(sources)
-    logger.info(f'===== items={items} =====')
 
     # keep track of new files
     new_files = []
@@ -490,6 +488,7 @@ def find_autosummary_in_lines(lines: List[str], module: str = None, filename: st
     *template* ``None`` if the directive does not have the
     corresponding options set.
     """
+    # jmontalt: Changed regexes to support MyST syntax.
     autosummary_re = re.compile(r'^(\s*)```{autosummary}\s*')
     automodule_re = re.compile(
         r'^\s*```{automodule}\s*([A-Za-z0-9_.]+)\s*$')
@@ -512,12 +511,12 @@ def find_autosummary_in_lines(lines: List[str], module: str = None, filename: st
     base_indent = ""
 
     for line in lines:
-        # logger.info(f"LINE: {line}")
         if in_autosummary:
+            # jmontalt: Added topmatter processing for MyST syntax.
             if in_topmatter:
+                # jmontalt: Added topmatter processing for MyST syntax.
                 m = topmatter_re.match(line)
                 if m:
-                    logger.info(f"========= topmatter_re (stop): {line} =========")
                     in_topmatter = False
                     continue
 
@@ -541,15 +540,14 @@ def find_autosummary_in_lines(lines: List[str], module: str = None, filename: st
 
                 continue  # skip options
 
+            # jmontalt: Added topmatter processing for MyST syntax.
             m = topmatter_re.match(line)
             if m:
-                logger.info(f"========= topmatter_re (start): {line} =========")
                 in_topmatter = True
                 continue
 
             m = autosummary_item_re.match(line)
             if m:
-                logger.info(f"========= autosummary_item_re: {line} =========")
                 name = m.group(1).strip()
                 if name.startswith('~'):
                     name = name[1:]
@@ -566,7 +564,6 @@ def find_autosummary_in_lines(lines: List[str], module: str = None, filename: st
 
         m = autosummary_re.match(line)
         if m:
-            logger.info(f"========= autosummary_re: {line} =========")
             in_autosummary = True
             base_indent = m.group(1)
             recursive = False

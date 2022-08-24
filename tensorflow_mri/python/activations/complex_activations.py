@@ -14,6 +14,8 @@
 # ==============================================================================
 """Complex-valued activations."""
 
+import inspect
+
 import tensorflow as tf
 
 from tensorflow_mri.python.util import api_util
@@ -36,6 +38,7 @@ def complexified(name, split='real_imag'):
                                    func(tf.math.imag(x), *args, **kwargs))
       return func(x, *args, **kwargs)
     wrapper.__name__ = name
+    wrapper.__signature__ = inspect.signature(func)
     return wrapper
   return decorator
 
@@ -57,11 +60,12 @@ complex_relu.__doc__ = (
     applied to its real and imaginary parts, i.e., the function returns
     `relu(real(x)) + 1j * relu(imag(x))`.
 
-    .. note::
-      This activation does not preserve the phase of complex inputs.
+    ```{note}
+    This activation does not preserve the phase of complex inputs.
+    ```
 
     If passed a real-valued tensor, this function falls back to the standard
-    `tf.keras.activations.relu`_.
+    `tf.keras.activations.relu`.
 
     Args:
       x: The input `tf.Tensor`. Can be real or complex.
@@ -75,7 +79,8 @@ complex_relu.__doc__ = (
     Returns:
       A `tf.Tensor` of the same shape and dtype of input `x`.
 
-    .. _tf.keras.activations.relu: https://www.tensorflow.org/api_docs/python/tf/keras/activations/relu
+    References:
+      1. https://arxiv.org/abs/1705.09792
     """
 )
 
@@ -95,16 +100,18 @@ mod_relu.__doc__ = (
     If passed a complex-valued tensor, the ReLU activation is applied to its
     magnitude, i.e., the function returns `relu(abs(x)) * exp(1j * angle(x))`.
 
-    .. note::
-      This activation preserves the phase of complex inputs.
+    ```{note}
+    This activation preserves the phase of complex inputs.
+    ```
 
-    .. warning::
-      With default parameters, this activation is linear, since the magnitude
-      of the input is never negative. Usually you will want to set one or more
-      of the provided parameters to non-default values.
+    ```{warning}
+    With default parameters, this activation is linear, since the magnitude
+    of the input is never negative. Usually you will want to set one or more
+    of the provided parameters to non-default values.
+    ```
 
     If passed a real-valued tensor, this function falls back to the standard
-    `tf.keras.activations.relu`_.
+    `tf.keras.activations.relu`.
 
     Args:
       x: The input `tf.Tensor`. Can be real or complex.
@@ -118,6 +125,7 @@ mod_relu.__doc__ = (
     Returns:
       A `tf.Tensor` of the same shape and dtype of input `x`.
 
-    .. _tf.keras.activations.relu: https://www.tensorflow.org/api_docs/python/tf/keras/activations/relu
+    References:
+      1. https://arxiv.org/abs/1705.09792
     """
 )
