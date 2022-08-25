@@ -24,9 +24,9 @@ import warnings
 import numpy as np
 import tensorflow as tf
 import tensorflow_nufft as tfft
-from tensorflow_graphics.geometry.transformation import rotation_matrix_2d # pylint: disable=wrong-import-order
 from tensorflow_graphics.geometry.transformation import rotation_matrix_3d # pylint: disable=wrong-import-order
 
+from tensorflow_mri.python.geometry import rotation_matrix_2d
 from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import geom_ops
 from tensorflow_mri.python.ops import signal_ops
@@ -694,8 +694,10 @@ def radial_density(base_resolution,
   if ordering not in orderings_2d:
     raise ValueError(f"Ordering `{ordering}` is not implemented.")
 
+  phases_ = phases if phases is not None else 1
+
   # Get angles.
-  angles = _trajectory_angles(views, phases or 1, ordering=ordering,
+  angles = _trajectory_angles(views, phases_, ordering=ordering,
                               angle_range=angle_range, tiny_number=tiny_number)
 
   # Compute weights.
@@ -917,6 +919,8 @@ def _trajectory_angles(views,
     raise ValueError(
         f"`tiny_number` must be an integer >= 2. Received: {tiny_number}")
 
+  phases_ = phases if phases is not None else 1
+
   # Constants.
   pi = math.pi
   pi2 = math.pi * 2.0
@@ -932,19 +936,19 @@ def _trajectory_angles(views,
 
   def _angles_2d(angle_delta, angle_max, interleave=False):
     # Compute azimuthal angles [0, 2 * pi] (full) or [0, pi] (half).
-    angles = tf.range(views * (phases or 1), dtype=tf.float32)
+    angles = tf.range(views * phases_, dtype=tf.float32)
     angles *= angle_delta
     angles %= angle_max
     if interleave:
-      angles = tf.transpose(tf.reshape(angles, (views, phases or 1)))
+      angles = tf.transpose(tf.reshape(angles, (views, phases_)))
     else:
-      angles = tf.reshape(angles, (phases or 1, views))
+      angles = tf.reshape(angles, (phases_, views))
     angles = tf.expand_dims(angles, -1)
     return angles
 
   # Get ordering.
   if ordering == 'linear':
-    angles = _angles_2d(default_max / (views * (phases or 1)), default_max,
+    angles = _angles_2d(default_max / (views * phases_), default_max,
                         interleave=True)
   elif ordering == 'golden':
     angles = _angles_2d(phi * default_max, default_max)
@@ -981,7 +985,7 @@ def _trajectory_angles(views,
   elif ordering == 'tiny_half':
     angles = _angles_2d(phi_n * pi, default_max)
   elif ordering == 'sphere_archimedean':
-    projections = views * (phases or 1)
+    projections = views * phases_
     full_projections = 2 * projections if angle_range == 'half' else projections
     # Computation is sensitive to floating-point errors, so we use float64 to
     # ensure sufficient accuracy.
@@ -993,7 +997,7 @@ def _trajectory_angles(views,
     az = tf.math.floormod(tf.math.cumsum(az), 2.0 * math.pi) # pylint: disable=no-value-for-parameter
     # Interleave the readouts.
     def _interleave(arg):
-      return tf.transpose(tf.reshape(arg, (views, phases or 1)))
+      return tf.transpose(tf.reshape(arg, (views, phases_)))
     pol = _interleave(pol)
     az = _interleave(az)
     angles = tf.stack([pol, az], axis=-1)
@@ -1212,10 +1216,22 @@ def flatten_trajectory(trajectory):
   Returns:
     A reshaped `Tensor` with shape `[..., views * samples, ndim]`.
   """
+  # Compute static output shape.
   batch_shape = trajectory.shape[:-3]
   views, samples, rank = trajectory.shape[-3:]
-  new_shape = batch_shape + [views*samples, rank]
-  return tf.reshape(trajectory, new_shape)
+  if views is None or samples is None:
+    views_times_samples = None
+  else:
+    views_times_samples = views * samples
+  static_flat_shape = batch_shape + [views_times_samples, rank]
+
+  # Compute dynamic output shape.
+  shape = tf.shape(trajectory)
+  batch_shape = shape[:-3]
+  views, samples, rank = shape[-3], shape[-2], shape[-1]
+  flat_shape = tf.concat([batch_shape, [views * samples, rank]], 0)
+
+  return tf.ensure_shape(tf.reshape(trajectory, flat_shape), static_flat_shape)
 
 
 @api_util.export("sampling.flatten_density")
@@ -1228,10 +1244,22 @@ def flatten_density(density):
   Returns:
     A reshaped `Tensor` with shape `[..., views * samples]`.
   """
+  # Compute static output shape.
   batch_shape = density.shape[:-2]
   views, samples = density.shape[-2:]
-  new_shape = batch_shape + [views*samples]
-  return tf.reshape(density, new_shape)
+  if views is None or samples is None:
+    views_times_samples = None
+  else:
+    views_times_samples = views * samples
+  static_flat_shape = batch_shape + [views_times_samples]
+
+  # Compute dynamic output shape.
+  shape = tf.shape(density)
+  batch_shape = shape[:-2]
+  views, samples = shape[-2], shape[-1]
+  flat_shape = tf.concat([batch_shape, [views * samples]], 0)
+
+  return tf.ensure_shape(tf.reshape(density, flat_shape), static_flat_shape)
 
 
 @api_util.export("sampling.expand_trajectory")

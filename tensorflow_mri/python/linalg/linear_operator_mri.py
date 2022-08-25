@@ -144,8 +144,10 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
     if self._rank not in (2, 3):
       raise ValueError(f"Rank must be 2 or 3, but got: {self._rank}")
     self._image_axes = list(range(-self._rank, 0))  # pylint: disable=invalid-unary-operand-type
+    if extra_shape is None:
+      extra_shape = []
     self._extra_shape_static, self._extra_shape_dynamic = (
-        tensor_util.static_and_dynamic_shapes_from_shape(extra_shape or []))
+        tensor_util.static_and_dynamic_shapes_from_shape(extra_shape))
 
     # Set initial batch shape, then update according to inputs.
     # We include the "extra" dimensions in the batch shape for now, so that

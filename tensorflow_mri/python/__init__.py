@@ -17,6 +17,7 @@
 from tensorflow_mri.python import activations
 from tensorflow_mri.python import callbacks
 from tensorflow_mri.python import coils
+from tensorflow_mri.python import geometry
 from tensorflow_mri.python import initializers
 from tensorflow_mri.python import io
 from tensorflow_mri.python import layers
