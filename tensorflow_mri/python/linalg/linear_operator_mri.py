@@ -550,4 +550,4 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
             "trajectory",
             "density",
             "sensitivities",
-            "fft_norm")
+            "phase")
