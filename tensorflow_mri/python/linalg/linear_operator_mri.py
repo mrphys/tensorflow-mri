@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
 # ==============================================================================
 """MRI linear operator."""
 
+import warnings
+
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import fft_ops
@@ -24,15 +26,19 @@ from tensorflow_mri.python.linalg import linear_operator
 from tensorflow_mri.python.util import tensor_util
 
 
+_WARNED_IGNORED_BATCH_DIMENSIONS = {}
+
+
 @api_util.export("linalg.LinearOperatorMRI")
 class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abstract-method
-  """Linear operator representing an MRI encoding matrix.
+  r"""Linear operator representing an MRI encoding matrix.
 
-  The MRI operator, :math:`A`, maps a [batch of] images, :math:`x` to a
-  [batch of] measurement data (*k*-space), :math:`b`.
+  The MRI operator, $A$, maps a [batch of] images, $x$ to a
+  [batch of] measurement data (*k*-space), $b$.
 
-  .. math::
-    A x = b
+  $$
+  A x = b
+  $$
 
   This object may represent an undersampled MRI operator and supports
   Cartesian and non-Cartesian *k*-space sampling. The user may provide a
@@ -130,12 +136,22 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
         dynamic_domain=dynamic_domain,
         dtype=dtype,
         name=name)
+    super().__init__(dtype, name=name, parameters=parameters)
 
     # Set dtype.
     dtype = tf.as_dtype(dtype)
     if dtype not in (tf.complex64, tf.complex128):
       raise ValueError(
           f"`dtype` must be `complex64` or `complex128`, but got: {str(dtype)}")
+
+    # Batch dimensions in `image_shape` and `extra_shape` are not supported.
+    # However, it is convenient to allow them to have batch dimensions anyway.
+    # This helps when this operator is used in Keras models, where all inputs
+    # may be automatically batched. If there are any batch dimensions, we simply
+    # ignore them by taking the first element. The first time this happens
+    # we also emit a warning.
+    image_shape = self._ignore_batch_dims_in_shape(image_shape, "image_shape")
+    extra_shape = self._ignore_batch_dims_in_shape(extra_shape, "extra_shape")
 
     # Set image shape, rank and extra shape.
     self._image_shape_static, self._image_shape_dynamic = (
@@ -310,8 +326,6 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
 
     # This variable is used by `LinearOperatorGramMRI` to disable the NUFFT.
     self._skip_nufft = False
-
-    super().__init__(dtype, name=name, parameters=parameters)
 
   def _transform(self, x, adjoint=False):
     """Transform [batch] input `x`.
@@ -551,3 +565,21 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
             "density",
             "sensitivities",
             "phase")
+
+  def _ignore_batch_dims_in_shape(self, shape, argname):
+    if shape is None:
+      return None
+    shape = tf.convert_to_tensor(shape, dtype=tf.int32)
+    if shape.shape.rank == 2:
+      warned = _WARNED_IGNORED_BATCH_DIMENSIONS.get(argname, False)
+      if not warned:
+        _WARNED_IGNORED_BATCH_DIMENSIONS[argname] = True
+        warnings.warn(
+            f"Operator {self.name} got a batched `{argname}` argument. "
+            f"It is not possible to process images with "
+            f"different shapes in the same batch. "
+            f"If the input batch has more than one element, "
+            f"only the first shape will be used. "
+            f"It is up to you to verify if this behavior is correct.")
+      return tf.ensure_shape(shape[0], shape.shape[1:])
+    return shape

@@ -14,33 +14,37 @@
 # ==============================================================================
 """Linear operator layer."""
 
-import inspect
-
 import tensorflow as tf
 
 from tensorflow_mri.python.linalg import linear_operator
 from tensorflow_mri.python.linalg import linear_operator_mri
 
 
+LINEAR_OPERATORS = {
+    'MRI': linear_operator_mri.LinearOperatorMRI,
+    'LinearOperatorMRI': linear_operator_mri.LinearOperatorMRI
+}
+
+
 class LinearOperatorLayer(tf.keras.layers.Layer):
   """A layer that uses a linear operator (abstract base class)."""
-  def __init__(self,
-               operator=linear_operator_mri.LinearOperatorMRI,
-               input_indices=None,
-               **kwargs):
+  def __init__(self, operator, input_indices=None, **kwargs):
     super().__init__(**kwargs)
 
     if isinstance(operator, linear_operator.LinearOperator):
-      self._operator_class = operator.__class__
-      self._operator_instance = operator
-    elif (inspect.isclass(operator) and
-          issubclass(operator, linear_operator.LinearOperator)):
-      self._operator_class = operator
-      self._operator_instance = None
+      self._operator = operator
+    elif isinstance(operator, str):
+      if operator not in LINEAR_OPERATORS:
+        raise ValueError(
+            f"Unknown operator: {operator}. "
+            f"Valid strings are: {list(LINEAR_OPERATORS.keys())}")
+      self._operator = operator
+    elif callable(operator):
+      self._operator = operator
     else:
       raise TypeError(
-          f"`operator` must be a subclass of `tfmri.linalg.LinearOperator` "
-          f"or an instance thereof, but got type: {type(operator)}")
+          f"`operator` must be a `tfmri.linalg.LinearOperator`, a `str`, or a "
+          f"callable object. Received: {operator}")
 
     if isinstance(input_indices, (int, str)):
       input_indices = (input_indices,)
@@ -53,50 +57,42 @@ class LinearOperatorLayer(tf.keras.layers.Layer):
     method. It returns the inputs and an instance of the linear operator to be
     used.
     """
-    if self._operator_instance is None:
-      # operator is a class.
-      if not isinstance(inputs, dict):
-        raise ValueError(
-            f"Layer {self.name} expected a mapping. "
-            f"Received: {inputs}")
+    if isinstance(self._operator, linear_operator.LinearOperator):
+      # Operator already instantiated. Simply return.
+      return inputs, self._operator
 
-      if self._input_indices is None:
-        input_indices = (tuple(inputs.keys())[0],)
-      else:
-        input_indices = self._input_indices
+    # Need to instantiate the operator.
+    if not isinstance(inputs, dict):
+      raise ValueError(
+          f"Layer {self.name} expected a mapping. "
+          f"Received: {inputs}")
 
-      main = tuple(inputs[i] for i in input_indices)
-      kwargs = {k: v for k, v in inputs.items() if k not in input_indices}
+    # If operator is a string, get corresponding class.
+    if isinstance(self._operator, str):
+      operator = LINEAR_OPERATORS[self._operator]
 
-      # Unpack single input.
-      if len(main) == 1:
-        main = main[0]
-
-      # Instantiate the operator.
-      operator = self._operator_class(**kwargs)
-
+    # Get main inputs (defined by input_indices).
+    if self._input_indices is None:
+      input_indices = (tuple(inputs.keys())[0],)
     else:
-      # Inputs.
-      main = inputs
-      operator = self._operator_instance
+      input_indices = self._input_indices
+    main = tuple(inputs[i] for i in input_indices)
+    if len(main) == 1:
+      main = main[0]  # Unpack single inputs.
+
+    # Get remaining inputs and instantiate the operator.
+    kwargs = {k: v for k, v in inputs.items() if k not in input_indices}
+    operator = operator(**kwargs)
 
     return main, operator
 
   def get_config(self):
     base_config = super().get_config()
     config = {
-        'operator': self.get_input_operator(),
+        'operator': self._operator,
         'input_indices': self._input_indices
     }
     return {**config, **base_config}
-
-  def get_input_operator(self):
-    """Serializes an operator to a dictionary."""
-    if self._operator_instance is None:
-      operator = self._operator_class
-    else:
-      operator = self._operator_instance
-    return operator
 
 
 class LinearTransform(LinearOperatorLayer):

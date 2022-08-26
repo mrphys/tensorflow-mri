@@ -27,26 +27,29 @@ from tensorflow_mri.python.util import doc_util
 from tensorflow_mri.python.util import keras_util
 
 
-DOCSTRING = string.Template(
-  """${rank}-D adjoint reconstruction layer.
+class ReconAdjoint(linear_operator_layer.LinearOperatorLayer):
+  r"""${rank}-D adjoint reconstruction layer.
 
   This layer reconstructs a signal using the adjoint of the specified system
   operator.
 
-  This layer's `inputs` differ depending on whether `operator` is a class or an
-  instance.
+  This layer can use the same operator instance in each invocation or
+  instantiate a new operator in each invocation, depending on whether the
+  operator remains constant or depends on the inputs to the layer.
 
-  - If `operator` is a class, then `inputs` must be a `dict` containing both
-    the inputs to the operator's constructor (e.g., *k*-space mask, trajectory,
-    coil sensitivities, etc...) and the input to the operator's `transform`
-    method (usually, the *k*-space data). The value at `kspace_index` will be
-    passed to the operator's `transform` method. Any other values in `inputs`
-    will be passed to the operator's constructor.
+  - If you wish to use the same operator instance during each call, initialize
+    the layer by setting `operator` to be an instance of a linear operator.
+    Then the call `inputs` are simply the input to the operator's `transform`
+    method (usually, the *k*-space data).
 
-  - If `operator` is an instance, then `inputs` only contains the input to the
-    operator's `transform` method (usually, the *k*-space data). In this case,
-    `inputs` must be a `tf.Tensor` which will be passed unmodified to the
-    operator's `transform` method.
+  - If you wish to instantiate a new operator during each call (e.g., because
+    the operator itself depends on the layer's inputs), initialize the layer by
+    setting `operator` to be a function that returns an instance of a linear
+    operator (or a string if you wish to use one of the built-in operators).
+    In this case the call `inputs` must be a `dict` containing both the inputs
+    to the operator's `transform` method (specified by `input_indices`) and the
+    any other inputs needed by the `operator` function to instantiate the
+    linear operator.
 
   Args:
     expand_channel_dim: A `boolean`. Whether to expand the channel dimension.
@@ -55,26 +58,31 @@ DOCSTRING = string.Template(
       Defaults to `True`.
     reinterpret_complex: A `boolean`. Whether to reinterpret a complex-valued
       output image as a dual-channel real image. Defaults to `False`.
-    operator: A subclass of `tfmri.linalg.LinearOperator` or an instance
-      thereof. The system operator. This object may be a class or an instance.
+    operator: A `tfmri.linalg.LinearOperator`, or a callable that returns a
+      `tfmri.linalg.LinearOperator`, or a `str` containing the name of one
+      of the built-in linear operators. The system operator.
 
-      - If `operator` is a class, then a new instance will be created during
-        each evaluation of `call`. The constructor will be passed the arguments
-        in `inputs` except `kspace_index`.
-      - If `operator` is an instance, then it will be used as is.
+      - If `operator` is a `tfmri.linalg.LinearOperator`, the operator will be
+        used as is during each invocation of the layer's `call` method.
+      - If `operator` is a generic callable, it will be called during each
+        invocation of the layer's `call` method to construct a new
+        `tfmri.linalg.LinearOperator`. The callable will be passed all of the
+        arguments in `inputs` except `kspace_index`.
+      - If `operator` is a `str`, it must be the name of one of the built-in
+        linear operators. See the `tfmri.linalg` module for a list of built-in
+        operators. The operator will be constructed during each invocation of
+        `call` using the arguments in `inputs` except `kspace_index`.
 
-      Defaults to `tfmri.linalg.LinearOperatorMRI`.
+      Defaults to `'MRI'`, which creates a new `tfmri.linalg.LinearOperatorMRI`
+      during each invocation of `call`.
     kspace_index: A `str`. The key of `inputs` containing the *k*-space data.
       Defaults to `None`, which takes the first element of `inputs`.
-  """)
-
-
-class ReconAdjoint(linear_operator_layer.LinearOperatorLayer):
+  """
   def __init__(self,
                rank,
                expand_channel_dim=True,
                reinterpret_complex=False,
-               operator=linear_operator_mri.LinearOperatorMRI,
+               operator='MRI',
                kspace_index=None,
                **kwargs):
     kwargs['dtype'] = kwargs.get('dtype') or keras_util.complexx()
@@ -103,6 +111,11 @@ class ReconAdjoint(linear_operator_layer.LinearOperatorLayer):
         input_indices[0] if input_indices is not None else None)
     return {**config, **base_config}
 
+  @classmethod
+  def from_config(cls, config):
+    print("from_config", config)
+    return cls(**config)
+
 
 @api_util.export("layers.ReconAdjoint2D")
 @tf.keras.utils.register_keras_serializable(package='MRI')
@@ -118,9 +131,9 @@ class ReconAdjoint3D(ReconAdjoint):
     super().__init__(3, *args, **kwargs)
 
 
-ReconAdjoint2D.__doc__ = DOCSTRING.substitute(
+ReconAdjoint2D.__doc__ = string.Template(ReconAdjoint.__doc__).substitute(
     rank=2, dim_names='height, width')
-ReconAdjoint3D.__doc__ = DOCSTRING.substitute(
+ReconAdjoint3D.__doc__ = string.Template(ReconAdjoint.__doc__).substitute(
     rank=3, dim_names='depth, height, width')
 
 
