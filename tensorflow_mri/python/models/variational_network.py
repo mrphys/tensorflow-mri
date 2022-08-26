@@ -16,10 +16,9 @@
 import string
 
 import tensorflow as tf
-import warnings
 
 from tensorflow_mri.python.activations import complex_activations
-from tensorflow_mri.python.layers import data_consistency, linear_operator_layer
+from tensorflow_mri.python.layers import data_consistency, normalization
 from tensorflow_mri.python.models import graph_like_model
 from tensorflow_mri.python.ops import coil_ops, math_ops
 from tensorflow_mri.python.util import api_util
@@ -104,7 +103,9 @@ class VarNet(tf.keras.Model):
     )
 
     if self.reg_network == 'auto':
-      reg_network_class = model_util.get_nd_model('UNet', rank)
+      reg_network_class = lambda *args, name=None, **kwargs: normalization.Normalized(
+          model_util.get_nd_model('UNet', rank)(*args, **kwargs),
+          axis=list(range(-(self.rank + 1), 0)), name=name)
       reg_network_kwargs = dict(
           filters=[32, 64, 128],
           kernel_size=3,
@@ -162,19 +163,6 @@ class VarNet(tf.keras.Model):
 
   def call(self, inputs):
     x = {k: v for k, v in inputs.items()}
-
-    if 'image_shape' in x:
-      image_shape = x['image_shape']
-      if image_shape.shape.rank == 2:
-        warnings.warn(
-            f"Layer {self.name} got a batch of image shapes. "
-            f"It is not possible to reconstruct images with "
-            f"different shapes in the same batch. "
-            f"If the input batch has more than one element, "
-            f"only the first image shape will be used. "
-            f"It is up to you to verify if this behavior is correct.")
-        x['image_shape'] = tf.ensure_shape(
-            image_shape[0], image_shape.shape[1:])
 
     if self.compress_coils:
       x['kspace'] = self._coil_compression_layer(x)

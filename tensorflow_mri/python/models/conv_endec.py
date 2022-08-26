@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ from tensorflow_mri.python.util import model_util  # pylint: disable=cyclic-impo
 from tensorflow_mri.python.util import layer_util
 
 
-UNET_DOC_TEMPLATE = string.Template(
+class UNet(tf.keras.Model):
   """${rank}D U-Net model.
 
   Args:
@@ -91,11 +91,7 @@ UNET_DOC_TEMPLATE = string.Template(
     .. [2] Han, Y., & Ye, J. C. (2018). Framing U-Net via deep convolutional
       framelets: Application to sparse-view CT. IEEE transactions on medical
       imaging, 37(6), 1418-1429.
-  """)
-
-
-class UNet(tf.keras.Model):
-  """U-Net model (private base class)."""
+  """
   def __init__(self,
                rank,
                filters,
@@ -397,9 +393,9 @@ class UNet3D(UNet):
     super().__init__(3, *args, **kwargs)
 
 
-UNet1D.__doc__ = UNET_DOC_TEMPLATE.substitute(rank=1)
-UNet2D.__doc__ = UNET_DOC_TEMPLATE.substitute(rank=2)
-UNet3D.__doc__ = UNET_DOC_TEMPLATE.substitute(rank=3)
+UNet1D.__doc__ = string.Template(UNet.__doc__).substitute(rank=1)
+UNet2D.__doc__ = string.Template(UNet.__doc__).substitute(rank=2)
+UNet3D.__doc__ = string.Template(UNet.__doc__).substitute(rank=3)
 
 
 UNet1D.__signature__ = doc_util.get_nd_layer_signature(UNet)

@@ -6,6 +6,7 @@
 __pycache__/
 artifacts/
 build/
+logs/
 third_party/spiral_waveform
 tools/docs/_build
 tools/docs/_templates
