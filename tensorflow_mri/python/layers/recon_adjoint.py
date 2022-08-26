@@ -111,11 +111,6 @@ class ReconAdjoint(linear_operator_layer.LinearOperatorLayer):
         input_indices[0] if input_indices is not None else None)
     return {**config, **base_config}
 
-  @classmethod
-  def from_config(cls, config):
-    print("from_config", config)
-    return cls(**config)
-
 
 @api_util.export("layers.ReconAdjoint2D")
 @tf.keras.utils.register_keras_serializable(package='MRI')
