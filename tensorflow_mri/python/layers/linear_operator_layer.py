@@ -70,6 +70,8 @@ class LinearOperatorLayer(tf.keras.layers.Layer):
     # If operator is a string, get corresponding class.
     if isinstance(self._operator, str):
       operator = LINEAR_OPERATORS[self._operator]
+    else:
+      operator = self._operator
 
     # Get main inputs (defined by input_indices).
     if self._input_indices is None:
