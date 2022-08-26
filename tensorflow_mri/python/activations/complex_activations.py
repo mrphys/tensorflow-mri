@@ -24,8 +24,7 @@ from tensorflow_mri.python.util import api_util
 def complexified(name, split='real_imag'):
   """Returns a decorator to create complex-valued activations."""
   if split not in ('real_imag', 'abs_angle'):
-    raise ValueError(
-        f"split must be one of 'real_imag' or 'abs_angle', but got: {split}")
+    raise ValueError("split must be one of 'real_imag' or 'abs_angle', but got:"+split)
   def decorator(func):
     def wrapper(x, *args, **kwargs):
       x = tf.convert_to_tensor(x)
