@@ -19,7 +19,6 @@ import string
 import tensorflow as tf
 
 from tensorflow_mri.python.layers import linear_operator_layer
-from tensorflow_mri.python.linalg import linear_operator_mri
 from tensorflow_mri.python.ops import math_ops
 from tensorflow_mri.python.recon import recon_adjoint
 from tensorflow_mri.python.util import api_util

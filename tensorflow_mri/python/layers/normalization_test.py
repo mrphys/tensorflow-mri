@@ -13,12 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for normalization layers."""
-# pylint: disable=g-direct-tensorflow-import
 
-from absl.testing import parameterized
-import keras
-from keras.testing_infra import test_combinations
-from keras.testing_infra import test_utils
 import numpy as np
 import tensorflow as tf
 
@@ -29,27 +24,30 @@ from tensorflow_mri.python.util import test_util
 class NormalizedTest(test_util.TestCase):
   @test_util.run_all_execution_modes
   def test_normalized_dense(self):
-    model = keras.models.Sequential()
-    model.add(
-        keras.layers.TimeDistributed(
-            keras.layers.Dense(2), input_shape=(3, 4)))
-    model.compile(optimizer='rmsprop', loss='mse')
-    model.fit(
-        np.random.random((10, 3, 4)),
-        np.random.random((10, 3, 2)),
-        epochs=1,
-        batch_size=10)
+    layer = normalization.Normalized(
+        tf.keras.layers.Dense(2, bias_initializer='random_uniform'))
+    layer.build((None, 4))
 
-    # test config
-    model.get_config()
+    input_data = np.random.uniform(size=(2, 4))
 
-    # check whether the model variables are present in the
-    # trackable list of objects
-    checkpointed_object_ids = {
-        id(o) for o in trackable_util.list_objects(model)
-    }
-    for v in model.variables:
-      self.assertIn(id(v), checkpointed_object_ids)
+    def _compute_output(input_data, normalized=False):
+      if normalized:
+        mean = input_data.mean(axis=-1, keepdims=True)
+        std = input_data.std(axis=-1, keepdims=True)
+        input_data = (input_data - mean) / std
+      output_data = layer.layer(input_data)
+      if normalized:
+        output_data = output_data * std + mean
+      return output_data
+
+    expected_unnorm = _compute_output(input_data, normalized=False)
+    expected_norm = _compute_output(input_data, normalized=True)
+
+    result_unnorm = layer.layer(input_data)
+    result_norm = layer(input_data)
+
+    self.assertAllClose(expected_unnorm, result_unnorm)
+    self.assertAllClose(expected_norm, result_norm)
 
 
 if __name__ == '__main__':
