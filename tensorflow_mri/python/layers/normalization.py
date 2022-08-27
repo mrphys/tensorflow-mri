@@ -28,14 +28,14 @@ class Normalized(tf.keras.layers.Wrapper):
   with a standard deviation of 1 before passing them to the wrapped layer.
 
   $$
-  x = (x - \mu) / \sigma
+    x = \frac{x - \mu}{\sigma}
   $$
 
   After applying the wrapped layer, the outputs are scaled back to the original
   distribution.
 
   $$
-  y = y \sigma + \mu
+    y = \sigma y + \mu
   $$
 
   Args:

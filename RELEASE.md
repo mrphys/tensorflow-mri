@@ -8,6 +8,14 @@
 
 ## Major Features and Improvements
 
+- `tfmri.geometry`:
+
+  - Added new extension type `RotationMatrix2D`.
+
+- `tfmri.layers`:
+
+  - Added new wrapper layer `Normalized`.
+
 - `tfmri.sampling`:
 
   - Added operator ``spiral_waveform`` to public API.

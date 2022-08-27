@@ -1037,9 +1037,6 @@ def _rotate_waveform_2d(waveform, angles):
   # Prepare for broadcasting.
   angles = tf.expand_dims(angles, -2)
 
-  # Compute rotation matrix.
-  rot_matrix = rotation_matrix_2d.from_euler(angles)
-
   # Add leading singleton dimensions to `waveform` to match the batch shape of
   # `angles`. This prevents a broadcasting error later.
   waveform = tf.reshape(waveform,
@@ -1047,7 +1044,7 @@ def _rotate_waveform_2d(waveform, angles):
                  tf.shape(waveform)], 0))
 
   # Apply rotation.
-  return rotation_matrix_2d.rotate(waveform, rot_matrix)
+  return rotation_matrix_2d.RotationMatrix2D.from_euler(angles).rotate(waveform)
 
 
 def _rotate_waveform_3d(waveform, angles):
