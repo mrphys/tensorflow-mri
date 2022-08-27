@@ -26,8 +26,9 @@ import functools
 import numpy as np
 import tensorflow as tf
 
+from tensorflow_mri.python.geometry import rotation_2d
+from tensorflow_mri.python.geometry import rotation_3d
 from tensorflow_mri.python.ops import array_ops
-from tensorflow_mri.python.ops import geom_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import deprecation
@@ -1740,7 +1741,8 @@ def phantom(phantom_type='modified_shepp_logan',  # pylint: disable=dangerous-de
 
     if isinstance(obj, Ellipse):
       # Apply translation and rotation to coordinates.
-      tx = geom_ops.rotate_2d(x - obj.pos, tf.cast(obj.phi, x.dtype))
+      tx = rotation_2d.Rotation2D.from_euler(tf.cast(obj.phi, x.dtype)).rotate(
+          x - obj.pos)
       # Use object equation to generate a mask.
       mask = tf.math.reduce_sum(
           (tx ** 2) / (tf.convert_to_tensor(obj.size) ** 2), -1) <= 1.0
@@ -1748,7 +1750,8 @@ def phantom(phantom_type='modified_shepp_logan',  # pylint: disable=dangerous-de
       image = tf.where(mask, image + obj.rho, image)
     elif isinstance(obj, Ellipsoid):
       # Apply translation and rotation to coordinates.
-      tx = geom_ops.rotate_3d(x - obj.pos, tf.cast(obj.phi, x.dtype))
+      tx = rotation_3d.Rotation3D.from_euler(tf.cast(obj.phi, x.dtype)).rotate(
+          x - obj.pos)
       # Use object equation to generate a mask.
       mask = tf.math.reduce_sum(
           (tx ** 2) / (tf.convert_to_tensor(obj.size) ** 2), -1) <= 1.0

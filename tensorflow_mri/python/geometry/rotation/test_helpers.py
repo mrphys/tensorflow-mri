@@ -14,22 +14,17 @@
 """Test helpers for the transformation module."""
 # This file is copied from TensorFlow Graphics.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import itertools
 import math
 
 import numpy as np
 from scipy import stats
 from six.moves import range
-import tensorflow.compat.v2 as tf
+import tensorflow as tf
 
-from tensorflow_graphics.geometry.transformation import axis_angle
-from tensorflow_graphics.geometry.transformation import quaternion
-from tensorflow_graphics.geometry.transformation import rotation_matrix_2d
-from tensorflow_graphics.geometry.transformation import rotation_matrix_3d
+from tensorflow_mri.python.geometry.rotation import rotation_matrix_2d
+from tensorflow_mri.python.geometry.rotation import rotation_matrix_3d
+from tensorflow_mri.python.geometry.rotation import quaternion
 
 
 def generate_preset_test_euler_angles(dimensions=3):
@@ -64,7 +59,7 @@ def generate_preset_test_rotation_matrices_2d():
 def generate_preset_test_axis_angle():
   """Generates pre-set test rotation matrices."""
   angles = generate_preset_test_euler_angles()
-  axis, angle = axis_angle.from_euler(angles)
+  axis, angle = rotation_matrix_3d.from_axis_angle(angles)
   return axis, angle
 
 

@@ -42,7 +42,6 @@ from tensorflow_mri.python.ops.array_ops import *
 from tensorflow_mri.python.ops.coil_ops import *
 from tensorflow_mri.python.ops.convex_ops import *
 from tensorflow_mri.python.ops.fft_ops import *
-from tensorflow_mri.python.ops.geom_ops import *
 from tensorflow_mri.python.ops.image_ops import *
 from tensorflow_mri.python.ops.math_ops import *
 from tensorflow_mri.python.ops.optimizer_ops import *

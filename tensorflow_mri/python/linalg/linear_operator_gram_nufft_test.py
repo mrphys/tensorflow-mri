@@ -19,9 +19,9 @@ from absl.testing import parameterized
 import numpy as np
 import tensorflow as tf
 
+from tensorflow_mri.python.geometry import rotation_2d
 from tensorflow_mri.python.linalg import linear_operator_gram_nufft
 from tensorflow_mri.python.linalg import linear_operator_nufft
-from tensorflow_mri.python.ops import geom_ops
 from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.ops import traj_ops
 from tensorflow_mri.python.util import test_util
@@ -50,7 +50,8 @@ class LinearOperatorGramNUFFTTest(test_util.TestCase):
       if batch:
         image = tf.stack([image, image * 0.5])
         trajectory = tf.stack([
-            trajectory, geom_ops.rotate_2d(trajectory, [np.pi / 2])])
+            trajectory,
+            rotation_2d.Rotation2D.from_euler([np.pi / 2]).rotate(trajectory)])
         if density is not None:
           density = tf.stack([density, density])
 

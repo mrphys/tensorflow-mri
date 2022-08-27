@@ -24,11 +24,10 @@ import warnings
 import numpy as np
 import tensorflow as tf
 import tensorflow_nufft as tfft
-from tensorflow_graphics.geometry.transformation import rotation_matrix_3d # pylint: disable=wrong-import-order
 
-from tensorflow_mri.python.geometry import rotation_matrix_2d
+from tensorflow_mri.python.geometry import rotation_2d
+from tensorflow_mri.python.geometry import rotation_3d
 from tensorflow_mri.python.ops import array_ops
-from tensorflow_mri.python.ops import geom_ops
 from tensorflow_mri.python.ops import signal_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
@@ -1044,7 +1043,7 @@ def _rotate_waveform_2d(waveform, angles):
                  tf.shape(waveform)], 0))
 
   # Apply rotation.
-  return rotation_matrix_2d.RotationMatrix2D.from_euler(angles).rotate(waveform)
+  return rotation_2d.Rotation2D.from_euler(angles).rotate(waveform)
 
 
 def _rotate_waveform_3d(waveform, angles):
@@ -1065,10 +1064,10 @@ def _rotate_waveform_3d(waveform, angles):
   angles = tf.expand_dims(angles, -2)
 
   # Compute rotation matrix.
-  rot_matrix = geom_ops.euler_to_rotation_matrix_3d(angles, order='ZYX')
+  rot_matrix = _rotation_matrix_3d_from_euler(angles, order='ZYX')
 
   # Apply rotation to trajectory.
-  waveform = rotation_matrix_3d.rotate(waveform, rot_matrix)
+  waveform = rotation_3d.rotate(waveform, rot_matrix)
 
   return waveform
 
@@ -1298,3 +1297,130 @@ def _find_first_greater_than(x, y):
   x = x - y
   x = tf.where(x < 0, np.inf, x)
   return tf.math.argmin(x)
+
+
+def _rotation_matrix_3d_from_euler(angles, order='XYZ', name='rotation_3d'):
+  r"""Convert an Euler angle representation to a rotation matrix.
+
+  The resulting matrix is $$\mathbf{R} = \mathbf{R}_z\mathbf{R}_y\mathbf{R}_x$$.
+
+  .. note::
+    In the following, A1 to An are optional batch dimensions.
+
+  Args:
+    angles: A tensor of shape `[A1, ..., An, 3]`, where the last dimension
+      represents the three Euler angles. `[A1, ..., An, 0]` is the angle about
+      `x` in radians `[A1, ..., An, 1]` is the angle about `y` in radians and
+      `[A1, ..., An, 2]` is the angle about `z` in radians.
+    order: A `str`. The order in which the rotations are applied. Defaults to
+      `"XYZ"`.
+    name: A name for this op that defaults to "rotation_matrix_3d_from_euler".
+
+  Returns:
+    A tensor of shape `[A1, ..., An, 3, 3]`, where the last two dimensions
+    represent a 3d rotation matrix.
+
+  Raises:
+    ValueError: If the shape of `angles` is not supported.
+  """
+  with tf.name_scope(name):
+    angles = tf.convert_to_tensor(value=angles)
+
+    if angles.shape[-1] != 3:
+      raise ValueError(f"The last dimension of `angles` must have size 3, "
+                       f"but got shape: {angles.shape}")
+
+    sin_angles = tf.math.sin(angles)
+    cos_angles = tf.math.cos(angles)
+    return _build_matrix_from_sines_and_cosines(
+        sin_angles, cos_angles, order=order)
+
+
+def _build_matrix_from_sines_and_cosines(sin_angles, cos_angles, order='XYZ'):
+  """Builds a rotation matrix from sines and cosines of Euler angles.
+
+  .. note::
+    In the following, A1 to An are optional batch dimensions.
+
+  Args:
+    sin_angles: A tensor of shape `[A1, ..., An, 3]`, where the last dimension
+      represents the sine of the Euler angles.
+    cos_angles: A tensor of shape `[A1, ..., An, 3]`, where the last dimension
+      represents the cosine of the Euler angles.
+    order: A `str`. The order in which the rotations are applied. Defaults to
+      `"XYZ"`.
+
+  Returns:
+    A tensor of shape `[A1, ..., An, 3, 3]`, where the last two dimensions
+    represent a 3d rotation matrix.
+
+  Raises:
+    ValueError: If any of the input arguments has an invalid value.
+  """
+  sin_angles.shape.assert_is_compatible_with(cos_angles.shape)
+  output_shape = tf.concat((tf.shape(sin_angles)[:-1], (3, 3)), -1)
+
+  sx, sy, sz = tf.unstack(sin_angles, axis=-1)
+  cx, cy, cz = tf.unstack(cos_angles, axis=-1)
+  ones = tf.ones_like(sx)
+  zeros = tf.zeros_like(sx)
+  # rx
+  m00 = ones
+  m01 = zeros
+  m02 = zeros
+  m10 = zeros
+  m11 = cx
+  m12 = -sx
+  m20 = zeros
+  m21 = sx
+  m22 = cx
+  rx = tf.stack((m00, m01, m02,
+                 m10, m11, m12,
+                 m20, m21, m22),
+                axis=-1)
+  rx = tf.reshape(rx, output_shape)
+  # ry
+  m00 = cy
+  m01 = zeros
+  m02 = sy
+  m10 = zeros
+  m11 = ones
+  m12 = zeros
+  m20 = -sy
+  m21 = zeros
+  m22 = cy
+  ry = tf.stack((m00, m01, m02,
+                 m10, m11, m12,
+                 m20, m21, m22),
+                axis=-1)
+  ry = tf.reshape(ry, output_shape)
+  # rz
+  m00 = cz
+  m01 = -sz
+  m02 = zeros
+  m10 = sz
+  m11 = cz
+  m12 = zeros
+  m20 = zeros
+  m21 = zeros
+  m22 = ones
+  rz = tf.stack((m00, m01, m02,
+                 m10, m11, m12,
+                 m20, m21, m22),
+                axis=-1)
+  rz = tf.reshape(rz, output_shape)
+
+  matrix = tf.eye(output_shape[-2], output_shape[-1],
+                  batch_shape=output_shape[:-2])
+
+  for r in order.upper():
+    if r == 'X':
+      matrix = rx @ matrix
+    elif r == 'Y':
+      matrix = ry @ matrix
+    elif r == 'Z':
+      matrix = rz @ matrix
+    else:
+      raise ValueError(f"Invalid value for `order`: {order}")
+
+  return matrix

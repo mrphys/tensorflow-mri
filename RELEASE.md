@@ -10,7 +10,7 @@
 
 - `tfmri.geometry`:
 
-  - Added new extension type `RotationMatrix2D`.
+  - Added new extension types `Rotation2D` and `Rotation3D`.
 
 - `tfmri.layers`:
 

@@ -14,4 +14,5 @@
 # ==============================================================================
 """Geometric operations."""
 
-from tensorflow_mri.python.geometry import rotation_matrix_2d
+from tensorflow_mri.python.geometry import rotation_2d
+from tensorflow_mri.python.geometry import rotation_3d
