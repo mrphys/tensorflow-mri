@@ -33,8 +33,8 @@ class Rotation2D(tf.experimental.ExtensionType):
     r"""Creates a 2D rotation from a rotation matrix.
 
     Args:
-      matrix: A `tf.Tensor` of shape `[..., 2, 2]`, where `...` represents
-        any number of batch dimensions.
+      matrix: A `tf.Tensor` of shape `[..., 2, 2]`, where the last two
+        dimensions represent a rotation matrix.
       name: A name for this op. Defaults to `"rotation_2d/from_matrix"`.
 
     Returns:

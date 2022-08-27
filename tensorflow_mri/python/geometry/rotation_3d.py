@@ -33,8 +33,8 @@ class Rotation3D(tf.experimental.ExtensionType):
     r"""Creates a 3D rotation from a rotation matrix.
 
     Args:
-      matrix: A `tf.Tensor` of shape `[..., 3, 3]`, where `...` represents
-        any number of batch dimensions.
+      matrix: A `tf.Tensor` of shape `[..., 3, 3]`, where the last two
+        dimensions represent a rotation matrix.
       name: A name for this op. Defaults to `"rotation_3d/from_matrix"`.
 
     Returns:
