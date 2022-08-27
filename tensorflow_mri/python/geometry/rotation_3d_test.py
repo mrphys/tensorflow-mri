@@ -39,8 +39,41 @@ from tensorflow_mri.python.geometry.rotation_3d import Rotation3D
 from tensorflow_mri.python.util import test_util
 
 
-class RotationMatrix3DTest(test_util.TestCase):
+class Rotation3DTest(test_util.TestCase):
   """Tests for `Rotation3D`."""
+  def test_shape(self):
+    """Tests shape."""
+    rot = Rotation3D.from_euler([0.0, 0.0, 0.0])
+    self.assertAllEqual([], rot.shape)
+    self.assertAllEqual([], tf.shape(rot))
+
+    rot = Rotation3D.from_euler([[0.0, 0.0, 0.0], [np.pi, 0.0, 0.0]])
+    self.assertAllEqual([2], rot.shape)
+    self.assertAllEqual([2], tf.shape(rot))
+
+  def test_equal(self):
+    """Tests equality operator."""
+    rot1 = Rotation3D.from_euler([0.0, 0.0, 0.0])
+    rot2 = Rotation3D.from_euler([0.0, 0.0, 0.0])
+    self.assertAllEqual(True, rot1 == rot2)
+
+    rot1 = Rotation3D.from_euler([0.0, 0.0, 0.0])
+    rot2 = Rotation3D.from_euler([np.pi, 0.0, 0.0])
+    self.assertAllEqual(False, rot1 == rot2)
+
+    rot1 = Rotation3D.from_euler([[0.0, 0.0, 0.0], [np.pi, 0.0, 0.0]])
+    rot2 = Rotation3D.from_euler([[0.0, 0.0, 0.0], [np.pi, 0.0, 0.0]])
+    self.assertAllEqual([True, True], rot1 == rot2)
+
+    rot1 = Rotation3D.from_euler([[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]])
+    rot2 = Rotation3D.from_euler([[0.0, 0.0, 0.0], [np.pi, 0.0, 0.0]])
+    self.assertAllEqual([True, False], rot1 == rot2)
+
+  def test_repr(self):
+    rot = Rotation3D.from_euler([0.0, 0.0, 0.0])
+    self.assertEqual(
+        "<tfmri.geometry.Rotation3D(shape=(), dtype=float32)>", repr(rot))
+
   def test_from_axis_angle_normalized_random(self):
     """Tests that axis-angles can be converted to rotation matrices."""
     tensor_shape = np.random.randint(1, 10, size=np.random.randint(3)).tolist()

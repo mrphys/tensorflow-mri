@@ -40,9 +40,10 @@ from tensorflow_mri.python.geometry.rotation_2d import Rotation2D
 from tensorflow_mri.python.util import test_util
 
 
-class RotationMatrix2DTest(test_util.TestCase):
+class Rotation2DTest(test_util.TestCase):
   """Tests for `Rotation2D`."""
   def test_shape(self):
+    """Tests shape."""
     rot = Rotation2D.from_euler([0.0])
     self.assertAllEqual([], rot.shape)
     self.assertAllEqual([], tf.shape(rot))
@@ -51,7 +52,31 @@ class RotationMatrix2DTest(test_util.TestCase):
     self.assertAllEqual([2], rot.shape)
     self.assertAllEqual([2], tf.shape(rot))
 
+  def test_equal(self):
+    """Tests equality operator."""
+    rot1 = Rotation2D.from_euler([0.0])
+    rot2 = Rotation2D.from_euler([0.0])
+    self.assertAllEqual(True, rot1 == rot2)
+
+    rot1 = Rotation2D.from_euler([0.0])
+    rot2 = Rotation2D.from_euler([np.pi])
+    self.assertAllEqual(False, rot1 == rot2)
+
+    rot1 = Rotation2D.from_euler([[0.0], [np.pi]])
+    rot2 = Rotation2D.from_euler([[0.0], [np.pi]])
+    self.assertAllEqual([True, True], rot1 == rot2)
+
+    rot1 = Rotation2D.from_euler([[0.0], [0.0]])
+    rot2 = Rotation2D.from_euler([[0.0], [np.pi]])
+    self.assertAllEqual([True, False], rot1 == rot2)
+
+  def test_repr(self):
+    rot = Rotation2D.from_euler([0.0])
+    self.assertEqual(
+        "<tfmri.geometry.Rotation2D(shape=(), dtype=float32)>", repr(rot))
+
   def test_from_matrix(self):
+    """Tests that rotation can be initialized from matrix."""
     rot = Rotation2D.from_matrix(np.eye(2))
     self.assertAllClose(np.eye(2), rot.as_matrix())
 

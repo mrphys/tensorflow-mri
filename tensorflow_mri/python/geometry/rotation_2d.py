@@ -14,8 +14,6 @@
 # ==============================================================================
 """2D rotation."""
 
-import contextlib
-
 import tensorflow as tf
 
 from tensorflow_mri.python.geometry.rotation import rotation_matrix_2d
@@ -23,10 +21,10 @@ from tensorflow_mri.python.util import api_util
 
 
 @api_util.export("geometry.Rotation2D")
-class Rotation2D(tf.experimental.ExtensionType):
+class Rotation2D(tf.experimental.BatchableExtensionType):
   """Represents a 2D rotation (or a batch thereof)."""
+  __name__ = "tfmri.geometry.Rotation2D"
   _matrix: tf.Tensor
-  _name: str = "rotation_2d"
 
   @classmethod
   def from_matrix(cls, matrix, name=None):
@@ -40,9 +38,8 @@ class Rotation2D(tf.experimental.ExtensionType):
     Returns:
       A `Rotation2D`.
     """
-    name = name or "rotation_2d/from_matrix"
-    with tf.name_scope(name):
-      return cls(_matrix=matrix, _name=name)
+    with tf.name_scope(name or "rotation_2d/from_matrix"):
+      return cls(_matrix=matrix)
 
   @classmethod
   def from_euler(cls, angle, name=None):
@@ -73,9 +70,8 @@ class Rotation2D(tf.experimental.ExtensionType):
     Raises:
       ValueError: If the shape of `angle` is invalid.
     """
-    name = name or "rotation_2d/from_euler"
-    with tf.name_scope(name):
-      return cls(_matrix=rotation_matrix_2d.from_euler(angle), _name=name)
+    with tf.name_scope(name or "rotation_2d/from_euler"):
+      return cls(_matrix=rotation_matrix_2d.from_euler(angle))
 
   @classmethod
   def from_small_euler(cls, angle, name=None):
@@ -115,34 +111,32 @@ class Rotation2D(tf.experimental.ExtensionType):
     Raises:
       ValueError: If the shape of `angle` is invalid.
     """
-    name = name or "rotation_2d/from_small_euler"
-    with tf.name_scope(name):
-      return cls(_matrix=rotation_matrix_2d.from_small_euler(angle), _name=name)
+    with tf.name_scope("rotation_2d/from_small_euler"):
+      return cls(_matrix=rotation_matrix_2d.from_small_euler(angle))
 
   def as_matrix(self, name=None):
     r"""Returns the rotation matrix that represents this rotation.
 
     Args:
-      name: A name for this op. Defaults to `"as_matrix"`.
+      name: A name for this op. Defaults to `"rotation_2d/as_matrix"`.
 
     Returns:
       A `tf.Tensor` of shape `[..., 2, 2]`.
     """
-    with self._name_scope(name or "as_matrix"):
+    with tf.name_scope(name or "rotation_2d/as_matrix"):
       return tf.identity(self._matrix)
 
   def inverse(self, name=None):
     r"""Computes the inverse of this rotation.
 
     Args:
-      name: A name for this op. Defaults to `"inverse"`.
+      name: A name for this op. Defaults to `"rotation_2d/inverse"`.
 
     Returns:
       A `Rotation2D` representing the inverse of this rotation.
     """
-    with self._name_scope(name or "inverse"):
-      return Rotation2D(_matrix=rotation_matrix_2d.inverse(self._matrix),
-                        _name=self._name + "/inverse")
+    with tf.name_scope(name or "rotation_2d/inverse"):
+      return Rotation2D(_matrix=rotation_matrix_2d.inverse(self._matrix))
 
   def is_valid(self, atol=1e-3, name=None):
     r"""Determines if this is a valid rotation.
@@ -152,13 +146,13 @@ class Rotation2D(tf.experimental.ExtensionType):
 
     Args:
       atol: A `float`. The absolute tolerance parameter.
-      name: A name for this op. Defaults to `"is_valid"`.
+      name: A name for this op. Defaults to `"rotation_2d/is_valid"`.
 
     Returns:
       A boolean `tf.Tensor` with shape `[..., 1]`, `True` if the corresponding
       matrix is valid and `False` otherwise.
     """
-    with self._name_scope(name or "is_valid"):
+    with tf.name_scope(name or "rotation_2d/is_valid"):
       return rotation_matrix_2d.is_valid(self._matrix, atol=atol)
 
   def rotate(self, point, name=None):
@@ -169,7 +163,7 @@ class Rotation2D(tf.experimental.ExtensionType):
         represents a 2D point and `...` represents any number of batch
         dimensions, which must be broadcastable with the batch shape of this
         rotation.
-      name: A name for this op. Defaults to `"rotate"`.
+      name: A name for this op. Defaults to `"rotation_2d/rotate"`.
 
     Returns:
       A `tf.Tensor` of shape `[..., 2]`, where the last dimension represents
@@ -179,7 +173,7 @@ class Rotation2D(tf.experimental.ExtensionType):
     Raises:
       ValueError: If the shape of `point` is invalid.
     """
-    with self._name_scope(name or "rotate"):
+    with tf.name_scope(name or "rotation_2d/rotate"):
       return rotation_matrix_2d.rotate(point, self._matrix)
 
   def __eq__(self, other):
@@ -189,7 +183,12 @@ class Rotation2D(tf.experimental.ExtensionType):
 
   def __matmul__(self, other):
     """Composes this rotation with another rotation."""
-    return Rotation2D(_matrix=self._matrix @ other._matrix,)
+    return Rotation2D(_matrix=self._matrix @ other._matrix)
+
+  def __repr__(self):
+    """Returns a string representation of this rotation."""
+    name = self.__name__
+    return f"<{name}(shape={str(self.shape)}, dtype={self.dtype.name})>"
 
   def __validate__(self):
     """Checks that this rotation is a valid rotation.
@@ -207,18 +206,6 @@ class Rotation2D(tf.experimental.ExtensionType):
   def dtype(self):
     """Returns the dtype of this rotation."""
     return self._matrix.dtype
-
-  @property
-  def name(self):
-    """Returns the name of this rotation."""
-    return self._name
-
-  @contextlib.contextmanager
-  def _name_scope(self, name=None):
-    """Helper function to standardize op scope."""
-    with tf.name_scope(self.name):
-      with tf.name_scope(name) as scope:
-        yield scope
 
 
 @tf.experimental.dispatch_for_api(tf.shape, {'input': Rotation2D})
