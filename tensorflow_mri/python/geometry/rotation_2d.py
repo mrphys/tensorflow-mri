@@ -22,7 +22,63 @@ from tensorflow_mri.python.util import api_util
 
 @api_util.export("geometry.Rotation2D")
 class Rotation2D(tf.experimental.BatchableExtensionType):
-  """Represents a 2D rotation (or a batch thereof)."""
+  """Represents a rotation in 2D space (or a batch thereof).
+
+  You can initialize a `Rotation2D` object using one of the `from_*` class
+  methods:
+
+  - `from_matrix`, to initialize using a
+    [rotation matrix](https://en.wikipedia.org/wiki/Rotation_matrix).
+  - `from_euler`, to initialize using an angle (in radians).
+  - `from_small_euler`, to initialize using an angle which is small enough
+    to fall under the [small angle approximation](https://en.wikipedia.org/wiki/Small-angle_approximation).
+
+  In all cases the above methods can accept a batch, in which case the returned
+  `Rotation2D` object will also have a batch shape.
+
+  Once initialized, `Rotation2D` objects expose several methods to operate
+  easily. These can all be used in the same way regardless of how the
+  `Rotation2D` was originally initialized.
+
+  - `rotate` rotates a point or a batch of points. The batch shapes of the
+    point and this rotation will be broadcasted.
+  - `inverse` returns a new `Rotation2D` object representing the inverse of
+    the current rotation.
+  - `is_valid` can be used to check if the rotation is valid.
+
+  Finally, the `as_*` methods can be used to obtain an explicit representation
+  of this rotation.
+
+  - `as_matrix` returns the corresponding rotation matrix.
+
+  Example:
+
+    >>> # Initialize a rotation object using a rotation matrix.
+    >>> rot = tfmri.geometry.Rotation2D.from_matrix([[0.0, -1.0], [1.0, 0.0]])
+    >>> print(rot)
+    tfmri.geometry.Rotation2D(shape=(), dtype=float32)
+    >>> # Rotate a point.
+    >>> point = tf.constant([1.0, 0.0], dtype=tf.float32)
+    >>> rotated = rot.rotate(point)
+    >>> print(rotated)
+    tf.Tensor([0. 1.], shape=(2,), dtype=float32)
+    >>> # Rotate the point back using the inverse rotation.
+    >>> inv_rot = rot.inverse()
+    >>> restored = inv_rot.rotate(rotated)
+    >>> print(restored)
+    tf.Tensor([1. 0.], shape=(2,), dtype=float32)
+    >>> # Get the rotation matrix for the inverse rotation.
+    >>> print(inv_rot.as_matrix())
+    tf.Tensor(
+    [[ 0.  1.]
+      [-1.  0.]], shape=(2, 2), dtype=float32)
+    >>> # You can also initialize a rotation using an angle:
+    >>> rot2 = tfmri.geometry.Rotation2D.from_euler([np.pi / 2])
+    >>> rotated2 = rot.rotate(point)
+    >>> np.allclose(rotated2, rotated)
+    True
+
+  """
   __name__ = "tfmri.geometry.Rotation2D"
   _matrix: tf.Tensor
 
@@ -189,6 +245,10 @@ class Rotation2D(tf.experimental.BatchableExtensionType):
     """Returns a string representation of this rotation."""
     name = self.__name__
     return f"<{name}(shape={str(self.shape)}, dtype={self.dtype.name})>"
+
+  def __str__(self):
+    """Returns a string representation of this rotation."""
+    return self.__repr__()[1:-1]
 
   def __validate__(self):
     """Checks that this rotation is a valid rotation.

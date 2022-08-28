@@ -22,7 +22,7 @@ from tensorflow_mri.python.util import api_util
 
 @api_util.export("geometry.Rotation3D")
 class Rotation3D(tf.experimental.BatchableExtensionType):
-  """Represents a 3D rotation (or a batch thereof)."""
+  """Represents a rotation in 3D space (or a batch thereof)."""
   __name__ = "tfmri.geometry.Rotation3D"
   _matrix: tf.Tensor
 
@@ -217,6 +217,10 @@ class Rotation3D(tf.experimental.BatchableExtensionType):
     """Returns a string representation of this rotation."""
     name = self.__name__
     return f"<{name}(shape={str(self.shape)}, dtype={self.dtype.name})>"
+
+  def __str__(self):
+    """Returns a string representation of this rotation."""
+    return self.__repr__()[1:-1]
 
   def __validate__(self):
     """Checks that this rotation is a valid rotation.

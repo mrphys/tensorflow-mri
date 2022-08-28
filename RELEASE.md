@@ -23,6 +23,11 @@
 
 ## Bug Fixes and Other Changes
 
+- `tfmri`:
+
+  - Removed the TensorFlow Graphics dependency, which should also eliminate
+    the common OpenEXR error.
+
 - `tfmri.recon`:
 
   - Improved error reporting for ``least_squares``.
