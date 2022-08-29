@@ -5,8 +5,8 @@
 from tensorflow_mri.python.ops.traj_ops import density_grid as density_grid
 from tensorflow_mri.python.ops.traj_ops import frequency_grid as frequency_grid
 from tensorflow_mri.python.ops.traj_ops import random_sampling_mask as random_mask
-from tensorflow_mri.python.ops.traj_ops import central_mask as central_mask
-from tensorflow_mri.python.ops.traj_ops import biphasic_mask as biphasic_mask
+from tensorflow_mri.python.ops.traj_ops import centre_mask as centre_mask
+from tensorflow_mri.python.ops.traj_ops import accel_mask as accel_mask
 from tensorflow_mri.python.ops.traj_ops import radial_trajectory as radial_trajectory
 from tensorflow_mri.python.ops.traj_ops import spiral_trajectory as spiral_trajectory
 from tensorflow_mri.python.ops.traj_ops import radial_density as radial_density

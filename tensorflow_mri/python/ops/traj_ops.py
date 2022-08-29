@@ -192,8 +192,8 @@ def random_sampling_mask(shape, density=1.0, seed=None, rng=None, name=None):
     return tf.cast(mask, tf.bool)
 
 
-@api_util.export("sampling.central_mask")
-def central_mask(shape, center_size, name=None):
+@api_util.export("sampling.centre_mask")
+def centre_mask(shape, center_size, name=None):
   """Returns a central sampling mask.
 
   This function returns a boolean tensor of zeros with a central region of ones.
@@ -218,7 +218,7 @@ def central_mask(shape, center_size, name=None):
 
   Example:
 
-    >>> mask = tfmri.sampling.central_mask([8], [4])
+    >>> mask = tfmri.sampling.centre_mask([8], [4])
     >>> mask.numpy()
     array([False, False,  True,  True,  True,  True, False, False])
 
@@ -239,7 +239,7 @@ def central_mask(shape, center_size, name=None):
   Raises:
     TypeError: If `center_size` is not of integer or floating point dtype.
   """
-  with tf.name_scope(name or 'central_mask'):
+  with tf.name_scope(name or 'centre_mask'):
     shape = tf.convert_to_tensor(shape, dtype=tf.int32)
     center_size = tf.convert_to_tensor(center_size)
 
@@ -266,19 +266,19 @@ def central_mask(shape, center_size, name=None):
     return mask
 
 
-@api_util.export("sampling.biphasic_mask")
-def biphasic_mask(shape,
-                  acceleration,
-                  central_size,
-                  mask_type='equispaced',
-                  offset=0,
-                  rng=None,
-                  name=None):
-  """Returns a biphasic sampling mask.
+@api_util.export("sampling.accel_mask")
+def accel_mask(shape,
+               acceleration,
+               centre_size=0,
+               mask_type='equispaced',
+               offset=0,
+               rng=None,
+               name=None):
+  """Returns a standard accelerated sampling mask.
 
-  A biphasic sampling mask has a fully sampled central region and a partially
-  sampled peripheral region. The peripheral region may be sampled uniformly or
-  randomly.
+  The returned sampling mask has two regions: a fully sampled central region
+  and a partially sampled peripheral region. The peripheral region may be
+  sampled uniformly or randomly.
 
   ```{tip}
     This type of mask describes the most commonly used sampling patterns in
@@ -300,7 +300,7 @@ def biphasic_mask(shape,
 
   Example:
 
-    >>> mask = tfmri.sampling.biphasic_mask([8], [2], [2])
+    >>> mask = tfmri.sampling.accel_mask([8], [2], [2])
     >>> mask.numpy()
     array([ True, False,  True,  True,  True, False,  True, False])
 
@@ -308,8 +308,8 @@ def biphasic_mask(shape,
     shape: A 1D integer `tf.Tensor`. The shape of the output mask.
     acceleration: A 1D integer `tf.Tensor`. The acceleration factor on the
       peripheral region along each axis.
-    central_size: A 1D integer `tf.Tensor`. The size of the central region
-      along each axis.
+    centre_size: A 1D integer `tf.Tensor`. The size of the central region
+      along each axis. Defaults to 0.
     mask_type: A `str`. The type of sampling to use on the peripheral region.
       Must be one of `'equispaced'` or `'random'`. If `'equispaced'`, the
       peripheral region is sampled uniformly. If `'random'`, the peripheral
@@ -329,7 +329,7 @@ def biphasic_mask(shape,
   Raises:
     ValueError: If `mask_type` is not one of `'equispaced'` or `'random'`.
   """
-  with tf.name_scope(name or 'biphasic_mask'):
+  with tf.name_scope(name or 'accel_mask'):
     shape = tf.convert_to_tensor(shape, dtype=tf.int32)
     acceleration = tf.convert_to_tensor(acceleration)
     rank = tf.size(shape)
@@ -338,15 +338,15 @@ def biphasic_mask(shape,
     with tf.init_scope():
       rng = rng or tf.random.get_global_generator().split(1)[0]
 
-    # Allow scalar ints as offset.
-    if isinstance(offset, int):
-      offset = tf.ones([rank], dtype=tf.int32) * offset
-    elif offset == 'random':
-      offset = tf.map_fn(lambda maxval: rng.uniform([], minval=0, maxval=maxval,
-                                                    dtype=tf.int32),
+    # Process `offset`.
+    if offset == 'random':
+      offset = tf.map_fn(lambda maxval: rng.uniform(
+                            [], minval=0, maxval=maxval, dtype=tf.int32),
                          acceleration, dtype=tf.int32)
     else:
       offset = tf.convert_to_tensor(offset, dtype=tf.int32)
+      if offset.shape.rank == 0:
+        offset = tf.ones([rank], dtype=tf.int32) * offset
 
     # Initialize mask.
     mask = tf.ones(shape, dtype=tf.bool)
@@ -376,7 +376,7 @@ def biphasic_mask(shape,
     _, mask = tf.foldl(fn, (shape, acceleration, offset),
                        initializer=(0, mask))
 
-    return tf.math.logical_or(mask, central_mask(shape, central_size))
+    return tf.math.logical_or(mask, centre_mask(shape, centre_size))
 
 
 @api_util.export("sampling.radial_trajectory")
