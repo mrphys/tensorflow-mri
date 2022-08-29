@@ -111,11 +111,6 @@ class SSIMLoss(LossFunctionWrapperIQA):
       `(rank of inputs) - batch_dims - 1`. Defaults to `None`. `image_dims` can
       always be inferred if `batch_dims` was specified, so you only need to
       provide one of the two.
-    rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
-      to `tf.rank(y_true) - 2`. In other words, if rank is not explicitly set,
-      `y_true` and `y_pred` should have shape `[batch, height, width, channels]`
-      if processing 2D images or `[batch, depth, height, width, channels]` if
-      processing 3D images.
     multichannel: A `boolean`. Whether multichannel computation is enabled. If
       `False`, the inputs `y_true` and `y_pred` are not expected to have a
       channel dimension, i.e. they should have shape
@@ -134,10 +129,6 @@ class SSIMLoss(LossFunctionWrapperIQA):
       for image restoration with neural networks. IEEE Transactions on
       computational imaging, 3(1), 47-57.
   """
-  @deprecation.deprecated_args(
-      deprecation.REMOVAL_DATE['0.19.0'],
-      'Use argument `image_dims` instead.',
-      ('rank', None))
   def __init__(self,
                max_val=None,
                filter_size=11,
@@ -146,7 +137,6 @@ class SSIMLoss(LossFunctionWrapperIQA):
                k2=0.03,
                batch_dims=None,
                image_dims=None,
-               rank=None,
                multichannel=True,
                complex_part=None,
                reduction=tf.keras.losses.Reduction.AUTO,
@@ -161,7 +151,6 @@ class SSIMLoss(LossFunctionWrapperIQA):
                      k2=k2,
                      batch_dims=batch_dims,
                      image_dims=image_dims,
-                     rank=rank,
                      multichannel=multichannel,
                      complex_part=complex_part)
 
@@ -201,11 +190,6 @@ class SSIMMultiscaleLoss(LossFunctionWrapperIQA):
       `(rank of inputs) - batch_dims - 1`. Defaults to `None`. `image_dims` can
       always be inferred if `batch_dims` was specified, so you only need to
       provide one of the two.
-    rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
-      to `tf.rank(y_true) - 2`. In other words, if rank is not explicitly set,
-      `y_true` and `y_pred` should have shape `[batch, height, width, channels]`
-      if processing 2D images or `[batch, depth, height, width, channels]` if
-      processing 3D images.
     multichannel: A `boolean`. Whether multichannel computation is enabled. If
       `False`, the inputs `y_true` and `y_pred` are not expected to have a
       channel dimension, i.e. they should have shape
@@ -224,10 +208,6 @@ class SSIMMultiscaleLoss(LossFunctionWrapperIQA):
       for image restoration with neural networks. IEEE Transactions on
       computational imaging, 3(1), 47-57.
   """
-  @deprecation.deprecated_args(
-      deprecation.REMOVAL_DATE['0.19.0'],
-      'Use argument `image_dims` instead.',
-      ('rank', None))
   def __init__(self,
                max_val=None,
                power_factors=image_ops._MSSSIM_WEIGHTS,
@@ -237,7 +217,6 @@ class SSIMMultiscaleLoss(LossFunctionWrapperIQA):
                k2=0.03,
                batch_dims=None,
                image_dims=None,
-               rank=None,
                multichannel=True,
                complex_part=None,
                reduction=tf.keras.losses.Reduction.AUTO,
@@ -253,20 +232,15 @@ class SSIMMultiscaleLoss(LossFunctionWrapperIQA):
                      k2=k2,
                      batch_dims=batch_dims,
                      image_dims=image_dims,
-                     rank=rank,
                      multichannel=multichannel,
                      complex_part=complex_part)
 
 
 @api_util.export("losses.ssim_loss")
-@deprecation.deprecated_args(
-      deprecation.REMOVAL_DATE['0.19.0'],
-      'Use argument `image_dims` instead.',
-      ('rank', None))
 @tf.keras.utils.register_keras_serializable(package="MRI")
 def ssim_loss(y_true, y_pred, max_val=None,
               filter_size=11, filter_sigma=1.5,
-              k1=0.01, k2=0.03, batch_dims=None, image_dims=None, rank=None):
+              k1=0.01, k2=0.03, batch_dims=None, image_dims=None):
   r"""Computes the structural similarity (SSIM) loss.
 
   The SSIM loss is equal to :math:`1.0 - \textrm{SSIM}`.
@@ -305,11 +279,6 @@ def ssim_loss(y_true, y_pred, max_val=None,
       `(rank of inputs) - batch_dims - 1`. Defaults to `None`. `image_dims` can
       always be inferred if `batch_dims` was specified, so you only need to
       provide one of the two.
-    rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
-      to `tf.rank(y_true) - 2`. In other words, if rank is not explicitly set,
-      `y_true` and `y_pred` should have shape `[batch, height, width, channels]`
-      if processing 2D images or `[batch, depth, height, width, channels]` if
-      processing 3D images.
 
   Returns:
     A `Tensor` of type `float32` and shape `batch_shape` containing an SSIM
@@ -327,21 +296,16 @@ def ssim_loss(y_true, y_pred, max_val=None,
                               k1=k1,
                               k2=k2,
                               batch_dims=batch_dims,
-                              image_dims=image_dims,
-                              rank=rank)
+                              image_dims=image_dims)
 
 
 @api_util.export("losses.ssim_multiscale_loss")
-@deprecation.deprecated_args(
-      deprecation.REMOVAL_DATE['0.19.0'],
-      'Use argument `image_dims` instead.',
-      ('rank', None))
 @tf.keras.utils.register_keras_serializable(package="MRI")
 def ssim_multiscale_loss(y_true, y_pred, max_val=None,
                          power_factors=image_ops._MSSSIM_WEIGHTS, # pylint: disable=protected-access
                          filter_size=11, filter_sigma=1.5,
                          k1=0.01, k2=0.03,
-                         batch_dims=None, image_dims=None, rank=None):
+                         batch_dims=None, image_dims=None):
   r"""Computes the multiscale structural similarity (MS-SSIM) loss.
 
   The MS-SSIM loss is equal to :math:`1.0 - \textrm{MS-SSIM}`.
@@ -387,11 +351,6 @@ def ssim_multiscale_loss(y_true, y_pred, max_val=None,
       `(rank of inputs) - batch_dims - 1`. Defaults to `None`. `image_dims` can
       always be inferred if `batch_dims` was specified, so you only need to
       provide one of the two.
-    rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
-      to `tf.rank(y_true) - 2`. In other words, if rank is not explicitly set,
-      `y_true` and `y_pred` should have shape `[batch, height, width, channels]`
-      if processing 2D images or `[batch, depth, height, width, channels]` if
-      processing 3D images.
 
   Returns:
     A `Tensor` of type `float32` and shape `batch_shape` containing an SSIM
@@ -410,8 +369,7 @@ def ssim_multiscale_loss(y_true, y_pred, max_val=None,
                                          k1=k1,
                                          k2=k2,
                                          batch_dims=batch_dims,
-                                         image_dims=image_dims,
-                                         rank=rank)
+                                         image_dims=image_dims)
 
 
 # For backward compatibility.

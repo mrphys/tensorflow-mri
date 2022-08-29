@@ -19,7 +19,6 @@ from tensorflow.python.util import deprecation
 # The following dictionary contains the removal date for deprecations
 # at a given release.
 REMOVAL_DATE = {
-    '0.19.0': '2022-09-01',
     '0.20.0': '2022-10-01'
 }
 

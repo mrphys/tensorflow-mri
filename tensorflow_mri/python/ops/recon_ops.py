@@ -834,15 +834,10 @@ def _flatten_last_dimensions(x):
 
 
 @api_util.export("recon.partial_fourier", "recon.pf")
-@deprecation.deprecated_args(
-    deprecation.REMOVAL_DATE['0.19.0'],
-    'Use argument `preserve_phase` instead.',
-    ('return_complex', None))
 def reconstruct_pf(kspace,
                    factors,
                    preserve_phase=None,
                    return_kspace=False,
-                   return_complex=None,
                    method='zerofill',
                    **kwargs):
   """Reconstructs an MR image using partial Fourier methods.
@@ -863,8 +858,6 @@ def reconstruct_pf(kspace,
       be complex-valued.
     return_kspace: A `boolean`. If `True`, returns the filled *k*-space instead
       of the reconstructed images. This is always complex-valued.
-    return_complex: A `boolean`. If `True`, returns complex instead of
-      real-valued images.
     method: A `string`. The partial Fourier reconstruction algorithm. Must be
       one of `"zerofill"`, `"homodyne"` (homodyne detection method) or `"pocs"`
       (projection onto convex sets method).
@@ -911,8 +904,6 @@ def reconstruct_pf(kspace,
     f"`factors` must be greater than or equal to 0.5, but got: {factors}"))
   tf.debugging.assert_less_equal(factors, 1.0, message=(
     f"`factors` must be less than or equal to 1.0, but got: {factors}"))
-  preserve_phase = deprecation.deprecated_argument_lookup(
-      'preserve_phase', preserve_phase, 'return_complex', return_complex)
   if preserve_phase is None:
     preserve_phase = False
 

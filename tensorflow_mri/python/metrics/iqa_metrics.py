@@ -111,11 +111,6 @@ class PSNR(MeanMetricWrapperIQA):
       `(rank of inputs) - batch_dims - 1`. Defaults to `None`. `image_dims` can
       always be inferred if `batch_dims` was specified, so you only need to
       provide one of the two.
-    rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
-      to `tf.rank(y_true) - 2`. In other words, if rank is not explicitly set,
-      `y_true` and `y_pred` should have shape `[batch, height, width, channels]`
-      if processing 2D images or `[batch, depth, height, width, channels]` if
-      processing 3D images.
     multichannel: A `boolean`. Whether multichannel computation is enabled. If
       `False`, the inputs `y_true` and `y_pred` are not expected to have a
       channel dimension, i.e. they should have shape
@@ -128,10 +123,6 @@ class PSNR(MeanMetricWrapperIQA):
     name: String name of the metric instance.
     dtype: Data type of the metric result.
   """
-  @deprecation.deprecated_args(
-      deprecation.REMOVAL_DATE['0.19.0'],
-      'Use argument `image_dims` instead.',
-      ('rank', None))
   def __init__(self,
                max_val=None,
                batch_dims=None,
@@ -209,10 +200,6 @@ class SSIM(MeanMetricWrapperIQA):
       Image quality assessment: from error visibility to structural similarity.
       IEEE transactions on image processing, 13(4), 600-612.
   """
-  @deprecation.deprecated_args(
-      deprecation.REMOVAL_DATE['0.19.0'],
-      'Use argument `image_dims` instead.',
-      ('rank', None))
   def __init__(self,
                max_val=None,
                filter_size=11,
@@ -221,7 +208,6 @@ class SSIM(MeanMetricWrapperIQA):
                k2=0.03,
                batch_dims=None,
                image_dims=None,
-               rank=None,
                multichannel=True,
                complex_part=None,
                name='ssim',
@@ -237,7 +223,6 @@ class SSIM(MeanMetricWrapperIQA):
                      k2=k2,
                      batch_dims=batch_dims,
                      image_dims=image_dims,
-                     rank=rank,
                      multichannel=multichannel,
                      complex_part=complex_part)
 
@@ -298,10 +283,6 @@ class SSIMMultiscale(MeanMetricWrapperIQA):
       Thrity-Seventh Asilomar Conference on Signals, Systems & Computers, 2003
       (Vol. 2, pp. 1398-1402). Ieee.
   """
-  @deprecation.deprecated_args(
-      deprecation.REMOVAL_DATE['0.19.0'],
-      'Use argument `image_dims` instead.',
-      ('rank', None))
   def __init__(self,
                max_val=None,
                filter_size=11,
@@ -310,7 +291,6 @@ class SSIMMultiscale(MeanMetricWrapperIQA):
                k2=0.03,
                batch_dims=None,
                image_dims=None,
-               rank=None,
                multichannel=True,
                complex_part=None,
                name='ms_ssim',
@@ -326,7 +306,6 @@ class SSIMMultiscale(MeanMetricWrapperIQA):
                      k2=k2,
                      batch_dims=batch_dims,
                      image_dims=image_dims,
-                     rank=rank,
                      multichannel=multichannel,
                      complex_part=complex_part)
 

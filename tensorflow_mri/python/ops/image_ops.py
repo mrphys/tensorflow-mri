@@ -35,16 +35,11 @@ from tensorflow_mri.python.util import deprecation
 
 
 @api_util.export("image.psnr")
-@deprecation.deprecated_args(
-    deprecation.REMOVAL_DATE['0.19.0'],
-    'Use argument `image_dims` instead.',
-    ('rank', None))
 def psnr(img1,
          img2,
          max_val=None,
          batch_dims=None,
          image_dims=None,
-         rank=None,
          name='psnr'):
   """Computes the peak signal-to-noise ratio (PSNR) between two N-D images.
 
@@ -76,11 +71,6 @@ def psnr(img1,
       `(rank of inputs) - batch_dims - 1`. Defaults to `None`. `image_dims` can
       always be inferred if `batch_dims` was specified, so you only need to
       provide one of the two.
-    rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
-      to `tf.rank(img1) - 2`. In other words, if rank is not explicitly set,
-      `img1` and `img2` should have shape `[batch, height, width, channels]`
-      if processing 2D images or `[batch, depth, height, width, channels]` if
-      processing 3D images.
     name: Namespace to embed the computation in.
 
   Returns:
@@ -88,9 +78,6 @@ def psnr(img1,
     `tf.float32` and shape `batch_shape`.
   """
   with tf.name_scope(name):
-    image_dims = deprecation.deprecated_argument_lookup(
-        'image_dims', image_dims, 'rank', rank)
-
     img1 = tf.convert_to_tensor(img1)
     img2 = tf.convert_to_tensor(img2)
     # Default `max_val` to maximum dynamic range for the input dtype.
@@ -175,10 +162,6 @@ def psnr3d(img1, img2, max_val, name='psnr3d'):
 
 
 @api_util.export("image.ssim")
-@deprecation.deprecated_args(
-    deprecation.REMOVAL_DATE['0.19.0'],
-    'Use argument `image_dims` instead.',
-    ('rank', None))
 def ssim(img1,
          img2,
          max_val=None,
@@ -188,7 +171,6 @@ def ssim(img1,
          k2=0.03,
          batch_dims=None,
          image_dims=None,
-         rank=None,
          name='ssim'):
   """Computes the structural similarity index (SSIM) between two N-D images.
 
@@ -229,11 +211,6 @@ def ssim(img1,
       `(rank of inputs) - batch_dims - 1`. Defaults to `None`. `image_dims` can
       always be inferred if `batch_dims` was specified, so you only need to
       provide one of the two.
-    rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
-      to `tf.rank(img1) - 2`. In other words, if rank is not explicitly set,
-      `img1` and `img2` should have shape `[batch, height, width, channels]`
-      if processing 2D images or `[batch, depth, height, width, channels]` if
-      processing 3D images.
     name: Namespace to embed the computation in.
 
   Returns:
@@ -247,9 +224,6 @@ def ssim(img1,
       2004, doi: 10.1109/TIP.2003.819861.
   """
   with tf.name_scope(name):
-    image_dims = deprecation.deprecated_argument_lookup(
-        'image_dims', image_dims, 'rank', rank)
-
     img1 = tf.convert_to_tensor(img1)
     img2 = tf.convert_to_tensor(img2)
     # Default `max_val` to maximum dynamic range for the input dtype.
@@ -397,10 +371,6 @@ _MSSSIM_WEIGHTS = (0.0448, 0.2856, 0.3001, 0.2363, 0.1333)
 
 
 @api_util.export("image.ssim_multiscale")
-@deprecation.deprecated_args(
-    deprecation.REMOVAL_DATE['0.19.0'],
-    'Use argument `image_dims` instead.',
-    ('rank', None))
 def ssim_multiscale(img1,
                     img2,
                     max_val=None,
@@ -411,7 +381,6 @@ def ssim_multiscale(img1,
                     k2=0.03,
                     batch_dims=None,
                     image_dims=None,
-                    rank=None,
                     name='ssim_multiscale'):
   """Computes the multiscale SSIM (MS-SSIM) between two N-D images.
 
@@ -459,11 +428,6 @@ def ssim_multiscale(img1,
       `(rank of inputs) - batch_dims - 1`. Defaults to `None`. `image_dims` can
       always be inferred if `batch_dims` was specified, so you only need to
       provide one of the two.
-    rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
-      to `tf.rank(img1) - 2`. In other words, if rank is not explicitly set,
-      `img1` and `img2` should have shape `[batch, height, width, channels]`
-      if processing 2D images or `[batch, depth, height, width, channels]` if
-      processing 3D images.
     name: Namespace to embed the computation in.
 
   Returns:
@@ -477,9 +441,6 @@ def ssim_multiscale(img1,
       Vol.2, doi: 10.1109/ACSSC.2003.1292216.
   """
   with tf.name_scope(name):
-    image_dims = deprecation.deprecated_argument_lookup(
-        'image_dims', image_dims, 'rank', rank)
-
     # Convert to tensor if needed.
     img1 = tf.convert_to_tensor(img1, name='img1')
     img2 = tf.convert_to_tensor(img2, name='img2')
@@ -938,7 +899,7 @@ def image_gradients(image, method='sobel', norm=False,
         image, batch_dims, image_dims)
 
     kernels = _gradient_operators(
-        method, norm=norm, rank=image_dims, dtype=image.dtype.real_dtype)
+        method, norm=norm, image_dims=image_dims, dtype=image.dtype.real_dtype)
     return _filter_image(image, kernels)
 
 
@@ -981,7 +942,7 @@ def gradient_magnitude(image, method='sobel', norm=False,
     return tf.norm(gradients, axis=-1)
 
 
-def _gradient_operators(method, norm=False, rank=2, dtype=tf.float32):
+def _gradient_operators(method, norm=False, image_dims=2, dtype=tf.float32):
   """Returns a set of operators to compute image gradients.
 
   Args:
@@ -993,7 +954,7 @@ def _gradient_operators(method, norm=False, rank=2, dtype=tf.float32):
 
   Returns:
     A `Tensor` of shape `[num_kernels] + kernel_shape`, where `kernel_shape` is
-    `[3] * rank`.
+    `[3] * image_dims`.
 
   Raises:
     ValueError: If passed an invalid `method`.
@@ -1012,15 +973,15 @@ def _gradient_operators(method, norm=False, rank=2, dtype=tf.float32):
   if norm:
     avg_operator /= tf.math.reduce_sum(tf.math.abs(avg_operator))
     diff_operator /= tf.math.reduce_sum(tf.math.abs(diff_operator))
-  kernels = [None] * rank
-  for d in range(rank):
-    kernels[d] = tf.ones([3] * rank, dtype=tf.float32)
-    for i in range(rank):
+  kernels = [None] * image_dims
+  for d in range(image_dims):
+    kernels[d] = tf.ones([3] * image_dims, dtype=tf.float32)
+    for i in range(image_dims):
       if i == d:
         operator_1d = diff_operator
       else:
         operator_1d = avg_operator
-      operator_shape = [1] * rank
+      operator_shape = [1] * image_dims
       operator_shape[i] = operator_1d.shape[0]
       operator_1d = tf.reshape(operator_1d, operator_shape)
       kernels[d] *= operator_1d
@@ -1103,16 +1064,11 @@ def _filter_image(image, kernels):
 
 
 @api_util.export("image.gmsd")
-@deprecation.deprecated_args(
-    deprecation.REMOVAL_DATE['0.19.0'],
-    'Use argument `image_dims` instead.',
-    ('rank', None))
 def gmsd(img1,
          img2,
          max_val=1.0,
          batch_dims=None,
          image_dims=None,
-         rank=None,
          name=None):
   """Computes the gradient magnitude similarity deviation (GMSD).
 
@@ -1141,11 +1097,6 @@ def gmsd(img1,
       `image.shape.rank - batch_dims - 1`. Defaults to `None`. `image_dims` can
       always be inferred if `batch_dims` was specified, so you only need to
       provide one of the two.
-    rank: An `int`. The number of spatial dimensions. Must be 2 or 3. Defaults
-      to `tf.rank(img1) - 2`. In other words, if rank is not explicitly set,
-      `img1` and `img2` should have shape `[batch, height, width, channels]`
-      if processing 2D images or `[batch, depth, height, width, channels]` if
-      processing 3D images.
     name: Namespace to embed the computation in.
 
   Returns:
@@ -1160,8 +1111,6 @@ def gmsd(img1,
   """
   with tf.name_scope(name or 'gmsd'):
     # Check and prepare inputs.
-    image_dims = deprecation.deprecated_argument_lookup(
-        'image_dims', image_dims, 'rank', rank)
     iqa_inputs = _validate_iqa_inputs(
         img1, img2, max_val, batch_dims, image_dims)
     img1, img2 = iqa_inputs.img1, iqa_inputs.img2
@@ -1231,7 +1180,7 @@ def gmsd2d(img1, img2, max_val=1.0, name=None):
       in IEEE Transactions on Image Processing, vol. 23, no. 2, pp. 684-695,
       Feb. 2014, doi: 10.1109/TIP.2013.2293423.
   """
-  return gmsd(img1, img2, max_val=max_val, rank=2, name=(name or 'gmsd2d'))
+  return gmsd(img1, img2, max_val=max_val, image_dims=2, name=(name or 'gmsd2d'))
 
 
 @api_util.export("image.gmsd3d")
@@ -1261,7 +1210,7 @@ def gmsd3d(img1, img2, max_val=1.0, name=None):
       in IEEE Transactions on Image Processing, vol. 23, no. 2, pp. 684-695,
       Feb. 2014, doi: 10.1109/TIP.2013.2293423.
   """
-  return gmsd(img1, img2, max_val=max_val, rank=3, name=(name or 'gmsd3d'))
+  return gmsd(img1, img2, max_val=max_val, image_dims=3, name=(name or 'gmsd3d'))
 
 
 def _validate_iqa_inputs(img1, img2, max_val, batch_dims, image_dims):
