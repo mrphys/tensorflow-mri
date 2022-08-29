@@ -20,7 +20,6 @@ from tensorflow_mri.python.geometry.rotation import rotation_matrix_3d
 from tensorflow_mri.python.util import api_util
 
 
-@api_util.export("geometry.Rotation3D")
 class Rotation3D(tf.experimental.BatchableExtensionType):
   """Represents a rotation in 3D space (or a batch thereof)."""
   __name__ = "tfmri.geometry.Rotation3D"
@@ -143,13 +142,14 @@ class Rotation3D(tf.experimental.BatchableExtensionType):
       return cls(_matrix=rotation_matrix_3d.from_quaternion(quaternion))
 
   def as_matrix(self, name=None):
-    r"""Returns the rotation matrix that represents this rotation.
+    r"""Returns a rotation matrix representation of this rotation.
 
     Args:
       name: A name for this op. Defaults to `"rotation_3d/as_matrix"`.
 
     Returns:
-      A `tf.Tensor` of shape `[..., 3, 3]`.
+      A `tf.Tensor` of shape `[..., 3, 3]`, where the last two dimensions
+      represent a rotation matrix.
     """
     with tf.name_scope(name or "rotation_3d/as_matrix"):
       return tf.identity(self._matrix)
@@ -211,7 +211,10 @@ class Rotation3D(tf.experimental.BatchableExtensionType):
 
   def __matmul__(self, other):
     """Composes this rotation with another rotation."""
-    return Rotation3D(_matrix=self._matrix @ other._matrix)
+    if isinstance(other, Rotation3D):
+      return Rotation3D(_matrix=tf.matmul(self._matrix, other._matrix))
+    raise ValueError(
+        f"Cannot compose a `Rotation2D` with a `{type(other).__name__}`.")
 
   def __repr__(self):
     """Returns a string representation of this rotation."""
@@ -231,15 +234,60 @@ class Rotation3D(tf.experimental.BatchableExtensionType):
 
   @property
   def shape(self):
-    """Returns the shape of this rotation."""
+    """Returns the shape of this rotation.
+
+    Returns:
+      A `tf.TensorShape`.
+    """
     return self._matrix.shape[:-2]
 
   @property
   def dtype(self):
-    """Returns the dtype of this rotation."""
+    """Returns the dtype of this rotation.
+
+    Returns:
+      A `tf.dtypes.DType`.
+    """
     return self._matrix.dtype
 
 
+@tf.experimental.dispatch_for_api(
+    tf.linalg.matmul, {'a': Rotation3D, 'b': Rotation3D})
+def matmul(a, b,
+           transpose_a=False,
+           transpose_b=False,
+           adjoint_a=False,
+           adjoint_b=False,
+           a_is_sparse=False,
+           b_is_sparse=False,
+           output_type=None,
+           name=None):
+  if a_is_sparse or b_is_sparse:
+    raise ValueError("Rotation3D does not support sparse matmul.")
+  return Rotation3D(_matrix=tf.linalg.matmul(a.as_matrix(), b.as_matrix(),
+                                             transpose_a=transpose_a,
+                                             transpose_b=transpose_b,
+                                             adjoint_a=adjoint_a,
+                                             adjoint_b=adjoint_b,
+                                             output_type=output_type,
+                                             name=name))
+
+
+@tf.experimental.dispatch_for_api(tf.linalg.matvec, {'a': Rotation3D})
+def matvec(a, b,
+           transpose_a=False,
+           adjoint_a=False,
+           a_is_sparse=False,
+           b_is_sparse=False,
+           name=None):
+  if a_is_sparse or b_is_sparse:
+    raise ValueError("Rotation3D does not support sparse matvec.")
+  return tf.linalg.matvec(a.as_matrix(), b,
+                          transpose_a=transpose_a,
+                          adjoint_a=adjoint_a,
+                          name=name)
+
+
 @tf.experimental.dispatch_for_api(tf.shape, {'input': Rotation3D})
-def rotation_3d_shape(input, out_type=tf.int32, name=None):
-  return tf.shape(input._matrix, out_type=out_type, name=name)[:-2]
+def shape(input, out_type=tf.int32, name=None):
+  return tf.shape(input.as_matrix(), out_type=out_type, name=name)[:-2]

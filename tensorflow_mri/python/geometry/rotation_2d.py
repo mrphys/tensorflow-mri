@@ -16,6 +16,7 @@
 
 import tensorflow as tf
 
+from tensorflow_mri.python.geometry.rotation import euler_2d
 from tensorflow_mri.python.geometry.rotation import rotation_matrix_2d
 from tensorflow_mri.python.util import api_util
 
@@ -23,6 +24,12 @@ from tensorflow_mri.python.util import api_util
 @api_util.export("geometry.Rotation2D")
 class Rotation2D(tf.experimental.BatchableExtensionType):
   """Represents a rotation in 2D space (or a batch thereof).
+
+  A `Rotation2D` contains all the information needed to represent a rotation
+  in 2D space (or a multidimensional array of rotations) and provides
+  convenient methods to work with rotations.
+
+  ## Initialization
 
   You can initialize a `Rotation2D` object using one of the `from_*` class
   methods:
@@ -33,12 +40,14 @@ class Rotation2D(tf.experimental.BatchableExtensionType):
   - `from_small_euler`, to initialize using an angle which is small enough
     to fall under the [small angle approximation](https://en.wikipedia.org/wiki/Small-angle_approximation).
 
-  In all cases the above methods can accept a batch, in which case the returned
-  `Rotation2D` object will also have a batch shape.
+  All of the above methods accept batched inputs, in which case the returned
+  `Rotation2D` object will represent a batch of rotations.
+
+  ## Methods
 
   Once initialized, `Rotation2D` objects expose several methods to operate
-  easily. These can all be used in the same way regardless of how the
-  `Rotation2D` was originally initialized.
+  easily with rotations. These methods are all used in the same way regardless
+  of how the `Rotation2D` was originally initialized.
 
   - `rotate` rotates a point or a batch of points. The batch shapes of the
     point and this rotation will be broadcasted.
@@ -46,10 +55,68 @@ class Rotation2D(tf.experimental.BatchableExtensionType):
     the current rotation.
   - `is_valid` can be used to check if the rotation is valid.
 
-  Finally, the `as_*` methods can be used to obtain an explicit representation
-  of this rotation.
+  ## Conversion to other representations
+
+  The `as_*` methods can be used to obtain an explicit representation
+  of this rotation as a standard `tf.Tensor`.
 
   - `as_matrix` returns the corresponding rotation matrix.
+  - `as_euler` returns the corresponding angle (in radians).
+
+  ## Shape and dtype
+
+  `Rotation2D` objects have a shape and a dtype, accessible via the `shape` and
+  `dtype` properties. The shape represents the shape of the array of
+  "rotations", so it is essentially the batch shape of the corresponding
+  rotation matrix or angles array (i.e., a `Rotation2D` representing a single
+  rotation has a scalar shape).
+
+  ```{note}
+    As with `tf.Tensor`s, the `shape` attribute contains the static shape
+    as a `tf.TensorShape` and may not be fully defined outside eager execution.
+    To obtain the dynamic shape of a `Rotation2D` object, use `tf.shape`.
+  ```
+
+  ## Operators
+
+  `Rotation2D` objects also override a few operators for concise and intuitive
+  use.
+
+  - `==` (equality operator) can be used to check if two `Rotation2D` objects
+    are equal. This checks if the rotations are equivalent, regardless of how
+    they were defined (`rot1 == rot2`).
+  - `@` (matrix multiplication operator) can be used to compose two rotations
+    (`rot = rot1 @ rot2`).
+
+  ## Compatibility with TensorFlow APIs
+
+  Some TensorFlow APIs are explicitly overriden to operate with `Rotation2D`
+  objects. These include:
+
+  ```{list-table}
+  ---
+  header-rows: 1
+  ---
+
+  * - API
+    - Description
+    - Notes
+  * - `tf.linalg.matmul`
+    - Composes two `Rotation2D` objects.
+    - `tf.linalg.matmul(rot1, rot2)` is equivalent to `rot1 @ rot2`.
+  * - `tf.linalg.matvec`
+    - Rotates a point or a batch of points.
+    - `tf.linalg.matvec(rot, point)` is equivalent to `rot.rotate(point)`.
+  * - `tf.shape`
+    - Returns the dynamic shape of a `Rotation2D` object.
+    -
+  ```
+
+  ```{warning}
+    While other TensorFlow APIs may also work as expected when passed a
+    `Rotation2D`, this is not supported and their behavior may change in the
+    future.
+  ```
 
   Example:
 
@@ -71,7 +138,7 @@ class Rotation2D(tf.experimental.BatchableExtensionType):
     >>> print(inv_rot.as_matrix())
     tf.Tensor(
     [[ 0.  1.]
-      [-1.  0.]], shape=(2, 2), dtype=float32)
+     [-1.  0.]], shape=(2, 2), dtype=float32)
     >>> # You can also initialize a rotation using an angle:
     >>> rot2 = tfmri.geometry.Rotation2D.from_euler([np.pi / 2])
     >>> rotated2 = rot.rotate(point)
@@ -167,20 +234,34 @@ class Rotation2D(tf.experimental.BatchableExtensionType):
     Raises:
       ValueError: If the shape of `angle` is invalid.
     """
-    with tf.name_scope("rotation_2d/from_small_euler"):
+    with tf.name_scope(name or "rotation_2d/from_small_euler"):
       return cls(_matrix=rotation_matrix_2d.from_small_euler(angle))
 
   def as_matrix(self, name=None):
-    r"""Returns the rotation matrix that represents this rotation.
+    r"""Returns a rotation matrix representation of this rotation.
 
     Args:
       name: A name for this op. Defaults to `"rotation_2d/as_matrix"`.
 
     Returns:
-      A `tf.Tensor` of shape `[..., 2, 2]`.
+      A `tf.Tensor` of shape `[..., 2, 2]`, where the last two dimensions
+      represent a rotation matrix.
     """
     with tf.name_scope(name or "rotation_2d/as_matrix"):
       return tf.identity(self._matrix)
+
+  def as_euler(self, name=None):
+    r"""Returns an angle representation of this rotation.
+
+    Args:
+      name: A name for this op. Defaults to `"rotation_2d/as_euler"`.
+
+    Returns:
+      A `tf.Tensor` of shape `[..., 1]`, where the last dimension represents an
+      angle in radians.
+    """
+    with tf.name_scope(name or "rotation_2d/as_euler"):
+      return euler_2d.from_matrix(self._matrix)
 
   def inverse(self, name=None):
     r"""Computes the inverse of this rotation.
@@ -239,7 +320,10 @@ class Rotation2D(tf.experimental.BatchableExtensionType):
 
   def __matmul__(self, other):
     """Composes this rotation with another rotation."""
-    return Rotation2D(_matrix=self._matrix @ other._matrix)
+    if isinstance(other, Rotation2D):
+      return Rotation2D(_matrix=tf.matmul(self._matrix, other._matrix))
+    raise ValueError(
+        f"Cannot compose a `Rotation2D` with a `{type(other).__name__}`.")
 
   def __repr__(self):
     """Returns a string representation of this rotation."""
@@ -259,15 +343,60 @@ class Rotation2D(tf.experimental.BatchableExtensionType):
 
   @property
   def shape(self):
-    """Returns the shape of this rotation."""
+    """Returns the shape of this rotation.
+
+    Returns:
+      A `tf.TensorShape`.
+    """
     return self._matrix.shape[:-2]
 
   @property
   def dtype(self):
-    """Returns the dtype of this rotation."""
+    """Returns the dtype of this rotation.
+
+    Returns:
+      A `tf.dtypes.DType`.
+    """
     return self._matrix.dtype
 
 
+@tf.experimental.dispatch_for_api(
+    tf.linalg.matmul, {'a': Rotation2D, 'b': Rotation2D})
+def matmul(a, b,
+           transpose_a=False,
+           transpose_b=False,
+           adjoint_a=False,
+           adjoint_b=False,
+           a_is_sparse=False,
+           b_is_sparse=False,
+           output_type=None,
+           name=None):
+  if a_is_sparse or b_is_sparse:
+    raise ValueError("Rotation2D does not support sparse matmul.")
+  return Rotation2D(_matrix=tf.linalg.matmul(a.as_matrix(), b.as_matrix(),
+                                             transpose_a=transpose_a,
+                                             transpose_b=transpose_b,
+                                             adjoint_a=adjoint_a,
+                                             adjoint_b=adjoint_b,
+                                             output_type=output_type,
+                                             name=name))
+
+
+@tf.experimental.dispatch_for_api(tf.linalg.matvec, {'a': Rotation2D})
+def matvec(a, b,
+           transpose_a=False,
+           adjoint_a=False,
+           a_is_sparse=False,
+           b_is_sparse=False,
+           name=None):
+  if a_is_sparse or b_is_sparse:
+    raise ValueError("Rotation2D does not support sparse matvec.")
+  return tf.linalg.matvec(a.as_matrix(), b,
+                          transpose_a=transpose_a,
+                          adjoint_a=adjoint_a,
+                          name=name)
+
+
 @tf.experimental.dispatch_for_api(tf.shape, {'input': Rotation2D})
-def rotation_2d_shape(input, out_type=tf.int32, name=None):
-  return tf.shape(input._matrix, out_type=out_type, name=name)[:-2]
+def shape(input, out_type=tf.int32, name=None):
+  return tf.shape(input.as_matrix(), out_type=out_type, name=name)[:-2]

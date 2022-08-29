@@ -71,9 +71,39 @@ class Rotation2DTest(test_util.TestCase):
     self.assertAllEqual([True, False], rot1 == rot2)
 
   def test_repr(self):
+    """Tests that repr works."""
+    expected = "<tfmri.geometry.Rotation2D(shape=(), dtype=float32)>"
     rot = Rotation2D.from_euler([0.0])
-    self.assertEqual(
-        "<tfmri.geometry.Rotation2D(shape=(), dtype=float32)>", repr(rot))
+    self.assertEqual(expected, repr(rot))
+    self.assertEqual(expected[1:-1], str(rot))
+
+  def test_matmul(self):
+    """Tests that matmul works."""
+    rot = Rotation2D.from_euler([np.pi])
+    composed = rot @ rot
+    self.assertAllClose(np.eye(2), composed.as_matrix())
+
+    composed = tf.linalg.matmul(rot, rot)
+    self.assertAllClose(np.eye(2), composed.as_matrix())
+
+  def test_matvec(self):
+    """Tests that matvec works."""
+    rot = Rotation2D.from_euler([np.pi])
+    vec = tf.constant([1.0, -1.0])
+    self.assertAllClose(rot.rotate(vec), tf.linalg.matvec(rot, vec))
+
+  @parameterized.named_parameters(
+      ("0", [0.0]),
+      ("45", [np.pi / 4]),
+      ("90", [np.pi / 2]),
+      ("135", [np.pi * 3 / 4]),
+      ("-45", [-np.pi / 4]),
+      ("-90", [-np.pi / 2]),
+      ("-135", [-np.pi * 3 / 4])
+  )
+  def test_as_euler(self, angle):
+    rot = Rotation2D.from_euler(angle)
+    self.assertAllClose(angle, rot.as_euler())
 
   def test_from_matrix(self):
     """Tests that rotation can be initialized from matrix."""

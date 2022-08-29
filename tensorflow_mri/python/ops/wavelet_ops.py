@@ -734,7 +734,7 @@ def dwt_max_level(shape, wavelet_or_length, axes=None):
   The level returned is the minimum along all axes.
 
   Examples:
-    >>> import tensorflow_mri as tfmri
+
     >>> tfmri.signal.max_wavelet_level((64, 32), 'db2')
     3
 
@@ -837,10 +837,12 @@ def coeffs_to_tensor(coeffs, padding=0, axes=None):
   into a single, contiguous array.
 
   Examples:
+
     >>> import tensorflow_mri as tfmri
     >>> image = tfmri.image.phantom()
     >>> coeffs = tfmri.signal.wavedec(image, wavelet='db2', level=3)
     >>> tensor, slices = tfmri.signal.wavelet_coeffs_to_tensor(coeffs)
+
   """
   coeffs, axes, ndim, ndim_transform = _prepare_coeffs_axes(coeffs, axes)
 
@@ -945,6 +947,7 @@ def tensor_to_coeffs(coeff_tensor, coeff_slices):
     >>> coeffs_from_arr = tfmri.signal.tensor_to_wavelet_coeffs(tensor, slices)
     >>> image_recon = tfmri.signal.waverec(coeffs_from_arr, wavelet='db2')
     >>> # image and image_recon are equal
+
   """
   coeff_tensor = tf.convert_to_tensor(coeff_tensor)
   coeffs = []

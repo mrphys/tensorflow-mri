@@ -198,26 +198,29 @@ def central_mask(shape, center_size, name=None):
 
   This function returns a boolean tensor of zeros with a central region of ones.
 
-  .. tip::
+  ```{tip}
     Use this function to extract the calibration region from a Cartesian
     *k*-space.
+  ```
 
-  .. tip::
+  ```{tip}
     In MRI, one of the spatial frequency dimensions (readout dimension) is
     typically fully sampled. In this case, you might want to create a mask that
     has one less dimension than the corresponding *k*-space (e.g., 1D mask for
     2D images or 2D mask for 3D images).
+  ```
 
-  .. note::
+  ```{note}
     The central region is always evenly shaped for even mask dimensions and
     oddly shaped for odd mask dimensions. This avoids phase artefacts when
     using the resulting mask to sample the frequency domain.
+  ```
 
   Example:
-    >>> import tensorflow as tfmri
+
     >>> mask = tfmri.sampling.central_mask([8], [4])
     >>> mask.numpy()
-    array([False, False, True, True, True, True, False, False])
+    array([False, False,  True,  True,  True,  True, False, False])
 
   Args:
     shape: A 1D integer `tf.Tensor`. The shape of the output mask.
@@ -274,29 +277,32 @@ def biphasic_mask(shape,
   """Returns a biphasic sampling mask.
 
   A biphasic sampling mask has a fully sampled central region and a partially
-  sampled peripheral region. The peripheral may be sampled uniformly or
+  sampled peripheral region. The peripheral region may be sampled uniformly or
   randomly.
 
-  .. tip::
+  ```{tip}
     This type of mask describes the most commonly used sampling patterns in
     Cartesian MRI.
+  ```
 
-  .. tip::
+  ```{tip}
     In MRI, one of the spatial frequency dimensions (readout dimension) is
     typically fully sampled. In this case, you might want to create a mask that
     has one less dimension than the corresponding *k*-space (e.g., 1D mask for
     2D images or 2D mask for 3D images).
+  ```
 
-  .. note::
+  ```{note}
     The central region is always evenly shaped for even mask dimensions and
     oddly shaped for odd mask dimensions. This avoids phase artefacts when
     using the resulting mask to sample the frequency domain.
+  ```
 
   Example:
-    >>> import tensorflow as tfmri
+
     >>> mask = tfmri.sampling.biphasic_mask([8], [2], [2])
     >>> mask.numpy()
-    array([True, False, True, True, True, False, True, False])
+    array([ True, False,  True,  True,  True, False,  True, False])
 
   Args:
     shape: A 1D integer `tf.Tensor`. The shape of the output mask.
@@ -439,17 +445,17 @@ def radial_trajectory(base_resolution,
     radians/voxel, ie, values are in the range `[-pi, pi]`.
 
   References:
-    .. [1] Winkelmann, S., Schaeffter, T., Koehler, T., Eggers, H. and
-      Doessel, O. (2007), An optimal radial profile order based on the golden
-      ratio for time-resolved MRI. IEEE Transactions on Medical Imaging,
-      26(1): 68-76, https://doi.org/10.1109/TMI.2006.885337
-    .. [2] Wundrak, S., Paul, J., Ulrici, J., Hell, E., Geibel, M.-A.,
-      Bernhardt, P., Rottbauer, W. and Rasche, V. (2016), Golden ratio sparse
-      MRI using tiny golden angles. Magn. Reson. Med., 75: 2372-2378.
-      https://doi.org/10.1002/mrm.25831
-    .. [3] Wong, S.T.S. and Roos, M.S. (1994), A strategy for sampling on a
-      sphere applied to 3D selective RF pulse design. Magn. Reson. Med.,
-      32: 778-784. https://doi.org/10.1002/mrm.1910320614
+    1. Winkelmann, S., Schaeffter, T., Koehler, T., Eggers, H. and
+       Doessel, O. (2007), An optimal radial profile order based on the golden
+       ratio for time-resolved MRI. IEEE Transactions on Medical Imaging,
+       26(1): 68-76, https://doi.org/10.1109/TMI.2006.885337
+    2. Wundrak, S., Paul, J., Ulrici, J., Hell, E., Geibel, M.-A.,
+       Bernhardt, P., Rottbauer, W. and Rasche, V. (2016), Golden ratio sparse
+       MRI using tiny golden angles. Magn. Reson. Med., 75: 2372-2378.
+       https://doi.org/10.1002/mrm.25831
+    3. Wong, S.T.S. and Roos, M.S. (1994), A strategy for sampling on a
+       sphere applied to 3D selective RF pulse design. Magn. Reson. Med.,
+       32: 778-784. https://doi.org/10.1002/mrm.1910320614
   """
   return _kspace_trajectory('radial',
                             {'base_resolution': base_resolution,
@@ -537,7 +543,7 @@ def spiral_trajectory(base_resolution,
     radians/voxel, ie, values are in the range `[-pi, pi]`.
 
   References:
-    .. [1] Pipe, J.G. and Zwart, N.R. (2014), Spiral trajectory design: A
+    1. Pipe, J.G. and Zwart, N.R. (2014), Spiral trajectory design: A
       flexible numerical algorithm and base analytical equations. Magn. Reson.
       Med, 71: 278-285. https://doi.org/10.1002/mrm.24675
   """
@@ -808,10 +814,11 @@ def estimate_radial_density(points, readout_os=2.0):
 
   This function supports 2D and 3D ("koosh-ball") radial trajectories.
 
-  .. warning::
+  ```{warning}
     This function assumes that `points` represents a radial trajectory, but
-    cannot verify that. If used with trajectories other than radial, it will
+    will not verify that. If used with trajectories other than radial, it will
     not fail but the result will be invalid.
+  ```
 
   Args:
     points: A `Tensor`. Must be one of the following types: `float32`,
@@ -1121,13 +1128,13 @@ def estimate_density(points, grid_shape, method='jackson', max_iter=50):
     A `Tensor` of shape `[..., M]` containing the density of `points`.
 
   References:
-    .. [1] Jackson, J.I., Meyer, C.H., Nishimura, D.G. and Macovski, A. (1991),
-      Selection of a convolution function for Fourier inversion using gridding
-      (computerised tomography application). IEEE Transactions on Medical
-      Imaging, 10(3): 473-478. https://doi.org/10.1109/42.97598
-    .. [2] Pipe, J.G. and Menon, P. (1999), Sampling density compensation in
-      MRI: Rationale and an iterative numerical solution. Magn. Reson. Med.,
-      41: 179-186. https://doi.org/10.1002/(SICI)1522-2594(199901)41:1<179::AID-MRM25>3.0.CO;2-V
+    1. Jackson, J.I., Meyer, C.H., Nishimura, D.G. and Macovski, A. (1991),
+       Selection of a convolution function for Fourier inversion using gridding
+       (computerised tomography application). IEEE Transactions on Medical
+       Imaging, 10(3): 473-478. https://doi.org/10.1109/42.97598
+    2. Pipe, J.G. and Menon, P. (1999), Sampling density compensation in
+       MRI: Rationale and an iterative numerical solution. Magn. Reson. Med.,
+       41: 179-186. https://doi.org/10.1002/(SICI)1522-2594(199901)41:1<179::AID-MRM25>3.0.CO;2-V
   """
   method = check_util.validate_enum(
       method, {'jackson', 'pipe'}, name='method')
@@ -1304,8 +1311,9 @@ def _rotation_matrix_3d_from_euler(angles, order='XYZ', name='rotation_3d'):
 
   The resulting matrix is $$\mathbf{R} = \mathbf{R}_z\mathbf{R}_y\mathbf{R}_x$$.
 
-  .. note::
+  ```{note}
     In the following, A1 to An are optional batch dimensions.
+  ```
 
   Args:
     angles: A tensor of shape `[A1, ..., An, 3]`, where the last dimension
@@ -1339,8 +1347,9 @@ def _rotation_matrix_3d_from_euler(angles, order='XYZ', name='rotation_3d'):
 def _build_matrix_from_sines_and_cosines(sin_angles, cos_angles, order='XYZ'):
   """Builds a rotation matrix from sines and cosines of Euler angles.
 
-  .. note::
+  ```{note}
     In the following, A1 to An are optional batch dimensions.
+  ```
 
   Args:
     sin_angles: A tensor of shape `[A1, ..., An, 3]`, where the last dimension

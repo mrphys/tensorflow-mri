@@ -256,18 +256,49 @@ COMMON_TYPES_LINKS = {
 
 
 def process_docstring(app, what, name, obj, options, lines):  # pylint: disable=missing-param-doc,unused-argument
-  """Process autodoc docstrings."""
-  # Regular expression.
+  """Processes autodoc docstrings."""
+  # Regular expressions.
+  blankline_re = re.compile(r"^\s*$")
+  prompt_re = re.compile(r"^\s*>>>")
   tf_symbol_re = re.compile(r"`(?P<symbol>tf\.[a-zA-Z0-9_.]+)`")
+
+  # Loop initialization. `insert_lines` keeps a list of lines to be inserted
+  # as well as their positions.
+  insert_lines = []
+  in_prompt = False
+
   # Iterate line by line.
   for lineno, line in enumerate(lines):
 
-    m = tf_symbol_re.match(line)
+    # Check if we're in a prompt block.
+    if in_prompt:
+      # Check if end of prompt block.
+      if blankline_re.match(line):
+        in_prompt = False
+        insert_lines.append((lineno, "```"))
+        continue
+
+    # Check for >>> prompt, if found insert code block (unless already in
+    # prompt).
+    m = prompt_re.match(line)
+    if m and not in_prompt:
+      in_prompt = True
+      # We need to insert a new line. It's not safe to modify the list we're
+      # iterating over, so instead we store the line in `insert_lines` and we
+      # insert it after the loop.
+      insert_lines.append((lineno, "```python"))
+      continue
+
+    # Add links to TF symbols.
+    m = tf_symbol_re.search(line)
     if m:
       symbol = m.group('symbol')
       link = f"https://www.tensorflow.org/api_docs/python/{symbol.replace('.', '/')}"
       lines[lineno] = line.replace(f"`{symbol}`", f"[`{symbol}`]({link})")
 
+  # Now insert the lines (in reversed order so that line numbers stay valid).
+  for lineno, line in reversed(insert_lines):
+    lines.insert(lineno, line)
 
 
 def get_doc_url(name):

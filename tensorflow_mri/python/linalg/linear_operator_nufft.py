@@ -57,25 +57,25 @@ class LinearOperatorNUFFT(linear_operator.LinearOperator):  # pylint: disable=ab
     and wish to apply the full compensation, you can do so via the
     `preprocess` method.
 
-    >>> import tensorflow as tf
-    >>> import tensorflow_mri as tfmri
     >>> # Create some data.
     >>> image_shape = (128, 128)
-    >>> image = image_ops.phantom(shape=image_shape, dtype=tf.complex64)
+    >>> image = tfmri.image.phantom(shape=image_shape, dtype=tf.complex64)
     >>> trajectory = tfmri.sampling.radial_trajectory(
-    >>>     128, 128, flatten_encoding_dims=True)
+    ...     base_resolution=128, views=129, flatten_encoding_dims=True)
     >>> density = tfmri.sampling.radial_density(
-    >>>     128, 128, flatten_encoding_dims=True)
+    ...     base_resolution=128, views=129, flatten_encoding_dims=True)
     >>> # Create a NUFFT operator.
     >>> linop = tfmri.linalg.LinearOperatorNUFFT(
-    >>>     image_shape, trajectory=trajectory, density=density)
+    ...     image_shape, trajectory=trajectory, density=density)
     >>> # Create k-space.
     >>> kspace = tfmri.signal.nufft(image, trajectory)
     >>> # This reconstructs the image applying only partial compensation
     >>> # (square root of weights).
     >>> image = linop.transform(kspace, adjoint=True)
     >>> # This reconstructs the image with full compensation.
-    >>> image = linop.transform(linop.preprocess(kspace, adjoint=True), adjoint=True)
+    >>> image = linop.transform(
+    ...     linop.preprocess(kspace, adjoint=True), adjoint=True)
+
   """
   def __init__(self,
                domain_shape,
