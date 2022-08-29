@@ -28,6 +28,13 @@ class ReluTest(test_util.TestCase):
     result = complex_activations.complex_relu(inputs)
     self.assertAllClose(expected, result)
 
+  @test_util.run_all_execution_modes
+  def test_mod_relu(self):
+    inputs = [1.0 - 2.0j, 1.0 + 3.0j, -2.0 + 1.0j, -3.0 - 4.0j]
+    expected = [0.0 + 0.0j, 1.0 + 3.0j, 0.0 + 0.0j, -3.0 - 4.0j]
+    result = complex_activations.mod_relu(inputs, threshold=3.0)
+    self.assertAllClose(expected, result)
+
 
 if __name__ == '__main__':
   tf.test.main()

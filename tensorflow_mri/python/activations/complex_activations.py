@@ -31,8 +31,10 @@ def complexified(name, split='real_imag'):
       x = tf.convert_to_tensor(x)
       if x.dtype.is_complex:
         if split == 'abs_angle':
+          j = tf.dtypes.complex(tf.zeros((), dtype=x.dtype.real_dtype),
+                                tf.ones((), dtype=x.dtype.real_dtype))
           return (tf.cast(func(tf.math.abs(x), *args, **kwargs), x.dtype) *
-                  tf.math.exp(1j * tf.math.angle(x)))
+                  tf.math.exp(j * tf.cast(tf.math.angle(x), x.dtype)))
         if split == 'real_imag':
           return tf.dtypes.complex(func(tf.math.real(x), *args, **kwargs),
                                    func(tf.math.imag(x), *args, **kwargs))
