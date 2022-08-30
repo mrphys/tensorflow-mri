@@ -29,7 +29,7 @@ from tensorflow_mri.python.util import check_util
 
 
 @api_util.export("coils.estimate_sensitivities")
-def estimate(input_, coil_axis=-1, method='walsh', **kwargs):
+def estimate_sensitivities(input_, coil_axis=-1, method='walsh', **kwargs):
   """Estimates coil sensitivity maps.
 
   This method supports 2D and 3D inputs.
@@ -408,7 +408,7 @@ def _apply_uniform_filter(tensor, size=5):
 
 
 @api_util.export("coils.estimate_sensitivities_universal")
-def estimate_universal(
+def estimate_sensitivities_universal(
     meas_data,
     operator,
     calib_data=None,
@@ -431,9 +431,9 @@ def estimate_universal(
   it from `meas_data`.
 
   ```{note}
-  This function is part of the
-  [universal family](https://mrphys.github.io/tensorflow-mri/guide/universal/)
-  of operators designed to work flexibly with any linear system.
+  This function is part of the family of
+  [universal operators](https://mrphys.github.io/tensorflow-mri/guide/universal/),
+  a set of functions designed to work flexibly with any linear system.
   ```
 
   Example:
@@ -480,8 +480,8 @@ def estimate_universal(
       In MRI, this is usually the *k*-space data.
       ```
     operator: A `tfmri.linalg.LinearOperator` describing the action of the
-      measurement system, i.e., mapping an object Its range must be compatible with `meas_data`, i.e.,
-      its adjoint should be able to process `meas_data` correctly.
+      measurement system. `operator` maps the causal factors to the measurement
+      or observation data. Its range must be compatible with `meas_data`.
       ```{tip}
       In MRI, this is usually an operator mapping images to the corresponding
       *k*-space data. For most MRI experiments, you can use
@@ -547,7 +547,7 @@ def estimate_universal(
 
     # Apply estimation for each element in batch.
     maps = tf.map_fn(
-        functools.partial(estimate,
+        functools.partial(estimate_sensitivities,
                           coil_axis=-(rank + 1),
                           method=method,
                           **kwargs),

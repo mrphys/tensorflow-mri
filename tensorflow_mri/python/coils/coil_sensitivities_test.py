@@ -42,7 +42,7 @@ class EstimateTest(test_util.TestCase):
     # In the meantime, we run these tests on the CPU only. Same applies to all
     # other tests in this class.
     with tf.device('/cpu:0'):
-      maps = coil_sensitivities.estimate(
+      maps = coil_sensitivities.estimate_sensitivities(
           self.data['images'], method='walsh')
 
     self.assertAllClose(maps, self.data['maps/walsh'], rtol=1e-2, atol=1e-2)
@@ -51,7 +51,7 @@ class EstimateTest(test_util.TestCase):
   def test_walsh_transposed(self):
     """Test Walsh's method with a transposed array."""
     with tf.device('/cpu:0'):
-      maps = coil_sensitivities.estimate(
+      maps = coil_sensitivities.estimate_sensitivities(
         tf.transpose(self.data['images'], [2, 0, 1]),
         coil_axis=0, method='walsh')
 
@@ -62,7 +62,7 @@ class EstimateTest(test_util.TestCase):
   def test_inati(self):
     """Test Inati's method."""
     with tf.device('/cpu:0'):
-      maps = coil_sensitivities.estimate(
+      maps = coil_sensitivities.estimate_sensitivities(
           self.data['images'], method='inati')
 
     self.assertAllClose(maps, self.data['maps/inati'], rtol=1e-4, atol=1e-4)
@@ -71,7 +71,7 @@ class EstimateTest(test_util.TestCase):
   def test_espirit(self):
     """Test ESPIRiT method."""
     with tf.device('/cpu:0'):
-      maps = coil_sensitivities.estimate(
+      maps = coil_sensitivities.estimate_sensitivities(
           self.data['kspace'], method='espirit')
 
     self.assertAllClose(maps, self.data['maps/espirit'], rtol=1e-2, atol=1e-2)
@@ -80,7 +80,7 @@ class EstimateTest(test_util.TestCase):
   def test_espirit_transposed(self):
     """Test ESPIRiT method with a transposed array."""
     with tf.device('/cpu:0'):
-      maps = coil_sensitivities.estimate(
+      maps = coil_sensitivities.estimate_sensitivities(
         tf.transpose(self.data['kspace'], [2, 0, 1]),
         coil_axis=0, method='espirit')
 
@@ -94,13 +94,13 @@ class EstimateTest(test_util.TestCase):
     with tf.device('/cpu:0'):
       image = image_ops.phantom(shape=[64, 64, 64], num_coils=4)
       # Currently only testing if it runs.
-      maps = coil_sensitivities.estimate(image, # pylint: disable=unused-variable
+      maps = coil_sensitivities.estimate_sensitivities(image, # pylint: disable=unused-variable
                                          coil_axis=0,
                                          method='walsh')
 
 
 class EstimateUniversalTest(test_util.TestCase):
-  def test_estimate_universal(self):
+  def test_estimate_sensitivities_universal(self):
     image_shape = [128, 128]
     image = image_ops.phantom(shape=image_shape, num_coils=4,
                               dtype=tf.complex64)
@@ -113,7 +113,7 @@ class EstimateUniversalTest(test_util.TestCase):
 
     # Test with direct *k*-space.
     image = fft_ops.ifftn(kspace, axes=[-2, -1], norm='ortho', shift=True)
-    maps = coil_sensitivities.estimate_universal(
+    maps = coil_sensitivities.estimate_sensitivities_universal(
         kspace, operator, method='direct')
     self.assertAllClose(image, maps)
 
@@ -122,27 +122,27 @@ class EstimateUniversalTest(test_util.TestCase):
     calib_data = tf.where(calib_mask, kspace, tf.zeros_like(kspace))
     calib_image = fft_ops.ifftn(
         calib_data, axes=[-2, -1], norm='ortho', shift=True)
-    maps = coil_sensitivities.estimate_universal(
+    maps = coil_sensitivities.estimate_sensitivities_universal(
         kspace, operator, calib_data=calib_data, method='direct')
     self.assertAllClose(calib_image, maps)
 
     # Test with calibration function.
     calib_fn = lambda x, _: tf.where(calib_mask, x, tf.zeros_like(x))
-    maps = coil_sensitivities.estimate_universal(
+    maps = coil_sensitivities.estimate_sensitivities_universal(
         kspace, operator, calib_fn=calib_fn, method='direct')
     self.assertAllClose(calib_image, maps)
 
     # Test Walsh.
-    expected = coil_sensitivities.estimate(
+    expected = coil_sensitivities.estimate_sensitivities(
         calib_image, coil_axis=-3, method='walsh')
-    maps = coil_sensitivities.estimate_universal(
+    maps = coil_sensitivities.estimate_sensitivities_universal(
         kspace, operator, calib_data=calib_data, method='walsh')
     self.assertAllClose(expected, maps)
 
     # Test batch.
     kspace_batch = tf.stack([kspace, 2 * kspace], axis=0)
     expected = tf.stack([calib_image, 2 * calib_image], axis=0)
-    maps = coil_sensitivities.estimate_universal(
+    maps = coil_sensitivities.estimate_sensitivities_universal(
         kspace_batch, operator, calib_fn=calib_fn, method='direct')
     self.assertAllClose(expected, maps)
 
