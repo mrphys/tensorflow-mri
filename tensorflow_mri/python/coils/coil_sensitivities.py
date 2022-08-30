@@ -14,85 +14,23 @@
 # ==============================================================================
 """Coil sensitivity estimation."""
 
+import collections
 import functools
 
 import numpy as np
 import tensorflow as tf
+import tensorflow.experimental.numpy as tnp
 
 from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.ops import fft_ops
-from tensorflow_mri.python.ops import signal_ops
 from tensorflow_mri.python.recon import recon_adjoint
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 
 
-@api_util.export("coils.estimate_sensitivities_with_calibration_data")
-def estimate_sensitivities_with_calibration_data(
-    kspace,
-    operator,
-    calib_data=None,
-    calib_window=None,
-    method='walsh',
-    **kwargs):
-  method = 'lowpass'
-
-  # For convenience.
-  rank = operator.rank
-
-  if calib_data is None:
-    # Calibration data was not provided. Get calibration data by low-pass
-    # filtering the input k-space.
-    calib_data = signal_ops.filter_kspace(
-        kspace,
-        trajectory=operator.trajectory,
-        filter_fn=calib_window,
-        filter_rank=rank,
-        separable=True)
-
-  # Reconstruct image.
-  calib_data = recon_adjoint.recon_adjoint(calib_data, operator)
-
-  if method == 'lowpass':
-    return calib_data
-
-  # ESPIRiT method takes in k-space data, so convert back to k-space in this
-  # case.
-  if method == 'espirit':
-    axes = list(range(-rank, 0))
-    calib_data = fft_ops.fftn(calib_data, axes=axes, norm='ortho', shift=True)
-
-  # Reshape to single batch dimension.
-  batch_shape_static = calib_data.shape[:-(rank + 1)]
-  batch_shape = tf.shape(calib_data)[:-(rank + 1)]
-  calib_shape = tf.shape(calib_data)[-(rank + 1):]
-  calib_data = tf.reshape(calib_data, tf.concat([[-1], calib_shape], 0))
-
-  # Apply estimation for each element in batch.
-  sensitivities = tf.map_fn(
-      functools.partial(estimate_coil_sensitivities,
-                        coil_axis=-(rank + 1),
-                        method=method,
-                        **kwargs),
-      calib_data)
-
-  # Restore batch shape.
-  output_shape = tf.shape(sensitivities)[1:]
-  output_shape_static = sensitivities.shape[1:]
-  sensitivities = tf.reshape(sensitivities,
-      tf.concat([batch_shape, output_shape], 0))
-  sensitivities = tf.ensure_shape(
-      sensitivities, batch_shape_static.concatenate(output_shape_static))
-
-  return sensitivities
-
-
 @api_util.export("coils.estimate_sensitivities")
-def estimate_coil_sensitivities(input_,
-                                coil_axis=-1,
-                                method='walsh',
-                                **kwargs):
-  """Estimate coil sensitivity maps.
+def estimate(input_, coil_axis=-1, method='walsh', **kwargs):
+  """Estimates coil sensitivity maps.
 
   This method supports 2D and 3D inputs.
 
@@ -118,91 +56,89 @@ def estimate_coil_sensitivities(input_,
 
     This function accepts the following method-specific keyword arguments:
 
-    * For `method="walsh"`:
+    - For `method="walsh"`:
 
-      * **filter_size**: An `int`. The size of the smoothing filter.
+      - **filter_size**: An `int`. The size of the smoothing filter.
 
-    * For `method="inati"`:
+    - For `method="inati"`:
 
-      * **filter_size**: An `int`. The size of the smoothing filter.
-      * **max_iter**: An `int`. The maximum number of iterations.
-      * **tol**: A `float`. The convergence tolerance.
+      - **filter_size**: An `int`. The size of the smoothing filter.
+      - **max_iter**: An `int`. The maximum number of iterations.
+      - **tol**: A `float`. The convergence tolerance.
 
-    * For `method="espirit"`:
+    - For `method="espirit"`:
 
-      * **calib_size**: An `int` or a list of `ints`. The size of the
+      - **calib_size**: An `int` or a list of `ints`. The size of the
         calibration region. If `None`, this is set to `input_.shape[:-1]` (ie,
         use full input for calibration). Defaults to 24.
-      * **kernel_size**: An `int` or a list of `ints`. The kernel size. Defaults
+      - **kernel_size**: An `int` or a list of `ints`. The kernel size. Defaults
         to 6.
-      * **num_maps**: An `int`. The number of output maps. Defaults to 2.
-      * **null_threshold**: A `float`. The threshold used to determine the size
+      - **num_maps**: An `int`. The number of output maps. Defaults to 2.
+      - **null_threshold**: A `float`. The threshold used to determine the size
         of the null-space. Defaults to 0.02.
-      * **eigen_threshold**: A `float`. The threshold used to determine the
+      - **eigen_threshold**: A `float`. The threshold used to determine the
         locations where coil sensitivity maps should be masked out. Defaults
         to 0.95.
-      * **image_shape**: A `tf.TensorShape` or a list of `ints`. The shape of
+      - **image_shape**: A `tf.TensorShape` or a list of `ints`. The shape of
         the output maps. If `None`, this is set to `input_.shape`. Defaults to
         `None`.
 
   References:
-    .. [1] Walsh, D.O., Gmitro, A.F. and Marcellin, M.W. (2000), Adaptive
-      reconstruction of phased array MR imagery. Magn. Reson. Med., 43:
-      682-690. https://doi.org/10.1002/(SICI)1522-2594(200005)43:5<682::AID-MRM10>3.0.CO;2-G
-
-    .. [2] Inati, S.J., Hansen, M.S. and Kellman, P. (2014). A fast optimal
-      method for coil sensitivity estimation and adaptive coil combination for
-      complex images. Proceedings of the 2014 Joint Annual Meeting
-      ISMRM-ESMRMB.
-
-    .. [3] Uecker, M., Lai, P., Murphy, M.J., Virtue, P., Elad, M., Pauly, J.M.,
-      Vasanawala, S.S. and Lustig, M. (2014), ESPIRiT—an eigenvalue approach
-      to autocalibrating parallel MRI: Where SENSE meets GRAPPA. Magn. Reson.
-      Med., 71: 990-1001. https://doi.org/10.1002/mrm.24751
+    1. Walsh, D.O., Gmitro, A.F. and Marcellin, M.W. (2000), Adaptive
+       reconstruction of phased array MR imagery. Magn. Reson. Med., 43:
+       682-690. https://doi.org/10.1002/(SICI)1522-2594(200005)43:5<682::AID-MRM10>3.0.CO;2-G
+    2. Inati, S.J., Hansen, M.S. and Kellman, P. (2014). A fast optimal
+       method for coil sensitivity estimation and adaptive coil combination for
+       complex images. Proceedings of the 2014 Joint Annual Meeting
+       ISMRM-ESMRMB.
+    3. Uecker, M., Lai, P., Murphy, M.J., Virtue, P., Elad, M., Pauly, J.M.,
+       Vasanawala, S.S. and Lustig, M. (2014), ESPIRiT—an eigenvalue approach
+       to autocalibrating parallel MRI: Where SENSE meets GRAPPA. Magn. Reson.
+       Med., 71: 990-1001. https://doi.org/10.1002/mrm.24751
   """
   # pylint: disable=missing-raises-doc
-  input_ = tf.convert_to_tensor(input_)
-  tf.debugging.assert_rank_at_least(input_, 2, message=(
-    f"Argument `input_` must have rank of at least 2, but got shape: "
-    f"{input_.shape}"))
-  coil_axis = check_util.validate_type(coil_axis, int, name='coil_axis')
-  method = check_util.validate_enum(
-    method, {'walsh', 'inati', 'espirit'}, name='method')
+  with tf.name_scope(kwargs.get("name", "estimate_sensitivities")):
+    input_ = tf.convert_to_tensor(input_)
+    tf.debugging.assert_rank_at_least(input_, 2, message=(
+      f"Argument `input_` must have rank of at least 2, but got shape: "
+      f"{input_.shape}"))
+    coil_axis = check_util.validate_type(coil_axis, int, name='coil_axis')
+    method = check_util.validate_enum(
+      method, {'walsh', 'inati', 'espirit'}, name='method')
 
-  # Move coil axis to innermost dimension if not already there.
-  if coil_axis != -1:
-    rank = input_.shape.rank
-    canonical_coil_axis = coil_axis + rank if coil_axis < 0 else coil_axis
-    perm = (
-      [ax for ax in range(rank) if not ax == canonical_coil_axis] +
-      [canonical_coil_axis])
-    input_ = tf.transpose(input_, perm)
+    # Move coil axis to innermost dimension if not already there.
+    if coil_axis != -1:
+      rank = input_.shape.rank
+      canonical_coil_axis = coil_axis + rank if coil_axis < 0 else coil_axis
+      perm = (
+        [ax for ax in range(rank) if not ax == canonical_coil_axis] +
+        [canonical_coil_axis])
+      input_ = tf.transpose(input_, perm)
 
-  if method == 'walsh':
-    maps = _estimate_coil_sensitivities_walsh(input_, **kwargs)
-  elif method == 'inati':
-    maps = _estimate_coil_sensitivities_inati(input_, **kwargs)
-  elif method == 'espirit':
-    maps = _estimate_coil_sensitivities_espirit(input_, **kwargs)
-  else:
-    raise RuntimeError("This should never happen.")
+    if method == 'walsh':
+      maps = _estimate_walsh(input_, **kwargs)
+    elif method == 'inati':
+      maps = _estimate_inati(input_, **kwargs)
+    elif method == 'espirit':
+      maps = _estimate_espirit(input_, **kwargs)
+    else:
+      raise RuntimeError("This should never happen.")
 
-  # If necessary, move coil axis back to its original location.
-  if coil_axis != -1:
-    inv_perm = tf.math.invert_permutation(perm)
-    if method == 'espirit':
-      # When using ESPIRiT method, output has an additional `maps` dimension.
-      inv_perm = tf.concat([inv_perm, [tf.shape(inv_perm)[0]]], 0)
-    maps = tf.transpose(maps, inv_perm)
+    # If necessary, move coil axis back to its original location.
+    if coil_axis != -1:
+      inv_perm = tf.math.invert_permutation(perm)
+      if method == 'espirit':
+        # When using ESPIRiT method, output has an additional `maps` dimension.
+        inv_perm = tf.concat([inv_perm, [tf.shape(inv_perm)[0]]], 0)
+      maps = tf.transpose(maps, inv_perm)
 
-  return maps
+    return maps
 
 
-
-def _estimate_coil_sensitivities_walsh(images, filter_size=5):
+def _estimate_walsh(images, filter_size=5):
   """Estimate coil sensitivity maps using Walsh's method.
 
-  For the parameters, see `estimate_coil_sensitivities`.
+  For the parameters, see `estimate`.
   """
   rank = images.shape.rank - 1
   image_shape = tf.shape(images)[:-1]
@@ -237,13 +173,13 @@ def _estimate_coil_sensitivities_walsh(images, filter_size=5):
   return maps
 
 
-def _estimate_coil_sensitivities_inati(images,
-                                       filter_size=5,
-                                       max_iter=5,
-                                       tol=1e-3):
+def _estimate_inati(images,
+                    filter_size=5,
+                    max_iter=5,
+                    tol=1e-3):
   """Estimate coil sensitivity maps using Inati's fast method.
 
-  For the parameters, see `estimate_coil_sensitivities`.
+  For the parameters, see `estimate`.
   """
   rank = images.shape.rank - 1
   spatial_axes = list(range(rank))
@@ -318,16 +254,16 @@ def _estimate_coil_sensitivities_inati(images,
   return tf.reshape(state.maps, images.shape)
 
 
-def _estimate_coil_sensitivities_espirit(kspace,
-                                         calib_size=24,
-                                         kernel_size=6,
-                                         num_maps=2,
-                                         null_threshold=0.02,
-                                         eigen_threshold=0.95,
-                                         image_shape=None):
+def _estimate_espirit(kspace,
+                      calib_size=24,
+                      kernel_size=6,
+                      num_maps=2,
+                      null_threshold=0.02,
+                      eigen_threshold=0.95,
+                      image_shape=None):
   """Estimate coil sensitivity maps using the ESPIRiT method.
 
-  For the parameters, see `estimate_coil_sensitivities`.
+  For the parameters, see `estimate`.
   """
   kspace = tf.convert_to_tensor(kspace)
   rank = kspace.shape.rank - 1
@@ -469,6 +405,108 @@ def _apply_uniform_filter(tensor, size=5):
   output = tf.transpose(output)
 
   return output
+
+
+@api_util.export("coils.estimate_sensitivities_from_kspace")
+def estimate_from_kspace(
+    kspace,
+    operator,
+    calib_data=None,
+    calib_fn=None,
+    method='walsh',
+    **kwargs):
+  """Estimates coil sensitivities from *k*-space data.
+
+  This function is designed to standardize the computation of coil
+  sensitivities in different contexts. It accepts a `kspace` tensor which may
+  be 2D/3D and Cartesian/non-Cartesian. It never takes images as inputs.
+
+  In addition to the `kspace` tensor, this function needs a linear `operator`
+  which represents the MR imaging matrix. This will be used internally to
+  reconstruct images from the *k*-space data.
+
+  This function also accepts an optional `calib_data` tensor or an optional
+  `calib_fn` function. These can be used to provide the calibration data
+  directly or to specify the rules to extract it from the full *k*-space data,
+  respectively.
+
+  Args:
+    kspace: A `tf.Tensor` containing the *k*-space data. Must be compatible
+      with `operator`. See
+      [Conventions](https://mrphys.github.io/tensorflow-mri/guide/conventions/)
+      for details on the common structure of *k*-space tensors.
+    operator: A `tfmri.linalg.LinearOperator` representing the imaging matrix.
+    calib_data: A `tf.Tensor` containing the calibration data. Must be
+      compatible with `operator`. If `None`, the calibration data will be
+      extracted from the `kspace` tensor using the `calib_fn` function.
+    calib_fn: A callable which extracts the calibration data from the input
+      `kspace`. Must have signature `calib_fn(kspace, operator) -> calib_data`.
+      If `None`, `calib_data` will be used for calibration. If `calib_data` is
+      also `None`, `kspace` will be used directly for calibration.
+    method: A `str` specifying which coil sensitivity estimation algorithm to
+      use. Must be one of `'direct'`, `'walsh'`, `'inati'` or `'espirit'`.
+      Defaults to `'walsh'`.
+    **kwargs: Additional keyword arguments depending on the `method`. For a
+      list of available arguments, see `tfmri.coils.estimate_sensitivites`.
+
+  Returns:
+    A `tf.Tensor` of shape `[..., coils, *spatial_dims]` containing the coil
+    sensitivities.
+
+  Raises:
+    ValueError: If both `calib_data` and `calib_fn` are provided.
+  """
+  with tf.name_scope(kwargs.get('name', 'estimate_sensitivities_from_kspace')):
+    rank = operator.rank
+    kspace = tf.convert_to_tensor(kspace)
+
+    if calib_data is None and calib_fn is None:
+      calib_data = kspace
+    elif calib_data is None and calib_fn is not None:
+      calib_data = calib_fn(kspace, operator)
+    elif calib_data is not None and calib_fn is None:
+      calib_data = tf.convert_to_tensor(calib_data)
+    else:
+      raise ValueError(
+          "Only one of `calib_data` and `calib_fn` may be specified.")
+
+    # Reconstruct image.
+    calib_data = recon_adjoint.recon_adjoint(calib_data, operator)
+
+    # If method is `'direct'`, we simply return the reconstructed calibration
+    # data.
+    if method == 'direct':
+      return calib_data
+
+    # ESPIRiT method takes in k-space data, so convert back to k-space in this
+    # case.
+    if method == 'espirit':
+      axes = list(range(-rank, 0))
+      calib_data = fft_ops.fftn(calib_data, axes=axes, norm='ortho', shift=True)
+
+    # Reshape to single batch dimension.
+    batch_shape_static = calib_data.shape[:-(rank + 1)]
+    batch_shape = tf.shape(calib_data)[:-(rank + 1)]
+    calib_shape = tf.shape(calib_data)[-(rank + 1):]
+    calib_data = tf.reshape(calib_data, tf.concat([[-1], calib_shape], 0))
+
+    # Apply estimation for each element in batch.
+    maps = tf.map_fn(
+        functools.partial(estimate,
+                          coil_axis=-(rank + 1),
+                          method=method,
+                          **kwargs),
+        calib_data)
+
+    # Restore batch shape.
+    output_shape = tf.shape(maps)[1:]
+    output_shape_static = maps.shape[1:]
+    maps = tf.reshape(maps,
+        tf.concat([batch_shape, output_shape], 0))
+    maps = tf.ensure_shape(
+        maps, batch_shape_static.concatenate(output_shape_static))
+
+    return maps
 
 
 _prod = lambda iterable: functools.reduce(lambda x, y: x * y, iterable)

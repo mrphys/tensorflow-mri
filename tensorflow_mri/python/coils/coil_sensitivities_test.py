@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Coil sensitivity estimation."""
+"""Tests for module `coil_sensitivities`."""
 
-import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.coils import coil_sensitivities
@@ -22,163 +21,131 @@ from tensorflow_mri.python.linalg import linear_operator_mri
 from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.ops import traj_ops
+from tensorflow_mri.python.util import io_util
 from tensorflow_mri.python.util import test_util
 
-import matplotlib.pyplot as plt
-from tensorflow_mri.python.util import plot_util
+
+class EstimateTest(test_util.TestCase):
+  """Tests for ops related to estimation of coil sensitivity maps."""
+  @classmethod
+  def setUpClass(cls):
+
+    super().setUpClass()
+    cls.data = io_util.read_hdf5('tests/data/coil_ops_data.h5')
+
+  @test_util.run_in_graph_and_eager_modes
+  def test_walsh(self):
+    """Test Walsh's method."""
+    # GPU results are close, but about 1-2% of values show deviations up to
+    # 1e-3. This is probably related to TF issue:
+    # https://github.com/tensorflow/tensorflow/issues/45756
+    # In the meantime, we run these tests on the CPU only. Same applies to all
+    # other tests in this class.
+    with tf.device('/cpu:0'):
+      maps = coil_sensitivities.estimate(
+          self.data['images'], method='walsh')
+
+    self.assertAllClose(maps, self.data['maps/walsh'], rtol=1e-2, atol=1e-2)
+
+  @test_util.run_in_graph_and_eager_modes
+  def test_walsh_transposed(self):
+    """Test Walsh's method with a transposed array."""
+    with tf.device('/cpu:0'):
+      maps = coil_sensitivities.estimate(
+        tf.transpose(self.data['images'], [2, 0, 1]),
+        coil_axis=0, method='walsh')
+
+    self.assertAllClose(maps, tf.transpose(self.data['maps/walsh'], [2, 0, 1]),
+                        rtol=1e-2, atol=1e-2)
+
+  @test_util.run_in_graph_and_eager_modes
+  def test_inati(self):
+    """Test Inati's method."""
+    with tf.device('/cpu:0'):
+      maps = coil_sensitivities.estimate(
+          self.data['images'], method='inati')
+
+    self.assertAllClose(maps, self.data['maps/inati'], rtol=1e-4, atol=1e-4)
+
+  @test_util.run_in_graph_and_eager_modes
+  def test_espirit(self):
+    """Test ESPIRiT method."""
+    with tf.device('/cpu:0'):
+      maps = coil_sensitivities.estimate(
+          self.data['kspace'], method='espirit')
+
+    self.assertAllClose(maps, self.data['maps/espirit'], rtol=1e-2, atol=1e-2)
+
+  @test_util.run_in_graph_and_eager_modes
+  def test_espirit_transposed(self):
+    """Test ESPIRiT method with a transposed array."""
+    with tf.device('/cpu:0'):
+      maps = coil_sensitivities.estimate(
+        tf.transpose(self.data['kspace'], [2, 0, 1]),
+        coil_axis=0, method='espirit')
+
+    self.assertAllClose(
+        maps, tf.transpose(self.data['maps/espirit'], [2, 0, 1, 3]),
+        rtol=1e-2, atol=1e-2)
+
+  @test_util.run_in_graph_and_eager_modes
+  def test_walsh_3d(self):
+    """Test Walsh method with 3D image."""
+    with tf.device('/cpu:0'):
+      image = image_ops.phantom(shape=[64, 64, 64], num_coils=4)
+      # Currently only testing if it runs.
+      maps = coil_sensitivities.estimate(image, # pylint: disable=unused-variable
+                                         coil_axis=0,
+                                         method='walsh')
 
 
-class CoilSensitivitiesTest(test_util.TestCase):
-
-  def test_coil_sensitivities(self):
-    # Simulate k-space.
-    image_shape = (8, 8)
+class EstimateFromKspaceTest(test_util.TestCase):
+  def test_estimate_from_kspace(self):
+    image_shape = [128, 128]
     image = image_ops.phantom(shape=image_shape, num_coils=4,
                               dtype=tf.complex64)
-    kspace = fft_ops.fftn(image, axes=(-2, -1), shift=True)
-
-    # Create a mask.
-    mask = traj_ops.random_sampling_mask(
-        shape=image_shape,
-        density=traj_ops.density_grid(image_shape,
-                                      outer_density=0.2,
-                                      inner_cutoff=0.1,
-                                      outer_cutoff=0.1))
+    kspace = fft_ops.fftn(image, axes=[-2, -1], shift=True)
+    mask = traj_ops.accel_mask(image_shape, [2, 2], [32, 32])
+    kspace = tf.where(mask, kspace, tf.zeros_like(kspace))
 
     operator = linear_operator_mri.LinearOperatorMRI(
         image_shape=image_shape, mask=mask)
 
-    sens = coil_sensitivities.coil_sensitivities(kspace,
-                                                 operator)
+    # Test with direct *k*-space.
+    image = fft_ops.ifftn(kspace, axes=[-2, -1], norm='ortho', shift=True)
+    maps = coil_sensitivities.estimate_from_kspace(
+        kspace, operator, method='direct')
+    self.assertAllClose(image, maps)
 
-    expected = [
-       [[0.43218857-4.6583355e-09j, 0.43218845-8.7869850e-11j,
-         0.43218854-6.1883219e-09j, 0.43218854-6.1883219e-09j,
-         0.43218854-6.1883219e-09j, 0.43218854-6.1883219e-09j,
-         0.43218845-8.7869850e-11j, 0.43218857-4.6583355e-09j],
-        [0.43218845-8.7869850e-11j, 0.4321886 -3.5613092e-09j,
-         0.4321885 +1.2543831e-08j, 0.4321885 +1.2543831e-08j,
-         0.4321885 +1.2543831e-08j, 0.4321885 +1.2543831e-08j,
-         0.4321886 -3.5613092e-09j, 0.43218845-8.7869850e-11j],
-        [0.43218854-6.1883219e-09j, 0.4321885 +1.2543831e-08j,
-         0.4321885 -4.5338737e-09j, 0.4321885 -4.5338737e-09j,
-         0.4321885 -4.5338737e-09j, 0.4321885 -4.5338737e-09j,
-         0.4321885 +1.2543831e-08j, 0.43218854-6.1883219e-09j],
-        [0.43218854-6.1883219e-09j, 0.4321885 +1.2543831e-08j,
-         0.4321885 -4.5338737e-09j, 0.4321885 -4.5338737e-09j,
-         0.4321885 -4.5338737e-09j, 0.4321885 -4.5338737e-09j,
-         0.4321885 +1.2543831e-08j, 0.43218854-6.1883219e-09j],
-        [0.43218854-6.1883219e-09j, 0.4321885 +1.2543831e-08j,
-         0.4321885 -4.5338737e-09j, 0.4321885 -4.5338737e-09j,
-         0.4321885 -4.5338737e-09j, 0.4321885 -4.5338737e-09j,
-         0.4321885 +1.2543831e-08j, 0.43218854-6.1883219e-09j],
-        [0.43218854-6.1883219e-09j, 0.4321885 +1.2543831e-08j,
-         0.4321885 -4.5338737e-09j, 0.4321885 -4.5338737e-09j,
-         0.4321885 -4.5338737e-09j, 0.4321885 -4.5338737e-09j,
-         0.4321885 +1.2543831e-08j, 0.43218854-6.1883219e-09j],
-        [0.43218845-8.7869850e-11j, 0.4321886 -3.5613092e-09j,
-         0.4321885 +1.2543831e-08j, 0.4321885 +1.2543831e-08j,
-         0.4321885 +1.2543831e-08j, 0.4321885 +1.2543831e-08j,
-         0.4321886 -3.5613092e-09j, 0.43218845-8.7869850e-11j],
-        [0.43218857-4.6583355e-09j, 0.43218845-8.7869850e-11j,
-         0.43218854-6.1883219e-09j, 0.43218854-6.1883219e-09j,
-         0.43218854-6.1883219e-09j, 0.43218854-6.1883219e-09j,
-         0.43218845-8.7869850e-11j, 0.43218857-4.6583355e-09j]],
-       [[0.482938  -6.7950569e-02j, 0.48293796-6.7950562e-02j,
-         0.48293793-6.7950577e-02j, 0.48293793-6.7950577e-02j,
-         0.48293793-6.7950577e-02j, 0.48293793-6.7950577e-02j,
-         0.48293796-6.7950562e-02j, 0.482938  -6.7950569e-02j],
-        [0.48293796-6.7950562e-02j, 0.4829379 -6.7950562e-02j,
-         0.4829379 -6.7950569e-02j, 0.4829379 -6.7950569e-02j,
-         0.4829379 -6.7950569e-02j, 0.4829379 -6.7950569e-02j,
-         0.4829379 -6.7950562e-02j, 0.48293796-6.7950562e-02j],
-        [0.48293793-6.7950577e-02j, 0.4829379 -6.7950569e-02j,
-         0.48293784-6.7950577e-02j, 0.48293784-6.7950577e-02j,
-         0.48293784-6.7950577e-02j, 0.48293784-6.7950577e-02j,
-         0.4829379 -6.7950569e-02j, 0.48293793-6.7950577e-02j],
-        [0.48293793-6.7950577e-02j, 0.4829379 -6.7950569e-02j,
-         0.48293784-6.7950577e-02j, 0.48293784-6.7950577e-02j,
-         0.48293784-6.7950577e-02j, 0.48293784-6.7950577e-02j,
-         0.4829379 -6.7950569e-02j, 0.48293793-6.7950577e-02j],
-        [0.48293793-6.7950577e-02j, 0.4829379 -6.7950569e-02j,
-         0.48293784-6.7950577e-02j, 0.48293784-6.7950577e-02j,
-         0.48293784-6.7950577e-02j, 0.48293784-6.7950577e-02j,
-         0.4829379 -6.7950569e-02j, 0.48293793-6.7950577e-02j],
-        [0.48293793-6.7950577e-02j, 0.4829379 -6.7950569e-02j,
-         0.48293784-6.7950577e-02j, 0.48293784-6.7950577e-02j,
-         0.48293784-6.7950577e-02j, 0.48293784-6.7950577e-02j,
-         0.4829379 -6.7950569e-02j, 0.48293793-6.7950577e-02j],
-        [0.48293796-6.7950562e-02j, 0.4829379 -6.7950562e-02j,
-         0.4829379 -6.7950569e-02j, 0.4829379 -6.7950569e-02j,
-         0.4829379 -6.7950569e-02j, 0.4829379 -6.7950569e-02j,
-         0.4829379 -6.7950562e-02j, 0.48293796-6.7950562e-02j],
-        [0.482938  -6.7950569e-02j, 0.48293796-6.7950562e-02j,
-         0.48293793-6.7950577e-02j, 0.48293793-6.7950577e-02j,
-         0.48293793-6.7950577e-02j, 0.48293793-6.7950577e-02j,
-         0.48293796-6.7950562e-02j, 0.482938  -6.7950569e-02j]],
-       [[0.48752287-6.2960379e-02j, 0.4875229 -6.2960386e-02j,
-         0.48752284-6.2960386e-02j, 0.48752284-6.2960386e-02j,
-         0.48752284-6.2960386e-02j, 0.48752284-6.2960386e-02j,
-         0.4875229 -6.2960386e-02j, 0.48752287-6.2960379e-02j],
-        [0.4875229 -6.2960386e-02j, 0.4875229 -6.2960394e-02j,
-         0.48752287-6.2960371e-02j, 0.48752287-6.2960371e-02j,
-         0.48752287-6.2960371e-02j, 0.48752287-6.2960371e-02j,
-         0.4875229 -6.2960394e-02j, 0.4875229 -6.2960386e-02j],
-        [0.48752284-6.2960386e-02j, 0.48752287-6.2960371e-02j,
-         0.48752296-6.2960409e-02j, 0.48752296-6.2960409e-02j,
-         0.48752296-6.2960409e-02j, 0.48752296-6.2960409e-02j,
-         0.48752287-6.2960371e-02j, 0.48752284-6.2960386e-02j],
-        [0.48752284-6.2960386e-02j, 0.48752287-6.2960371e-02j,
-         0.48752296-6.2960409e-02j, 0.48752296-6.2960409e-02j,
-         0.48752296-6.2960409e-02j, 0.48752296-6.2960409e-02j,
-         0.48752287-6.2960371e-02j, 0.48752284-6.2960386e-02j],
-        [0.48752284-6.2960386e-02j, 0.48752287-6.2960371e-02j,
-         0.48752296-6.2960409e-02j, 0.48752296-6.2960409e-02j,
-         0.48752296-6.2960409e-02j, 0.48752296-6.2960409e-02j,
-         0.48752287-6.2960371e-02j, 0.48752284-6.2960386e-02j],
-        [0.48752284-6.2960386e-02j, 0.48752287-6.2960371e-02j,
-         0.48752296-6.2960409e-02j, 0.48752296-6.2960409e-02j,
-         0.48752296-6.2960409e-02j, 0.48752296-6.2960409e-02j,
-         0.48752287-6.2960371e-02j, 0.48752284-6.2960386e-02j],
-        [0.4875229 -6.2960386e-02j, 0.4875229 -6.2960394e-02j,
-         0.48752287-6.2960371e-02j, 0.48752287-6.2960371e-02j,
-         0.48752287-6.2960371e-02j, 0.48752287-6.2960371e-02j,
-         0.4875229 -6.2960394e-02j, 0.4875229 -6.2960386e-02j],
-        [0.48752287-6.2960379e-02j, 0.4875229 -6.2960386e-02j,
-         0.48752284-6.2960386e-02j, 0.48752284-6.2960386e-02j,
-         0.48752284-6.2960386e-02j, 0.48752284-6.2960386e-02j,
-         0.4875229 -6.2960386e-02j, 0.48752287-6.2960379e-02j]],
-       [[0.57736677+1.9284124e-02j, 0.57736677+1.9284116e-02j,
-         0.5773667 +1.9284122e-02j, 0.5773667 +1.9284122e-02j,
-         0.5773667 +1.9284122e-02j, 0.5773667 +1.9284122e-02j,
-         0.57736677+1.9284116e-02j, 0.57736677+1.9284124e-02j],
-        [0.57736677+1.9284116e-02j, 0.57736677+1.9284124e-02j,
-         0.57736677+1.9284150e-02j, 0.57736677+1.9284150e-02j,
-         0.57736677+1.9284150e-02j, 0.57736677+1.9284150e-02j,
-         0.57736677+1.9284124e-02j, 0.57736677+1.9284116e-02j],
-        [0.5773667 +1.9284122e-02j, 0.57736677+1.9284150e-02j,
-         0.5773668 +1.9284131e-02j, 0.5773668 +1.9284131e-02j,
-         0.5773668 +1.9284131e-02j, 0.5773668 +1.9284131e-02j,
-         0.57736677+1.9284150e-02j, 0.5773667 +1.9284122e-02j],
-        [0.5773667 +1.9284122e-02j, 0.57736677+1.9284150e-02j,
-         0.5773668 +1.9284131e-02j, 0.5773668 +1.9284131e-02j,
-         0.5773668 +1.9284131e-02j, 0.5773668 +1.9284131e-02j,
-         0.57736677+1.9284150e-02j, 0.5773667 +1.9284122e-02j],
-        [0.5773667 +1.9284122e-02j, 0.57736677+1.9284150e-02j,
-         0.5773668 +1.9284131e-02j, 0.5773668 +1.9284131e-02j,
-         0.5773668 +1.9284131e-02j, 0.5773668 +1.9284131e-02j,
-         0.57736677+1.9284150e-02j, 0.5773667 +1.9284122e-02j],
-        [0.5773667 +1.9284122e-02j, 0.57736677+1.9284150e-02j,
-         0.5773668 +1.9284131e-02j, 0.5773668 +1.9284131e-02j,
-         0.5773668 +1.9284131e-02j, 0.5773668 +1.9284131e-02j,
-         0.57736677+1.9284150e-02j, 0.5773667 +1.9284122e-02j],
-        [0.57736677+1.9284116e-02j, 0.57736677+1.9284124e-02j,
-         0.57736677+1.9284150e-02j, 0.57736677+1.9284150e-02j,
-         0.57736677+1.9284150e-02j, 0.57736677+1.9284150e-02j,
-         0.57736677+1.9284124e-02j, 0.57736677+1.9284116e-02j],
-        [0.57736677+1.9284124e-02j, 0.57736677+1.9284116e-02j,
-         0.5773667 +1.9284122e-02j, 0.5773667 +1.9284122e-02j,
-         0.5773667 +1.9284122e-02j, 0.5773667 +1.9284122e-02j,
-         0.57736677+1.9284116e-02j, 0.57736677+1.9284124e-02j]]]
+    # Test with calibration data.
+    calib_mask = traj_ops.centre_mask(image_shape, [32, 32])
+    calib_data = tf.where(calib_mask, kspace, tf.zeros_like(kspace))
+    calib_image = fft_ops.ifftn(
+        calib_data, axes=[-2, -1], norm='ortho', shift=True)
+    maps = coil_sensitivities.estimate_from_kspace(
+        kspace, operator, calib_data=calib_data, method='direct')
+    self.assertAllClose(calib_image, maps)
 
-    self.assertAllClose(expected, sens)
+    # Test with calibration function.
+    calib_fn = lambda x, _: tf.where(calib_mask, x, tf.zeros_like(x))
+    maps = coil_sensitivities.estimate_from_kspace(
+        kspace, operator, calib_fn=calib_fn, method='direct')
+    self.assertAllClose(calib_image, maps)
+
+    # Test Walsh.
+    expected = coil_sensitivities.estimate(
+        calib_image, coil_axis=-3, method='walsh')
+    maps = coil_sensitivities.estimate_from_kspace(
+        kspace, operator, calib_data=calib_data, method='walsh')
+    self.assertAllClose(expected, maps)
+
+    # Test batch.
+    kspace_batch = tf.stack([kspace, 2 * kspace], axis=0)
+    expected = tf.stack([calib_image, 2 * calib_image], axis=0)
+    maps = coil_sensitivities.estimate_from_kspace(
+        kspace_batch, operator, calib_fn=calib_fn, method='direct')
+    self.assertAllClose(expected, maps)
+
+
+if __name__ == '__main__':
+  tf.test.main()

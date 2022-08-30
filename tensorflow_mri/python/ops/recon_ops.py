@@ -22,12 +22,12 @@ import collections
 
 import tensorflow as tf
 
+from tensorflow_mri.python.coils import coil_combination
 from tensorflow_mri.python.linalg import conjugate_gradient
 from tensorflow_mri.python.linalg import linear_operator_gram_matrix
 from tensorflow_mri.python.linalg import linear_operator_gram_mri
 from tensorflow_mri.python.linalg import linear_operator_mri
 from tensorflow_mri.python.ops import array_ops
-from tensorflow_mri.python.ops import coil_ops
 from tensorflow_mri.python.ops import convex_ops
 from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.ops import image_ops
@@ -736,9 +736,9 @@ def reconstruct_grappa(kspace,
 
   # Combine coils if requested.
   if combine_coils:
-    result = coil_ops.combine_coils(result,
-                                    maps=sensitivities,
-                                    coil_axis=-rank-1)
+    result = coil_combination.combine_coils(result,
+                                            maps=sensitivities,
+                                            coil_axis=-rank-1)
 
   return result
 

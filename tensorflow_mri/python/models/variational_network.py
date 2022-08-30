@@ -20,7 +20,7 @@ import tensorflow as tf
 from tensorflow_mri.python.activations import complex_activations
 from tensorflow_mri.python.layers import data_consistency, normalization
 from tensorflow_mri.python.models import graph_like_model
-from tensorflow_mri.python.ops import coil_ops, math_ops
+from tensorflow_mri.python.ops import math_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import keras_util
 from tensorflow_mri.python.util import layer_util

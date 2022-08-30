@@ -9,7 +9,6 @@ from tensorflow_mri.__about__ import *
 
 # TODO(jmontalt): Remove these imports on release 1.0.0.
 from tensorflow_mri.python.ops.array_ops import *
-from tensorflow_mri.python.ops.coil_ops import *
 from tensorflow_mri.python.ops.convex_ops import *
 from tensorflow_mri.python.ops.fft_ops import *
 from tensorflow_mri.python.ops.image_ops import *

@@ -16,64 +16,10 @@
 
 import abc
 
-import numpy as np
 import tensorflow as tf
 
-from tensorflow_mri.python.ops import signal_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
-
-
-@api_util.export("coils.compress_coils_with_calibration_data")
-def compress_coils_with_calibration_data(
-    kspace,
-    operator,
-    calib_data=None,
-    calib_window=None,
-    method='svd',
-    **kwargs):
-  # For convenience.
-  rank = operator.rank
-
-  if calib_data is None:
-    # Calibration data was not provided. Get calibration data by low-pass
-    # filtering the input k-space.
-    calib_data = signal_ops.filter_kspace(
-        kspace,
-        trajectory=operator.trajectory,
-        filter_fn=calib_window,
-        filter_rank=rank,
-        separable=True)
-
-  # Reshape to single batch dimension.
-  coil_axis = -2 if operator.is_non_cartesian else -(rank + 1)
-  batch_shape_static = calib_data.shape[:coil_axis]
-  batch_shape = tf.shape(calib_data)[:coil_axis]
-  calib_shape = tf.shape(calib_data)[coil_axis:]
-  calib_data = tf.reshape(calib_data, tf.concat([[-1], calib_shape], 0))
-  kspace_shape = tf.shape(kspace)[coil_axis:]
-  kspace = tf.reshape(kspace, tf.concat([[-1], kspace_shape], 0))
-
-  # Apply compression for each element in batch.
-  def compress_coils_fn(inputs):
-    ksp, cal = inputs
-    return get_coil_compressor(method,
-                               coil_axis=coil_axis,
-                               **kwargs).fit(cal).transform(ksp)
-  output_shape = [kwargs.get('out_coils')] + kspace.shape[2:].as_list()
-  fn_output_signature = tf.TensorSpec(shape=output_shape, dtype=kspace.dtype)
-  kspace = tf.map_fn(compress_coils_fn, (kspace, calib_data),
-                     fn_output_signature=fn_output_signature)
-
-  # Restore batch shape.
-  output_shape = tf.shape(kspace)[1:]
-  output_shape_static = kspace.shape[1:]
-  kspace = tf.reshape(kspace,
-      tf.concat([batch_shape, output_shape], 0))
-  kspace = tf.ensure_shape(
-      kspace, batch_shape_static.concatenate(output_shape_static))
-
-  return kspace
 
 
 @api_util.export("coils.compress_coils")
@@ -132,10 +78,10 @@ def compress_coils(kspace,
       compression for cartesian sampling. In Proceedings of the 21st
       Annual Meeting of ISMRM, Salt Lake City, Utah, USA (Vol. 47).
   """
-  return get_coil_compressor(method,
-                             coil_axis=coil_axis,
-                             out_coils=out_coils,
-                             **kwargs).fit_transform(kspace)
+  return make_coil_compressor(method,
+                              coil_axis=coil_axis,
+                              out_coils=out_coils,
+                              **kwargs).fit_transform(kspace)
 
 
 class CoilCompressor():
@@ -315,8 +261,7 @@ class CoilCompressorSVD(CoilCompressor):
     return self._explained_variance_ratio
 
 
-@api_util.export("coils.get_coil_compressor")
-def get_coil_compressor(method, **kwargs):
+def make_coil_compressor(method, **kwargs):
   """Creates a coil compressor based on the specified method.
 
   Args:
@@ -332,3 +277,54 @@ def get_coil_compressor(method, **kwargs):
   if method == 'svd':
     return CoilCompressorSVD(**kwargs)
   raise NotImplementedError(f"Method {method} not implemented.")
+
+
+# def compress_coils_with_calibration_data(
+#     kspace,
+#     operator,
+#     calib_data=None,
+#     calib_window=None,
+#     method='svd',
+#     **kwargs):
+#   # For convenience.
+#   rank = operator.rank
+
+#   if calib_data is None:
+#     # Calibration data was not provided. Get calibration data by low-pass
+#     # filtering the input k-space.
+#     calib_data = signal_ops.filter_kspace(
+#         kspace,
+#         trajectory=operator.trajectory,
+#         filter_fn=calib_window,
+#         filter_rank=rank,
+#         separable=True)
+
+#   # Reshape to single batch dimension.
+#   coil_axis = -2 if operator.is_non_cartesian else -(rank + 1)
+#   batch_shape_static = calib_data.shape[:coil_axis]
+#   batch_shape = tf.shape(calib_data)[:coil_axis]
+#   calib_shape = tf.shape(calib_data)[coil_axis:]
+#   calib_data = tf.reshape(calib_data, tf.concat([[-1], calib_shape], 0))
+#   kspace_shape = tf.shape(kspace)[coil_axis:]
+#   kspace = tf.reshape(kspace, tf.concat([[-1], kspace_shape], 0))
+
+#   # Apply compression for each element in batch.
+#   def compress_coils_fn(inputs):
+#     ksp, cal = inputs
+#     return get_coil_compressor(method,
+#                                coil_axis=coil_axis,
+#                                **kwargs).fit(cal).transform(ksp)
+#   output_shape = [kwargs.get('out_coils')] + kspace.shape[2:].as_list()
+#   fn_output_signature = tf.TensorSpec(shape=output_shape, dtype=kspace.dtype)
+#   kspace = tf.map_fn(compress_coils_fn, (kspace, calib_data),
+#                      fn_output_signature=fn_output_signature)
+
+#   # Restore batch shape.
+#   output_shape = tf.shape(kspace)[1:]
+#   output_shape_static = kspace.shape[1:]
+#   kspace = tf.reshape(kspace,
+#       tf.concat([batch_shape, output_shape], 0))
+#   kspace = tf.ensure_shape(
+#       kspace, batch_shape_static.concatenate(output_shape_static))
+
+#   return kspace

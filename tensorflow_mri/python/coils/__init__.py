@@ -14,5 +14,6 @@
 # ==============================================================================
 """Operators for coil arrays."""
 
+from tensorflow_mri.python.coils import coil_combination
 from tensorflow_mri.python.coils import coil_compression
 from tensorflow_mri.python.coils import coil_sensitivities
