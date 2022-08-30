@@ -5,5 +5,6 @@
 from tensorflow_mri.python.coils.coil_combination import combine_coils as combine_coils
 from tensorflow_mri.python.coils.coil_compression import compress_coils as compress_coils
 from tensorflow_mri.python.coils.coil_compression import CoilCompressorSVD as CoilCompressorSVD
+from tensorflow_mri.python.coils.coil_compression import compress_coils_universal as compress_coils_universal
 from tensorflow_mri.python.coils.coil_sensitivities import estimate_sensitivities as estimate_sensitivities
 from tensorflow_mri.python.coils.coil_sensitivities import estimate_sensitivities_universal as estimate_sensitivities_universal
