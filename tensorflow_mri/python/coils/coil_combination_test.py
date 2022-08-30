@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""Tests for module `coil_combination`."""
 
 from absl.testing import parameterized
 import tensorflow as tf

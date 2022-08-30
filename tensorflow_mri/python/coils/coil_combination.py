@@ -25,18 +25,18 @@ def combine_coils(images, maps=None, coil_axis=-1, keepdims=False, name=None):
   Supports sum of squares (when `maps` is `None`) and adaptive combination.
 
   Args:
-    images: A `Tensor`. The input images.
-    maps: A `Tensor`. The Wcoil sensitivity maps. This argument is optional.
+    images: A `tf.Tensor`. The input images.
+    maps: A `tf.Tensor`. The Wcoil sensitivity maps. This argument is optional.
       If `maps` is provided, it must have the same shape and type as
       `images`. In this case an adaptive coil combination is performed using
       the specified maps. If `maps` is `None`, a simple estimate of `maps`
       is used (ie, images are combined using the sum of squares method).
     coil_axis: An `int`. The coil axis. Defaults to -1.
-    keepdims: A `boolean`. If `True`, retains the coil dimension with size 1.
+    keepdims: A boolean. If `True`, retains the coil dimension with size 1.
     name: A name for the operation. Defaults to "combine_coils".
 
   Returns:
-    A `Tensor`. The combined images.
+    A `tf.Tensor`. The combined images.
 
   References:
     1. Roemer, P.B., Edelstein, W.A., Hayes, C.E., Souza, S.P. and
