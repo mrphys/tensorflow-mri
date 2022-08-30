@@ -155,6 +155,8 @@ class FFTCPU : public FFTBase {
   using FFTBase::FFTBase;
 
  protected:
+  static unsigned FftwPlanningRigor;
+
   int Rank() const override { return FFTRank; }
   bool IsForward() const override { return Forward; }
   bool IsReal() const override { return _Real; }
@@ -185,7 +187,7 @@ class FFTCPU : public FFTBase {
                     const Tensor& in, Tensor* out) {
     auto device = ctx->eigen_device<CPUDevice>();
     auto worker_threads = ctx->device()->tensorflow_cpu_worker_threads();
-    auto num_threads = worker_threads->num_threads;   
+    auto num_threads = worker_threads->num_threads;
 
     const bool is_complex128 =
         in.dtype() == DT_COMPLEX128 || out->dtype() == DT_COMPLEX128;
@@ -214,7 +216,7 @@ class FFTCPU : public FFTBase {
     int batch_size = input.dimension(0);
 
     constexpr auto fft_sign = Forward ? FFTW_FORWARD : FFTW_BACKWARD;
-    constexpr auto fft_flags = FFTW_ESTIMATE;
+    auto fft_flags = FftwPlanningRigor;
 
     #pragma omp critical
     {
@@ -267,11 +269,33 @@ class FFTCPU : public FFTBase {
       output.device(device) = output / output.constant(num_points);
     }
   }
-
- private:
-  // Used to control access to FFTW planner.
-  mutex mu_;
 };
+
+unsigned GetFftwPlanningRigor(const string& envvar,
+                              const string& default_value) {
+  const char* str = getenv(envvar.c_str());
+  if (str == nullptr || strcmp(str, "") == 0) {
+    // envvar is not set, use default value.
+    str = default_value.c_str();
+  }
+
+  if (strcmp(str, "estimate") == 0) {
+    return FFTW_ESTIMATE;
+  } else if (strcmp(str, "measure") == 0) {
+    return FFTW_MEASURE;
+  } else if (strcmp(str, "patient") == 0) {
+    return FFTW_PATIENT;
+  } else if (strcmp(str, "exhaustive") == 0) {
+    return FFTW_EXHAUSTIVE;
+  } else {
+    LOG(FATAL) << "Invalid value for environment variable " << envvar << ": " << str;
+  }
+}
+
+template <bool Forward, bool _Real, int FFTRank>
+unsigned FFTCPU<Forward, _Real, FFTRank>::FftwPlanningRigor = GetFftwPlanningRigor(
+    "TFMRI_FFTW_PLANNING_RIGOR", "measure"
+);
 
 // Environment variable `TFMRI_USE_CUSTOM_FFT` can be used to specify whether to
 // use custom FFT kernels.
