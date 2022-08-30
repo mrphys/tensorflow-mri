@@ -99,8 +99,8 @@ class EstimateTest(test_util.TestCase):
                                          method='walsh')
 
 
-class EstimateFromKspaceTest(test_util.TestCase):
-  def test_estimate_from_kspace(self):
+class EstimateUniversalTest(test_util.TestCase):
+  def test_estimate_universal(self):
     image_shape = [128, 128]
     image = image_ops.phantom(shape=image_shape, num_coils=4,
                               dtype=tf.complex64)
@@ -113,36 +113,36 @@ class EstimateFromKspaceTest(test_util.TestCase):
 
     # Test with direct *k*-space.
     image = fft_ops.ifftn(kspace, axes=[-2, -1], norm='ortho', shift=True)
-    maps = coil_sensitivities.estimate_from_kspace(
+    maps = coil_sensitivities.estimate_universal(
         kspace, operator, method='direct')
     self.assertAllClose(image, maps)
 
     # Test with calibration data.
-    calib_mask = traj_ops.centre_mask(image_shape, [32, 32])
+    calib_mask = traj_ops.center_mask(image_shape, [32, 32])
     calib_data = tf.where(calib_mask, kspace, tf.zeros_like(kspace))
     calib_image = fft_ops.ifftn(
         calib_data, axes=[-2, -1], norm='ortho', shift=True)
-    maps = coil_sensitivities.estimate_from_kspace(
+    maps = coil_sensitivities.estimate_universal(
         kspace, operator, calib_data=calib_data, method='direct')
     self.assertAllClose(calib_image, maps)
 
     # Test with calibration function.
     calib_fn = lambda x, _: tf.where(calib_mask, x, tf.zeros_like(x))
-    maps = coil_sensitivities.estimate_from_kspace(
+    maps = coil_sensitivities.estimate_universal(
         kspace, operator, calib_fn=calib_fn, method='direct')
     self.assertAllClose(calib_image, maps)
 
     # Test Walsh.
     expected = coil_sensitivities.estimate(
         calib_image, coil_axis=-3, method='walsh')
-    maps = coil_sensitivities.estimate_from_kspace(
+    maps = coil_sensitivities.estimate_universal(
         kspace, operator, calib_data=calib_data, method='walsh')
     self.assertAllClose(expected, maps)
 
     # Test batch.
     kspace_batch = tf.stack([kspace, 2 * kspace], axis=0)
     expected = tf.stack([calib_image, 2 * calib_image], axis=0)
-    maps = coil_sensitivities.estimate_from_kspace(
+    maps = coil_sensitivities.estimate_universal(
         kspace_batch, operator, calib_fn=calib_fn, method='direct')
     self.assertAllClose(expected, maps)
 

@@ -24,7 +24,7 @@
 
 - `tfmri.coils`:
 
-  - Added new function `estimate_sensitivities_from_kspace`.
+  - Added new function `estimate_sensitivities_universal`.
 
 - `tfmri.geometry`:
 
@@ -36,7 +36,8 @@
 
 - `tfmri.sampling`:
 
-  - Added operator ``spiral_waveform`` to public API.
+  - Added operator `spiral_waveform` to public API.
+  - Added new functions `accel_mask` and `center_mask`.
 
 
 ## Bug Fixes and Other Changes

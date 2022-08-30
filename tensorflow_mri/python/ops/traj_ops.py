@@ -192,8 +192,8 @@ def random_sampling_mask(shape, density=1.0, seed=None, rng=None, name=None):
     return tf.cast(mask, tf.bool)
 
 
-@api_util.export("sampling.centre_mask")
-def centre_mask(shape, center_size, name=None):
+@api_util.export("sampling.center_mask")
+def center_mask(shape, center_size, name=None):
   """Returns a central sampling mask.
 
   This function returns a boolean tensor of zeros with a central region of ones.
@@ -218,7 +218,7 @@ def centre_mask(shape, center_size, name=None):
 
   Example:
 
-    >>> mask = tfmri.sampling.centre_mask([8], [4])
+    >>> mask = tfmri.sampling.center_mask([8], [4])
     >>> mask.numpy()
     array([False, False,  True,  True,  True,  True, False, False])
 
@@ -239,7 +239,7 @@ def centre_mask(shape, center_size, name=None):
   Raises:
     TypeError: If `center_size` is not of integer or floating point dtype.
   """
-  with tf.name_scope(name or 'centre_mask'):
+  with tf.name_scope(name or 'center_mask'):
     shape = tf.convert_to_tensor(shape, dtype=tf.int32)
     center_size = tf.convert_to_tensor(center_size)
 
@@ -269,7 +269,7 @@ def centre_mask(shape, center_size, name=None):
 @api_util.export("sampling.accel_mask")
 def accel_mask(shape,
                acceleration,
-               centre_size=0,
+               center_size=0,
                mask_type='equispaced',
                offset=0,
                rng=None,
@@ -308,7 +308,7 @@ def accel_mask(shape,
     shape: A 1D integer `tf.Tensor`. The shape of the output mask.
     acceleration: A 1D integer `tf.Tensor`. The acceleration factor on the
       peripheral region along each axis.
-    centre_size: A 1D integer `tf.Tensor`. The size of the central region
+    center_size: A 1D integer `tf.Tensor`. The size of the central region
       along each axis. Defaults to 0.
     mask_type: A `str`. The type of sampling to use on the peripheral region.
       Must be one of `'equispaced'` or `'random'`. If `'equispaced'`, the
@@ -376,7 +376,7 @@ def accel_mask(shape,
     _, mask = tf.foldl(fn, (shape, acceleration, offset),
                        initializer=(0, mask))
 
-    return tf.math.logical_or(mask, centre_mask(shape, centre_size))
+    return tf.math.logical_or(mask, center_mask(shape, center_size))
 
 
 @api_util.export("sampling.radial_trajectory")

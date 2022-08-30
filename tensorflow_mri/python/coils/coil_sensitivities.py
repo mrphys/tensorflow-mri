@@ -407,42 +407,97 @@ def _apply_uniform_filter(tensor, size=5):
   return output
 
 
-@api_util.export("coils.estimate_sensitivities_from_kspace")
-def estimate_from_kspace(
-    kspace,
+@api_util.export("coils.estimate_sensitivities_universal")
+def estimate_universal(
+    meas_data,
     operator,
     calib_data=None,
     calib_fn=None,
     method='walsh',
     **kwargs):
-  """Estimates coil sensitivities from *k*-space data.
+  """Estimates coil sensitivities (universal).
 
   This function is designed to standardize the computation of coil
-  sensitivities in different contexts. It accepts a `kspace` tensor which may
-  be 2D/3D and Cartesian/non-Cartesian. It never takes images as inputs.
-
-  In addition to the `kspace` tensor, this function needs a linear `operator`
-  which represents the MR imaging matrix. This will be used internally to
-  reconstruct images from the *k*-space data.
+  sensitivities in different contexts. The `meas_data` argument can accept
+  arbitrary measurement data (e.g., N-dimensional, Cartesian/non-Cartesian
+  *k*-space tensors). In addition, this function expects a linear `operator`
+  which describes the action of the measurement system (e.g., the MR imaging
+  experiment).
 
   This function also accepts an optional `calib_data` tensor or an optional
-  `calib_fn` function. These can be used to provide the calibration data
-  directly or to specify the rules to extract it from the full *k*-space data,
-  respectively.
+  `calib_fn` function, in case the calibration should be performed with data
+  other than `meas_data`. `calib_data` may be used to provide the calibration
+  data directly, whereas `calib_fn` may be used to specify the rules to extract
+  it from `meas_data`.
+
+  ```{note}
+  This function is part of the
+  [universal family](https://mrphys.github.io/tensorflow-mri/guide/universal/)
+  of operators designed to work flexibly with any linear system.
+  ```
+
+  Example:
+    >>> # Create an example image.
+    >>> image_shape = [256, 256]
+    >>> image = tfmri.image.phantom(shape=image_shape,
+    ...                             num_coils=8,
+    ...                             dtype=tf.complex64)
+    >>> kspace = tfmri.signal.fft(image, axes=[-2, -1], shift=True)
+    >>> # Create an acceleration mask with 4x undersampling along the last axis
+    >>> # and 24 calibration lines.
+    >>> mask = tfmri.sampling.accel_mask(shape=image_shape,
+    ...                                  acceleration=[1, 4],
+    ...                                  center_size=[256, 24])
+    >>> # Create a linear operator describing a basic MR experiment with
+    >>> # Cartesian undersampling. This operator maps an image to the
+    >>> # corresponding *k*-space data (by performing an FFT and masking the
+    >>> # measured values).
+    >>> linop_mri = tfmri.linalg.LinearOperatorMRI(
+    ...     image_shape=image_shape, mask=mask)
+    >>> # Generate *k*-space data using the system operator.
+    >>> kspace = linop_mri.transform(image)
+    >>> # To compute the sensitivity maps, we typically want to use only the
+    >>> # fully-sampled central region of *k*-space. Let's create a mask that
+    >>> # retrieves only the 24 calibration lines.
+    >>> calib_mask = tfmri.sampling.center_mask(shape=image_shape,
+    ...                                         center_size=[256, 24])
+    >>> # We can create a function that extracts the calibration data from
+    >>> # an arbitrary *k*-space by applying the calibration mask below.
+    >>> def calib_fn(meas_data, operator):
+    ...   # Returns `meas_data` where `calib_mask` is `True`, 0 otherwise.
+    ...   return tf.where(calib_mask, meas_data, tf.zeros_like(meas_data))
+    >>> # Finally, compute the coil sensitivities using the above function
+    >>> # to extract the calibration data.
+    >>> maps = tfmri.coils.estimate_sensitivities_universal(
+    ...     kspace, linop_mri, calib_fn=calib_fn)
 
   Args:
-    kspace: A `tf.Tensor` containing the *k*-space data. Must be compatible
-      with `operator`. See
-      [Conventions](https://mrphys.github.io/tensorflow-mri/guide/conventions/)
-      for details on the common structure of *k*-space tensors.
-    operator: A `tfmri.linalg.LinearOperator` representing the imaging matrix.
+    meas_data: A `tf.Tensor` containing the measurement or observation data.
+      Must be compatible with the range of `operator`, i.e., it should be a
+      plausible output of the system operator. Accordingly, it should be a
+      plausible input for the adjoint of the system operator.
+      ```{tip}
+      In MRI, this is usually the *k*-space data.
+      ```
+    operator: A `tfmri.linalg.LinearOperator` describing the action of the
+      measurement system, i.e., mapping an object Its range must be compatible with `meas_data`, i.e.,
+      its adjoint should be able to process `meas_data` correctly.
+      ```{tip}
+      In MRI, this is usually an operator mapping images to the corresponding
+      *k*-space data. For most MRI experiments, you can use
+      `tfmri.linalg.LinearOperatorMRI`.
+      ```
     calib_data: A `tf.Tensor` containing the calibration data. Must be
       compatible with `operator`. If `None`, the calibration data will be
-      extracted from the `kspace` tensor using the `calib_fn` function.
+      extracted from the `meas_data` tensor using the `calib_fn` function.
+      ```{tip}
+      In MRI, this is usually the central, fully-sampled region of *k*-space.
+      ```
     calib_fn: A callable which extracts the calibration data from the input
-      `kspace`. Must have signature `calib_fn(kspace, operator) -> calib_data`.
-      If `None`, `calib_data` will be used for calibration. If `calib_data` is
-      also `None`, `kspace` will be used directly for calibration.
+      `meas_data`. Must have signature
+      `calib_fn(meas_data, operator) -> calib_data`. If `None`, `calib_data`
+      will be used for calibration. If `calib_data` is also `None`, `meas_data`
+      will be used directly for calibration.
     method: A `str` specifying which coil sensitivity estimation algorithm to
       use. Must be one of `'direct'`, `'walsh'`, `'inati'` or `'espirit'`.
       Defaults to `'walsh'`.
@@ -456,14 +511,14 @@ def estimate_from_kspace(
   Raises:
     ValueError: If both `calib_data` and `calib_fn` are provided.
   """
-  with tf.name_scope(kwargs.get('name', 'estimate_sensitivities_from_kspace')):
+  with tf.name_scope(kwargs.get('name', 'estimate_sensitivities_universal')):
     rank = operator.rank
-    kspace = tf.convert_to_tensor(kspace)
+    meas_data = tf.convert_to_tensor(meas_data)
 
     if calib_data is None and calib_fn is None:
-      calib_data = kspace
+      calib_data = meas_data
     elif calib_data is None and calib_fn is not None:
-      calib_data = calib_fn(kspace, operator)
+      calib_data = calib_fn(meas_data, operator)
     elif calib_data is not None and calib_fn is None:
       calib_data = tf.convert_to_tensor(calib_data)
     else:

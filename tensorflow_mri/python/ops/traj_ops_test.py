@@ -103,35 +103,35 @@ class FrequencyGridTest(test_util.TestCase):
 
 
 class CentralMaskTest(test_util.TestCase):
-  def test_centre_mask(self):
-    result = traj_ops.centre_mask([8], [4])
+  def test_center_mask(self):
+    result = traj_ops.center_mask([8], [4])
     expected = [0, 0, 1, 1, 1, 1, 0, 0]
     self.assertAllClose(expected, result)
 
-    result = traj_ops.centre_mask([9], [5])
+    result = traj_ops.center_mask([9], [5])
     expected = [0, 0, 1, 1, 1, 1, 1, 0, 0]
     self.assertAllClose(expected, result)
 
-    result = traj_ops.centre_mask([8], [0.5])
+    result = traj_ops.center_mask([8], [0.5])
     expected = [0, 0, 1, 1, 1, 1, 0, 0]
     self.assertAllClose(expected, result)
 
-    result = traj_ops.centre_mask([9], [0.5])
+    result = traj_ops.center_mask([9], [0.5])
     expected = [0, 0, 1, 1, 1, 1, 1, 0, 0]
     self.assertAllClose(expected, result)
 
-    result = traj_ops.centre_mask([8], [5])
+    result = traj_ops.center_mask([8], [5])
     expected = [0, 0, 1, 1, 1, 1, 0, 0]
     self.assertAllClose(expected, result)
 
-    result = traj_ops.centre_mask([4, 8], [2, 4])
+    result = traj_ops.center_mask([4, 8], [2, 4])
     expected = [[0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 1, 1, 1, 1, 0, 0],
                 [0, 0, 1, 1, 1, 1, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0]]
     self.assertAllClose(expected, result)
 
-    result = traj_ops.centre_mask([4, 8], [1.0, 0.5])
+    result = traj_ops.center_mask([4, 8], [1.0, 0.5])
     expected = [[0, 0, 1, 1, 1, 1, 0, 0],
                 [0, 0, 1, 1, 1, 1, 0, 0],
                 [0, 0, 1, 1, 1, 1, 0, 0],
