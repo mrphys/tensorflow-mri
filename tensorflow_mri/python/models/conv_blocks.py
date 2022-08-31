@@ -42,20 +42,13 @@ from tensorflow_mri.python.util import doc_util
 from tensorflow_mri.python.util import layer_util
 
 
-class ConvBlock(graph_like_network.GraphLikeNetwork):
-  """${rank}D convolutional block.
-
-  A basic Conv + BN + Activation + Dropout block. The number of convolutional
-  layers is determined by the length of `filters`. BN and activation are
-  optional.
-
-  Args:
-    filters: A `int` or a list of `int`. Given an `int` input, a single
+ARGS = string.Template("""
+    filters: A `int` or a `list` of `int`. Given an `int` input, a single
       convolution is applied; otherwise a series of convolutions are applied.
-    kernel_size: An integer or tuple/list of `rank` integers, specifying the
+    kernel_size: An `int` or `list` of ${rank} `int`s, specifying the
       size of the convolution window. Can be a single integer to specify the
       same value for all spatial dimensions.
-    strides: An integer or tuple/list of `rank` integers, specifying the strides
+    strides: An `int` or a `list` of ${rank} `int`s, specifying the strides
       of the convolution along each spatial dimension. Can be a single integer
       to specify the same value for all spatial dimensions.
     activation: A callable or a Keras activation identifier. The activation to
@@ -67,9 +60,9 @@ class ConvBlock(graph_like_network.GraphLikeNetwork):
       to `True`.
     kernel_initializer: A `tf.keras.initializers.Initializer` or a Keras
       initializer identifier. Initializer for convolutional kernels. Defaults to
-      `'VarianceScaling'`.
+      `'variance_scaling'`.
     bias_initializer: A `tf.keras.initializers.Initializer` or a Keras
-      initializer identifier. Initializer for bias terms. Defaults to `'Zeros'`.
+      initializer identifier. Initializer for bias terms. Defaults to `'zeros'`.
     kernel_regularizer: A `tf.keras.initializers.Regularizer` or a Keras
       regularizer identifier. Regularizer for convolutional kernels. Defaults to
       `None`.
@@ -94,6 +87,18 @@ class ConvBlock(graph_like_network.GraphLikeNetwork):
       `'spatial'`. Standard dropout drops individual elements from the feature
       maps, whereas spatial dropout drops entire feature maps. Only relevant if
       `use_dropout` is `True`. Defaults to `'standard'`.
+""")
+
+
+class ConvBlock(graph_like_network.GraphLikeNetwork):
+  """${rank}D convolutional block.
+
+  A basic Conv + BN + Activation + Dropout block. The number of convolutional
+  layers is determined by the length of `filters`. BN and activation are
+  optional.
+
+  Args:
+    ${args}
     **kwargs: Additional keyword arguments to be passed to base class.
   """
   def __init__(self,
@@ -104,8 +109,8 @@ class ConvBlock(graph_like_network.GraphLikeNetwork):
                activation='relu',
                output_activation='same',
                use_bias=True,
-               kernel_initializer='VarianceScaling',
-               bias_initializer='Zeros',
+               kernel_initializer='variance_scaling',
+               bias_initializer='zeros',
                kernel_regularizer=None,
                bias_regularizer=None,
                use_batch_norm=False,
@@ -126,13 +131,16 @@ class ConvBlock(graph_like_network.GraphLikeNetwork):
     self.filters = [filters] if isinstance(filters, int) else filters
     self.kernel_size = kernel_size
     self.strides = strides
-    self.activation = activation
-    self.output_activation = output_activation
+    self.activation = tf.keras.activations.get(activation)
+    if output_activation == 'same':
+      self.output_activation = self.activation
+    else:
+      self.output_activation = tf.keras.activations.get(output_activation)
     self.use_bias = use_bias
-    self.kernel_initializer = kernel_initializer
-    self.bias_initializer = bias_initializer
-    self.kernel_regularizer = kernel_regularizer
-    self.bias_regularizer = bias_regularizer
+    self.kernel_initializer = tf.keras.initializers.get(kernel_initializer)
+    self.bias_initializer = tf.keras.initializers.get(bias_initializer)
+    self.kernel_regularizer = tf.keras.regularizers.get(kernel_regularizer)
+    self.bias_regularizer = tf.keras.regularizers.get(bias_regularizer)
     self.use_batch_norm = use_batch_norm
     self.use_sync_bn = use_sync_bn
     self.use_instance_norm = use_instance_norm
@@ -194,7 +202,7 @@ class ConvBlock(graph_like_network.GraphLikeNetwork):
         self._layers.append(tfa.layers.InstanceNormalization(
             axis=self.channel_axis))
       # Activation.
-      if level == self._levels - 1 and self.output_activation != 'same':
+      if level == self._levels - 1:
         # Last level, and `output_activation` is not the same as `activation`.
         self._layers.append(
             tf.keras.layers.Activation(self.output_activation))
@@ -227,13 +235,18 @@ class ConvBlock(graph_like_network.GraphLikeNetwork):
         'filters': self.filters,
         'kernel_size': self.kernel_size,
         'strides': self.strides,
-        'activation': self.activation,
-        'output_activation': self.output_activation,
+        'activation': tf.keras.activations.serialize(self.activation),
+        'output_activation': tf.keras.activations.serialize(
+            self.output_activation),
         'use_bias': self.use_bias,
-        'kernel_initializer': self.kernel_initializer,
-        'bias_initializer': self.bias_initializer,
-        'kernel_regularizer': self.kernel_regularizer,
-        'bias_regularizer': self.bias_regularizer,
+        'kernel_initializer': tf.keras.initializers.serialize(
+            self.kernel_initializer),
+        'bias_initializer': tf.keras.initializers.serialize(
+            self.bias_initializer),
+        'kernel_regularizer': tf.keras.regularizers.serialize(
+            self.kernel_regularizer),
+        'bias_regularizer': tf.keras.regularizers.serialize(
+            self.bias_regularizer),
         'use_batch_norm': self.use_batch_norm,
         'use_sync_bn': self.use_sync_bn,
         'use_instance_norm': self.use_instance_norm,
@@ -251,11 +264,14 @@ class ConvBlock(graph_like_network.GraphLikeNetwork):
 class ConvBlockLSTM(ConvBlock):
   """${rank}D convolutional LSTM block.
 
-
   Args:
+    ${args}
     stateful: A boolean. If `True`, the last state for each sample at index `i`
       in a batch will be used as initial state for the sample of index `i` in
       the following batch. Defaults to `False`.
+    recurrent_regularizer: A `tf.keras.initializers.Regularizer` or a Keras
+      regularizer identifier. The regularizer applied to the recurrent kernel.
+      Defaults to `None`.
   """
   def __init__(self,
                rank,
@@ -265,8 +281,8 @@ class ConvBlockLSTM(ConvBlock):
                activation='relu',
                output_activation='same',
                use_bias=True,
-               kernel_initializer='VarianceScaling',
-               bias_initializer='Zeros',
+               kernel_initializer='variance_scaling',
+               bias_initializer='zeros',
                kernel_regularizer=None,
                bias_regularizer=None,
                use_batch_norm=False,
@@ -279,7 +295,11 @@ class ConvBlockLSTM(ConvBlock):
                dropout_rate=0.3,
                dropout_type='standard',
                stateful=False,
+               recurrent_regularizer=None,
                **kwargs):
+    self.stateful = stateful
+    self.recurrent_regularizer = tf.keras.regularizers.get(
+        recurrent_regularizer)
     super().__init__(rank=rank,
                      filters=filters,
                      kernel_size=kernel_size,
@@ -301,9 +321,20 @@ class ConvBlockLSTM(ConvBlock):
                      dropout_rate=dropout_rate,
                      dropout_type=dropout_type,
                      _conv_fn=layer_util.get_nd_layer('ConvLSTM', rank),
-                     _conv_kwargs=dict(stateful=stateful,
-                                       return_sequences=True),
+                     _conv_kwargs=dict(
+                        stateful=self.stateful,
+                        recurrent_regularizer=self.recurrent_regularizer,
+                        return_sequences=True),
                      **kwargs)
+
+  def get_config(self):
+    base_config = super().get_config()
+    config = {
+        'stateful': self.stateful,
+        'recurrent_regularizer': tf.keras.regularizers.serialize(
+            self.recurrent_regularizer)
+    }
+    return {**base_config, **config}
 
 
 @api_util.export("models.ConvBlock1D")
@@ -348,9 +379,12 @@ class ConvBlockLSTM3D(ConvBlockLSTM):
     super().__init__(3, *args, **kwargs)
 
 
-ConvBlock1D.__doc__ = string.Template(ConvBlock.__doc__).substitute(rank=1)
-ConvBlock2D.__doc__ = string.Template(ConvBlock.__doc__).substitute(rank=2)
-ConvBlock3D.__doc__ = string.Template(ConvBlock.__doc__).substitute(rank=3)
+ConvBlock1D.__doc__ = string.Template(ConvBlock.__doc__).substitute(
+    rank=1, args=ARGS.substitute(rank=1))
+ConvBlock2D.__doc__ = string.Template(ConvBlock.__doc__).substitute(
+    rank=2, args=ARGS.substitute(rank=2))
+ConvBlock3D.__doc__ = string.Template(ConvBlock.__doc__).substitute(
+    rank=3, args=ARGS.substitute(rank=3))
 
 
 ConvBlock1D.__signature__ = doc_util.get_nd_layer_signature(ConvBlock)
@@ -358,9 +392,12 @@ ConvBlock2D.__signature__ = doc_util.get_nd_layer_signature(ConvBlock)
 ConvBlock3D.__signature__ = doc_util.get_nd_layer_signature(ConvBlock)
 
 
-ConvBlockLSTM1D.__doc__ = string.Template(ConvBlockLSTM.__doc__).substitute(rank=1)
-ConvBlockLSTM2D.__doc__ = string.Template(ConvBlockLSTM.__doc__).substitute(rank=2)
-ConvBlockLSTM3D.__doc__ = string.Template(ConvBlockLSTM.__doc__).substitute(rank=3)
+ConvBlockLSTM1D.__doc__ = string.Template(ConvBlockLSTM.__doc__).substitute(
+    rank=1, args=ARGS.substitute(rank=1))
+ConvBlockLSTM2D.__doc__ = string.Template(ConvBlockLSTM.__doc__).substitute(
+    rank=2, args=ARGS.substitute(rank=2))
+ConvBlockLSTM3D.__doc__ = string.Template(ConvBlockLSTM.__doc__).substitute(
+    rank=3, args=ARGS.substitute(rank=3))
 
 
 ConvBlockLSTM1D.__signature__ = doc_util.get_nd_layer_signature(ConvBlockLSTM)

@@ -182,12 +182,6 @@ class ConvBlockTest(test_util.TestCase):
     ]
     self._check_layers(expected, model.layers)
 
-  def _check_layers(self, expected, actual):
-    actual = [
-        (layer.name, type(layer), layer.output_shape, layer.count_params())
-        for layer in actual]
-    self.assertEqual(expected, actual)
-
   def test_arch_lstm(self):
     tf.keras.backend.clear_session()
     inputs = tf.keras.Input(shape=(None, 32, 32, 4))
@@ -243,6 +237,12 @@ class ConvBlockTest(test_util.TestCase):
     self.assertAllEqual(tf.zeros_like(model.layers[1].states),
                         model.layers[1].states)
     self.assertTrue(model.layers[1].stateful)
+
+  def _check_layers(self, expected, actual):
+    actual = [
+        (layer.name, type(layer), layer.output_shape, layer.count_params())
+        for layer in actual]
+    self.assertEqual(expected, actual)
 
 
 if __name__ == '__main__':

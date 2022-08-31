@@ -20,6 +20,9 @@ import tensorflow as tf
 
 from tensorflow_mri.python.activations import complex_activations
 from tensorflow_mri.python.layers import convolutional
+from tensorflow_mri.python.layers import pooling
+from tensorflow_mri.python.layers import reshaping
+from tensorflow_mri.python.models import conv_blocks
 from tensorflow_mri.python.models import conv_endec
 from tensorflow_mri.python.util import test_util
 
@@ -37,7 +40,7 @@ class UNetTest(test_util.TestCase):
                          rank,
                          filters,
                          kernel_size,
-                         out_channels,
+                         output_filters,
                          use_deconv,
                          use_global_residual):
     """Test object creation."""
@@ -53,14 +56,14 @@ class UNetTest(test_util.TestCase):
         filters=filters,
         kernel_size=kernel_size,
         use_deconv=use_deconv,
-        out_channels=out_channels,
+        output_filters=output_filters,
         use_global_residual=use_global_residual)
 
     features = network(inputs)
-    if out_channels is None:
-      out_channels = filters[0]
+    if output_filters is None:
+      output_filters = filters[0]
 
-    self.assertAllEqual(features.shape, [1] + [128] * rank + [out_channels])
+    self.assertAllEqual(features.shape, [1] + [128] * rank + [output_filters])
 
 
   @test_util.run_all_execution_modes
@@ -121,9 +124,9 @@ class UNetTest(test_util.TestCase):
         use_sync_bn=True,
         bn_momentum=0.98,
         bn_epsilon=0.002,
-        out_channels=1,
-        out_kernel_size=1,
-        out_activation='relu',
+        output_filters=1,
+        output_kernel_size=1,
+        output_activation='relu',
         use_global_residual=True,
         use_dropout=True,
         dropout_rate=0.5,
@@ -138,9 +141,8 @@ class UNetTest(test_util.TestCase):
     block2 = conv_endec.UNet2D.from_config(block.get_config())
     self.assertAllEqual(block.get_config(), block2.get_config())
 
-
-  def test_architecture(self):
-    """Tests basic model architecture."""
+  def test_arch(self):
+    """Tests basic model arch."""
     tf.keras.backend.clear_session()
 
     model = conv_endec.UNet2D(filters=[8, 16], kernel_size=3)
@@ -174,9 +176,8 @@ class UNetTest(test_util.TestCase):
         [elem[3] for elem in expected],
         [layer.count_params() for layer in get_layers(model)])
 
-
-  def test_architecture_with_deconv(self):
-    """Tests model architecture with deconvolution."""
+  def test_arch_with_deconv(self):
+    """Tests model arch with deconvolution."""
     tf.keras.backend.clear_session()
 
     model = conv_endec.UNet2D(filters=[8, 16], kernel_size=3, use_deconv=True)
@@ -209,13 +210,12 @@ class UNetTest(test_util.TestCase):
         [elem[3] for elem in expected],
         [layer.count_params() for layer in get_layers(model)])
 
-
-  def test_architecture_with_out_block(self):
-    """Tests model architecture with output block."""
+  def test_arch_with_out_block(self):
+    """Tests model arch with output block."""
     tf.keras.backend.clear_session()
 
     tf.random.set_seed(32)
-    model = conv_endec.UNet2D(filters=[8, 16], kernel_size=3, out_channels=2)
+    model = conv_endec.UNet2D(filters=[8, 16], kernel_size=3, output_filters=2)
     inputs = tf.keras.Input(shape=(32, 32, 1), batch_size=1)
     model = tf.keras.Model(inputs, model.call(inputs))
 
@@ -248,24 +248,57 @@ class UNetTest(test_util.TestCase):
         [layer.count_params() for layer in get_layers(model)])
 
     out_block = model.layers[-1]
-    self.assertLen(out_block.layers, 1)
+    self.assertLen(out_block.layers, 2)
     self.assertIsInstance(out_block.layers[0], convolutional.Conv2D)
+    self.assertIsInstance(out_block.layers[1], tf.keras.layers.Activation)
     self.assertEqual(tf.keras.activations.linear,
-                     out_block.layers[0].activation)
+                     out_block.layers[1].activation)
 
     input_data = tf.random.stateless_normal((1, 32, 32, 1), [12, 34])
     output_data = model.predict(input_data)
 
-    # New model with activation.
+    # New model with output activation.
     tf.random.set_seed(32)
     model = conv_endec.UNet2D(
-        filters=[8, 16], kernel_size=3, out_channels=2,
-        out_activation='sigmoid')
+        filters=[8, 16], kernel_size=3, output_filters=2,
+        output_activation='sigmoid')
     inputs = tf.keras.Input(shape=(32, 32, 1), batch_size=1)
     model = tf.keras.Model(inputs, model.call(inputs))
 
     self.assertAllClose(tf.keras.activations.sigmoid(output_data),
                         model.predict(input_data))
+
+  def test_arch_lstm(self):
+    """Tests LSTM model arch."""
+    tf.keras.backend.clear_session()
+
+    model = conv_endec.UNetLSTM2D(filters=[8, 16], kernel_size=3)
+    inputs = tf.keras.Input(shape=(4, 32, 32, 1), batch_size=1)
+    model = tf.keras.Model(inputs, model.call(inputs))
+
+    expected = [
+        # name, type, output_shape, params
+        ('input_1', tf.keras.layers.InputLayer, [(1, 4, 32, 32, 1)], 0),
+        ('conv_block_lstm2d', conv_blocks.ConvBlockLSTM2D, (1, 4, 32, 32, 8), 7264),
+        ('time_distributed', tf.keras.layers.TimeDistributed, (1, 4, 16, 16, 8), 0),
+        ('conv_block_lstm2d_1', conv_blocks.ConvBlockLSTM2D, (1, 4, 16, 16, 16), 32384),
+        ('time_distributed_1', tf.keras.layers.TimeDistributed, (1, 4, 32, 32, 16), 0),
+        ('time_distributed_2', tf.keras.layers.TimeDistributed, (1, 4, 32, 32, 8), 1160),
+        ('concatenate', tf.keras.layers.Concatenate, (1, 4, 32, 32, 16), 0),
+        ('conv_block_lstm2d_2', conv_blocks.ConvBlockLSTM2D, (1, 4, 32, 32, 8), 11584)]
+
+    self._check_layers(expected, model.layers)
+
+    # Check that TimeDistributed wrappers wrap the right layers.
+    self.assertIsInstance(model.layers[2].layer, pooling.MaxPooling2D)
+    self.assertIsInstance(model.layers[4].layer, reshaping.UpSampling2D)
+    self.assertIsInstance(model.layers[5].layer, convolutional.Conv2D)
+
+  def _check_layers(self, expected, actual):
+    actual = [
+        (layer.name, type(layer), layer.output_shape, layer.count_params())
+        for layer in actual]
+    self.assertEqual(expected, actual)
 
 
 def get_layers(model, recursive=False):
