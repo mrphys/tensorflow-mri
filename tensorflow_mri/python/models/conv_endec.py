@@ -18,6 +18,7 @@ import string
 
 import tensorflow as tf
 
+from tensorflow_mri.python import initializers
 from tensorflow_mri.python.layers import concatenate
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
@@ -140,12 +141,12 @@ class UNet(tf.keras.Model):
     self.pool_size = pool_size
     self.block_depth = block_depth
     self.use_deconv = use_deconv
-    self.activation = activation
+    self.activation = tf.keras.activations.get(activation)
     self.use_bias = use_bias
-    self.kernel_initializer = kernel_initializer
-    self.bias_initializer = bias_initializer
-    self.kernel_regularizer = kernel_regularizer
-    self.bias_regularizer = bias_regularizer
+    self.kernel_initializer = initializers.get(kernel_initializer)
+    self.bias_initializer = initializers.get(bias_initializer)
+    self.kernel_regularizer = tf.keras.regularizers.get(kernel_regularizer)
+    self.bias_regularizer = tf.keras.regularizers.get(bias_regularizer)
     self.use_batch_norm = use_batch_norm
     self.use_sync_bn = use_sync_bn
     self.use_instance_norm = use_instance_norm
@@ -153,7 +154,7 @@ class UNet(tf.keras.Model):
     self.bn_epsilon = bn_epsilon
     self.output_filters = output_filters
     self.output_kernel_size = output_kernel_size
-    self.output_activation = output_activation
+    self.output_activation = tf.keras.activations.get(output_activation)
     self.use_global_residual = use_global_residual
     self.use_dropout = use_dropout
     self.dropout_rate = dropout_rate
@@ -375,12 +376,14 @@ class UNet(tf.keras.Model):
         'pool_size': self.pool_size,
         'block_depth': self.block_depth,
         'use_deconv': self.use_deconv,
-        'activation': self.activation,
+        'activation': tf.keras.activations.serialize(self.activation),
         'use_bias': self.use_bias,
-        'kernel_initializer': self.kernel_initializer,
-        'bias_initializer': self.bias_initializer,
-        'kernel_regularizer': self.kernel_regularizer,
-        'bias_regularizer': self.bias_regularizer,
+        'kernel_initializer': initializers.serialize(self.kernel_initializer),
+        'bias_initializer': initializers.serialize(self.bias_initializer),
+        'kernel_regularizer': tf.keras.regularizers.serialize(
+            self.kernel_regularizer),
+        'bias_regularizer': tf.keras.regularizers.serialize(
+            self.bias_regularizer),
         'use_batch_norm': self.use_batch_norm,
         'use_sync_bn': self.use_sync_bn,
         'use_instance_norm': self.use_instance_norm,
@@ -388,7 +391,8 @@ class UNet(tf.keras.Model):
         'bn_epsilon': self.bn_epsilon,
         'output_filters': self.output_filters,
         'output_kernel_size': self.output_kernel_size,
-        'output_activation': self.output_activation,
+        'output_activation': tf.keras.activations.serialize(
+            self.output_activation),
         'use_global_residual': self.use_global_residual,
         'use_dropout': self.use_dropout,
         'dropout_rate': self.dropout_rate,

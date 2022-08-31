@@ -89,7 +89,6 @@ class UNetTest(test_util.TestCase):
       if hasattr(layer, 'use_bias'):
         self.assertEqual(use_bias, layer.use_bias)
 
-
   def test_complex_valued(self):
     inputs = tf.dtypes.complex(
         tf.random.stateless_normal(shape=(2, 32, 32, 4), seed=[12, 34]),
@@ -105,7 +104,6 @@ class UNetTest(test_util.TestCase):
     self.assertAllClose((2, 32, 32, 4), result.shape)
     self.assertDTypeEqual(result, tf.complex64)
 
-
   def test_serialize_deserialize(self):
     """Test de/serialization."""
     config = dict(
@@ -116,10 +114,10 @@ class UNetTest(test_util.TestCase):
         use_deconv=True,
         activation='tanh',
         use_bias=False,
-        kernel_initializer='ones',
-        bias_initializer='ones',
-        kernel_regularizer='l2',
-        bias_regularizer='l1',
+        kernel_initializer={'class_name': 'Ones', 'config': {}},
+        bias_initializer={'class_name': 'Ones', 'config': {}},
+        kernel_regularizer={'class_name': 'L2', 'config': {'l2': 1.0}},
+        bias_regularizer=None,
         use_batch_norm=True,
         use_sync_bn=True,
         bn_momentum=0.98,

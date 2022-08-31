@@ -35,6 +35,7 @@ import string
 import tensorflow as tf
 import tensorflow_addons as tfa
 
+from tensorflow_mri.python import initializers
 from tensorflow_mri.python.models import graph_like_network
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
@@ -137,8 +138,8 @@ class ConvBlock(graph_like_network.GraphLikeNetwork):
     else:
       self.output_activation = tf.keras.activations.get(output_activation)
     self.use_bias = use_bias
-    self.kernel_initializer = tf.keras.initializers.get(kernel_initializer)
-    self.bias_initializer = tf.keras.initializers.get(bias_initializer)
+    self.kernel_initializer = initializers.get(kernel_initializer)
+    self.bias_initializer = initializers.get(bias_initializer)
     self.kernel_regularizer = tf.keras.regularizers.get(kernel_regularizer)
     self.bias_regularizer = tf.keras.regularizers.get(bias_regularizer)
     self.use_batch_norm = use_batch_norm
@@ -239,10 +240,8 @@ class ConvBlock(graph_like_network.GraphLikeNetwork):
         'output_activation': tf.keras.activations.serialize(
             self.output_activation),
         'use_bias': self.use_bias,
-        'kernel_initializer': tf.keras.initializers.serialize(
-            self.kernel_initializer),
-        'bias_initializer': tf.keras.initializers.serialize(
-            self.bias_initializer),
+        'kernel_initializer': initializers.serialize(self.kernel_initializer),
+        'bias_initializer': initializers.serialize(self.bias_initializer),
         'kernel_regularizer': tf.keras.regularizers.serialize(
             self.kernel_regularizer),
         'bias_regularizer': tf.keras.regularizers.serialize(
