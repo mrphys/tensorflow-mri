@@ -449,7 +449,6 @@ class LSTMConvBlock(tf.keras.layers.Layer):
       if self._use_dropout:
         self._dropouts.append(dropout(rate=self._dropout_rate))
     #Activation (allow input of function)
-    print(callable(self._activation))
     if self._activation is not None and (self._activation.startswith('tf.') | self._activation.startswith('lambda')):
       self._activation_fn = tf.keras.activations.get(eval(activation))
     else:
