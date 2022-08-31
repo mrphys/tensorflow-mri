@@ -76,7 +76,7 @@ UNET_DOC_TEMPLATE = string.Template(
       maps, whereas spatial dropout drops entire feature maps. Only relevant if
       `use_dropout` is `True`. Defaults to `'standard'`.
     use_tight_frame: A `boolean`. If `True`, creates a tight frame U-Net as
-      described in [2]. Defaults to `False`.
+      described in [2]. Defaults to `False`. -> Probably won't work
     use_resize_and_concatenate: A `boolean`. If `True`, the upsampled feature
       maps are resized (by cropping) to match the shape of the incoming
       skip connection prior to concatenation. This enables more flexible input
@@ -110,10 +110,11 @@ class LSTMUNet(tf.keras.Model):
                kernel_initializer='VarianceScaling',
                bias_initializer='Zeros',
                kernel_regularizer=None,
+               recurrent_regularizer=None,
                bias_regularizer=None,
                use_batch_norm=False,
                use_sync_bn=False,
-               use_instance_norm=False,
+               #use_instance_norm=False,
                bn_momentum=0.99,
                bn_epsilon=0.001,
                out_channels=None,
@@ -141,10 +142,11 @@ class LSTMUNet(tf.keras.Model):
     self._kernel_initializer = kernel_initializer
     self._bias_initializer = bias_initializer
     self._kernel_regularizer = kernel_regularizer
+    self._recurrent_regularizer = recurrent_regularizer
     self._bias_regularizer = bias_regularizer
     self._use_batch_norm = use_batch_norm
     self._use_sync_bn = use_sync_bn
-    self._use_instance_norm = use_instance_norm
+    #self._use_instance_norm = use_instance_norm
     self._bn_momentum = bn_momentum
     self._bn_epsilon = bn_epsilon
     self._out_channels = out_channels
@@ -179,10 +181,11 @@ class LSTMUNet(tf.keras.Model):
         kernel_initializer=self._kernel_initializer,
         bias_initializer=self._bias_initializer,
         kernel_regularizer=self._kernel_regularizer,
+        recurrent_regularizer=self._recurrent_regularizer,
         bias_regularizer=self._bias_regularizer,
         use_batch_norm=self._use_batch_norm,
         use_sync_bn=self._use_sync_bn,
-        use_instance_norm=self._use_instance_norm,
+        #use_instance_norm=self._use_instance_norm,
         bn_momentum=self._bn_momentum,
         bn_epsilon=self._bn_epsilon,
         use_dropout=self._use_dropout,
@@ -196,6 +199,8 @@ class LSTMUNet(tf.keras.Model):
     if self._use_tight_frame:
       pool_name = 'DWT'
       pool_config = self._dwt_kwargs
+      #Probably won't work
+      pool_layer = layer_util.get_nd_layer(pool_name, self._rank)
     else:
       pool_name = 'MaxPool'
       pool_config = dict(
@@ -203,7 +208,8 @@ class LSTMUNet(tf.keras.Model):
           strides=self._pool_size,
           padding='same',
           dtype=self.dtype)
-    pool_layer = tf.keras.layers.TimeDistributed(layer_util.get_nd_layer(pool_name, self._rank))
+    pool_layer = lambda *args, **kwargs: tf.keras.layers.TimeDistributed(
+                    layer_util.get_nd_layer(pool_name, self._rank)(*args, **kwargs))
 
     # Configure upsampling layer.
     if self._use_deconv:
@@ -224,7 +230,8 @@ class LSTMUNet(tf.keras.Model):
       upsamp_config = dict(
           size=self._pool_size,
           dtype=self.dtype)
-    upsamp_layer = tf.keras.layers.TimeDistributed(layer_util.get_nd_layer(upsamp_name, self._rank))
+    upsamp_layer = lambda *args, **kwargs: tf.keras.layers.TimeDistributed(
+                    layer_util.get_nd_layer(upsamp_name, self._rank)(*args, **kwargs))
 
     # Configure concatenation layer.
     if self._use_resize_and_concatenate:
@@ -254,7 +261,7 @@ class LSTMUNet(tf.keras.Model):
 
       if scale < len(self._filters) - 1:
         self._pools.append(pool_layer(**pool_config))
-        if use_deconv:
+        if self._use_deconv:
           upsamp_config['filters'] = filt
         self._upsamps.append(upsamp_layer(**upsamp_config))
         if self._use_tight_frame:
@@ -367,7 +374,7 @@ class LSTMUNet(tf.keras.Model):
         'bias_regularizer': self._bias_regularizer,
         'use_batch_norm': self._use_batch_norm,
         'use_sync_bn': self._use_sync_bn,
-        'use_instance_norm': self._use_instance_norm,
+        #'use_instance_norm': self._use_instance_norm,
         'bn_momentum': self._bn_momentum,
         'bn_epsilon': self._bn_epsilon,
         'out_channels': self._out_channels,

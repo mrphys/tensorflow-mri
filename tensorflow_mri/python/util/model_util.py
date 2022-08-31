@@ -18,7 +18,7 @@ import tensorflow as tf
 
 from tensorflow_mri.python.models import conv_blocks
 from tensorflow_mri.python.models import conv_endec
-
+from tensorflow_mri.python.models import conv_endec_LSTM
 
 def get_nd_model(name, rank):
   """Get an N-D model object.
@@ -44,7 +44,9 @@ _ND_MODELS = {
     ('ConvBlock', 1): conv_blocks.ConvBlock1D,
     ('ConvBlock', 2): conv_blocks.ConvBlock2D,
     ('ConvBlock', 3): conv_blocks.ConvBlock3D,
+    ('LSTMConvBlock', 2): conv_blocks.LSTMConvBlock2D,
     ('UNet', 1): conv_endec.UNet1D,
     ('UNet', 2): conv_endec.UNet2D,
-    ('UNet', 3): conv_endec.UNet3D
+    ('UNet', 3): conv_endec.UNet3D,
+    ('LSTMUNet', 2): conv_endec_LSTM.LSTMUNet2D
 }

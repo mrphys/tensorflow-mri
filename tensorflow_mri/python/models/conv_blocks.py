@@ -337,10 +337,10 @@ class LSTMConvBlock(tf.keras.layers.Layer):
     **kwargs: Additional keyword arguments to be passed to base class.
   """
   def __init__(self,
+               rank,
                filters,
                kernel_size,
                strides=1,
-               rank=2,
                activation='relu',
                out_activation='same',
                use_bias=True,
@@ -449,6 +449,7 @@ class LSTMConvBlock(tf.keras.layers.Layer):
       if self._use_dropout:
         self._dropouts.append(dropout(rate=self._dropout_rate))
     #Activation (allow input of function)
+    print(callable(self._activation))
     if self._activation is not None and (self._activation.startswith('tf.') | self._activation.startswith('lambda')):
       self._activation_fn = tf.keras.activations.get(eval(activation))
     else:
@@ -517,3 +518,11 @@ class LSTMConvBlock(tf.keras.layers.Layer):
     for layer in self._convs:
       if hasattr(layer, 'reset_states'):
           layer.reset_states()
+
+@api_util.export("models.LSTMConvBlock2D")
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class LSTMConvBlock2D(LSTMConvBlock):
+  def __init__(self, *args, **kwargs):
+    super().__init__(2, *args, **kwargs)
+
+LSTMConvBlock2D.__signature__ = doc_util.get_nd_layer_signature(LSTMConvBlock)
