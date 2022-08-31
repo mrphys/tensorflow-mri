@@ -4,6 +4,9 @@
 
 ## Breaking Changes
 
+- `tfmri.models`
+
+  - `UNet1D`, `UNet2D` and `UNet3D` contain backwards incompatible changes.
 
 
 ## Major Features and Improvements

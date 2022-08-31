@@ -118,14 +118,14 @@ class UNet(tf.keras.Model):
                dropout_rate=0.3,
                dropout_type='standard',
                use_tight_frame=False,
-               use_resize_and_concatenate=True,
+               use_resize_and_concatenate=False,
                **kwargs):
     """Creates a UNet model."""
     super().__init__(**kwargs)
+    self.rank = rank
     self._filters = filters
     self._kernel_size = kernel_size
     self._pool_size = pool_size
-    self._rank = rank
     self._block_depth = block_depth
     self._use_deconv = use_deconv
     self._activation = activation
@@ -157,7 +157,7 @@ class UNet(tf.keras.Model):
     if use_tight_frame and pool_size != 2:
       raise ValueError('pool_size must be 2 if use_tight_frame is True.')
 
-    block_layer = model_util.get_nd_model('ConvBlock', self._rank)
+    block_layer = model_util.get_nd_model('ConvBlock', self.rank)
     block_config = dict(
         filters=None,  # To be filled for each scale.
         kernel_size=self._kernel_size,
@@ -189,28 +189,36 @@ class UNet(tf.keras.Model):
           strides=self._pool_size,
           padding='same',
           dtype=self.dtype)
-    pool_layer = layer_util.get_nd_layer(pool_name, self._rank)
+    pool_layer = layer_util.get_nd_layer(pool_name, self.rank)
 
     # Configure upsampling layer.
+    upsamp_config = dict(
+        filters=None,  # To be filled for each scale.
+        kernel_size=self._kernel_size,
+        pool_size=self._pool_size,
+        padding='same',
+        activation=self._activation,
+        use_bias=self._use_bias,
+        kernel_initializer=self._kernel_initializer,
+        bias_initializer=self._bias_initializer,
+        kernel_regularizer=self._kernel_regularizer,
+        bias_regularizer=self._bias_regularizer,
+        dtype=self.dtype)
     if self._use_deconv:
-      upsamp_name = 'ConvTranspose'
-      upsamp_config = dict(
-          filters=None,  # To be filled for each scale.
-          kernel_size=self._kernel_size,
-          strides=self._pool_size,
-          padding='same',
-          activation=None,
-          use_bias=self._use_bias,
-          kernel_initializer=self._kernel_initializer,
-          bias_initializer=self._bias_initializer,
-          kernel_regularizer=self._kernel_regularizer,
-          bias_regularizer=self._bias_regularizer)
+      # Use transposed convolution for upsampling.
+      def UpSampling(**config):
+        config['strides'] = config.pop('pool_size')
+        return layer_util.get_nd_layer('ConvTranspose', rank)(**config)
+      upsamp_layer = UpSampling
     else:
-      upsamp_name = 'UpSampling'
-      upsamp_config = dict(
-          size=self._pool_size,
-          dtype=self.dtype)
-    upsamp_layer = layer_util.get_nd_layer(upsamp_name, self._rank)
+      # Use upsampling + conv for upsampling.
+      def UpSampling(**config):
+        pool_size = config.pop('pool_size')
+        upsamp = layer_util.get_nd_layer('UpSampling', rank)(
+            size=pool_size, dtype=self.dtype)
+        conv = layer_util.get_nd_layer('Conv', rank)(**config)
+        return (upsamp, conv)
+      upsamp_layer = UpSampling
 
     # Configure concatenation layer.
     if self._use_resize_and_concatenate:
@@ -223,47 +231,57 @@ class UNet(tf.keras.Model):
     else:
       self._channel_axis = 1
 
-    self._enc_blocks = []
-    self._dec_blocks = []
-    self._pools = []
-    self._upsamps = []
-    self._concats = []
+    self._enc_blocks = [None] * self._scales
+    self._dec_blocks = [None] * (self._scales - 1)
+    self._pools = [None] * (self._scales - 1)
+    self._upsamps = [None] * (self._scales - 1)
+    self._concats = [None] * (self._scales - 1)
     if self._use_tight_frame:
       # For tight frame model, we also need to upsample each of the detail
       # components.
-      self._detail_upsamps = []
+      self._detail_upsamps = [None] * (self._scales - 1)
 
-    # Configure backbone and decoder.
-    for scale, filt in enumerate(self._filters):
-      block_config['filters'] = [filt] * self._block_depth
-      self._enc_blocks.append(block_layer(**block_config))
+    # Configure encoder.
+    for scale, nfilt in enumerate(self._filters):
+      block_config['filters'] = [nfilt] * self._block_depth
+      self._enc_blocks[scale] = block_layer(**block_config)
 
-      if scale < len(self._filters) - 1:
-        self._pools.append(pool_layer(**pool_config))
-        if use_deconv:
-          upsamp_config['filters'] = filt
-        self._upsamps.append(upsamp_layer(**upsamp_config))
+      if scale < len(self._filters) - 1:  # Not the last scale.
+        self._pools[scale] = pool_layer(**pool_config)
+
+    # Configure decoder.
+    for scale, nfilt in reversed(list(enumerate(self._filters))):
+      block_config['filters'] = [nfilt] * self._block_depth
+
+      if scale < len(self._filters) - 1:  # Not the last scale.
+        # Add upsampling layer.
+        # if use_deconv:
+        upsamp_config['filters'] = nfilt
+        self._upsamps[scale] = upsamp_layer(**upsamp_config)
+        # For tight-frame U-Net only.
         if self._use_tight_frame:
           # Add one upsampling layer for each detail component. There are 1
           # detail components for 1D, 3 detail components for 2D, and 7 detail
           # components for 3D.
-          self._detail_upsamps.append([upsamp_layer(**upsamp_config)
-                                       for _ in range(2 ** self._rank - 1)])
-        self._concats.append(concat_layer(axis=self._channel_axis))
-        self._dec_blocks.append(block_layer(**block_config))
+          self._detail_upsamps[scale] = [upsamp_layer(**upsamp_config)
+                                         for _ in range(2 ** self.rank - 1)]
+        # Add concatenation layer.
+        self._concats[scale] = concat_layer(axis=self._channel_axis)
+        # Add decoding block.
+        self._dec_blocks[scale] = block_layer(**block_config)
 
     # Configure output block.
     if self._out_channels is not None:
       block_config['filters'] = self._out_channels
-    if self._out_kernel_size is not None:
-      block_config['kernel_size'] = self._out_kernel_size
-    # If network is residual, the activation is performed after the residual
-    # addition.
-    if self._use_global_residual:
-      block_config['activation'] = None
-    else:
-      block_config['activation'] = self._out_activation
-    self._out_block = block_layer(**block_config)
+      if self._out_kernel_size is not None:
+        block_config['kernel_size'] = self._out_kernel_size
+      # If network is residual, the activation is performed after the residual
+      # addition.
+      if self._use_global_residual:
+        block_config['activation'] = None
+      else:
+        block_config['activation'] = self._out_activation
+      self._out_block = block_layer(**block_config)
 
     # Configure residual addition, if requested.
     if self._use_global_residual:
@@ -294,16 +312,18 @@ class UNet(tf.keras.Model):
 
     # Decoder.
     for scale in range(self._scales - 2, -1, -1):
-      x = self._upsamps[scale](x)
-      if self._use_resize_and_concatenate:
-        concat_inputs = [cache[scale], x]
+      # If not using deconv, `self._upsamps[scale]` is a tuple containing two
+      # layers (upsampling + conv).
+      if self._use_deconv:
+        x = self._upsamps[scale](x)
       else:
-        # For backwards compatibility.
-        concat_inputs = [x, cache[scale]]
+        x = self._upsamps[scale][0](x)
+        x = self._upsamps[scale][1](x)
+      concat_inputs = [cache[scale], x]
       if self._use_tight_frame:
         # Upsample detail components too.
-        d = [up(d) for d, up in zip(
-            detail_cache[scale], self._detail_upsamps[scale])]
+        d = [up(d) for d, up in zip(detail_cache[scale],
+                                    self._detail_upsamps[scale])]
         # Add to concatenation.
         concat_inputs.extend(d)
       x = self._concats[scale](concat_inputs)
@@ -360,16 +380,6 @@ class UNet(tf.keras.Model):
     }
     base_config = super().get_config()
     return {**base_config, **config}
-
-  @classmethod
-  def from_config(cls, config):
-    if 'base_filters' in config:
-      # Old config format. Convert to new format.
-      config['filters'] = [config.pop('base_filters') * (2 ** scale)
-                           for scale in config.pop('scales')]
-    if 'use_resize_and_concatenate' not in config:
-      config['use_resize_and_concatenate'] = False
-    return super().from_config(config)
 
 
 @api_util.export("models.UNet1D")

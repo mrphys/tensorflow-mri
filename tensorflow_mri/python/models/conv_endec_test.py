@@ -19,6 +19,7 @@ from absl.testing import parameterized
 import tensorflow as tf
 
 from tensorflow_mri.python.activations import complex_activations
+from tensorflow_mri.python.layers import convolutional
 from tensorflow_mri.python.models import conv_endec
 from tensorflow_mri.python.util import test_util
 
@@ -127,13 +128,158 @@ class UNetTest(test_util.TestCase):
         use_dropout=True,
         dropout_rate=0.5,
         dropout_type='spatial',
-        use_tight_frame=True)
+        use_tight_frame=True,
+        use_instance_norm=False,
+        use_resize_and_concatenate=False)
 
     block = conv_endec.UNet2D(**config)
-    self.assertEqual(block.get_config(), config)
+    self.assertEqual(config, block.get_config())
 
     block2 = conv_endec.UNet2D.from_config(block.get_config())
     self.assertAllEqual(block.get_config(), block2.get_config())
+
+
+  def test_architecture(self):
+    """Tests basic model architecture."""
+    tf.keras.backend.clear_session()
+
+    model = conv_endec.UNet2D(filters=[8, 16], kernel_size=3)
+    inputs = tf.keras.Input(shape=(32, 32, 1), batch_size=1)
+    model = tf.keras.Model(inputs, model.call(inputs))
+
+    expected = [
+        # name, type, output_shape, params
+        ('input_1', 'InputLayer', [(1, 32, 32, 1)], 0),
+        ('conv_block2d', 'ConvBlock2D', (1, 32, 32, 8), 664),
+        ('max_pooling2d', 'MaxPooling2D', (1, 16, 16, 8), 0),
+        ('conv_block2d_1', 'ConvBlock2D', (1, 16, 16, 16), 3488),
+        ('up_sampling2d', 'UpSampling2D', (1, 32, 32, 16), 0),
+        ('conv2d_4', 'Conv2D', (1, 32, 32, 8), 1160),
+        ('concatenate', 'Concatenate', (1, 32, 32, 16), 0),
+        ('conv_block2d_2', 'ConvBlock2D', (1, 32, 32, 8), 1744)]
+
+    self.assertAllEqual(
+        [elem[0] for elem in expected],
+        [layer.name for layer in get_layers(model)])
+
+    self.assertAllEqual(
+        [elem[1] for elem in expected],
+        [layer.__class__.__name__ for layer in get_layers(model)])
+
+    self.assertAllEqual(
+        [elem[2] for elem in expected],
+        [layer.output_shape for layer in get_layers(model)])
+
+    self.assertAllEqual(
+        [elem[3] for elem in expected],
+        [layer.count_params() for layer in get_layers(model)])
+
+
+  def test_architecture_with_deconv(self):
+    """Tests model architecture with deconvolution."""
+    tf.keras.backend.clear_session()
+
+    model = conv_endec.UNet2D(filters=[8, 16], kernel_size=3, use_deconv=True)
+    inputs = tf.keras.Input(shape=(32, 32, 1), batch_size=1)
+    model = tf.keras.Model(inputs, model.call(inputs))
+
+    expected = [
+        # name, type, output_shape
+        ('input_1', 'InputLayer', [(1, 32, 32, 1)], 0),
+        ('conv_block2d', 'ConvBlock2D', (1, 32, 32, 8), 664),
+        ('max_pooling2d', 'MaxPooling2D', (1, 16, 16, 8), 0),
+        ('conv_block2d_1', 'ConvBlock2D', (1, 16, 16, 16), 3488),
+        ('conv2d_transpose', 'Conv2DTranspose', (1, 32, 32, 8), 1160),
+        ('concatenate', 'Concatenate', (1, 32, 32, 16), 0),
+        ('conv_block2d_2', 'ConvBlock2D', (1, 32, 32, 8), 1744)]
+
+    self.assertAllEqual(
+        [elem[0] for elem in expected],
+        [layer.name for layer in get_layers(model)])
+
+    self.assertAllEqual(
+        [elem[1] for elem in expected],
+        [layer.__class__.__name__ for layer in get_layers(model)])
+
+    self.assertAllEqual(
+        [elem[2] for elem in expected],
+        [layer.output_shape for layer in get_layers(model)])
+
+    self.assertAllEqual(
+        [elem[3] for elem in expected],
+        [layer.count_params() for layer in get_layers(model)])
+
+
+  def test_architecture_with_out_block(self):
+    """Tests model architecture with output block."""
+    tf.keras.backend.clear_session()
+
+    tf.random.set_seed(32)
+    model = conv_endec.UNet2D(filters=[8, 16], kernel_size=3, out_channels=2)
+    inputs = tf.keras.Input(shape=(32, 32, 1), batch_size=1)
+    model = tf.keras.Model(inputs, model.call(inputs))
+
+    expected = [
+        # name, type, output_shape, params
+        ('input_1', 'InputLayer', [(1, 32, 32, 1)], 0),
+        ('conv_block2d', 'ConvBlock2D', (1, 32, 32, 8), 664),
+        ('max_pooling2d', 'MaxPooling2D', (1, 16, 16, 8), 0),
+        ('conv_block2d_1', 'ConvBlock2D', (1, 16, 16, 16), 3488),
+        ('up_sampling2d', 'UpSampling2D', (1, 32, 32, 16), 0),
+        ('conv2d_4', 'Conv2D', (1, 32, 32, 8), 1160),
+        ('concatenate', 'Concatenate', (1, 32, 32, 16), 0),
+        ('conv_block2d_2', 'ConvBlock2D', (1, 32, 32, 8), 1744),
+        ('conv_block2d_3', 'ConvBlock2D', (1, 32, 32, 2), 146)]
+
+    self.assertAllEqual(
+        [elem[0] for elem in expected],
+        [layer.name for layer in get_layers(model)])
+
+    self.assertAllEqual(
+        [elem[1] for elem in expected],
+        [layer.__class__.__name__ for layer in get_layers(model)])
+
+    self.assertAllEqual(
+        [elem[2] for elem in expected],
+        [layer.output_shape for layer in get_layers(model)])
+
+    self.assertAllEqual(
+        [elem[3] for elem in expected],
+        [layer.count_params() for layer in get_layers(model)])
+
+    out_block = model.layers[-1]
+    self.assertLen(out_block.layers, 1)
+    self.assertIsInstance(out_block.layers[0], convolutional.Conv2D)
+    self.assertEqual(tf.keras.activations.linear,
+                     out_block.layers[0].activation)
+
+    input_data = tf.random.stateless_normal((1, 32, 32, 1), [12, 34])
+    output_data = model.predict(input_data)
+
+    # New model with activation.
+    tf.random.set_seed(32)
+    model = conv_endec.UNet2D(
+        filters=[8, 16], kernel_size=3, out_channels=2,
+        out_activation='sigmoid')
+    inputs = tf.keras.Input(shape=(32, 32, 1), batch_size=1)
+    model = tf.keras.Model(inputs, model.call(inputs))
+
+    self.assertAllClose(tf.keras.activations.sigmoid(output_data),
+                        model.predict(input_data))
+
+
+def get_layers(model, recursive=False):
+  """Gets all layers in a model (expanding nested models)."""
+  layers = []
+  for layer in model.layers:
+    if isinstance(layer, tf.keras.Model):
+      if recursive:
+        layers.extend(get_layers(layer, recursive=True))
+      else:
+        layers.append(layer)
+    else:
+      layers.append(layer)
+  return layers
 
 
 if __name__ == '__main__':
