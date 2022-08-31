@@ -97,7 +97,7 @@ class UNetTest(test_util.TestCase):
     block = conv_endec.UNet2D(
         filters=[4, 8],
         kernel_size=3,
-        activation=complex_activations.complex_relu,
+        activation='complex_relu',
         dtype=tf.complex64)
 
     result = block(inputs)

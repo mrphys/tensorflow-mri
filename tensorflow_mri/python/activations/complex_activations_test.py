@@ -16,6 +16,7 @@
 
 import tensorflow as tf
 
+from tensorflow_mri.python import activations
 from tensorflow_mri.python.activations import complex_activations
 from tensorflow_mri.python.util import test_util
 
@@ -34,6 +35,31 @@ class ReluTest(test_util.TestCase):
     expected = [0.0 + 0.0j, 1.0 + 3.0j, 0.0 + 0.0j, -3.0 - 4.0j]
     result = complex_activations.mod_relu(inputs, threshold=3.0)
     self.assertAllClose(expected, result)
+
+  def test_serialization(self):
+    fn = activations.get('complex_relu')
+    self.assertEqual(complex_activations.complex_relu, fn)
+
+    fn = activations.get('mod_relu')
+    self.assertEqual(complex_activations.mod_relu, fn)
+
+    fn = activations.deserialize('complex_relu')
+    self.assertEqual(complex_activations.complex_relu, fn)
+
+    fn = activations.deserialize('mod_relu')
+    self.assertEqual(complex_activations.mod_relu, fn)
+
+    fn = activations.serialize(complex_activations.complex_relu)
+    self.assertEqual('complex_relu', fn)
+
+    fn = activations.serialize(complex_activations.mod_relu)
+    self.assertEqual('mod_relu', fn)
+
+    fn = activations.get(complex_activations.complex_relu)
+    self.assertEqual(complex_activations.complex_relu, fn)
+
+    fn = activations.get(complex_activations.mod_relu)
+    self.assertEqual(complex_activations.mod_relu, fn)
 
 
 if __name__ == '__main__':

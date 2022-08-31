@@ -26,9 +26,9 @@ EXTENSION_NOTE = string.Template("""
 
   ```{tip}
   This layer can be used as a drop-in replacement for
-  [`tf.keras.layers.${name}`](https://www.tensorflow.org/api_docs/python/tf/keras/layers/${name}).
-  However, this one also supports complex-valued convolutions. Simply pass
-  `dtype='complex64'` or `dtype='complex128'` to the layer constructor.
+  `tf.keras.layers.${name}`, but unlike the core Keras layer, this one also
+  supports complex-valued convolutions. Simply pass `dtype='complex64'` or
+  `dtype='complex128'` to the layer constructor.
   ```
 
 """)

@@ -9,3 +9,6 @@ from tensorflow_mri.python.initializers.initializers import HeNormal as HeNormal
 from tensorflow_mri.python.initializers.initializers import HeUniform as HeUniform
 from tensorflow_mri.python.initializers.initializers import LecunNormal as LecunNormal
 from tensorflow_mri.python.initializers.initializers import LecunUniform as LecunUniform
+from tensorflow_mri.python.initializers import serialize as serialize
+from tensorflow_mri.python.initializers import deserialize as deserialize
+from tensorflow_mri.python.initializers import get as get

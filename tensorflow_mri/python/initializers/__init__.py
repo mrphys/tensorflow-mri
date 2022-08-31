@@ -45,8 +45,7 @@ def serialize(initializer):
   """Serialize a Keras initializer.
 
   ```{note}
-  This function is a drop-in replacement for
-  [`tf.keras.initializers.serialize`](https://www.tensorflow.org/api_docs/python/tf/keras/initializers/serialize).
+  This function is a drop-in replacement for `tf.keras.initializers.serialize`.
   ```
 
   Args:
@@ -60,14 +59,14 @@ def serialize(initializer):
 
 @api_util.export("initializers.deserialize")
 def deserialize(config, custom_objects=None):
-  """Deserialize a Keras initializers.
+  """Deserialize a Keras initializer.
 
   ```{note}
   This function is a drop-in replacement for
-  [`tf.keras.initializers.deserialize`](https://www.tensorflow.org/api_docs/python/tf/keras/initializers/deserialize).
-  The only difference is that it has built-in knowledge of TFMRI initializers.
-  Where a TFMRI initializer exists that replaces the corresponding Keras
-  initializer, this function returns the TFMRI initializer.
+  `tf.keras.initializers.deserialize`. The only difference is that this function
+  has built-in knowledge of TFMRI initializers. Where a TFMRI initializer exists
+  that replaces the corresponding Keras initializer, this function prefers the
+  TFMRI initializer.
   ```
 
   Args:
@@ -88,10 +87,10 @@ def get(identifier):
 
   ```{note}
   This function is a drop-in replacement for
-  [`tf.keras.initializers.get`](https://www.tensorflow.org/api_docs/python/tf/keras/initializers/get).
-  The only difference is that it has built-in knowledge of TFMRI initializers.
-  Where a TFMRI initializer exists that replaces the corresponding Keras
-  initializer, this function returns the TFMRI initializer.
+  `tf.keras.initializers.get`. The only difference is that this function
+  has built-in knowledge of TFMRI initializers. Where a TFMRI initializer exists
+  that replaces the corresponding Keras initializer, this function prefers the
+  TFMRI initializer.
   ```
 
   The `identifier` may be the string name of a initializers function or class (
@@ -113,11 +112,11 @@ def get(identifier):
   instance of the class by its constructor.
 
   Args:
-    identifier: String or dict that contains the initializer name or
-      configurations.
+    identifier: A `str` or `dict` containing the initializer name or
+      configuration.
 
   Returns:
-    Initializer instance base on the input identifier.
+    An initializer instance based on the input identifier.
 
   Raises:
     ValueError: If the input identifier is not a supported type or in a bad

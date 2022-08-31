@@ -29,12 +29,12 @@
 # ==============================================================================
 """Convolutional neural network blocks."""
 
-import itertools
 import string
 
 import tensorflow as tf
 import tensorflow_addons as tfa
 
+from tensorflow_mri.python import activations
 from tensorflow_mri.python import initializers
 from tensorflow_mri.python.models import graph_like_network
 from tensorflow_mri.python.util import api_util
@@ -132,11 +132,11 @@ class ConvBlock(graph_like_network.GraphLikeNetwork):
     self.filters = [filters] if isinstance(filters, int) else filters
     self.kernel_size = kernel_size
     self.strides = strides
-    self.activation = tf.keras.activations.get(activation)
+    self.activation = activations.get(activation)
     if output_activation == 'same':
       self.output_activation = self.activation
     else:
-      self.output_activation = tf.keras.activations.get(output_activation)
+      self.output_activation = activations.get(output_activation)
     self.use_bias = use_bias
     self.kernel_initializer = initializers.get(kernel_initializer)
     self.bias_initializer = initializers.get(bias_initializer)
@@ -236,8 +236,8 @@ class ConvBlock(graph_like_network.GraphLikeNetwork):
         'filters': self.filters,
         'kernel_size': self.kernel_size,
         'strides': self.strides,
-        'activation': tf.keras.activations.serialize(self.activation),
-        'output_activation': tf.keras.activations.serialize(
+        'activation': activations.serialize(self.activation),
+        'output_activation': activations.serialize(
             self.output_activation),
         'use_bias': self.use_bias,
         'kernel_initializer': initializers.serialize(self.kernel_initializer),

@@ -18,6 +18,7 @@ import string
 
 import tensorflow as tf
 
+from tensorflow_mri.python import activations
 from tensorflow_mri.python import initializers
 from tensorflow_mri.python.layers import concatenate
 from tensorflow_mri.python.util import api_util
@@ -141,7 +142,7 @@ class UNet(tf.keras.Model):
     self.pool_size = pool_size
     self.block_depth = block_depth
     self.use_deconv = use_deconv
-    self.activation = tf.keras.activations.get(activation)
+    self.activation = activations.get(activation)
     self.use_bias = use_bias
     self.kernel_initializer = initializers.get(kernel_initializer)
     self.bias_initializer = initializers.get(bias_initializer)
@@ -154,7 +155,7 @@ class UNet(tf.keras.Model):
     self.bn_epsilon = bn_epsilon
     self.output_filters = output_filters
     self.output_kernel_size = output_kernel_size
-    self.output_activation = tf.keras.activations.get(output_activation)
+    self.output_activation = activations.get(output_activation)
     self.use_global_residual = use_global_residual
     self.use_dropout = use_dropout
     self.dropout_rate = dropout_rate
@@ -376,7 +377,7 @@ class UNet(tf.keras.Model):
         'pool_size': self.pool_size,
         'block_depth': self.block_depth,
         'use_deconv': self.use_deconv,
-        'activation': tf.keras.activations.serialize(self.activation),
+        'activation': activations.serialize(self.activation),
         'use_bias': self.use_bias,
         'kernel_initializer': initializers.serialize(self.kernel_initializer),
         'bias_initializer': initializers.serialize(self.bias_initializer),
@@ -391,7 +392,7 @@ class UNet(tf.keras.Model):
         'bn_epsilon': self.bn_epsilon,
         'output_filters': self.output_filters,
         'output_kernel_size': self.output_kernel_size,
-        'output_activation': tf.keras.activations.serialize(
+        'output_activation': activations.serialize(
             self.output_activation),
         'use_global_residual': self.use_global_residual,
         'use_dropout': self.use_dropout,
