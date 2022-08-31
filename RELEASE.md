@@ -6,6 +6,8 @@
 
 - `tfmri.models`
 
+  - `ConvBlock1D`, `ConvBlock2D` and `ConvBlock3D`contain backwards
+    incompatible changes.
   - `UNet1D`, `UNet2D` and `UNet3D` contain backwards incompatible changes.
 
 
@@ -36,6 +38,11 @@
 - `tfmri.layers`:
 
   - Added new wrapper layer `Normalized`.
+
+- `tfmri.models`:
+
+  - Added new models `ConvBlockLSTM1D`, `ConvBlockLSTM2D` and `ConvBlockLSTM3D`.
+  - Added new models `UNetLSTM1D`, `UNetLSTM2D` and `UNetLSTM3D`.
 
 - `tfmri.sampling`:
 

@@ -16,5 +16,5 @@
 
 from tensorflow_mri.python.models import conv_blocks
 from tensorflow_mri.python.models import conv_endec
-from tensorflow_mri.python.models import graph_like_model
+from tensorflow_mri.python.models import graph_like_network
 from tensorflow_mri.python.models import variational_network
