@@ -83,20 +83,20 @@ class LSTMUNetTest(test_util.TestCase):
         self.assertEqual(use_bias, layer.use_bias)
 
 
-  def test_complex_valued(self):
-    inputs = tf.dtypes.complex(
-        tf.random.stateless_normal(shape=(2, 12, 32, 32, 4), seed=[12, 34]),
-        tf.random.stateless_normal(shape=(2, 12, 32, 32, 4), seed=[56, 78]))
+  # def test_complex_valued(self):
+  #   inputs = tf.dtypes.complex(
+  #       tf.random.stateless_normal(shape=(2, 12, 32, 32, 4), seed=[12, 34]),
+  #       tf.random.stateless_normal(shape=(2, 12, 32, 32, 4), seed=[56, 78]))
 
-    block = conv_endec_LSTM.LSTMUNet2D(
-        filters=[4, 8],
-        kernel_size=3,
-        activation=complex_activations.complex_relu,
-        dtype=tf.complex64)
+  #   block = conv_endec_LSTM.LSTMUNet2D(
+  #       filters=[4, 8],
+  #       kernel_size=3,
+  #       activation=complex_activations.complex_relu,
+  #       dtype=tf.complex64)
 
-    result = block(inputs)
-    self.assertAllClose((2, 12,32, 32, 4), result.shape)
-    self.assertDTypeEqual(result, tf.complex64)
+  #   result = block(inputs)
+  #   self.assertAllClose((2, 12,32, 32, 4), result.shape)
+  #   self.assertDTypeEqual(result, tf.complex64)
 
 
   def test_serialize_deserialize(self):
