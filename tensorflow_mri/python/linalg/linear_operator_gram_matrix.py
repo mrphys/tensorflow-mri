@@ -19,7 +19,7 @@ import tensorflow as tf
 from tensorflow_mri.python.linalg import linear_operator
 from tensorflow_mri.python.linalg import linear_operator_addition
 from tensorflow_mri.python.linalg import linear_operator_composition
-from tensorflow_mri.python.linalg import linear_operator_scaled_identity
+from tensorflow_mri.python.linalg import linear_operator_identity
 from tensorflow_mri.python.util import api_util
 
 
@@ -27,41 +27,41 @@ from tensorflow_mri.python.util import api_util
 class LinearOperatorGramMatrix(linear_operator.LinearOperator):  # pylint: disable=abstract-method
   r"""Linear operator representing the Gram matrix of an operator.
 
-  If :math:`A` is a `LinearOperator`, this operator is equivalent to
-  :math:`A^H A`.
+  If $A$ is a `LinearOperator`, this operator is equivalent to
+  $A^H A$.
 
-  The Gram matrix of :math:`A` appears in the normal equation
-  :math:`A^H A x = A^H b` associated with the least squares problem
-  :math:`{\mathop{\mathrm{argmin}}_x} {\left \| Ax-b \right \|_2^2}`.
+  The Gram matrix of $A$ appears in the normal equation
+  $A^H A x = A^H b$ associated with the least squares problem
+  ${\mathop{\mathrm{argmin}}_x} {\left \| Ax-b \right \|_2^2}$.
 
   This operator is self-adjoint and positive definite. Therefore, linear systems
   defined by this linear operator can be solved using the conjugate gradient
   method.
 
   This operator supports the optional addition of a regularization parameter
-  :math:`\lambda` and a transform matrix :math:`T`. If these are provided,
-  this operator becomes :math:`A^H A + \lambda T^H T`. This appears
+  $\lambda$ and a transform matrix $T$. If these are provided,
+  this operator becomes $A^H A + \lambda T^H T$. This appears
   in the regularized normal equation
-  :math:`\left ( A^H A + \lambda T^H T \right ) x = A^H b + \lambda T^H T x_0`,
+  $\left ( A^H A + \lambda T^H T \right ) x = A^H b + \lambda T^H T x_0$,
   associated with the regularized least squares problem
-  :math:`{\mathop{\mathrm{argmin}}_x} {\left \| Ax-b \right \|_2^2 + \lambda \left \| T(x-x_0) \right \|_2^2}`.
+  ${\mathop{\mathrm{argmin}}_x} {\left \| Ax-b \right \|_2^2 + \lambda \left \| T(x-x_0) \right \|_2^2}$.
 
   Args:
-    operator: A `tfmri.linalg.LinearOperator`. The operator :math:`A` whose Gram
+    operator: A `tfmri.linalg.LinearOperator`. The operator $A$ whose Gram
       matrix is represented by this linear operator.
     reg_parameter: A `Tensor` of shape `[B1, ..., Bb]` and real dtype.
-      The regularization parameter :math:`\lambda`. Defaults to 0.
+      The regularization parameter $\lambda$. Defaults to 0.
     reg_operator: A `tfmri.linalg.LinearOperator`. The regularization transform
-      :math:`T`. Defaults to the identity.
+      $T$. Defaults to the identity.
     gram_operator: A `tfmri.linalg.LinearOperator`. The Gram matrix
-      :math:`A^H A`. This may be optionally provided to use a specialized
+      $A^H A$. This may be optionally provided to use a specialized
       Gram matrix implementation. Defaults to `None`.
     is_non_singular: Expect that this operator is non-singular.
     is_self_adjoint: Expect that this operator is equal to its Hermitian
       transpose.
     is_positive_definite: Expect that this operator is positive definite,
-      meaning the quadratic form :math:`x^H A x` has positive real part for all
-      nonzero :math:`x`.  Note that we do not require the operator to be
+      meaning the quadratic form $x^H A x$ has positive real part for all
+      nonzero $x$.  Note that we do not require the operator to be
       self-adjoint to be positive-definite.
     is_square: Expect that this operator acts like square [batch] matrices.
     name: A name for this `LinearOperator`.
@@ -103,7 +103,7 @@ class LinearOperatorGramMatrix(linear_operator.LinearOperator):  # pylint: disab
       raise ValueError("A Gram matrix is always square.")
 
     if self._reg_parameter is not None:
-      reg_operator_gm = linear_operator_scaled_identity.LinearOperatorScaledIdentity(
+      reg_operator_gm = linear_operator_identity.LinearOperatorScaledIdentity(
           shape=self._operator.domain_shape,
           multiplier=tf.cast(self._reg_parameter, self._operator.dtype))
       if self._reg_operator is not None:

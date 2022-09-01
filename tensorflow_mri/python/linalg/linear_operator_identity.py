@@ -22,35 +22,39 @@ from tensorflow_mri.python.util import tensor_util
 
 
 @api_util.export("linalg.LinearOperatorScaledIdentity")
+@linear_operator.make_composite_tensor
 class LinearOperatorScaledIdentity(linear_operator.LinearOperatorMixin,  # pylint: disable=abstract-method
                                    tf.linalg.LinearOperatorScaledIdentity):
   """Linear operator representing a scaled identity matrix.
 
-  .. note:
-    Similar to `tf.linalg.LinearOperatorScaledIdentity`_, but with imaging
-    extensions.
+  This operator acts like a scaled identity matrix $A = cI$.
+
+  ```{note}
+  This operator is a drop-in replacement of
+  `tf.linalg.LinearOperatorScaledIdentity`, with extended functionality.
+  ```
 
   Args:
-    shape: Non-negative integer `Tensor`. The shape of the operator.
-    multiplier: A `Tensor` of shape `[B1, ..., Bb]`, or `[]` (a scalar).
+    domain_shape: A 1D integer `Tensor`. The domain/range domain_shape of the operator.
+    multiplier: A `tf.Tensor` of arbitrary domain_shape. Its domain_shape will become the
+      batch domain_shape of the operator. Its dtype will determine the dtype of the
+      operator.
     is_non_singular: Expect that this operator is non-singular.
     is_self_adjoint: Expect that this operator is equal to its hermitian
       transpose.
     is_positive_definite: Expect that this operator is positive definite,
-      meaning the quadratic form `x^H A x` has positive real part for all
-      nonzero `x`.  Note that we do not require the operator to be
+      meaning the quadratic form $x^H A x$ has positive real part for all
+      nonzero $x$.  Note that we do not require the operator to be
       self-adjoint to be positive-definite.  See:
       https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices
     is_square:  Expect that this operator acts like square [batch] matrices.
-    assert_proper_shapes: Python `bool`.  If `False`, only perform static
-      checks that initialization and method arguments have proper shape.
+    assert_proper_shapes: A boolean.  If `False`, only perform static
+      checks that initialization and method arguments have proper domain_shape.
       If `True`, and static checks are inconclusive, add asserts to the graph.
     name: A name for this `LinearOperator`.
-
-  .. _tf.linalg.LinearOperatorScaledIdentity: https://www.tensorflow.org/api_docs/python/tf/linalg/LinearOperatorScaledIdentity
   """
   def __init__(self,
-               shape,
+               domain_shape,
                multiplier,
                is_non_singular=None,
                is_self_adjoint=None,
@@ -60,12 +64,12 @@ class LinearOperatorScaledIdentity(linear_operator.LinearOperatorMixin,  # pylin
                name="LinearOperatorScaledIdentity"):
 
     self._domain_shape_tensor_value = tensor_util.convert_shape_to_tensor(
-        shape, name="shape")
+        domain_shape, name="domain_shape")
     self._domain_shape_value = tf.TensorShape(tf.get_static_value(
         self._domain_shape_tensor_value))
 
     super().__init__(
-        num_rows=tf.math.reduce_prod(shape),
+        num_rows=tf.math.reduce_prod(domain_shape),
         multiplier=multiplier,
         is_non_singular=is_non_singular,
         is_self_adjoint=is_self_adjoint,
@@ -101,3 +105,11 @@ class LinearOperatorScaledIdentity(linear_operator.LinearOperatorMixin,  # pylin
 
   def _batch_shape_tensor(self):
     return tf.shape(self.multiplier)
+
+  @property
+  def _composite_tensor_fields(self):
+    return ("domain_shape", "multiplier", "assert_proper_shapes")
+
+  @property
+  def _composite_tensor_prefer_static_fields(self):
+    return ("domain_shape",)

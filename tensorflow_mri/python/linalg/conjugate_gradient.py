@@ -48,18 +48,19 @@ def conjugate_gradient(operator,
                        name=None):
   r"""Conjugate gradient solver.
 
-  Solves a linear system of equations :math:`Ax = b` for self-adjoint, positive
-  definite matrix :math:`A` and right-hand side vector :math:`b`, using an
-  iterative, matrix-free algorithm where the action of the matrix :math:`A` is
+  Solves a linear system of equations $Ax = b$ for self-adjoint, positive
+  definite matrix $A$ and right-hand side vector $b$, using an
+  iterative, matrix-free algorithm where the action of the matrix $A$ is
   represented by `operator`. The iteration terminates when either the number of
   iterations exceeds `max_iterations` or when the residual norm has been reduced
   to `tol` times its initial value, i.e.
-  :math:`(\left\| b - A x_k \right\| <= \mathrm{tol} \left\| b \right\|\\)`.
+  $(\left\| b - A x_k \right\| <= \mathrm{tol} \left\| b \right\|\\)$.
 
-  .. note::
-    This function is similar to
-    `tf.linalg.experimental.conjugate_gradient`, except it adds support for
-    complex-valued linear systems and for imaging operators.
+  ```{note}
+  This function is similar to
+  `tf.linalg.experimental.conjugate_gradient`, except it adds support for
+  complex-valued linear systems and for imaging operators.
+  ```
 
   Args:
     operator: A `LinearOperator` that is self-adjoint and positive definite.

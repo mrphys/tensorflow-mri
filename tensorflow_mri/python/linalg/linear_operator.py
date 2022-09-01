@@ -15,10 +15,11 @@
 """Base linear operator."""
 
 import abc
-import functools
 
+import numpy as np
 import tensorflow as tf
-from tensorflow.python.ops.linalg import linear_operator
+from tensorflow.python.framework import type_spec
+from tensorflow.python.ops.linalg import linear_operator as tf_linear_operator
 
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import tensor_util
@@ -494,5 +495,136 @@ class LinearOperatorAdjoint(LinearOperatorMixin,  # pylint: disable=abstract-met
     return self.operator.batch_shape_tensor()
 
 
-make_composite_tensor = functools.partial(
-    linear_operator.make_composite_tensor, module_name="tfmri.linalg")
+class _LinearOperatorSpec(type_spec.BatchableTypeSpec):
+  """A tf.TypeSpec for `LinearOperator` objects.
+
+  This is very similar to `tf.linalg.LinearOperatorSpec`, but it adds a
+  `shape` attribute which is required by Keras.
+
+  Note that this attribute is redundant, as it can always be computed from
+  other attributes. However, the details of this computation vary between
+  operators, so its easier to just store it.
+  """
+  __slots__ = ("_shape",
+               "_param_specs",
+               "_non_tensor_params",
+               "_prefer_static_fields")
+
+  def __init__(self,
+               shape,
+               param_specs,
+               non_tensor_params,
+               prefer_static_fields):
+    """Initializes a new `_LinearOperatorSpec`.
+
+    Args:
+      shape: A `tf.TensorShape`.
+      param_specs: Python `dict` of `tf.TypeSpec` instances that describe
+        kwargs to the `LinearOperator`'s constructor that are `Tensor`-like or
+        `CompositeTensor` subclasses.
+      non_tensor_params: Python `dict` containing non-`Tensor` and non-
+        `CompositeTensor` kwargs to the `LinearOperator`'s constructor.
+      prefer_static_fields: Python `tuple` of strings corresponding to the names
+        of `Tensor`-like args to the `LinearOperator`s constructor that may be
+        stored as static values, if known. These are typically shapes, indices,
+        or axis values.
+    """
+    self._shape = shape
+    self._param_specs = param_specs
+    self._non_tensor_params = non_tensor_params
+    self._prefer_static_fields = prefer_static_fields
+
+  @classmethod
+  def from_operator(cls, operator):
+    """Builds a `_LinearOperatorSpec` from a `LinearOperator` instance.
+
+    Args:
+      operator: An instance of `LinearOperator`.
+
+    Returns:
+      linear_operator_spec: An instance of `_LinearOperatorSpec` to be used as
+        the `TypeSpec` of `operator`.
+    """
+    validation_fields = ("is_non_singular", "is_self_adjoint",
+                         "is_positive_definite", "is_square")
+    kwargs = tf_linear_operator._extract_attrs(
+        operator,
+        keys=set(operator._composite_tensor_fields + validation_fields))  # pylint: disable=protected-access
+
+    non_tensor_params = {}
+    param_specs = {}
+    for k, v in list(kwargs.items()):
+      type_spec_or_v = tf_linear_operator._extract_type_spec_recursively(v)
+      is_tensor = [isinstance(x, type_spec.TypeSpec)
+                   for x in tf.nest.flatten(type_spec_or_v)]
+      if all(is_tensor):
+        param_specs[k] = type_spec_or_v
+      elif not any(is_tensor):
+        non_tensor_params[k] = v
+      else:
+        raise NotImplementedError(f"Field {k} contains a mix of `Tensor` and "
+                                  f" non-`Tensor` values.")
+
+    return cls(
+        shape=operator.shape,
+        param_specs=param_specs,
+        non_tensor_params=non_tensor_params,
+        prefer_static_fields=operator._composite_tensor_prefer_static_fields)  # pylint: disable=protected-access
+
+  def _to_components(self, obj):
+    return tf_linear_operator._extract_attrs(obj, keys=list(self._param_specs))
+
+  def _from_components(self, components):
+    kwargs = dict(self._non_tensor_params, **components)
+    return self.value_type(**kwargs)
+
+  @property
+  def _component_specs(self):
+    return self._param_specs
+
+  def _serialize(self):
+    return (self._shape,
+            self._param_specs,
+            self._non_tensor_params,
+            self._prefer_static_fields)
+
+  def _copy(self, **overrides):
+    kwargs = {
+        "shape": self._shape,
+        "param_specs": self._param_specs,
+        "non_tensor_params": self._non_tensor_params,
+        "prefer_static_fields": self._prefer_static_fields
+    }
+    kwargs.update(overrides)
+    return type(self)(**kwargs)
+
+  def _batch(self, batch_size):
+    """Returns a TypeSpec representing a batch of objects with this TypeSpec."""
+    return self._copy(
+        param_specs=tf.nest.map_structure(
+            lambda spec: spec._batch(batch_size),  # pylint: disable=protected-access
+            self._param_specs))
+
+  def _unbatch(self, batch_size):
+    """Returns a TypeSpec representing a single element of this TypeSpec."""
+    return self._copy(
+        param_specs=tf.nest.map_structure(
+            lambda spec: spec._unbatch(),  # pylint: disable=protected-access
+            self._param_specs))
+
+  @property
+  def shape(self):
+    return self._shape
+
+
+def make_composite_tensor(cls, module_name="tfmri.linalg"):
+  """Class decorator to convert `LinearOperator`s to `CompositeTensor`s.
+
+  Overrides the default `make_composite_tensor` to use the custom
+  `LinearOperatorSpec`.
+  """
+  spec_name = "{}Spec".format(cls.__name__)
+  spec_type = type(spec_name, (_LinearOperatorSpec,), {"value_type": cls})
+  type_spec.register("{}.{}".format(module_name, spec_name))(spec_type)
+  cls._type_spec = property(spec_type.from_operator)  # pylint: disable=protected-access
+  return cls
