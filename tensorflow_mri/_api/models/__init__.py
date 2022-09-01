@@ -14,5 +14,3 @@ from tensorflow_mri.python.models.conv_endec import UNet3D as UNet3D
 from tensorflow_mri.python.models.conv_endec import UNetLSTM1D as UNetLSTM1D
 from tensorflow_mri.python.models.conv_endec import UNetLSTM2D as UNetLSTM2D
 from tensorflow_mri.python.models.conv_endec import UNetLSTM3D as UNetLSTM3D
-from tensorflow_mri.python.models.variational_network import VarNet2D as VarNet2D
-from tensorflow_mri.python.models.variational_network import VarNet3D as VarNet3D
