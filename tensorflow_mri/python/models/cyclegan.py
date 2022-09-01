@@ -179,16 +179,19 @@ class CGGenerator(Model):
 		# 6 resnet blocks
 		if image_shape[1] < 256 and n_resnet == None:
 			pass
-	
+		
+		self.n_resnet = n_resnet
 		self.encoder = CGEncoder()
 		self.decoder = CGDecoder()
 		self.res_blocks = []
-	
+
+		for block in range(0, self.n_resnet):
+			self.res_blocks.append(CGResNetBlock(256))
+
 	def call(self, inputs):
 		x = self.encoder(inputs)
-		for i in range(0, self.n_resnet):
-			self.res_blocks.append(CGResNetBlock(256))
-			x = self.res_blocks[i](x)
+		for block in self.res_blocks:
+			x = block(x)
 		x = self.decoder(x)
 		return x
 
@@ -218,6 +221,10 @@ class CycleGAN(Model):
 
 	def __init__(
 		self,
+		G_loss_fn,
+		D_loss_fn,
+		adversarial_loss_fn,
+		identity_loss_fn,
 		generator_G = CGGenerator(image_shape=(1,128,128)),
 		generator_F = CGGenerator(image_shape=(1,128,128)),
 		discriminator_X = CGDiscriminator(),
@@ -233,9 +240,15 @@ class CycleGAN(Model):
 		self.lambda_cycle = lambda_cycle
 		self.lambda_identity = lambda_identity
 	
-		# Loss function for evaluating adversarial loss
-		self.adv_loss_fn = MeanSquaredError()
+		self.G_loss_fn = G_loss_fn
+		self.D_loss_fn = D_loss_fn
+		self.adv_loss_fn = adversarial_loss_fn
+		self.identity_loss_fn = identity_loss_fn
 
+	# TODO - Move these to a tutorial notebook and add them 
+	# as input to the cycleGAN as they are now not needed
+	# within the class here. 
+	'''
 	# Define the loss function for the generators
 	def generator_loss_fn(self, fake):
 		fake_loss = self.adv_loss_fn(tf.ones_like(fake), fake)
@@ -246,15 +259,14 @@ class CycleGAN(Model):
 		real_loss = self.adv_loss_fn(tf.ones_like(real), real)
 		fake_loss = self.adv_loss_fn(tf.zeros_like(fake), fake)
 		return (real_loss + fake_loss) * 0.5
+	'''
 	
 	def compile(
 		self,
 		gen_G_optimizer=Adam(lr=0.0002, beta_1=0.5),
 		gen_F_optimizer=Adam(lr=0.0002, beta_1=0.5),
 		disc_X_optimizer=Adam(lr=0.0002, beta_1=0.5),
-		disc_Y_optimizer=Adam(lr=0.0002, beta_1=0.5),
-		gen_loss_fn=generator_loss_fn,
-		disc_loss_fn=discriminator_loss_fn,
+		disc_Y_optimizer=Adam(lr=0.0002, beta_1=0.5)
 	):
 
 		super(CycleGAN, self).compile()
@@ -262,10 +274,10 @@ class CycleGAN(Model):
 		self.gen_F_optimizer = gen_F_optimizer
 		self.disc_X_optimizer = disc_X_optimizer
 		self.disc_Y_optimizer = disc_Y_optimizer
-		self.generator_loss_fn = gen_loss_fn
-		self.discriminator_loss_fn = disc_loss_fn
-		self.cycle_loss_fn = MeanAbsoluteError()
-		self.identity_loss_fn = MeanAbsoluteError()
+		self.generator_loss_fn = self.G_loss_fn
+		self.discriminator_loss_fn = self.D_loss_fn
+		self.cycle_loss_fn = self.adv_loss_fn
+		self.identity_loss_fn = self.identity_loss_fn
 	
 	def train_step(self, batch_data):
 		# real_x is the ailiased data
