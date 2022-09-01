@@ -127,7 +127,6 @@ class PSNR(MeanMetricWrapperIQA):
                max_val=None,
                batch_dims=None,
                image_dims=None,
-               rank=None,
                multichannel=True,
                complex_part=None,
                name='psnr',
@@ -138,7 +137,6 @@ class PSNR(MeanMetricWrapperIQA):
                      max_val=max_val,
                      batch_dims=batch_dims,
                      image_dims=image_dims,
-                     rank=rank,
                      multichannel=multichannel,
                      complex_part=complex_part)
 
