@@ -15,14 +15,10 @@
 """Keras layers."""
 
 from tensorflow_mri.python.layers import convolutional
-from tensorflow_mri.python.layers import coil_sensitivities
 from tensorflow_mri.python.layers import conv_blocks
 from tensorflow_mri.python.layers import conv_endec
-from tensorflow_mri.python.layers import data_consistency
-from tensorflow_mri.python.layers import kspace_scaling
 from tensorflow_mri.python.layers import normalization
 from tensorflow_mri.python.layers import pooling
 from tensorflow_mri.python.layers import preproc_layers
-from tensorflow_mri.python.layers import recon_adjoint
 from tensorflow_mri.python.layers import reshaping
 from tensorflow_mri.python.layers import signal_layers
