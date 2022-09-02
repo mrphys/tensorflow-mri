@@ -16,8 +16,8 @@
 
 import tensorflow as tf
 
-from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.linalg import linear_operator_mri
+from tensorflow_mri.python.util import api_util
 
 
 @api_util.export("recon.adjoint_universal")

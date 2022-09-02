@@ -260,6 +260,7 @@ def process_docstring(app, what, name, obj, options, lines):  # pylint: disable=
   blankline_re = re.compile(r"^\s*$")
   prompt_re = re.compile(r"^\s*>>>")
   tf_symbol_re = re.compile(r"`(?P<symbol>tf\.[a-zA-Z0-9_.]+)`")
+  tfmri_symbol_re = re.compile(r"`(?P<symbol>tfmri\.[a-zA-Z0-9_.]+)`")
 
   # Loop initialization. `insert_lines` keeps a list of lines to be inserted
   # as well as their positions.
@@ -293,6 +294,13 @@ def process_docstring(app, what, name, obj, options, lines):  # pylint: disable=
     if m:
       symbol = m.group('symbol')
       link = f"https://www.tensorflow.org/api_docs/python/{symbol.replace('.', '/')}"
+      lines[lineno] = line.replace(f"`{symbol}`", f"[`{symbol}`]({link})")
+
+    # Add links to TFMRI symbols.
+    m = tfmri_symbol_re.search(line)
+    if m:
+      symbol = m.group('symbol')
+      link = f"https://mrphys.github.io/tensorflow-mri/api_docs/{symbol.replace('.', '/')}"
       lines[lineno] = line.replace(f"`{symbol}`", f"[`{symbol}`]({link})")
 
   # Now insert the lines (in reversed order so that line numbers stay valid).

@@ -239,7 +239,7 @@ class Rotation3D(tf.experimental.BatchableExtensionType):
     Returns:
       A `tf.TensorShape`.
     """
-    return self._matrix.shape[:-2]
+    return self._matrix.shape
 
   @property
   def dtype(self):
@@ -249,6 +249,11 @@ class Rotation3D(tf.experimental.BatchableExtensionType):
       A `tf.dtypes.DType`.
     """
     return self._matrix.dtype
+
+
+@tf.experimental.dispatch_for_api(tf.convert_to_tensor, {'value': Rotation3D})
+def convert_to_tensor(value, dtype=None, dtype_hint=None, name=None):
+  return value.as_matrix()
 
 
 @tf.experimental.dispatch_for_api(
@@ -290,4 +295,4 @@ def matvec(a, b,
 
 @tf.experimental.dispatch_for_api(tf.shape, {'input': Rotation3D})
 def shape(input, out_type=tf.int32, name=None):
-  return tf.shape(input.as_matrix(), out_type=out_type, name=name)[:-2]
+  return tf.shape(input.as_matrix(), out_type=out_type, name=name)

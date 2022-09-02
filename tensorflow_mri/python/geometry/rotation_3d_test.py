@@ -44,12 +44,12 @@ class Rotation3DTest(test_util.TestCase):
   def test_shape(self):
     """Tests shape."""
     rot = Rotation3D.from_euler([0.0, 0.0, 0.0])
-    self.assertAllEqual([], rot.shape)
-    self.assertAllEqual([], tf.shape(rot))
+    self.assertAllEqual([3, 3], rot.shape)
+    self.assertAllEqual([3, 3], tf.shape(rot))
 
     rot = Rotation3D.from_euler([[0.0, 0.0, 0.0], [np.pi, 0.0, 0.0]])
-    self.assertAllEqual([2], rot.shape)
-    self.assertAllEqual([2], tf.shape(rot))
+    self.assertAllEqual([2, 3, 3], rot.shape)
+    self.assertAllEqual([2, 3, 3], tf.shape(rot))
 
   def test_equal(self):
     """Tests equality operator."""
@@ -72,7 +72,13 @@ class Rotation3DTest(test_util.TestCase):
   def test_repr(self):
     rot = Rotation3D.from_euler([0.0, 0.0, 0.0])
     self.assertEqual(
-        "<tfmri.geometry.Rotation3D(shape=(), dtype=float32)>", repr(rot))
+        "<tfmri.geometry.Rotation3D(shape=(3, 3), dtype=float32)>", repr(rot))
+
+  def test_convert_to_tensor(self):
+    """Tests that conversion to tensor works."""
+    rot = Rotation3D.from_euler([0.0, 0.0, 0.0])
+    self.assertIsInstance(tf.convert_to_tensor(rot), tf.Tensor)
+    self.assertAllClose(np.eye(3), tf.convert_to_tensor(rot))
 
   def test_from_axis_angle_normalized_random(self):
     """Tests that axis-angles can be converted to rotation matrices."""

@@ -605,7 +605,7 @@ class _LinearOperatorSpec(type_spec.BatchableTypeSpec):
             lambda spec: spec._batch(batch_size),  # pylint: disable=protected-access
             self._param_specs))
 
-  def _unbatch(self, batch_size):
+  def _unbatch(self):
     """Returns a TypeSpec representing a single element of this TypeSpec."""
     return self._copy(
         param_specs=tf.nest.map_structure(
@@ -614,7 +614,14 @@ class _LinearOperatorSpec(type_spec.BatchableTypeSpec):
 
   @property
   def shape(self):
+    """Returns a `tf.TensorShape` representing the static shape."""
+    # This property is required to use linear operators with Keras.
     return self._shape
+
+  def with_shape(self, shape):
+    """Returns a new `tf.TypeSpec` with the given shape."""
+    # This method is required to use linear operators with Keras.
+    return self._copy(shape=shape)
 
 
 def make_composite_tensor(cls, module_name="tfmri.linalg"):

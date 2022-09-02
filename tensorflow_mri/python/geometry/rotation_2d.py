@@ -66,10 +66,9 @@ class Rotation2D(tf.experimental.BatchableExtensionType):
   ## Shape and dtype
 
   `Rotation2D` objects have a shape and a dtype, accessible via the `shape` and
-  `dtype` properties. The shape represents the shape of the array of
-  "rotations", so it is essentially the batch shape of the corresponding
-  rotation matrix or angles array (i.e., a `Rotation2D` representing a single
-  rotation has a scalar shape).
+  `dtype` properties. Because this operator acts like a rotation matrix, its
+  shape corresponds to the shape of the rotation matrix. In other words,
+  `rot.shape` is equal to `rot.as_matrix().shape`.
 
   ```{note}
     As with `tf.Tensor`s, the `shape` attribute contains the static shape
@@ -101,6 +100,10 @@ class Rotation2D(tf.experimental.BatchableExtensionType):
   * - API
     - Description
     - Notes
+  * - `tf.convert_to_tensor`
+    - Converts a `Rotation2D` to a `tf.Tensor` containing the corresponding
+      rotation matrix.
+    - `tf.convert_to_tensor(rot)` is equivalent to `rot.as_matrix()`.
   * - `tf.linalg.matmul`
     - Composes two `Rotation2D` objects.
     - `tf.linalg.matmul(rot1, rot2)` is equivalent to `rot1 @ rot2`.
@@ -112,10 +115,15 @@ class Rotation2D(tf.experimental.BatchableExtensionType):
     -
   ```
 
+  ```{tip}
+  In general, a `Rotation2D` object behaves like a rotation matrix, although
+  its internal representation may differ.
+  ```
+
   ```{warning}
-    While other TensorFlow APIs may also work as expected when passed a
-    `Rotation2D`, this is not supported and their behavior may change in the
-    future.
+  While other TensorFlow APIs may also work as expected when passed a
+  `Rotation2D`, this is not supported and their behavior may change in the
+  future.
   ```
 
   Example:
@@ -123,7 +131,7 @@ class Rotation2D(tf.experimental.BatchableExtensionType):
     >>> # Initialize a rotation object using a rotation matrix.
     >>> rot = tfmri.geometry.Rotation2D.from_matrix([[0.0, -1.0], [1.0, 0.0]])
     >>> print(rot)
-    tfmri.geometry.Rotation2D(shape=(), dtype=float32)
+    tfmri.geometry.Rotation2D(shape=(2, 2), dtype=float32)
     >>> # Rotate a point.
     >>> point = tf.constant([1.0, 0.0], dtype=tf.float32)
     >>> rotated = rot.rotate(point)
@@ -348,7 +356,7 @@ class Rotation2D(tf.experimental.BatchableExtensionType):
     Returns:
       A `tf.TensorShape`.
     """
-    return self._matrix.shape[:-2]
+    return self._matrix.shape
 
   @property
   def dtype(self):
@@ -358,6 +366,11 @@ class Rotation2D(tf.experimental.BatchableExtensionType):
       A `tf.dtypes.DType`.
     """
     return self._matrix.dtype
+
+
+@tf.experimental.dispatch_for_api(tf.convert_to_tensor, {'value': Rotation2D})
+def convert_to_tensor(value, dtype=None, dtype_hint=None, name=None):
+  return value.as_matrix()
 
 
 @tf.experimental.dispatch_for_api(
@@ -399,4 +412,4 @@ def matvec(a, b,
 
 @tf.experimental.dispatch_for_api(tf.shape, {'input': Rotation2D})
 def shape(input, out_type=tf.int32, name=None):
-  return tf.shape(input.as_matrix(), out_type=out_type, name=name)[:-2]
+  return tf.shape(input.as_matrix(), out_type=out_type, name=name)

@@ -45,12 +45,12 @@ class Rotation2DTest(test_util.TestCase):
   def test_shape(self):
     """Tests shape."""
     rot = Rotation2D.from_euler([0.0])
-    self.assertAllEqual([], rot.shape)
-    self.assertAllEqual([], tf.shape(rot))
+    self.assertAllEqual([2, 2], rot.shape)
+    self.assertAllEqual([2, 2], tf.shape(rot))
 
     rot = Rotation2D.from_euler([[0.0], [np.pi]])
-    self.assertAllEqual([2], rot.shape)
-    self.assertAllEqual([2], tf.shape(rot))
+    self.assertAllEqual([2, 2, 2], rot.shape)
+    self.assertAllEqual([2, 2, 2], tf.shape(rot))
 
   def test_equal(self):
     """Tests equality operator."""
@@ -72,7 +72,7 @@ class Rotation2DTest(test_util.TestCase):
 
   def test_repr(self):
     """Tests that repr works."""
-    expected = "<tfmri.geometry.Rotation2D(shape=(), dtype=float32)>"
+    expected = "<tfmri.geometry.Rotation2D(shape=(2, 2), dtype=float32)>"
     rot = Rotation2D.from_euler([0.0])
     self.assertEqual(expected, repr(rot))
     self.assertEqual(expected[1:-1], str(rot))
@@ -91,6 +91,12 @@ class Rotation2DTest(test_util.TestCase):
     rot = Rotation2D.from_euler([np.pi])
     vec = tf.constant([1.0, -1.0])
     self.assertAllClose(rot.rotate(vec), tf.linalg.matvec(rot, vec))
+
+  def test_convert_to_tensor(self):
+    """Tests that conversion to tensor works."""
+    rot = Rotation2D.from_euler([0.0])
+    self.assertIsInstance(tf.convert_to_tensor(rot), tf.Tensor)
+    self.assertAllClose(np.eye(2), tf.convert_to_tensor(rot))
 
   @parameterized.named_parameters(
       ("0", [0.0]),
