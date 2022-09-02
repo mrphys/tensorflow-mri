@@ -12,45 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.s
 # ==============================================================================
-
+"""CycleGAN model and composite generator/discriminator implementation."""
 # pylint: disable=arguments-differ
 
-"""CycleGAN Layers and Composite Generator/Discriminator
-Model Implementation."""
-
+import keras
 import tensorflow as tf
+import tensorflow_addons as tfa
 
-from keras.activations import sigmoid
-from keras.initializers import RandomNormal
-from keras.layers import Layer
-from keras.layers import Conv2D
-from keras.layers import LeakyReLU
-from keras.layers import Conv2DTranspose
-from keras.layers import Activation
-from keras.layers import Concatenate
-from keras.models import Model
-from keras.optimizers import Adam
 
-from tensorflow_addons.layers import InstanceNormalization
+class CGResNetBlock(keras.layers.Layer):
+  """ResNet block layer specific to the CycleGAN generator architecture.
 
-class CGResNetBlock(Layer):
-  """ResNet Block Layer specific to the CycleGAN Generator Architecture."""
+  Args:
+    n_filters: An `int` denoting the number of convolutional filters
+      to use.
+  """
+  # TODO: this layer needs a `get_config` method, or just remove the `n_filters`
+  # argument, since it's always set to the same value of 256.
   def __init__(self, n_filters):
-    """
-    Args:
-      n_filters: An `int` denoting the number of convolutional filters
-      to use, and same dtype as `self`.
-    """
     super().__init__()
-    self.init = RandomNormal(stddev=0.02)
-    self.conv2a = Conv2D(n_filters, (3,3), padding="same",
-        kernel_initializer=self.init)
-    self.conv2b = Conv2D(256, (3,3), padding="same",
-        kernel_initializer=self.init)
-    self.instance_norm1 = InstanceNormalization(axis=-1)
-    self.instance_norm2 = InstanceNormalization(axis=-1)
-    self.relu = Activation("relu")
-    self.concat = Concatenate()
+    self.conv2a = keras.layers.Conv2D(
+        n_filters, (3, 3), padding="same",
+        kernel_initializer=_make_default_initializer())
+    self.conv2b = keras.layers.Conv2D(
+        256, (3, 3), padding="same",
+        kernel_initializer=_make_default_initializer())
+    self.instance_norm1 = tfa.layers.InstanceNormalization(axis=-1)
+    self.instance_norm2 = tfa.layers.InstanceNormalization(axis=-1)
+    self.relu = keras.layers.Activation("relu")
+    self.concat = keras.layers.Concatenate()
 
   def call(self, inputs):
     x = self.conv2a(inputs)
@@ -61,22 +51,22 @@ class CGResNetBlock(Layer):
     x = self.concat([x, inputs])
     return x
 
-class CGEncoder(Layer):
-  """Encoder Layer specific to the CycleGAN Generator Architecture."""
+
+class CGEncoder(keras.layers.Layer):
+  """Encoder layer specific to the CycleGAN generator architecture."""
 
   def __init__(self):
     super().__init__()
-    self.init = RandomNormal(stddev=0.02)
-    self.conv2a = Conv2D(64, (7,7), padding='same',
-        kernel_initializer=self.init)
-    self.conv2b = Conv2D(128, (3,3), strides=(2,2), padding='same',
-        kernel_initializer=self.init)
-    self.conv2c = Conv2D(256, (3,3), strides=(2,2), padding='same',
-        kernel_initializer=self.init)
-    self.instance_norm1 = InstanceNormalization(axis=-1)
-    self.instance_norm2 = InstanceNormalization(axis=-1)
-    self.instance_norm3 = InstanceNormalization(axis=-1)
-    self.relu = Activation('relu')
+    self.conv2a = keras.layers.Conv2D(64, (7,7), padding='same',
+        kernel_initializer=_make_default_initializer())
+    self.conv2b = keras.layers.Conv2D(128, (3,3), strides=(2,2), padding='same',
+        kernel_initializer=_make_default_initializer())
+    self.conv2c = keras.layers.Conv2D(256, (3,3), strides=(2,2), padding='same',
+        kernel_initializer=_make_default_initializer())
+    self.instance_norm1 = tfa.layers.InstanceNormalization(axis=-1)
+    self.instance_norm2 = tfa.layers.InstanceNormalization(axis=-1)
+    self.instance_norm3 = tfa.layers.InstanceNormalization(axis=-1)
+    self.relu = keras.layers.Activation('relu')
 
   def call(self, inputs):
     x = self.conv2a(inputs)
@@ -93,21 +83,25 @@ class CGEncoder(Layer):
 
     return x
 
-class CGDecoder(Layer):
-  """Decoder Layer specific to the CycleGAN Generator Architecture."""
+
+class CGDecoder(keras.layers.Layer):
+  """Decoder layer specific to the CycleGAN generator architecture."""
   def __init__(self):
     super().__init__()
-    self.init = RandomNormal(stddev=0.02)
-    self.conv2ta = Conv2DTranspose(128, (3,3), strides=(2,2), padding='same',
-        kernel_initializer=self.init)
-    self.conv2tb = Conv2DTranspose(64, (3,3), strides=(2,2), padding='same',
-        kernel_initializer=self.init)
-    self.conv2c = Conv2D(1, (7,7), padding='same', kernel_initializer=self.init)
-    self.instance_norm1 = InstanceNormalization(axis=-1)
-    self.instance_norm2 = InstanceNormalization(axis=-1)
-    self.instance_norm3 = InstanceNormalization(axis=-1)
-    self.tanh = Activation('tanh')
-    self.relu = Activation('relu')
+    self.conv2ta = keras.layers.keras.layers.Conv2DTranspose(
+        128, (3, 3), strides=(2, 2), padding='same',
+        kernel_initializer=_make_default_initializer())
+    self.conv2tb = keras.layers.keras.layers.Conv2DTranspose(
+        64, (3, 3), strides=(2, 2), padding='same',
+        kernel_initializer=_make_default_initializer())
+    self.conv2c = keras.layers.Conv2D(
+        1, (7,7), padding='same',
+        kernel_initializer=_make_default_initializer())
+    self.instance_norm1 = tfa.layers.InstanceNormalization(axis=-1)
+    self.instance_norm2 = tfa.layers.InstanceNormalization(axis=-1)
+    self.instance_norm3 = tfa.layers.InstanceNormalization(axis=-1)
+    self.tanh = keras.layers.Activation('tanh')
+    self.relu = keras.layers.Activation('relu')
 
   def call(self, inputs):
     x = self.conv2ta(inputs)
@@ -124,33 +118,35 @@ class CGDecoder(Layer):
 
     return out_image
 
-class CGConvEncoder(Layer):
-  """Convolutional Encoder Layer specific to the
-  CycleGAN Discriminator Architecture."""
+
+class CGConvEncoder(keras.layers.Layer):
+  """Convolutional layer specific to the CycleGAN discriminator architecture."""
   def __init__(self):
     super().__init__()
-    self.init = RandomNormal(stddev=0.02)
 
-    self.conv2a = Conv2D(64, (4,4), strides=(3,3), padding='same',
-        kernel_initializer=self.init)
-    self.conv2b = Conv2D(128, (4,4), strides=(3,3), padding='same',
-        kernel_initializer=self.init)
-    self.conv2c = Conv2D(256, (4,4), strides=(3,3), padding='same',
-        kernel_initializer=self.init)
-    self.conv2d = Conv2D(512, (4,4), strides=(2,2), padding='same',
-        kernel_initializer=self.init)
-    self.conv2e = Conv2D(512, (4,4), padding='same',
-        kernel_initializer=self.init)
-    self.conv2f = Conv2D(1, (4,4), padding='same',
-        kernel_initializer=self.init)
+    self.conv2a = keras.layers.Conv2D(
+        64, (4, 4), strides=(3, 3), padding='same',
+        kernel_initializer=_make_default_initializer())
+    self.conv2b = keras.layers.Conv2D(
+        128, (4, 4), strides=(3, 3), padding='same',
+        kernel_initializer=_make_default_initializer())
+    self.conv2c = keras.layers.Conv2D(
+        256, (4, 4), strides=(3, 3), padding='same',
+        kernel_initializer=_make_default_initializer())
+    self.conv2d = keras.layers.Conv2D(
+        512, (4, 4), strides=(2, 2), padding='same',
+        kernel_initializer=_make_default_initializer())
+    self.conv2e = keras.layers.Conv2D(
+        512, (4, 4), padding='same',
+        kernel_initializer=_make_default_initializer())
+    self.conv2f = keras.layers.Conv2D(
+        1, (4, 4), padding='same',
+        kernel_initializer=_make_default_initializer())
 
-    self.instance_norm1 = InstanceNormalization(axis=-1)
-    self.instance_norm2 = InstanceNormalization(axis=-1)
-    self.instance_norm3 = InstanceNormalization(axis=-1)
-    self.instance_norm4 = InstanceNormalization(axis=-1)
-
-    self.leakyrelu = LeakyReLU(alpha=0.2)
-    self.sigmoid = sigmoid
+    self.instance_norm1 = tfa.layers.InstanceNormalization(axis=-1)
+    self.instance_norm2 = tfa.layers.InstanceNormalization(axis=-1)
+    self.instance_norm3 = tfa.layers.InstanceNormalization(axis=-1)
+    self.instance_norm4 = tfa.layers.InstanceNormalization(axis=-1)
 
   def call(self, inputs):
     """
@@ -182,8 +178,11 @@ class CGConvEncoder(Layer):
 
     return out_pred
 
-class CGGenerator(Model):
+
+class CGGenerator(keras.Model):
   """CycleGAN Generator Model."""
+  # TODO: `image_shape` should not be an argument to the constructor.
+  # It is typically inferred from the input tensor.
   def __init__(self, image_shape, n_resnet=None):
     super().__init__()
 
@@ -207,21 +206,28 @@ class CGGenerator(Model):
     x = self.decoder(x)
     return x
 
-class CGDiscriminator(Model):
-  """CycleGAN Discriminator Model."""
+
+class CGDiscriminator(keras.Model):
+  """CycleGAN discriminator Model."""
   def __init__(self):
     super().__init__()
     self.conv_encoder = CGConvEncoder()
 
-  def compile(self, optimizer=Adam(lr=0.0002, beta_1=0.5),
-  loss_weights=(0.5), **kwargs):
-    super().compile(optimizer=optimizer, losds_weights=loss_weights **kwargs)
+  def compile(self,
+              optimizer=None,
+              loss_weights=(0.5,),
+              **kwargs):
+    super().compile(optimizer=optimizer or _make_default_optimizer(),
+                    loss_weights=loss_weights,
+                    **kwargs)
 
   def call(self, inputs):
     return self.conv_encoder(inputs)
 
-class CycleGAN(Model):
-  """
+
+class CycleGAN(keras.Model):
+  """CycleGAN model.
+
   This is the main composite CycleGAN  Model used to concurrently
   train both generators and discriminators with a custom training loop.
 
@@ -233,23 +239,22 @@ class CycleGAN(Model):
   """
 
   def __init__(
-    self,
-    g_loss_fn,
-    d_loss_fn,
-    adversarial_loss_fn,
-    identity_loss_fn,
-    generator_g = CGGenerator(image_shape=(1,128,128)),
-    generator_f = CGGenerator(image_shape=(1,128,128)),
-    discriminator_x = CGDiscriminator(),
-    discriminator_y = CGDiscriminator(),
-    lambda_cycle=10.0,
-    lambda_identity=1.0,
-  ):
+      self,
+      g_loss_fn,
+      d_loss_fn,
+      adversarial_loss_fn,
+      identity_loss_fn,
+      generator_g=None,
+      generator_f=None,
+      discriminator_x=None,
+      discriminator_y=None,
+      lambda_cycle=10.0,
+      lambda_identity=1.0):
     super().__init__()
-    self.gen_g = generator_g
-    self.gen_f = generator_f
-    self.disc_x = discriminator_x
-    self.disc_y = discriminator_y
+    self.gen_g = generator_g or _make_default_generator()
+    self.gen_f = generator_f or _make_default_generator()
+    self.disc_x = discriminator_x or _make_default_discriminator()
+    self.disc_y = discriminator_y or _make_default_discriminator()
     self.lambda_cycle = lambda_cycle
     self.lambda_identity = lambda_identity
 
@@ -275,26 +280,25 @@ class CycleGAN(Model):
 
 
   def compile(
-    self,
-    gen_g_optimizer=Adam(lr=0.0002, beta_1=0.5),
-    gen_f_optimizer=Adam(lr=0.0002, beta_1=0.5),
-    disc_x_optimizer=Adam(lr=0.0002, beta_1=0.5),
-    disc_y_optimizer=Adam(lr=0.0002, beta_1=0.5)
-  ):
-
+      self,
+      gen_g_optimizer=None,
+      gen_f_optimizer=None,
+      disc_x_optimizer=None,
+      disc_y_optimizer=None):
     super().compile()
-    self.gen_g_optimizer = gen_g_optimizer
-    self.gen_f_optimizer = gen_f_optimizer
-    self.disc_x_optimizer = disc_x_optimizer
-    self.disc_y_optimizer = disc_y_optimizer
+    self.gen_g_optimizer = gen_g_optimizer or _make_default_optimizer()
+    self.gen_f_optimizer = gen_f_optimizer or _make_default_optimizer()
+    self.disc_x_optimizer = disc_x_optimizer or _make_default_optimizer()
+    self.disc_y_optimizer = disc_y_optimizer or _make_default_optimizer()
     self.generator_loss_fn = self.g_loss_fn
     self.discriminator_loss_fn = self.d_loss_fn
     self.cycle_loss_fn = self.adv_loss_fn
     self.identity_loss_fn = self.identity_loss_fn
 
   def call(self):
-    raise NotImplementedError("Directly call either the Generator or "
-        "Discriminator model during inference.")
+    raise NotImplementedError(
+        "Directly call either the generator or "
+        "discriminator model during inference.")
 
   def train_step(self, batch_data):
     # real_x is the ailiased data
@@ -382,8 +386,24 @@ class CycleGAN(Model):
     )
 
     return {
-      "g_loss": total_loss_g,
-      "f_loss": total_loss_f,
-      "d_x_loss": disc_x_loss,
-      "d_y_loss": disc_y_loss,
+        "g_loss": total_loss_g,
+        "f_loss": total_loss_f,
+        "d_x_loss": disc_x_loss,
+        "d_y_loss": disc_y_loss,
     }
+
+
+def _make_default_optimizer():
+  return keras.optimizers.Adam(lr=0.0002, beta_1=0.5)
+
+
+def _make_default_generator():
+  return CGGenerator(image_shape=[1, 128, 128])
+
+
+def _make_default_discriminator():
+  return CGDiscriminator()
+
+
+def _make_default_initializer():
+  return keras.initializers.RandomNormal(stddev=0.02)
