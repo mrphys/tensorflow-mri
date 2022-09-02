@@ -2,7 +2,7 @@
 # Do not edit.
 """Signal reconstruction."""
 
-from tensorflow_mri.python.recon.recon_adjoint import recon_adjoint as custom_adjoint
+from tensorflow_mri.python.recon.recon_adjoint import recon_adjoint as adjoint_universal
 from tensorflow_mri.python.recon.recon_adjoint import recon_adjoint_mri as adjoint
 from tensorflow_mri.python.recon.recon_adjoint import recon_adjoint_mri as adj
 from tensorflow_mri.python.ops.recon_ops import reconstruct_lstsq as least_squares

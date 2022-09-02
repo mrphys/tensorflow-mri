@@ -409,7 +409,7 @@ def _apply_uniform_filter(tensor, size=5):
 
 @api_util.export("coils.estimate_sensitivities_universal")
 def estimate_sensitivities_universal(
-    meas_data,
+    data,
     operator,
     calib_data=None,
     calib_fn=None,
@@ -418,7 +418,7 @@ def estimate_sensitivities_universal(
   """Estimates coil sensitivities (universal).
 
   This function is designed to standardize the computation of coil
-  sensitivities in different contexts. The `meas_data` argument can accept
+  sensitivities in different contexts. The `data` argument can accept
   arbitrary measurement data (e.g., N-dimensional, Cartesian/non-Cartesian
   *k*-space tensors). In addition, this function expects a linear `operator`
   which describes the action of the measurement system (e.g., the MR imaging
@@ -426,9 +426,9 @@ def estimate_sensitivities_universal(
 
   This function also accepts an optional `calib_data` tensor or an optional
   `calib_fn` function, in case the calibration should be performed with data
-  other than `meas_data`. `calib_data` may be used to provide the calibration
+  other than `data`. `calib_data` may be used to provide the calibration
   data directly, whereas `calib_fn` may be used to specify the rules to extract
-  it from `meas_data`.
+  it from `data`.
 
   ```{note}
   This function is part of the family of
@@ -463,16 +463,16 @@ def estimate_sensitivities_universal(
     ...                                         center_size=[256, 24])
     >>> # We can create a function that extracts the calibration data from
     >>> # an arbitrary *k*-space by applying the calibration mask below.
-    >>> def calib_fn(meas_data, operator):
-    ...   # Returns `meas_data` where `calib_mask` is `True`, 0 otherwise.
-    ...   return tf.where(calib_mask, meas_data, tf.zeros_like(meas_data))
+    >>> def calib_fn(data, operator):
+    ...   # Returns `data` where `calib_mask` is `True`, 0 otherwise.
+    ...   return tf.where(calib_mask, data, tf.zeros_like(data))
     >>> # Finally, compute the coil sensitivities using the above function
     >>> # to extract the calibration data.
     >>> maps = tfmri.coils.estimate_sensitivities_universal(
     ...     kspace, linop_mri, calib_fn=calib_fn)
 
   Args:
-    meas_data: A `tf.Tensor` containing the measurement or observation data.
+    data: A `tf.Tensor` containing the measurement or observation data.
       Must be compatible with the range of `operator`, i.e., it should be a
       plausible output of the system operator. Accordingly, it should be a
       plausible input for the adjoint of the system operator.
@@ -481,7 +481,7 @@ def estimate_sensitivities_universal(
       ```
     operator: A `tfmri.linalg.LinearOperator` describing the action of the
       measurement system. `operator` maps the causal factors to the measurement
-      or observation data. Its range must be compatible with `meas_data`.
+      or observation data. Its range must be compatible with `data`.
       ```{tip}
       In MRI, this is usually an operator mapping images to the corresponding
       *k*-space data. For most MRI experiments, you can use
@@ -489,14 +489,14 @@ def estimate_sensitivities_universal(
       ```
     calib_data: A `tf.Tensor` containing the calibration data. Must be
       compatible with `operator`. If `None`, the calibration data will be
-      extracted from the `meas_data` tensor using the `calib_fn` function.
+      extracted from the `data` tensor using the `calib_fn` function.
       ```{tip}
       In MRI, this is usually the central, fully-sampled region of *k*-space.
       ```
     calib_fn: A callable which extracts the calibration data from the input
-      `meas_data`. Must have signature
-      `calib_fn(meas_data, operator) -> calib_data`. If `None`, `calib_data`
-      will be used for calibration. If `calib_data` is also `None`, `meas_data`
+      `data`. Must have signature
+      `calib_fn(data, operator) -> calib_data`. If `None`, `calib_data`
+      will be used for calibration. If `calib_data` is also `None`, `data`
       will be used directly for calibration.
     method: A `str` specifying which coil sensitivity estimation algorithm to
       use. Must be one of `'direct'`, `'walsh'`, `'inati'` or `'espirit'`.
@@ -513,12 +513,12 @@ def estimate_sensitivities_universal(
   """
   with tf.name_scope(kwargs.get('name', 'estimate_sensitivities_universal')):
     rank = operator.rank
-    meas_data = tf.convert_to_tensor(meas_data)
+    data = tf.convert_to_tensor(data)
 
     if calib_data is None and calib_fn is None:
-      calib_data = meas_data
+      calib_data = data
     elif calib_data is None and calib_fn is not None:
-      calib_data = calib_fn(meas_data, operator)
+      calib_data = calib_fn(data, operator)
     elif calib_data is not None and calib_fn is None:
       calib_data = tf.convert_to_tensor(calib_data)
     else:

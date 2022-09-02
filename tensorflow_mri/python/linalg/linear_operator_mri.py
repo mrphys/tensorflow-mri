@@ -105,6 +105,19 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
       dimension of `extra_shape`. The `'time'` mode (default) should be
       used for regular dynamic reconstruction. The `'frequency'` mode should be
       used for reconstruction in x-f space.
+    is_non_singular: A boolean, or `None`. Whether this operator is expected
+      to be non-singular. Defaults to `None`.
+    is_self_adjoint: A boolean, or `None`. Whether this operator is expected
+      to be equal to its Hermitian transpose. If `dtype` is real, this is
+      equivalent to being symmetric. Defaults to `None`.
+    is_positive_definite: A boolean, or `None`. Whether this operators is
+      expected to be positive definite, meaning the quadratic form $x^H A x$
+      has positive real part for all nonzero $x$. Note that we do not require
+      the operator to be self-adjoint to be positive-definite. See:
+      https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices.
+      Defaults to `None`.
+    is_square: A boolean, or `None`. Expect that this operator acts like a
+      square matrix (or a batch of square matrices). Defaults to `None`.
     dtype: A `tf.dtypes.DType`. The dtype of this operator. Must be `complex64`
       or `complex128`. Defaults to `complex64`.
     name: An optional `str`. The name of this operator.
@@ -121,6 +134,10 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
                sens_norm=True,
                intensity_correction=True,
                dynamic_domain=None,
+               is_non_singular=None,
+               is_self_adjoint=None,
+               is_positive_definite=None,
+               is_square=None,
                dtype=tf.complex64,
                name=None):
     # pylint: disable=invalid-unary-operand-type
@@ -136,9 +153,19 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
         sens_norm=sens_norm,
         intensity_correction=intensity_correction,
         dynamic_domain=dynamic_domain,
+        is_non_singular=is_non_singular,
+        is_self_adjoint=is_self_adjoint,
+        is_positive_definite=is_positive_definite,
+        is_square=is_square,
         dtype=dtype,
         name=name)
-    super().__init__(dtype, name=name, parameters=parameters)
+    super().__init__(dtype=dtype,
+                     is_non_singular=is_non_singular,
+                     is_self_adjoint=is_self_adjoint,
+                     is_positive_definite=is_positive_definite,
+                     is_square=is_square,
+                     name=name,
+                     parameters=parameters)
 
     # Set dtype.
     dtype = tf.as_dtype(dtype)
@@ -584,7 +611,12 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
             "trajectory",
             "density",
             "sensitivities",
-            "phase")
+            "phase",
+            "fft_norm",
+            "sens_norm",
+            "intensity_correction",
+            "dynamic_domain",
+            "dtype")
 
   @property
   def _composite_tensor_prefer_static_fields(self):

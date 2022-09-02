@@ -21,6 +21,7 @@ from tensorflow_mri.python.layers.pooling import MaxPooling2D as MaxPooling2D
 from tensorflow_mri.python.layers.pooling import MaxPooling2D as MaxPool2D
 from tensorflow_mri.python.layers.pooling import MaxPooling3D as MaxPooling3D
 from tensorflow_mri.python.layers.pooling import MaxPooling3D as MaxPool3D
+from tensorflow_mri.python.layers.recon_adjoint import ReconAdjoint as ReconAdjoint
 from tensorflow_mri.python.layers.reshaping import UpSampling1D as UpSampling1D
 from tensorflow_mri.python.layers.reshaping import UpSampling2D as UpSampling2D
 from tensorflow_mri.python.layers.reshaping import UpSampling3D as UpSampling3D
