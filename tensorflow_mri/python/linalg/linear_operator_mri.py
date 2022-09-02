@@ -538,6 +538,14 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
     return self._trajectory
 
   @property
+  def density(self):
+    """The density compensation function.
+
+    Returns `None` for Cartesian imaging.
+    """
+    return self._density
+
+  @property
   def is_cartesian(self):
     """Whether this is a Cartesian MRI operator."""
     return self._trajectory is None
