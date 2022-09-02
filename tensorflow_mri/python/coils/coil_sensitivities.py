@@ -433,7 +433,8 @@ def estimate_sensitivities_universal(
   ```{note}
   This function is part of the family of
   [universal operators](https://mrphys.github.io/tensorflow-mri/guide/universal/),
-  a set of functions designed to work flexibly with any linear system.
+  a set of functions and classes designed to work flexibly with any linear
+  system.
   ```
 
   Example:
