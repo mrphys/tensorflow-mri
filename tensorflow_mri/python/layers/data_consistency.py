@@ -93,7 +93,7 @@ class LeastSquaresGradientDescent2D(LeastSquaresGradientDescent):
     super().__init__(2, *args, **kwargs)
 
 
-@api_util.export("models.LeastSquaresGradientDescent3D")
+@api_util.export("layers.LeastSquaresGradientDescent3D")
 @tf.keras.utils.register_keras_serializable(package='MRI')
 class LeastSquaresGradientDescent3D(LeastSquaresGradientDescent):
   def __init__(self, *args, **kwargs):

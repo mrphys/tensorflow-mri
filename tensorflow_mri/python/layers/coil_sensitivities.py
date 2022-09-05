@@ -135,7 +135,7 @@ class CoilSensitivityEstimation2D(CoilSensitivityEstimation):
     super().__init__(2, *args, **kwargs)
 
 
-@api_util.export("models.CoilSensitivityEstimation3D")
+@api_util.export("layers.CoilSensitivityEstimation3D")
 @tf.keras.utils.register_keras_serializable(package='MRI')
 class CoilSensitivityEstimation3D(CoilSensitivityEstimation):
   def __init__(self, *args, **kwargs):

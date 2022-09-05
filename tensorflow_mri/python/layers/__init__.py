@@ -14,8 +14,10 @@
 # ==============================================================================
 """Keras layers."""
 
+from tensorflow_mri.python.layers import coil_sensitivities
 from tensorflow_mri.python.layers import concatenate
 from tensorflow_mri.python.layers import convolutional
+from tensorflow_mri.python.layers import data_consistency
 from tensorflow_mri.python.layers import normalization
 from tensorflow_mri.python.layers import pooling
 from tensorflow_mri.python.layers import preproc_layers

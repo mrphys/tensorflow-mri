@@ -123,7 +123,7 @@ class ReconAdjoint2D(ReconAdjoint):
     super().__init__(2, *args, **kwargs)
 
 
-@api_util.export("models.ReconAdjoint3D")
+@api_util.export("layers.ReconAdjoint3D")
 @tf.keras.utils.register_keras_serializable(package='MRI')
 class ReconAdjoint3D(ReconAdjoint):
   def __init__(self, *args, **kwargs):
