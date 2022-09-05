@@ -16,10 +16,13 @@
 
 import tensorflow as tf
 
+from tensorflow_mri.python.layers import coil_sensitivities
 from tensorflow_mri.python.layers import convolutional
+from tensorflow_mri.python.layers import data_consistency
 from tensorflow_mri.python.layers import padding
 from tensorflow_mri.python.layers import pooling
 from tensorflow_mri.python.layers import reshaping
+from tensorflow_mri.python.layers import recon_adjoint
 from tensorflow_mri.python.layers import signal_layers
 
 
@@ -47,6 +50,8 @@ _ND_LAYERS = {
     ('AveragePooling', 1): pooling.AveragePooling1D,
     ('AveragePooling', 2): pooling.AveragePooling2D,
     ('AveragePooling', 3): pooling.AveragePooling3D,
+    ('CoilSensitivityEstimation', 2): coil_sensitivities.CoilSensitivityEstimation2D,
+    ('CoilSensitivityEstimation', 3): coil_sensitivities.CoilSensitivityEstimation3D,
     ('Conv', 1): convolutional.Conv1D,
     ('Conv', 2): convolutional.Conv2D,
     ('Conv', 3): convolutional.Conv3D,
@@ -76,11 +81,15 @@ _ND_LAYERS = {
     ('IDWT', 1): signal_layers.IDWT1D,
     ('IDWT', 2): signal_layers.IDWT2D,
     ('IDWT', 3): signal_layers.IDWT3D,
+    ('LeastSquaresGradientDescent', 2): data_consistency.LeastSquaresGradientDescent2D,
+    ('LeastSquaresGradientDescent', 3): data_consistency.LeastSquaresGradientDescent3D,
     ('LocallyConnected', 1): tf.keras.layers.LocallyConnected1D,
     ('LocallyConnected', 2): tf.keras.layers.LocallyConnected2D,
     ('MaxPool', 1): pooling.MaxPooling1D,
     ('MaxPool', 2): pooling.MaxPooling2D,
     ('MaxPool', 3): pooling.MaxPooling3D,
+    ('ReconAdjoint', 2): recon_adjoint.ReconAdjoint2D,
+    ('ReconAdjoint', 3): recon_adjoint.ReconAdjoint3D,
     ('SeparableConv', 1): tf.keras.layers.SeparableConv1D,
     ('SeparableConv', 2): tf.keras.layers.SeparableConv2D,
     ('SpatialDropout', 1): tf.keras.layers.SpatialDropout1D,

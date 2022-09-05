@@ -14,17 +14,18 @@
 # ==============================================================================
 """Adjoint reconstruction layer."""
 
+import string
+
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import math_ops
 from tensorflow_mri.python.recon import recon_adjoint
 from tensorflow_mri.python.util import api_util
+from tensorflow_mri.python.util import doc_util
 
 
-@api_util.export("layers.ReconAdjoint")
-@tf.keras.utils.register_keras_serializable(package="MRI")
 class ReconAdjoint(tf.keras.layers.Layer):
-  r"""Adjoint reconstruction layer.
+  r"""${rank}D adjoint reconstruction layer.
 
   This layer reconstructs a signal using the adjoint of the specified system
   operator.
@@ -69,8 +70,8 @@ class ReconAdjoint(tf.keras.layers.Layer):
 
   Args:
     expand_channel_dim: A `boolean`. Whether to expand the channel dimension.
-      If `True`, the output has shape `[*batch_shape, ${dim_names}, 1]`.
-      If `False`, the output has shape `[*batch_shape, ${dim_names}]`.
+      If `True`, output has shape `batch_shape + operator.domain_shape + [1]`.
+      If `False`, output has shape `batch_shape + operator.domain_shape`.
       Defaults to `True`.
     reinterpret_complex: A `boolean`. Whether to reinterpret a complex-valued
       output image as a dual-channel real image. Defaults to `False`.
@@ -78,10 +79,12 @@ class ReconAdjoint(tf.keras.layers.Layer):
       `tf.keras.layers.Layer`.
   """
   def __init__(self,
-               expand_channel_dim=True,
+               rank,
+               expand_channel_dim=False,
                reinterpret_complex=False,
                **kwargs):
     super().__init__(**kwargs)
+    self.rank = rank  # Currently unused.
     self.expand_channel_dim = expand_channel_dim
     self.reinterpret_complex = reinterpret_complex
 
@@ -90,7 +93,7 @@ class ReconAdjoint(tf.keras.layers.Layer):
     image = recon_adjoint.recon_adjoint(data, operator)
     if self.expand_channel_dim:
       image = tf.expand_dims(image, axis=-1)
-    if self.reinterpret_complex and tf.as_dtype(self.dtype).is_complex:
+    if self.reinterpret_complex and image.dtype.is_complex:
       image = math_ops.view_as_real(image, stacked=False)
     return image
 
@@ -111,3 +114,27 @@ def parse_inputs(inputs):
   elif isinstance(inputs, dict):
     return _parse_inputs(**inputs)
   raise ValueError('inputs must be a tuple or dict')
+
+
+@api_util.export("layers.ReconAdjoint2D")
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class ReconAdjoint2D(ReconAdjoint):
+  def __init__(self, *args, **kwargs):
+    super().__init__(2, *args, **kwargs)
+
+
+@api_util.export("models.ReconAdjoint3D")
+@tf.keras.utils.register_keras_serializable(package='MRI')
+class ReconAdjoint3D(ReconAdjoint):
+  def __init__(self, *args, **kwargs):
+    super().__init__(3, *args, **kwargs)
+
+
+ReconAdjoint2D.__doc__ = string.Template(
+    ReconAdjoint.__doc__).safe_substitute(rank=2)
+ReconAdjoint3D.__doc__ = string.Template(
+    ReconAdjoint.__doc__).safe_substitute(rank=3)
+
+
+ReconAdjoint2D.__signature__ = doc_util.get_nd_layer_signature(ReconAdjoint)
+ReconAdjoint3D.__signature__ = doc_util.get_nd_layer_signature(ReconAdjoint)

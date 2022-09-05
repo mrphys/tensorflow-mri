@@ -413,7 +413,7 @@ def estimate_sensitivities_universal(
     operator,
     calib_data=None,
     calib_fn=None,
-    method='walsh',
+    algorithm='walsh',
     **kwargs):
   """Estimates coil sensitivities (universal).
 
@@ -494,16 +494,28 @@ def estimate_sensitivities_universal(
       ```{tip}
       In MRI, this is usually the central, fully-sampled region of *k*-space.
       ```
-    calib_fn: A callable which extracts the calibration data from the input
-      `data`. Must have signature
-      `calib_fn(data, operator) -> calib_data`. If `None`, `calib_data`
-      will be used for calibration. If `calib_data` is also `None`, `data`
-      will be used directly for calibration.
-    method: A `str` specifying which coil sensitivity estimation algorithm to
-      use. Must be one of `'direct'`, `'walsh'`, `'inati'` or `'espirit'`.
+    calib_fn: A callable which returns the calibration data given the input
+      `data` and `operator`. Must have signature
+      `calib_fn(data: tf.Tensor, operator: tfmri.linalg.LinearOperator) -> tf.Tensor`.
+      If `None`, `calib_data` will be used for calibration. If `calib_data` is
+      also `None`, `data` will be used directly for calibration.
+    algorithm: A `str` or a callable specifying the coil sensitivity estimation
+      algorithm. Must be one of the following:
+      - A `str` to use one of the default algorithms, which are:
+        - `'direct'`: Uses images extracted from calibration data directly as
+          coil sensitivities.
+        - `'walsh'`: Implements the algorithm described in Walsh et al. [1].
+        - `'inati'`: Implements the algorithm described in Inati et al. [2].
+        - `'espirit'`: Implements the algorithm described in Uecker et al. [3].
+      - A callable which returns the coil sensitivity maps given
+        `calib_data` and `operator`. Must have signature
+        `algorithm(calib_data: tf.Tensor, operator: tfmri.linalg.LinearOperator, **kwargs) -> tf.Tensor`,
+        i.e., it should accept the calibration data and return the coil
+        sensitivity maps.
       Defaults to `'walsh'`.
-    **kwargs: Additional keyword arguments depending on the `method`. For a
-      list of available arguments, see `tfmri.coils.estimate_sensitivites`.
+    **kwargs: Additional keyword arguments to be passed to the coil sensitivity
+      estimation algorithm. For a list of arguments available for the default
+      algorithms, see `tfmri.coils.estimate_sensitivites`.
 
   Returns:
     A `tf.Tensor` of shape `[..., coils, *spatial_dims]` containing the coil
@@ -511,6 +523,19 @@ def estimate_sensitivities_universal(
 
   Raises:
     ValueError: If both `calib_data` and `calib_fn` are provided.
+
+  References:
+    1. Walsh, D.O., Gmitro, A.F. and Marcellin, M.W. (2000), Adaptive
+       reconstruction of phased array MR imagery. Magn. Reson. Med., 43:
+       682-690. https://doi.org/10.1002/(SICI)1522-2594(200005)43:5<682::AID-MRM10>3.0.CO;2-G
+    2. Inati, S.J., Hansen, M.S. and Kellman, P. (2014). A fast optimal
+       method for coil sensitivity estimation and adaptive coil combination for
+       complex images. Proceedings of the 2014 Joint Annual Meeting
+       ISMRM-ESMRMB.
+    3. Uecker, M., Lai, P., Murphy, M.J., Virtue, P., Elad, M., Pauly, J.M.,
+       Vasanawala, S.S. and Lustig, M. (2014), ESPIRiT—an eigenvalue approach
+       to autocalibrating parallel MRI: Where SENSE meets GRAPPA. Magn. Reson.
+       Med., 71: 990-1001. https://doi.org/10.1002/mrm.24751
   """
   with tf.name_scope(kwargs.get('name', 'estimate_sensitivities_universal')):
     rank = operator.rank
@@ -526,17 +551,21 @@ def estimate_sensitivities_universal(
       raise ValueError(
           "Only one of `calib_data` and `calib_fn` may be specified.")
 
+    if callable(algorithm):
+      # Using a custom algorithm.
+      return algorithm(calib_data, operator, **kwargs)
+
     # Reconstruct image.
     calib_data = recon_adjoint.recon_adjoint(calib_data, operator)
 
     # If method is `'direct'`, we simply return the reconstructed calibration
     # data.
-    if method == 'direct':
+    if algorithm == 'direct':
       return calib_data
 
     # ESPIRiT method takes in k-space data, so convert back to k-space in this
     # case.
-    if method == 'espirit':
+    if algorithm == 'espirit':
       axes = list(range(-rank, 0))
       calib_data = fft_ops.fftn(calib_data, axes=axes, norm='ortho', shift=True)
 
@@ -550,7 +579,7 @@ def estimate_sensitivities_universal(
     maps = tf.map_fn(
         functools.partial(estimate_sensitivities,
                           coil_axis=-(rank + 1),
-                          method=method,
+                          method=algorithm,
                           **kwargs),
         calib_data)
 
