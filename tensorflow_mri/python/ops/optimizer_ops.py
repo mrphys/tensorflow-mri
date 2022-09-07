@@ -191,11 +191,11 @@ def admm_minimize(function_f,
                   name=None):
   r"""Applies the ADMM algorithm to minimize a separable convex function.
 
-  Minimizes :math:`f(x) + g(z)`, subject to :math:`Ax + Bz = c`.
+  Minimizes $f(x) + g(z)$, subject to $Ax + Bz = c$.
 
-  If :math:`A`, :math:`B` and :math:`c` are not provided, the constraint
-  defaults to :math:`x - z = 0`, in which case the problem is equivalent to
-  minimizing :math:`f(x) + g(x)`.
+  If $A$, $B$ and $c$ are not provided, the constraint
+  defaults to $x - z = 0$, in which case the problem is equivalent to
+  minimizing $f(x) + g(x)$.
 
   Args:
     function_f: A `tfmri.convex.ConvexFunction` of shape `[..., n]` and real or
@@ -218,7 +218,7 @@ def admm_minimize(function_f,
       of iterations of the ADMM update.
     linearized: A `boolean`. If `True`, use linearized variant of the ADMM
       algorithm. Linearized ADMM solves problems of the form
-      :math:`f(x) + g(Ax)` and only requires evaluation of the proximal operator
+      $f(x) + g(Ax)$ and only requires evaluation of the proximal operator
       of `g(x)`. This is useful when the proximal operator of `g(Ax)` cannot be
       easily evaluated, but the proximal operator of `g(x)` can. Defaults to
       `False`.
@@ -452,8 +452,8 @@ def _get_admm_update_fn(function, operator, prox_kwargs=None):
   r"""Returns a function for the ADMM update.
 
   The returned function evaluates the expression
-  :math:`{\mathop{\mathrm{argmin}}_x} \left ( f(x) + \frac{\rho}{2} \left\| Ax - v \right\|_2^2 \right )`
-  for a given input :math:`v` and penalty parameter :math:`\rho`.
+  ${\mathop{\mathrm{argmin}}_x} \left ( f(x) + \frac{\rho}{2} \left\| Ax - v \right\|_2^2 \right )$
+  for a given input $v$ and penalty parameter $\rho$.
 
   This function will raise an error if the above expression cannot be easily
   evaluated for the specified convex function and linear operator.

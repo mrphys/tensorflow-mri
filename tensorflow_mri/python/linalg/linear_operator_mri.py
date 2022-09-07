@@ -686,7 +686,7 @@ class LinearOperatorGramMRI(LinearOperatorMRI):  # pylint: disable=abstract-meth
       used for regular dynamic reconstruction. The `'frequency'` mode should be
       used for reconstruction in x-f space.
     toeplitz_nufft: A `boolean`. If `True`, uses the Toeplitz approach [5]
-      to compute :math:`F^H F x`, where :math:`F` is the non-uniform Fourier
+      to compute $F^H F x$, where $F$ is the non-uniform Fourier
       operator. If `False`, the same operation is performed using the standard
       NUFFT operation. The Toeplitz approach might be faster than the direct
       approach but is slightly less accurate. This argument is only relevant

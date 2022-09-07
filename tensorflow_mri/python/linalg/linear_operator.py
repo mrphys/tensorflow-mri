@@ -423,8 +423,8 @@ class LinearOperator(LinearOperatorMixin, tf.linalg.LinearOperator):  # pylint: 
     is_self_adjoint: Expect that this operator is equal to its Hermitian
       transpose. If `dtype` is real, this is equivalent to being symmetric.
     is_positive_definite: Expect that this operator is positive definite,
-      meaning the quadratic form :math:`x^H A x` has positive real part for all
-      nonzero :math:`x`. Note that we do not require the operator to be
+      meaning the quadratic form $x^H A x$ has positive real part for all
+      nonzero $x$. Note that we do not require the operator to be
       self-adjoint to be positive-definite.
     is_square: Expect that this operator acts like square [batch] matrices.
     name: A name for this `LinearOperator`.
@@ -443,8 +443,8 @@ class LinearOperatorAdjoint(LinearOperatorMixin,  # pylint: disable=abstract-met
                             tf.linalg.LinearOperatorAdjoint):
   """Linear operator representing the adjoint of another operator.
 
-  `LinearOperatorAdjoint` is initialized with an operator :math:`A` and
-  represents its adjoint :math:`A^H`.
+  `LinearOperatorAdjoint` is initialized with an operator $A$ and
+  represents its adjoint $A^H$.
 
   .. note:
     Similar to `tf.linalg.LinearOperatorAdjoint`_, but with imaging extensions.
@@ -455,8 +455,8 @@ class LinearOperatorAdjoint(LinearOperatorMixin,  # pylint: disable=abstract-met
     is_self_adjoint: Expect that this operator is equal to its Hermitian
       transpose.
     is_positive_definite: Expect that this operator is positive definite,
-      meaning the quadratic form :math:`x^H A x` has positive real part for all
-      nonzero :math:`x`. Note that we do not require the operator to be
+      meaning the quadratic form $x^H A x$ has positive real part for all
+      nonzero $x$. Note that we do not require the operator to be
       self-adjoint to be positive-definite.
     is_square: Expect that this operator acts like square [batch] matrices.
     name: A name for this `LinearOperator`. Default is `operator.name +

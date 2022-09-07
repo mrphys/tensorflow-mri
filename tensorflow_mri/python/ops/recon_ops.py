@@ -63,8 +63,8 @@ def reconstruct_lstsq(kspace,
   .. math::
     \hat{x} = {\mathop{\mathrm{argmin}}_x} \left (\left\| Ax - y \right\|_2^2 + g(x) \right )
 
-  where :math:`A` is the MRI `LinearOperator`, :math:`x` is the solution, `y` is
-  the measured *k*-space data, and :math:`g(x)` is an optional `ConvexFunction`
+  where $A$ is the MRI `LinearOperator`, $x$ is the solution, `y` is
+  the measured *k*-space data, and $g(x)$ is an optional `ConvexFunction`
   used for regularization.
 
   This operator supports Cartesian and non-Cartesian *k*-space data.
@@ -140,7 +140,7 @@ def reconstruct_lstsq(kspace,
     return_optimizer_state: A `boolean`. If `True`, returns the optimizer
       state along with the reconstructed image.
     toeplitz_nufft: A `boolean`. If `True`, uses the Toeplitz approach [5]
-      to compute :math:`F^H F x`, where :math:`F` is the non-uniform Fourier
+      to compute $F^H F x$, where $F$ is the non-uniform Fourier
       operator. If `False`, the same operation is performed using the standard
       NUFFT operation. The Toeplitz approach might be faster than the direct
       approach but is slightly less accurate. This argument is only relevant

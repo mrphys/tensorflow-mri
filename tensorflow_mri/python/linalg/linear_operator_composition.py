@@ -27,8 +27,8 @@ class LinearOperatorComposition(linear_operator.LinearOperatorMixin,  # pylint: 
   """Composes one or more linear operators.
 
   `LinearOperatorComposition` is initialized with a list of operators
-  :math:`A_1, A_2, ..., A_J` and represents their composition
-  :math:`A_1 A_2 ... A_J`.
+  $A_1, A_2, ..., A_J$ and represents their composition
+  $A_1 A_2 ... A_J$.
 
   .. note:
     Similar to `tf.linalg.LinearOperatorComposition`_, but with imaging
@@ -41,8 +41,8 @@ class LinearOperatorComposition(linear_operator.LinearOperatorMixin,  # pylint: 
     is_self_adjoint: Expect that this operator is equal to its Hermitian
       transpose.
     is_positive_definite: Expect that this operator is positive definite,
-      meaning the quadratic form :math:`x^H A x` has positive real part for all
-      nonzero :math:`x`. Note that we do not require the operator to be
+      meaning the quadratic form $x^H A x$ has positive real part for all
+      nonzero $x$. Note that we do not require the operator to be
       self-adjoint to be positive-definite.
     is_square: Expect that this operator acts like square [batch] matrices.
     name: A name for this `LinearOperator`.  Default is the individual

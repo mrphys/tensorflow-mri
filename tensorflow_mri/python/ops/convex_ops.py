@@ -38,8 +38,8 @@ class ConvexFunction():
   r"""Base class defining a [batch of] convex function[s].
 
   Represents a closed proper convex function
-  :math:`f : \mathbb{R}^{n}\rightarrow \mathbb{R}` or
-  :math:`f : \mathbb{C}^{n}\rightarrow \mathbb{R}`.
+  $f : \mathbb{R}^{n}\rightarrow \mathbb{R}$ or
+  $f : \mathbb{C}^{n}\rightarrow \mathbb{R}$.
 
   Subclasses should implement the `_call` and `_prox` methods to define the
   forward pass and the proximal mapping, respectively. Gradients are
@@ -291,8 +291,8 @@ class ConvexFunction():
 class ConvexFunctionAffineMappingComposition(ConvexFunction):
   """Composes a convex function and an affine mapping.
 
-  Represents :math:`f(Ax + b)`, where :math:`f` is a `ConvexFunction`,
-  :math:`A` is a `LinearOperator` and :math:`b` is a constant `Tensor`.
+  Represents $f(Ax + b)$, where $f$ is a `ConvexFunction`,
+  $A$ is a `LinearOperator` and $b$ is a constant `Tensor`.
 
   Args:
     function: A `ConvexFunction`.
@@ -350,8 +350,8 @@ class ConvexFunctionLinearOperatorComposition(  # pylint: disable=abstract-metho
     ConvexFunctionAffineMappingComposition):
   r"""Composes a convex function and a linear operator.
 
-  Represents :math:`f(Ax)`, where :math:`f` is a `ConvexFunction` and
-  :math:`A` is a `LinearOperator`.
+  Represents $f(Ax)$, where $f$ is a `ConvexFunction` and
+  $A$ is a `LinearOperator`.
 
   Args:
     function: A `ConvexFunction`.
@@ -619,15 +619,15 @@ class ConvexFunctionL2NormSquared(ConvexFunction):  # pylint: disable=abstract-m
 class ConvexFunctionTikhonov(ConvexFunctionAffineMappingComposition):  # pylint: disable=abstract-method
   r"""A `ConvexFunction` representing a Tikhonov regularization term.
 
-  For a given input :math:`x`, computes
-  :math:`\lambda \left\| T(x - x_0) \right\|_2^2`, where :math:`\lambda` is a
-  scaling factor, :math:`T` is any linear operator and :math:`x_0` is
+  For a given input $x$, computes
+  $\lambda \left\| T(x - x_0) \right\|_2^2$, where $\lambda$ is a
+  scaling factor, $T$ is any linear operator and $x_0$ is
   a prior estimate.
 
   Args:
-    transform: A `tf.linalg.LinearOperator`. The Tikhonov operator :math:`T`.
+    transform: A `tf.linalg.LinearOperator`. The Tikhonov operator $T$.
       Defaults to the identity operator.
-    prior: A `tf.Tensor`. The prior estimate :math:`x_0`. Defaults to 0.
+    prior: A `tf.Tensor`. The prior estimate $x_0$. Defaults to 0.
     domain_dimension: A scalar integer `tf.Tensor`. The dimension of the domain.
     scale: A `float`. The scaling factor.
     dtype: A `tf.DType`. The dtype of the inputs. Defaults to `float32`.
@@ -673,8 +673,8 @@ class ConvexFunctionTikhonov(ConvexFunctionAffineMappingComposition):  # pylint:
 class ConvexFunctionTotalVariation(ConvexFunctionLinearOperatorComposition):  # pylint: disable=abstract-method
   r"""A `ConvexFunction` representing a total variation regularization term.
 
-  For a given input :math:`x`, computes :math:`\lambda \left\| Dx \right\|_1`,
-  where :math:`\lambda` is a scaling factor and :math:`D` is the finite
+  For a given input $x$, computes $\lambda \left\| Dx \right\|_1$,
+  where $\lambda$ is a scaling factor and $D$ is the finite
   difference operator.
 
   Args:
@@ -722,8 +722,8 @@ class ConvexFunctionTotalVariation(ConvexFunctionLinearOperatorComposition):  # 
 class ConvexFunctionL1Wavelet(ConvexFunctionLinearOperatorComposition):  # pylint: disable=abstract-method
   r"""A `ConvexFunction` representing an L1 wavelet regularization term.
 
-  For a given input :math:`x`, computes :math:`\lambda \left\| Dx \right\|_1`,
-  where :math:`\lambda` is a scaling factor and :math:`D` is a wavelet
+  For a given input $x$, computes $\lambda \left\| Dx \right\|_1$,
+  where $\lambda$ is a scaling factor and $D$ is a wavelet
   decomposition operator (see `tfmri.linalg.LinearOperatorWavelet`).
 
   Args:
@@ -776,7 +776,7 @@ class ConvexFunctionL1Wavelet(ConvexFunctionLinearOperatorComposition):  # pylin
 class ConvexFunctionQuadratic(ConvexFunction):  # pylint: disable=abstract-method
   r"""A `ConvexFunction` representing a generic quadratic function.
 
-  Represents :math:`f(x) = \frac{1}{2} x^{T} A x + b^{T} x + c`.
+  Represents $f(x) = \frac{1}{2} x^{T} A x + b^{T} x + c$.
 
   Args:
     quadratic_coefficient: A `tf.Tensor` or a `tf.linalg.LinearOperator`
@@ -903,19 +903,19 @@ class ConvexFunctionQuadratic(ConvexFunction):  # pylint: disable=abstract-metho
 class ConvexFunctionLeastSquares(ConvexFunctionQuadratic):  # pylint: disable=abstract-method
   r"""A `ConvexFunction` representing a least squares function.
 
-  Represents :math:`f(x) = \frac{1}{2} {\left \| A x - b \right \|}_{2}^{2}`.
+  Represents $f(x) = \frac{1}{2} {\left \| A x - b \right \|}_{2}^{2}$.
 
   Minimizing `f(x)` is equivalent to finding a solution to the linear system
-  :math:`Ax - b`.
+  $Ax - b$.
 
   Args:
     operator: A `tf.Tensor` or a `tfmri.linalg.LinearOperator` representing a
-      matrix :math:`A` with shape `[..., m, n]`. The linear system operator.
+      matrix $A$ with shape `[..., m, n]`. The linear system operator.
     rhs: A `Tensor` representing a vector `b` with shape `[..., m]`. The
       right-hand side of the linear system.
     gram_operator: A `tf.Tensor` or a `tfmri.linalg.LinearOperator` representing
       the Gram matrix of `operator`. This may be used to provide a specialized
-      implementation of the Gram matrix :math:`A^H A`. Defaults to `None`, in
+      implementation of the Gram matrix $A^H A$. Defaults to `None`, in
       which case a naive implementation of the Gram matrix is derived from
       `operator`.
     scale: A `float`. A scaling factor. Defaults to 1.0.

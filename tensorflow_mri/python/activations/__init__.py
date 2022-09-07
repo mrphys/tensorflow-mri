@@ -53,7 +53,7 @@ def serialize(activation):
     A `str` denoting the name attribute of the input function.
 
   Raises:
-      ValueError: The input function is not a valid one.
+    ValueError: If the input function is not a valid one.
   """
   return keras.activations.serialize(activation)
 
@@ -130,8 +130,8 @@ def get(identifier):
     ValueError: Unknown activation function:abcd
 
   Raises:
-    ValueError: Input is an unknown function or string, i.e., the input does
-    not denote any defined function.
+    ValueError: If the input is an unknown function or string, i.e., the input
+      does not denote any defined function.
   """
   if identifier is None:
     return keras.activations.linear

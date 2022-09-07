@@ -87,7 +87,7 @@ class LossFunctionWrapperIQA(keras_util.LossFunctionWrapper):
 class SSIMLoss(LossFunctionWrapperIQA):
   """Computes the structural similarity (SSIM) loss.
 
-  The SSIM loss is equal to :math:`1.0 - \textrm{SSIM}`.
+  The SSIM loss is equal to $1.0 - \textrm{SSIM}$.
 
   Args:
     max_val: The dynamic range of the images (i.e., the difference between
@@ -161,7 +161,7 @@ class SSIMLoss(LossFunctionWrapperIQA):
 class SSIMMultiscaleLoss(LossFunctionWrapperIQA):
   """Computes the multiscale structural similarity (MS-SSIM) loss.
 
-  The MS-SSIM loss is equal to :math:`1.0 - \textrm{MS-SSIM}`.
+  The MS-SSIM loss is equal to $1.0 - \textrm{MS-SSIM}$.
 
   Args:
     max_val: The dynamic range of the images (i.e., the difference between
@@ -243,7 +243,7 @@ def ssim_loss(y_true, y_pred, max_val=None,
               k1=0.01, k2=0.03, batch_dims=None, image_dims=None):
   r"""Computes the structural similarity (SSIM) loss.
 
-  The SSIM loss is equal to :math:`1.0 - \textrm{SSIM}`.
+  The SSIM loss is equal to $1.0 - \textrm{SSIM}$.
 
   Args:
     y_true: A `Tensor`. Ground truth images. For 2D images, must have rank >= 3
@@ -308,7 +308,7 @@ def ssim_multiscale_loss(y_true, y_pred, max_val=None,
                          batch_dims=None, image_dims=None):
   r"""Computes the multiscale structural similarity (MS-SSIM) loss.
 
-  The MS-SSIM loss is equal to :math:`1.0 - \textrm{MS-SSIM}`.
+  The MS-SSIM loss is equal to $1.0 - \textrm{MS-SSIM}$.
 
   Args:
     y_true: A `Tensor`. Ground truth images. For 2D images, must have rank >= 3

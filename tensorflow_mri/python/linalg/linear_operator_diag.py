@@ -42,8 +42,8 @@ class LinearOperatorDiag(linear_operator.LinearOperatorMixin,  # pylint: disable
     is_self_adjoint: Expect that this operator is equal to its Hermitian
       transpose. If `diag` is real, this is auto-set to `True`.
     is_positive_definite: Expect that this operator is positive definite,
-      meaning the quadratic form :math:`x^H A x` has positive real part for all
-      nonzero :math:`x`.  Note that we do not require the operator to be
+      meaning the quadratic form $x^H A x$ has positive real part for all
+      nonzero $x$.  Note that we do not require the operator to be
       self-adjoint to be positive-definite.
     is_square: Expect that this operator acts like square [batch] matrices.
     name: A name for this `LinearOperator`.
