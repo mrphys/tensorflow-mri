@@ -228,8 +228,9 @@ class FocalTverskyLoss(ConfusionLoss):
 
   The focal Tversky loss is computed as:
 
-  .. math::
+  $$
     L = \left ( 1 - \frac{\mathrm{TP} + \epsilon}{\mathrm{TP} + \alpha \mathrm{FP} + \beta \mathrm{FN} + \epsilon} \right ) ^ \gamma
+  $$
 
   This loss allows control over the relative importance of false positives and
   false negatives through the `alpha` and `beta` parameters, which may be useful
@@ -301,8 +302,9 @@ class TverskyLoss(FocalTverskyLoss):
 
   The Tversky loss is computed as:
 
-  .. math::
+  $$
     L = \left ( 1 - \frac{\mathrm{TP} + \epsilon}{\mathrm{TP} + \alpha \mathrm{FP} + \beta \mathrm{FN} + \epsilon} \right )
+  $$
 
   Args:
     alpha: A `float`. Weight given to false positives. Defaults to 0.3.
@@ -339,8 +341,9 @@ class F1Loss(TverskyLoss):
 
   The F1 loss is computed as:
 
-  .. math::
+  $$
     L = \left ( 1 - \frac{\mathrm{TP} + \epsilon}{\mathrm{TP} + \frac{1}{2} \mathrm{FP} + \frac{1}{2} \mathrm{FN} + \epsilon} \right )
+  $$
 
   Args:
     epsilon: A `float`. A smoothing factor. Defaults to 1e-5.
@@ -373,8 +376,9 @@ class IoULoss(TverskyLoss):
 
   The IoU loss is computed as:
 
-  .. math::
+  $$
     L = \left ( 1 - \frac{\mathrm{TP} + \epsilon}{\mathrm{TP} + \mathrm{FP} + \mathrm{FN} + \epsilon} \right )
+  $$
 
   Args:
     epsilon: A `float`. A smoothing factor. Defaults to 1e-5.

@@ -60,8 +60,9 @@ def reconstruct_lstsq(kspace,
   This is an iterative reconstruction method which formulates the image
   reconstruction problem as follows:
 
-  .. math::
+  $$
     \hat{x} = {\mathop{\mathrm{argmin}}_x} \left (\left\| Ax - y \right\|_2^2 + g(x) \right )
+  $$
 
   where $A$ is the MRI `LinearOperator`, $x$ is the solution, `y` is
   the measured *k*-space data, and $g(x)$ is an optional `ConvexFunction`

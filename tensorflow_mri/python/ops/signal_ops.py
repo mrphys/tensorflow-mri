@@ -105,13 +105,14 @@ def rect(arg, cutoff=np.pi, name=None):
 
   The rectangular function is defined as:
 
-  .. math::
+  $$
     \operatorname{rect}(x) = \Pi(t) =
       \left\{\begin{array}{rl}
         0, & \text{if } |x| > \pi \\
         \frac{1}{2}, & \text{if } |x| = \pi \\
         1, & \text{if } |x| < \pi.
       \end{array}\right.
+  $$
 
   Args:
     arg: The input `tf.Tensor`.

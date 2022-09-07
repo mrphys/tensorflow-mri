@@ -299,8 +299,9 @@ class Accuracy(ConfusionMetric):
 
   Estimates how often predictions match labels.
 
-  .. math::
+  $$
     \textrm{accuracy} = \frac{\textrm{TP} + \textrm{TN}}{\textrm{TP} + \textrm{TN} + \textrm{FP} + \textrm{FN}}
+  $$
 
   Args:
     name: String name of the metric instance.
@@ -337,8 +338,9 @@ class TruePositiveRate(ConfusionMetric):
   The true positive rate (TPR), also called sensitivity or recall, is the
   proportion of correctly predicted positives among all positive instances.
 
-  .. math::
+  $$
     \textrm{TPR} = \frac{\textrm{TP}}{\textrm{TP} + \textrm{FN}}
+  $$
 
   Args:
     name: String name of the metric instance.
@@ -374,8 +376,9 @@ class TrueNegativeRate(ConfusionMetric):
   The true negative rate (TNR), also called specificity or selectivity, is the
   proportion of correctly predicted negatives among all negative instances.
 
-  .. math::
+  $$
     \textrm{TNR} = \frac{\textrm{TN}}{\textrm{TN} + \textrm{FP}}
+  $$
 
   Args:
     name: String name of the metric instance.
@@ -410,8 +413,9 @@ class PositivePredictiveValue(ConfusionMetric):
   The positive predictive value (PPV), also called precision, is the proportion
   of correctly predicted positives among all positive calls.
 
-  .. math::
+  $$
     \textrm{PPV} = \frac{\textrm{TP}}{\textrm{TP} + \textrm{FP}}
+  $$
 
   Args:
     name: String name of the metric instance.
@@ -446,8 +450,9 @@ class NegativePredictiveValue(ConfusionMetric):
   The negative predictive value (NPV) is the proportion of correctly predicted
   negatives among all negative calls.
 
-  .. math::
+  $$
     \textrm{NPV} = \frac{\textrm{TN}}{\textrm{TN} + \textrm{FN}}
+  $$
 
   Args:
     name: String name of the metric instance.
@@ -482,8 +487,9 @@ class TverskyIndex(ConfusionMetric):
   The Tversky index is an asymmetric similarity measure [1]_. It is a
   generalization of the F-beta family of scores and the IoU.
 
-  .. math::
+  $$
     \textrm{TI} = \frac{\textrm{TP}}{\textrm{TP} + \alpha * \textrm{FP} + \beta * \textrm{FN}}
+  $$
 
   Args:
     alpha: A `float`. The weight given to false positives. Defaults to 0.5.
@@ -541,8 +547,9 @@ class FBetaScore(TverskyIndex):
 
   The F-beta score is the weighted harmonic mean of precision and recall.
 
-  .. math::
+  $$
     F_{\beta} = (1 + \beta^2) * \frac{\textrm{precision} * \textrm{precision}}{(\beta^2 \cdot \textrm{precision}) + \textrm{recall}}
+  $$
 
   Args:
     beta: A `float`. Determines the weight of precision and recall in harmonic
@@ -587,8 +594,9 @@ class F1Score(FBetaScore):
 
   The F-1 score is the harmonic mean of precision and recall.
 
-  .. math::
+  $$
     F_1 = 2 \cdot \frac{\textrm{precision} \cdot \textrm{recall}}{\textrm{precision} + \textrm{recall}}
+  $$
 
   Args:
     name: String name of the metric instance.
@@ -622,8 +630,9 @@ class IoU(TverskyIndex):
 
   Also known as Jaccard index.
 
-  .. math::
+  $$
     \textrm{IoU} = \frac{\textrm{TP}}{\textrm{TP} + \textrm{FP} + \textrm{FN}}
+  $$
 
   Args:
     name: String name of the metric instance.

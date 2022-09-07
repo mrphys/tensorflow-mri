@@ -329,8 +329,9 @@ def indicator_box(x, lower_bound=-1.0, upper_bound=1.0, name=None):
   The box of radius $r$ is defined as the set of points of
   ${R}^{n}$ whose components are within the range $[l, u]$.
 
-  .. math::
+  $$
     \mathcal{C} = \left\{x \in \mathbb{R}^{n} : l \leq x_i \leq u, \forall i = 1, \dots, n \right\}
+  $$
 
   Args:
     x: A `tf.Tensor` of shape `[..., n]`.
@@ -381,8 +382,9 @@ def indicator_simplex(x, radius=1.0, name=None):
   The simplex of radius $r$ is defined as the set of points of
   $\mathbb{R}^{n}$ whose elements are nonnegative and sum up to `r`.
 
-  .. math::
+  $$
     \Delta_r = \left\{x \in \mathbb{R}^{n} : \sum_{i=1}^{n} x_i = r \text{ and } x_i >= 0, \forall i = 1, \dots, n \right\}
+  $$
 
   If $r$ is 1, the simplex is also called the unit simplex, standard
   simplex or probability simplex.
@@ -430,8 +432,9 @@ def indicator_ball(x, order=2, radius=1.0, name=None):
   ${R}^{n}$ whose distance from the origin, as defined by the $L_p$
   norm, is less than or equal to $r$.
 
-  .. math::
+  $$
     \mathcal{B}_r = \left\{x \in \mathbb{R}^{n} : \left\|x\right\|_{p} \leq r \right\}
+  $$
 
   If $r$ is 1, this ball is also called the unit ball of the
   :math`L_p` norm.
