@@ -1,4 +1,4 @@
-/*Copyright 2021 University College London. All Rights Reserved.
+/*Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ class SpiralWaveformOp : public OpKernel {
  public:
 
   explicit SpiralWaveformOp(OpKernelConstruction* ctx) : OpKernel(ctx) {
-    
+
     string vd_type_str;
 
     OP_REQUIRES_OK(ctx, ctx->GetAttr("base_resolution", &base_resolution_));
@@ -64,7 +64,7 @@ class SpiralWaveformOp : public OpKernel {
   }
 
   void Compute(OpKernelContext* ctx) override {
-                  
+
     // Create a buffer tensor.
     TensorShape temp_waveform_shape({SWF_MAX_WAVEFORM_SIZE, 2});
     Tensor temp_waveform;
@@ -94,7 +94,7 @@ class SpiralWaveformOp : public OpKernel {
       ctx, result == 0,
       errors::Internal(
         "failed during `calculate_spiral_trajectory`"));
-    
+
     Tensor waveform = temp_waveform.Slice(0, waveform_length);
     ctx->set_output(0, waveform);
   }
