@@ -26,7 +26,12 @@ def complexified(name, type_='cartesian'):
 
   Args:
     name: A `str` denoting the name of the activation function.
+    type_: A `str` denoting the type of the complex-valued activation function.
+      Must be one of `'cartesian'` or `'polar'`.
 
+  Returns:
+    A decorator to convert real-valued activations to complex-valued
+    activations.
   """
   if type_ not in ('cartesian', 'polar'):
     raise ValueError(
