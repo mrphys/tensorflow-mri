@@ -16,7 +16,6 @@
 
 import abc
 
-import numpy as np
 import tensorflow as tf
 from tensorflow.python.framework import type_spec
 from tensorflow.python.ops.linalg import linear_operator as tf_linear_operator
@@ -495,7 +494,7 @@ class LinearOperatorAdjoint(LinearOperatorMixin,  # pylint: disable=abstract-met
     return self.operator.batch_shape_tensor()
 
 
-class _LinearOperatorSpec(type_spec.BatchableTypeSpec):
+class _LinearOperatorSpec(type_spec.BatchableTypeSpec):  # pylint: disable=abstract-method
   """A tf.TypeSpec for `LinearOperator` objects.
 
   This is very similar to `tf.linalg.LinearOperatorSpec`, but it adds a

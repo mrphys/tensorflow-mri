@@ -28,6 +28,7 @@
 # limitations under the License.
 """Tests for 3D rotation."""
 # This file is partly inspired by TensorFlow Graphics.
+# pylint: disable=missing-param-doc
 
 from absl.testing import parameterized
 import numpy as np
@@ -186,7 +187,8 @@ class Rotation3DTest(test_util.TestCase):
     z_rotation = Rotation3D.from_axis_angle(z_axis, z_angle)
     expected_matrix = z_rotation @ (y_rotation @ x_rotation)
 
-    self.assertAllClose(expected_matrix.as_matrix(), matrix.as_matrix(), rtol=1e-3)
+    self.assertAllClose(expected_matrix.as_matrix(), matrix.as_matrix(),
+                        rtol=1e-3)
 
   def test_from_quaternion_normalized_random(self):
     """Tests that random quaternions can be converted to rotation matrices."""

@@ -14,8 +14,6 @@
 # ==============================================================================
 """Model utilities."""
 
-import tensorflow as tf
-
 from tensorflow_mri.python.models import conv_blocks
 from tensorflow_mri.python.models import conv_endec
 

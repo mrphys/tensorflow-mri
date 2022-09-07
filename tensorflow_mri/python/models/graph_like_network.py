@@ -12,17 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""Graph-like network."""
 
 import tensorflow as tf
 
 
 class GraphLikeNetwork(tf.keras.Model):
-  """A model with graph-like structure.
+  """Base class for models with graph-like structure.
 
   Adds a method `functional` that returns a functional model with the same
   architecture as the current model. Functional models have some advantages
   over subclassing as described in
   https://www.tensorflow.org/guide/keras/functional#when_to_use_the_functional_api.
-  """
+  """  # pylint: disable=line-too-long
   def functional(self, inputs):
     return tf.keras.Model(inputs, self.call(inputs))

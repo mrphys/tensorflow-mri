@@ -35,9 +35,9 @@ class LinearOperatorScaledIdentity(linear_operator.LinearOperatorMixin,  # pylin
   ```
 
   Args:
-    domain_shape: A 1D integer `Tensor`. The domain/range domain_shape of the operator.
-    multiplier: A `tf.Tensor` of arbitrary domain_shape. Its domain_shape will become the
-      batch domain_shape of the operator. Its dtype will determine the dtype of the
+    domain_shape: A 1D integer `Tensor`. The domain/range shape of the operator.
+    multiplier: A `tf.Tensor` of arbitrary shape. Its shape will become the
+      batch shape of the operator. Its dtype will determine the dtype of the
       operator.
     is_non_singular: Expect that this operator is non-singular.
     is_self_adjoint: Expect that this operator is equal to its hermitian
@@ -49,7 +49,7 @@ class LinearOperatorScaledIdentity(linear_operator.LinearOperatorMixin,  # pylin
       https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices
     is_square:  Expect that this operator acts like square [batch] matrices.
     assert_proper_shapes: A boolean.  If `False`, only perform static
-      checks that initialization and method arguments have proper domain_shape.
+      checks that initialization and method arguments have proper shape.
       If `True`, and static checks are inconclusive, add asserts to the graph.
     name: A name for this `LinearOperator`.
   """

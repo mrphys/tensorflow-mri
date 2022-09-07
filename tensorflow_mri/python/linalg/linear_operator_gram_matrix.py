@@ -104,7 +104,7 @@ class LinearOperatorGramMatrix(linear_operator.LinearOperator):  # pylint: disab
 
     if self._reg_parameter is not None:
       reg_operator_gm = linear_operator_identity.LinearOperatorScaledIdentity(
-          shape=self._operator.domain_shape,
+          domain_shape=self._operator.domain_shape,
           multiplier=tf.cast(self._reg_parameter, self._operator.dtype))
       if self._reg_operator is not None:
         reg_operator_gm = linear_operator_composition.LinearOperatorComposition(

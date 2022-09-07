@@ -51,7 +51,7 @@ class LeastSquaresGradientDescent(tf.keras.layers.Layer):
         trainable=self.trainable,
         constraint=tf.keras.constraints.NonNeg())
 
-  def call(self, inputs):
+  def call(self, inputs):  # pylint: disable=missing-function-docstring
     image, data, operator = parse_inputs(inputs)
     if self.reinterpret_complex:
       image = math_ops.view_as_complex(image, stacked=False)
@@ -81,7 +81,7 @@ def parse_inputs(inputs):
     return image, data, operator
   if isinstance(inputs, tuple):
     return _parse_inputs(*inputs)
-  elif isinstance(inputs, dict):
+  if isinstance(inputs, dict):
     return _parse_inputs(**inputs)
   raise ValueError('inputs must be a tuple or dict')
 

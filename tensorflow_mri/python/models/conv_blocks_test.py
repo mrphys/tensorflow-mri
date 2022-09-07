@@ -43,6 +43,7 @@ class ConvBlockTest(test_util.TestCase):
     self.assertAllEqual(features.shape, [1] + [128] * rank + [filters])
 
   def test_complex_valued(self):
+    """Tests complex-valued conv block."""
     inputs = tf.dtypes.complex(
         tf.random.stateless_normal(shape=(2, 32, 32, 4), seed=[12, 34]),
         tf.random.stateless_normal(shape=(2, 32, 32, 4), seed=[56, 78]))
@@ -87,9 +88,11 @@ class ConvBlockTest(test_util.TestCase):
     self.assertAllEqual(block2.get_config(), block.get_config())
 
   def test_arch(self):
+    """Tests the architecture of the block."""
     tf.keras.backend.clear_session()
     inputs = tf.keras.Input(shape=(32, 32, 4))
-    model = conv_blocks.ConvBlock2D(filters=16, kernel_size=3).functional(inputs)
+    model = conv_blocks.ConvBlock2D(
+        filters=16, kernel_size=3).functional(inputs)
 
     expected = [
         # name, type, output_shape, params
@@ -100,9 +103,11 @@ class ConvBlockTest(test_util.TestCase):
     self._check_layers(expected, model.layers)
 
   def test_multilayer(self):
+    """Tests the architecture of the block with multiple layers."""
     tf.keras.backend.clear_session()
     inputs = tf.keras.Input(shape=(32, 32, 4))
-    model = conv_blocks.ConvBlock2D(filters=[8, 16], kernel_size=3).functional(inputs)
+    model = conv_blocks.ConvBlock2D(
+        filters=[8, 16], kernel_size=3).functional(inputs)
 
     expected = [
         # name, type, output_shape, params
@@ -115,6 +120,7 @@ class ConvBlockTest(test_util.TestCase):
     self._check_layers(expected, model.layers)
 
   def test_arch_activation(self):
+    """Tests the architecture of the block with activation."""
     tf.keras.backend.clear_session()
     inputs = tf.keras.Input(shape=(32, 32, 4))
     model = conv_blocks.ConvBlock2D(
@@ -131,6 +137,7 @@ class ConvBlockTest(test_util.TestCase):
     self.assertEqual(tf.keras.activations.sigmoid, model.layers[-1].activation)
 
   def test_arch_output_activation(self):
+    """Tests the architecture of the block with output activation."""
     tf.keras.backend.clear_session()
     inputs = tf.keras.Input(shape=(32, 32, 4))
     model = conv_blocks.ConvBlock2D(
@@ -153,6 +160,7 @@ class ConvBlockTest(test_util.TestCase):
     self.assertEqual(tf.keras.activations.tanh, model.layers[4].activation)
 
   def test_arch_batch_norm(self):
+    """Tests the architecture of the block with batch norm."""
     tf.keras.backend.clear_session()
     inputs = tf.keras.Input(shape=(32, 32, 4))
     model = conv_blocks.ConvBlock2D(
@@ -162,12 +170,14 @@ class ConvBlockTest(test_util.TestCase):
         # name, type, output_shape, params
         ('input_1', tf.keras.layers.InputLayer, [(None, 32, 32, 4)], 0),
         ('conv2d', convolutional.Conv2D, (None, 32, 32, 16), 592),
-        ('batch_normalization', tf.keras.layers.BatchNormalization, (None, 32, 32, 16), 64),
+        ('batch_normalization',
+         tf.keras.layers.BatchNormalization, (None, 32, 32, 16), 64),
         ('activation', tf.keras.layers.Activation, (None, 32, 32, 16), 0)
     ]
     self._check_layers(expected, model.layers)
 
   def test_arch_dropout(self):
+    """Tests the architecture of the block with dropout."""
     tf.keras.backend.clear_session()
     inputs = tf.keras.Input(shape=(32, 32, 4))
     model = conv_blocks.ConvBlock2D(
@@ -183,6 +193,7 @@ class ConvBlockTest(test_util.TestCase):
     self._check_layers(expected, model.layers)
 
   def test_arch_lstm(self):
+    """Tests the architecture of the LSTM block."""
     tf.keras.backend.clear_session()
     inputs = tf.keras.Input(shape=(None, 32, 32, 4))
     model = conv_blocks.ConvBlockLSTM2D(
@@ -191,7 +202,8 @@ class ConvBlockTest(test_util.TestCase):
     expected = [
         # name, type, output_shape, params
         ('input_1', tf.keras.layers.InputLayer, [(None, None, 32, 32, 4)], 0),
-        ('conv_lstm2d', tf.keras.layers.ConvLSTM2D, (None, None, 32, 32, 16), 11584),
+        ('conv_lstm2d',
+         tf.keras.layers.ConvLSTM2D, (None, None, 32, 32, 16), 11584),
         ('activation', tf.keras.layers.Activation, (None, None, 32, 32, 16), 0),
     ]
     self._check_layers(expected, model.layers)
@@ -199,6 +211,7 @@ class ConvBlockTest(test_util.TestCase):
     self.assertFalse(model.layers[1].stateful)
 
   def test_arch_lstm_stateful(self):
+    """Tests the architecture of the stateful LSTM block."""
     tf.keras.backend.clear_session()
     inputs = tf.keras.Input(shape=(6, 32, 32, 4), batch_size=2)
     model = conv_blocks.ConvBlockLSTM2D(
@@ -215,6 +228,7 @@ class ConvBlockTest(test_util.TestCase):
     self.assertTrue(model.layers[1].stateful)
 
   def test_reset_states(self):
+    """Tests the reset_states method."""
     tf.keras.backend.clear_session()
     model = conv_blocks.ConvBlockLSTM2D(
         filters=16, kernel_size=3, stateful=True)

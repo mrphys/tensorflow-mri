@@ -22,8 +22,10 @@ from tensorflow_mri.python.util import test_util
 
 
 class NormalizedTest(test_util.TestCase):
+  """Tests for `Normalized` layer."""
   @test_util.run_all_execution_modes
   def test_normalized_dense(self):
+    """Tests `Normalized` layer wrapping a `Dense` layer."""
     layer = normalization.Normalized(
         tf.keras.layers.Dense(2, bias_initializer='random_uniform'))
     layer.build((None, 4))

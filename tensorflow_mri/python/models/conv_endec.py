@@ -448,7 +448,8 @@ class UNetLSTM(UNet):
                recurrent_regularizer=None,
                **kwargs):
     self.stateful = stateful
-    self.recurrent_regularizer = tf.keras.regularizers.get(recurrent_regularizer)
+    self.recurrent_regularizer = tf.keras.regularizers.get(
+        recurrent_regularizer)
     super().__init__(rank=rank,
                      filters=filters,
                      kernel_size=kernel_size,

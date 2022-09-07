@@ -43,7 +43,7 @@ class DivisorPadding(tf.keras.layers.Layer):
                        f'Received: {divisor}')
     self.input_spec = tf.keras.layers.InputSpec(ndim=rank + 2)
 
-  def call(self, inputs):
+  def call(self, inputs):  # pylint: disable=missing-function-docstring
     static_input_shape = inputs.shape
     static_output_shape = tuple(
         ((s + d - 1) // d) * d if s is not None else None for s, d in zip(
@@ -52,13 +52,14 @@ class DivisorPadding(tf.keras.layers.Layer):
         static_output_shape).concatenate(static_input_shape[-1:])
 
     input_shape = tf.shape(inputs)[1:-1]
-    output_shape = ((input_shape + self.divisor - 1) // self.divisor) * self.divisor
+    output_shape = (((input_shape + self.divisor - 1) // self.divisor) *
+                    self.divisor)
     left_paddings = (output_shape - input_shape) // 2
     right_paddings = (output_shape - input_shape + 1) // 2
     paddings = tf.stack([left_paddings, right_paddings], axis=-1)
-    paddings = tf.pad(paddings, [[1, 1], [0, 0]])
+    paddings = tf.pad(paddings, [[1, 1], [0, 0]])  # pylint: disable=no-value-for-parameter
 
-    return tf.ensure_shape(tf.pad(inputs, paddings), static_output_shape)
+    return tf.ensure_shape(tf.pad(inputs, paddings), static_output_shape)  # pylint: disable=no-value-for-parameter
 
   def get_config(self):
     config = {'divisor': self.divisor}

@@ -50,8 +50,10 @@ _ND_LAYERS = {
     ('AveragePooling', 1): pooling.AveragePooling1D,
     ('AveragePooling', 2): pooling.AveragePooling2D,
     ('AveragePooling', 3): pooling.AveragePooling3D,
-    ('CoilSensitivityEstimation', 2): coil_sensitivities.CoilSensitivityEstimation2D,
-    ('CoilSensitivityEstimation', 3): coil_sensitivities.CoilSensitivityEstimation3D,
+    ('CoilSensitivityEstimation', 2):
+        coil_sensitivities.CoilSensitivityEstimation2D,
+    ('CoilSensitivityEstimation', 3):
+        coil_sensitivities.CoilSensitivityEstimation3D,
     ('Conv', 1): convolutional.Conv1D,
     ('Conv', 2): convolutional.Conv2D,
     ('Conv', 3): convolutional.Conv3D,
@@ -81,8 +83,10 @@ _ND_LAYERS = {
     ('IDWT', 1): signal_layers.IDWT1D,
     ('IDWT', 2): signal_layers.IDWT2D,
     ('IDWT', 3): signal_layers.IDWT3D,
-    ('LeastSquaresGradientDescent', 2): data_consistency.LeastSquaresGradientDescent2D,
-    ('LeastSquaresGradientDescent', 3): data_consistency.LeastSquaresGradientDescent3D,
+    ('LeastSquaresGradientDescent', 2):
+        data_consistency.LeastSquaresGradientDescent2D,
+    ('LeastSquaresGradientDescent', 3):
+        data_consistency.LeastSquaresGradientDescent3D,
     ('LocallyConnected', 1): tf.keras.layers.LocallyConnected1D,
     ('LocallyConnected', 2): tf.keras.layers.LocallyConnected2D,
     ('MaxPool', 1): pooling.MaxPooling1D,

@@ -536,7 +536,7 @@ def estimate_sensitivities_universal(
        Vasanawala, S.S. and Lustig, M. (2014), ESPIRiT—an eigenvalue approach
        to autocalibrating parallel MRI: Where SENSE meets GRAPPA. Magn. Reson.
        Med., 71: 990-1001. https://doi.org/10.1002/mrm.24751
-  """
+  """  # pylint: disable=line-too-long
   with tf.name_scope(kwargs.get('name', 'estimate_sensitivities_universal')):
     rank = operator.rank
     data = tf.convert_to_tensor(data)

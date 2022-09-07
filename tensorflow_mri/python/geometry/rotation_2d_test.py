@@ -29,6 +29,7 @@
 # ==============================================================================
 """Tests for 2D rotation."""
 # This file is partly inspired by TensorFlow Graphics.
+# pylint: disable=missing-param-doc
 
 from absl.testing import parameterized
 import numpy as np
@@ -107,7 +108,8 @@ class Rotation2DTest(test_util.TestCase):
       ("-90", [-np.pi / 2]),
       ("-135", [-np.pi * 3 / 4])
   )
-  def test_as_euler(self, angle):
+  def test_as_euler(self, angle):  # pylint: disable=missing-param-doc
+    """Tests that `as_euler` returns the correct angle."""
     rot = Rotation2D.from_euler(angle)
     self.assertAllClose(angle, rot.as_euler())
 

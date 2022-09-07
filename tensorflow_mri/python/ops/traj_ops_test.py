@@ -49,23 +49,28 @@ class DensityGridTest(test_util.TestCase):
 
 
 class FrequencyGridTest(test_util.TestCase):
+  """Tests for `frequency_grid`."""
   def test_frequency_grid_even(self):
+    """Tests `frequency_grid` with even number of points."""
     result = traj_ops.frequency_grid([4])
     expected = [[-1.0], [-0.5], [0], [0.5]]
     self.assertDTypeEqual(result, np.float32)
     self.assertAllClose(expected, result)
 
   def test_frequency_grid_odd(self):
+    """Tests `frequency_grid` with odd number of points."""
     result = traj_ops.frequency_grid([5])
     expected = [[-1.0], [-0.5], [0], [0.5], [1.0]]
     self.assertAllClose(expected, result)
 
   def test_frequency_grid_max_val(self):
+    """Tests `frequency_grid` with a different max value."""
     result = traj_ops.frequency_grid([4], max_val=2.0)
     expected = [[-2.0], [-1.0], [0], [1.0]]
     self.assertAllClose(expected, result)
 
   def test_frequency_grid_2d(self):
+    """Tests 2-dimensional `frequency_grid`."""
     result = traj_ops.frequency_grid([4, 8])
     expected = [[[-1.  , -1.  ],
                  [-1.  , -0.75],
@@ -102,8 +107,10 @@ class FrequencyGridTest(test_util.TestCase):
     self.assertAllClose(expected, result)
 
 
-class CentralMaskTest(test_util.TestCase):
+class CenterMaskTest(test_util.TestCase):
+  """Tests for `center_mask`."""
   def test_center_mask(self):
+    """Tests `center_mask`."""
     result = traj_ops.center_mask([8], [4])
     expected = [0, 0, 1, 1, 1, 1, 0, 0]
     self.assertAllClose(expected, result)
@@ -140,7 +147,9 @@ class CentralMaskTest(test_util.TestCase):
 
 
 class AccelMaskTest(test_util.TestCase):
+  """Tests for `accel_mask`."""
   def test_accel_mask(self):
+    """Tests `accel_mask`."""
     result = traj_ops.accel_mask([16], [4], [0])
     expected = [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]
     self.assertAllClose(expected, result)

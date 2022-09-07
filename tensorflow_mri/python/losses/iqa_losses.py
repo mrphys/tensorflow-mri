@@ -22,7 +22,6 @@ import tensorflow as tf
 from tensorflow_mri.python.ops import image_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
-from tensorflow_mri.python.util import deprecation
 from tensorflow_mri.python.util import keras_util
 
 

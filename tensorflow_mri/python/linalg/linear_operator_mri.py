@@ -271,9 +271,11 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
             f"compatible with {self._image_shape_static}, but got: "
             f"{sensitivities.shape[-self._rank:]}")
       self._batch_shape_static = tf.broadcast_static_shape(
-          self._batch_shape_static, sensitivities.shape[:-(self._rank + 1)])
+          self._batch_shape_static,
+          sensitivities.shape[:-(self._rank + 1)])
       self._batch_shape_dynamic = tf.broadcast_dynamic_shape(
-          self._batch_shape_dynamic, tf.shape(sensitivities)[:-(self._rank + 1)])
+          self._batch_shape_dynamic,
+          tf.shape(sensitivities)[:-(self._rank + 1)])
     self._sensitivities = sensitivities
 
     if phase is not None:

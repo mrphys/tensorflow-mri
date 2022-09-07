@@ -54,8 +54,8 @@ def from_euler(angle):
 
   cos_angle = tf.math.cos(angle)
   sin_angle = tf.math.sin(angle)
-  matrix = tf.stack([cos_angle, -sin_angle, sin_angle, cos_angle], axis=-1)
-  output_shape = tf.concat([tf.shape(angle)[:-1], [2, 2]], axis=-1)
+  matrix = tf.stack([cos_angle, -sin_angle, sin_angle, cos_angle], axis=-1)  # pylint: disable=invalid-unary-operand-type
+  output_shape = tf.concat([tf.shape(angle)[:-1], [2, 2]], axis=-1)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
   return tf.reshape(matrix, output_shape)
 
 
@@ -80,7 +80,7 @@ def from_small_euler(angle):
   cos_angle = 1.0 - 0.5 * angle * angle
   sin_angle = angle
   matrix = tf.stack([cos_angle, -sin_angle, sin_angle, cos_angle], axis=-1)
-  output_shape = tf.concat([tf.shape(angle)[:-1], [2, 2]], axis=-1)
+  output_shape = tf.concat([tf.shape(angle)[:-1], [2, 2]], axis=-1)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
   return tf.reshape(matrix, output_shape)
 
 

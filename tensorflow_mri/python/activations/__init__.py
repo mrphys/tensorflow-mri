@@ -137,8 +137,7 @@ def get(identifier):
     return keras.activations.linear
   if isinstance(identifier, (str, dict)):
     return deserialize(identifier)
-  elif callable(identifier):
+  if callable(identifier):
     return identifier
-  else:
-    raise ValueError(
-        f'Could not interpret activation function identifier: {identifier}')
+  raise ValueError(
+      f'Could not interpret activation function identifier: {identifier}')

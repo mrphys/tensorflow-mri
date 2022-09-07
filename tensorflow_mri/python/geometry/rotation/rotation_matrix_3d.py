@@ -81,7 +81,18 @@ def from_small_euler(angles):
 
 
 def from_axis_angle(axis, angle):
-  """Converts an axis-angle to a 3D rotation matrix."""
+  """Converts an axis-angle to a 3D rotation matrix.
+
+  Args:
+    axis: A `tf.Tensor` of shape `[..., 3]`.
+    angle: A `tf.Tensor` of shape `[..., 1]`.
+
+  Returns:
+    A `tf.Tensor` of shape `[..., 3, 3]`.
+
+  Raises:
+    ValueError: If the shape of `axis` or `angle` is invalid.
+  """
   axis = tf.convert_to_tensor(axis)
   angle = tf.convert_to_tensor(angle)
 
@@ -93,8 +104,7 @@ def from_axis_angle(axis, angle):
         f"angle must have shape `[..., 1]`, but got: {angle.shape}")
 
   try:
-    static_batch_shape = tf.broadcast_static_shape(
-        axis.shape[:-1], angle.shape[:-1])
+    _ = tf.broadcast_static_shape(axis.shape[:-1], angle.shape[:-1])
   except ValueError as err:
     raise ValueError(
         f"The batch shapes of axis and angle do not "
@@ -120,16 +130,26 @@ def from_axis_angle(axis, angle):
   matrix = tf.stack([diag_x, m01, m02,
                       m10, diag_y, m12,
                       m20, m21, diag_z], axis=-1)
-  output_shape = tf.concat([tf.shape(axis)[:-1], [3, 3]], axis=-1)
+  output_shape = tf.concat([tf.shape(axis)[:-1], [3, 3]], axis=-1)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
   return tf.reshape(matrix, output_shape)
 
 
 def from_quaternion(quaternion):
-  """Converts a quaternion to a 3D rotation matrix."""
+  """Converts a quaternion to a 3D rotation matrix.
+
+  Args:
+    quaternion: A `tf.Tensor` of shape `[..., 4]`.
+
+  Returns:
+    A `tf.Tensor` of shape `[..., 3, 3]`.
+
+  Raises:
+    ValueError: If the shape of `quaternion` is invalid.
+  """
   quaternion = tf.convert_to_tensor(quaternion)
 
   if quaternion.shape[-1] != 4:
-    raise ValueError(f"quaternion must have shape `[..., 4]`, ",
+    raise ValueError(f"quaternion must have shape `[..., 4]`, "
                      f"but got: {quaternion.shape}")
 
   x, y, z, w = tf.unstack(quaternion, axis=-1)
@@ -148,7 +168,7 @@ def from_quaternion(quaternion):
   matrix = tf.stack([1.0 - (tyy + tzz), txy - twz, txz + twy,
                      txy + twz, 1.0 - (txx + tzz), tyz - twx,
                      txz - twy, tyz + twx, 1.0 - (txx + tyy)], axis=-1)
-  output_shape = tf.concat([tf.shape(quaternion)[:-1], [3, 3]], axis=-1)
+  output_shape = tf.concat([tf.shape(quaternion)[:-1], [3, 3]], axis=-1)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
   return tf.reshape(matrix, output_shape)
 
 
@@ -182,7 +202,7 @@ def _build_matrix_from_sines_and_cosines(sin_angles, cos_angles):
                      m10, m11, m12,
                      m20, m21, m22],
                     axis=-1)
-  output_shape = tf.concat([tf.shape(sin_angles)[:-1], [3, 3]], axis=-1)
+  output_shape = tf.concat([tf.shape(sin_angles)[:-1], [3, 3]], axis=-1)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
   return tf.reshape(matrix, output_shape)
 
 

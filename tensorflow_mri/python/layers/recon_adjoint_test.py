@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for module `recon_adjoint`."""
+# pylint: disable=missing-param-doc
 
 import os
 import tempfile
@@ -27,8 +28,10 @@ from tensorflow_mri.python.util import test_util
 
 
 class ReconAdjointTest(test_util.TestCase):
+  """Tests for `ReconAdjoint` layer."""
   @parameterized.product(expand_channel_dim=[True, False])
   def test_recon_adjoint(self, expand_channel_dim):
+    """Test `ReconAdjoint` layer."""
     # Create layer.
     layer = recon_adjoint_layer.ReconAdjoint(
         expand_channel_dim=expand_channel_dim)

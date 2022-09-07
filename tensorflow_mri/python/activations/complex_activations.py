@@ -21,21 +21,26 @@ import tensorflow as tf
 from tensorflow_mri.python.util import api_util
 
 
-def complexified(name, split='real_imag'):
-  """Returns a decorator to create complex-valued activations."""
-  if split not in ('real_imag', 'abs_angle'):
+def complexified(name, type_='cartesian'):
+  """Returns a decorator to create complex-valued activations.
+
+  Args:
+    name: A `str` denoting the name of the activation function.
+
+  """
+  if type_ not in ('cartesian', 'polar'):
     raise ValueError(
-        f"split must be one of 'real_imag' or 'abs_angle', but got: {split}")
+        f"type_ must be one of 'cartesian' or 'polar', but got: {type_}")
   def decorator(func):
     def wrapper(x, *args, **kwargs):
       x = tf.convert_to_tensor(x)
       if x.dtype.is_complex:
-        if split == 'abs_angle':
+        if type_ == 'polar':
           j = tf.dtypes.complex(tf.zeros((), dtype=x.dtype.real_dtype),
                                 tf.ones((), dtype=x.dtype.real_dtype))
           return (tf.cast(func(tf.math.abs(x), *args, **kwargs), x.dtype) *
                   tf.math.exp(j * tf.cast(tf.math.angle(x), x.dtype)))
-        if split == 'real_imag':
+        if type_ == 'cartesian':
           return tf.dtypes.complex(func(tf.math.real(x), *args, **kwargs),
                                    func(tf.math.imag(x), *args, **kwargs))
       return func(x, *args, **kwargs)
@@ -47,7 +52,8 @@ def complexified(name, split='real_imag'):
 
 
 complex_relu = api_util.export("activations.complex_relu")(
-    complexified(name='complex_relu', split='real_imag')(tf.keras.activations.relu))
+    complexified(name='complex_relu', type_='cartesian')(
+        tf.keras.activations.relu))
 complex_relu.__doc__ = (
     """Applies the rectified linear unit activation function.
 
@@ -88,7 +94,8 @@ complex_relu.__doc__ = (
 
 
 mod_relu = api_util.export("activations.mod_relu")(
-    complexified(name='mod_relu', split='abs_angle')(tf.keras.activations.relu))
+    complexified(name='mod_relu', type_='polar')(
+        tf.keras.activations.relu))
 mod_relu.__doc__ = (
     """Applies the rectified linear unit activation function.
 

@@ -120,22 +120,22 @@ def dynamic_meshgrid(vecs):
   output_shape = tf.TensorArray(
       dtype=tf.int32, size=vecs.size(), element_shape=())
 
-  def _cond(i, vecs, shape):  # pylint:disable=unused-argument
+  def _cond1(i, vecs, shape):  # pylint:disable=unused-argument
     return i < vecs.size()
-  def _body(i, vecs, shape):
+  def _body1(i, vecs, shape):
     vec = vecs.read(i)
     shape = shape.write(i, tf.shape(vec)[0])
     return i + 1, vecs, shape
 
-  _, _, output_shape = tf.while_loop(_cond, _body, [0, vecs, output_shape])
+  _, _, output_shape = tf.while_loop(_cond1, _body1, [0, vecs, output_shape])
   output_shape = output_shape.stack()
 
   # Compute output grid.
   output_grid = tf.TensorArray(dtype=vecs.dtype, size=vecs.size())
 
-  def _cond(i, vecs, grid):  # pylint:disable=unused-argument
+  def _cond2(i, vecs, grid):  # pylint:disable=unused-argument
     return i < vecs.size()
-  def _body(i, vecs, grid):
+  def _body2(i, vecs, grid):
     vec = vecs.read(i)
     vec_shape = tf.ones(shape=[vecs.size()], dtype=tf.int32)
     vec_shape = tf.tensor_scatter_nd_update(vec_shape, [[i]], [-1])
@@ -143,7 +143,7 @@ def dynamic_meshgrid(vecs):
     grid = grid.write(i, tf.broadcast_to(vec, output_shape))
     return i + 1, vecs, grid
 
-  _, _, output_grid = tf.while_loop(_cond, _body, [0, vecs, output_grid])
+  _, _, output_grid = tf.while_loop(_cond2, _body2, [0, vecs, output_grid])
   output_grid = output_grid.stack()
 
   perm = tf.concat([tf.range(1, vecs.size() + 1), [0]], 0)

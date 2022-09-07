@@ -35,7 +35,6 @@ from tensorflow_mri.python.ops import optimizer_ops
 from tensorflow_mri.python.ops import signal_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
-from tensorflow_mri.python.util import deprecation
 
 
 @api_util.export("recon.least_squares", "recon.lstsq")

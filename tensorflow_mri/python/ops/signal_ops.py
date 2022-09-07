@@ -101,7 +101,7 @@ def atanfilt(arg, cutoff=np.pi, beta=100.0, name=None):
 
 @api_util.export("signal.rect")
 def rect(arg, cutoff=np.pi, name=None):
-  """Returns the rectangular function.
+  r"""Returns the rectangular function.
 
   The rectangular function is defined as:
 

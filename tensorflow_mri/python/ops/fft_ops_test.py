@@ -33,25 +33,22 @@ import distutils
 import itertools
 import unittest
 
+from absl.testing import parameterized
 import numpy as np
 import tensorflow as tf
-
-from tensorflow_mri.python.ops import fft_ops
-from tensorflow_mri.python.util import test_util
-
-
-from absl.testing import parameterized
-
 from tensorflow.core.protobuf import config_pb2
 from tensorflow.python.eager import context
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import errors
-# from tensorflow.python.framework import test_util
 from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import gen_spectral_ops
 from tensorflow.python.ops import gradient_checker_v2
 from tensorflow.python.ops import math_ops
 from tensorflow.python.platform import test
+
+from tensorflow_mri.python.ops import fft_ops
+from tensorflow_mri.python.util import test_util
+
 
 VALID_FFT_RANKS = (1, 2, 3)
 

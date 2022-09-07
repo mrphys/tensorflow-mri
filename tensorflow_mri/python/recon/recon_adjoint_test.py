@@ -46,7 +46,8 @@ class ReconAdjointTest(test_util.TestCase):
     self.assertAllClose(expected, image)
 
     # Test multi-coil.
-    image = recon_adjoint.recon_adjoint_mri(kspace, image_shape, sensitivities=sens)
+    image = recon_adjoint.recon_adjoint_mri(
+        kspace, image_shape, sensitivities=sens)
     expected = fft_ops.ifftn(kspace, axes=[-2, -1], norm='ortho', shift=True)
     scale = tf.math.reduce_sum(sens * tf.math.conj(sens), axis=0)
     expected = tf.math.divide_no_nan(

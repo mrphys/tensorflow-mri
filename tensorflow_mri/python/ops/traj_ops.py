@@ -137,7 +137,7 @@ def frequency_grid(shape, max_val=1.0):
                         infer_shape=False,
                         clear_after_read=False)
 
-  def _cond(i, vecs):
+  def _cond(i, vecs):  # pylint: disable=unused-argument
     return tf.less(i, tf.size(shape))
   def _body(i, vecs):
     step = (2.0 * max_val) / tf.cast(shape[i], dtype)

@@ -111,7 +111,7 @@ def parse_inputs(inputs):
     return data, operator
   if isinstance(inputs, tuple):
     return _parse_inputs(*inputs)
-  elif isinstance(inputs, dict):
+  if isinstance(inputs, dict):
     return _parse_inputs(**inputs)
   raise ValueError('inputs must be a tuple or dict')
 

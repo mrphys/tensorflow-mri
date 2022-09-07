@@ -31,7 +31,6 @@ from tensorflow_mri.python.geometry import rotation_3d
 from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
-from tensorflow_mri.python.util import deprecation
 
 
 @api_util.export("image.psnr")
@@ -949,7 +948,8 @@ def _gradient_operators(method, norm=False, image_dims=2, dtype=tf.float32):
     method: A `str`. The gradient operator. Must be one of `'prewitt'`,
       `'sobel'` or `'scharr'`.
     norm: A `boolean`. If `True`, returns normalized kernels.
-    rank: An `int`. The dimensionality of the requested kernels. Defaults to 2.
+    image_dims: An `int`. The dimensionality of the requested kernels.
+      Defaults to 2.
     dtype: The `dtype` of the returned kernels. Defaults to `tf.float32`.
 
   Returns:
@@ -1180,7 +1180,11 @@ def gmsd2d(img1, img2, max_val=1.0, name=None):
       in IEEE Transactions on Image Processing, vol. 23, no. 2, pp. 684-695,
       Feb. 2014, doi: 10.1109/TIP.2013.2293423.
   """
-  return gmsd(img1, img2, max_val=max_val, image_dims=2, name=(name or 'gmsd2d'))
+  return gmsd(img1,
+              img2,
+              max_val=max_val,
+              image_dims=2,
+              name=(name or 'gmsd2d'))
 
 
 @api_util.export("image.gmsd3d")
@@ -1210,7 +1214,11 @@ def gmsd3d(img1, img2, max_val=1.0, name=None):
       in IEEE Transactions on Image Processing, vol. 23, no. 2, pp. 684-695,
       Feb. 2014, doi: 10.1109/TIP.2013.2293423.
   """
-  return gmsd(img1, img2, max_val=max_val, image_dims=3, name=(name or 'gmsd3d'))
+  return gmsd(img1,
+              img2,
+              max_val=max_val,
+              image_dims=3,
+              name=(name or 'gmsd3d'))
 
 
 def _validate_iqa_inputs(img1, img2, max_val, batch_dims, image_dims):

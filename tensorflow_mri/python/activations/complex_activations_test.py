@@ -22,6 +22,8 @@ from tensorflow_mri.python.util import test_util
 
 
 class ReluTest(test_util.TestCase):
+  """Tests for ReLU-derived activations."""
+  # pylint: disable=missing-function-docstring
   @test_util.run_all_execution_modes
   def test_complex_relu(self):
     inputs = [1.0 - 2.0j, 1.0 + 3.0j, -2.0 + 1.0j, -3.0 - 4.0j]

@@ -17,10 +17,9 @@
 import tensorflow as tf
 
 from tensorflow_mri.python.geometry.rotation import rotation_matrix_3d
-from tensorflow_mri.python.util import api_util
 
 
-class Rotation3D(tf.experimental.BatchableExtensionType):
+class Rotation3D(tf.experimental.BatchableExtensionType):  # pylint: disable=abstract-method
   """Represents a rotation in 3D space (or a batch thereof)."""
   __name__ = "tfmri.geometry.Rotation3D"
   _matrix: tf.Tensor
@@ -253,12 +252,14 @@ class Rotation3D(tf.experimental.BatchableExtensionType):
 
 @tf.experimental.dispatch_for_api(tf.convert_to_tensor, {'value': Rotation3D})
 def convert_to_tensor(value, dtype=None, dtype_hint=None, name=None):
-  return value.as_matrix()
+  """Overrides `tf.convert_to_tensor` for `Rotation3D` objects."""
+  return tf.convert_to_tensor(
+      value.as_matrix(), dtype=dtype, dtype_hint=dtype_hint, name=name)
 
 
 @tf.experimental.dispatch_for_api(
     tf.linalg.matmul, {'a': Rotation3D, 'b': Rotation3D})
-def matmul(a, b,
+def matmul(a, b,  # pylint: disable=missing-param-doc
            transpose_a=False,
            transpose_b=False,
            adjoint_a=False,
@@ -267,6 +268,7 @@ def matmul(a, b,
            b_is_sparse=False,
            output_type=None,
            name=None):
+  """Overrides `tf.linalg.matmul` for `Rotation3D` objects."""
   if a_is_sparse or b_is_sparse:
     raise ValueError("Rotation3D does not support sparse matmul.")
   return Rotation3D(_matrix=tf.linalg.matmul(a.as_matrix(), b.as_matrix(),
@@ -279,12 +281,13 @@ def matmul(a, b,
 
 
 @tf.experimental.dispatch_for_api(tf.linalg.matvec, {'a': Rotation3D})
-def matvec(a, b,
+def matvec(a, b,  # pylint: disable=missing-param-doc
            transpose_a=False,
            adjoint_a=False,
            a_is_sparse=False,
            b_is_sparse=False,
            name=None):
+  """Overrides `tf.linalg.matvec` for `Rotation3D` objects."""
   if a_is_sparse or b_is_sparse:
     raise ValueError("Rotation3D does not support sparse matvec.")
   return tf.linalg.matvec(a.as_matrix(), b,
@@ -294,5 +297,6 @@ def matvec(a, b,
 
 
 @tf.experimental.dispatch_for_api(tf.shape, {'input': Rotation3D})
-def shape(input, out_type=tf.int32, name=None):
+def shape(input, out_type=tf.int32, name=None):  # pylint: disable=redefined-builtin
+  """Overrides `tf.shape` for `Rotation3D` objects."""
   return tf.shape(input.as_matrix(), out_type=out_type, name=name)

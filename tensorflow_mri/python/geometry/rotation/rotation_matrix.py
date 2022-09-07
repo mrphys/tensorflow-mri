@@ -42,6 +42,9 @@ def rotate(n, point, matrix):
 
   Returns:
     A `tf.Tensor` of shape `[..., N]`.
+
+  Raises:
+    ValueError: If the shape of the point or matrix is invalid.
   """
   point = tf.convert_to_tensor(point)
   matrix = tf.convert_to_tensor(matrix)
@@ -81,6 +84,9 @@ def inverse(n, matrix):
 
   Returns:
     A `tf.Tensor` of shape `[..., N, N]`.
+
+  Raises:
+    ValueError: If the shape of the matrix is invalid.
   """
   matrix = tf.convert_to_tensor(matrix)
 
@@ -101,6 +107,9 @@ def is_valid(n, matrix, atol=1e-3):
 
   Returns:
     A boolean `tf.Tensor` of shape `[..., 1]`.
+
+  Raises:
+    ValueError: If the shape of the matrix is invalid.
   """
   matrix = tf.convert_to_tensor(matrix)
 
@@ -114,8 +123,8 @@ def is_valid(n, matrix, atol=1e-3):
   # Computes how far the product of the transposed rotation matrix with itself
   # is from the identity matrix.
   identity = tf.eye(n, dtype=matrix.dtype)
-  inverse = tf.linalg.matrix_transpose(matrix)
-  distance_identity = tf.matmul(inverse, matrix) - identity
+  inverse_matrix = tf.linalg.matrix_transpose(matrix)
+  distance_identity = tf.matmul(inverse_matrix, matrix) - identity
   distance_identity = tf.norm(distance_identity, axis=[-2, -1])
 
   # Computes the mask of entries that satisfies all conditions.

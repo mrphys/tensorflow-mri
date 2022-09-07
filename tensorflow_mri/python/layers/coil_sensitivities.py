@@ -18,9 +18,7 @@ import string
 
 import tensorflow as tf
 
-from tensorflow_mri.python.activations import complex_activations
 from tensorflow_mri.python.coils import coil_sensitivities
-from tensorflow_mri.python.linalg import linear_operator_mri
 from tensorflow_mri.python.ops import math_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import doc_util

@@ -18,7 +18,6 @@
 from absl.testing import parameterized
 import tensorflow as tf
 
-from tensorflow_mri.python.activations import complex_activations
 from tensorflow_mri.python.layers import convolutional
 from tensorflow_mri.python.layers import pooling
 from tensorflow_mri.python.layers import reshaping
@@ -90,6 +89,7 @@ class UNetTest(test_util.TestCase):
         self.assertEqual(use_bias, layer.use_bias)
 
   def test_complex_valued(self):
+    """Test complex-valued U-Net."""
     inputs = tf.dtypes.complex(
         tf.random.stateless_normal(shape=(2, 32, 32, 4), seed=[12, 34]),
         tf.random.stateless_normal(shape=(2, 32, 32, 4), seed=[56, 78]))
@@ -277,13 +277,19 @@ class UNetTest(test_util.TestCase):
     expected = [
         # name, type, output_shape, params
         ('input_1', tf.keras.layers.InputLayer, [(1, 4, 32, 32, 1)], 0),
-        ('conv_block_lstm2d', conv_blocks.ConvBlockLSTM2D, (1, 4, 32, 32, 8), 7264),
-        ('time_distributed', tf.keras.layers.TimeDistributed, (1, 4, 16, 16, 8), 0),
-        ('conv_block_lstm2d_1', conv_blocks.ConvBlockLSTM2D, (1, 4, 16, 16, 16), 32384),
-        ('time_distributed_1', tf.keras.layers.TimeDistributed, (1, 4, 32, 32, 16), 0),
-        ('time_distributed_2', tf.keras.layers.TimeDistributed, (1, 4, 32, 32, 8), 1160),
+        ('conv_block_lstm2d',
+         conv_blocks.ConvBlockLSTM2D, (1, 4, 32, 32, 8), 7264),
+        ('time_distributed',
+         tf.keras.layers.TimeDistributed, (1, 4, 16, 16, 8), 0),
+        ('conv_block_lstm2d_1',
+         conv_blocks.ConvBlockLSTM2D, (1, 4, 16, 16, 16), 32384),
+        ('time_distributed_1',
+         tf.keras.layers.TimeDistributed, (1, 4, 32, 32, 16), 0),
+        ('time_distributed_2',
+         tf.keras.layers.TimeDistributed, (1, 4, 32, 32, 8), 1160),
         ('concatenate', tf.keras.layers.Concatenate, (1, 4, 32, 32, 16), 0),
-        ('conv_block_lstm2d_2', conv_blocks.ConvBlockLSTM2D, (1, 4, 32, 32, 8), 11584)]
+        ('conv_block_lstm2d_2',
+         conv_blocks.ConvBlockLSTM2D, (1, 4, 32, 32, 8), 11584)]
 
     self._check_layers(expected, model.layers)
 

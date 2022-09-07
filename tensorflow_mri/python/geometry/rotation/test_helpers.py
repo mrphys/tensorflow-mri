@@ -56,13 +56,6 @@ def generate_preset_test_rotation_matrices_2d():
   return preset_rotation_matrix
 
 
-def generate_preset_test_axis_angle():
-  """Generates pre-set test rotation matrices."""
-  angles = generate_preset_test_euler_angles()
-  axis, angle = rotation_matrix_3d.from_axis_angle(angles)
-  return axis, angle
-
-
 def generate_preset_test_quaternions():
   """Generates pre-set test quaternions."""
   angles = generate_preset_test_euler_angles()
@@ -83,7 +76,7 @@ def generate_preset_test_dual_quaternions():
   preset_quaternion_dual = quaternion.multiply(preset_quaternion_translation,
                                                preset_quaternion_real)
 
-  preset_dual_quaternion = tf.concat(
+  preset_dual_quaternion = tf.concat(  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
       (preset_quaternion_real, preset_quaternion_dual), axis=-1)
 
   return preset_dual_quaternion
@@ -123,7 +116,7 @@ def generate_random_test_dual_quaternions():
   random_quaternion_dual = quaternion.multiply(random_quaternion_translation,
                                                random_quaternion_real)
 
-  random_dual_quaternion = tf.concat(
+  random_dual_quaternion = tf.concat(  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
       (random_quaternion_real, random_quaternion_dual), axis=-1)
 
   return random_dual_quaternion
@@ -138,7 +131,7 @@ def generate_random_test_euler_angles(dimensions=3,
   return np.random.uniform(min_angle, max_angle, tensor_tile + [dimensions])
 
 
-def generate_random_test_quaternions(tensor_shape=None):
+def generate_random_test_quaternions(tensor_shape=None):  # pylint: disable=missing-param-doc
   """Generates random test quaternions."""
   if tensor_shape is None:
     tensor_dimensions = np.random.randint(low=1, high=3)

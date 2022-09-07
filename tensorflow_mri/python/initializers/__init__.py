@@ -126,13 +126,12 @@ def get(identifier):
     return None
   if isinstance(identifier, dict):
     return deserialize(identifier)
-  elif isinstance(identifier, str):
+  if isinstance(identifier, str):
     identifier = str(identifier)
     return deserialize(identifier)
-  elif callable(identifier):
+  if callable(identifier):
     if inspect.isclass(identifier):
       identifier = identifier()
     return identifier
-  else:
-    raise ValueError('Could not interpret initializer identifier: ' +
-                     str(identifier))
+  raise ValueError('Could not interpret initializer identifier: ' +
+                    str(identifier))

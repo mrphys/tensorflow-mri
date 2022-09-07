@@ -71,8 +71,8 @@ def compress_coils(kspace,
 
   References:
     1. Huang, F., Vijayakumar, S., Li, Y., Hertel, S. and Duensing, G.R.
-       (2008). A software channel compression technique for faster reconstruction
-       with many channels. Magn Reson Imaging, 26(1): 133-141.
+       (2008). A software channel compression technique for faster
+       reconstruction with many channels. Magn Reson Imaging, 26(1): 133-141.
     2. Zhang, T., Pauly, J.M., Vasanawala, S.S. and Lustig, M. (2013), Coil
        compression for accelerated imaging with Cartesian sampling. Magn
        Reson Med, 69: 571-582. https://doi.org/10.1002/mrm.24267
@@ -273,6 +273,9 @@ def make_coil_compressor(method, **kwargs):
 
   Returns:
     A `CoilCompressor` object.
+
+  Raises:
+    NotImplementedError: If the specified method is not implemented.
   """
   method = check_util.validate_enum(
       method, {'svd', 'geometric', 'espirit'}, name='method')

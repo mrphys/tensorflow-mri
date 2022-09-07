@@ -100,7 +100,9 @@ class EstimateTest(test_util.TestCase):
 
 
 class EstimateUniversalTest(test_util.TestCase):
+  """Tests for `estimate_sensitivities_universal`."""
   def test_estimate_sensitivities_universal(self):
+    """Test `estimate_sensitivities_universal`."""
     image_shape = [128, 128]
     image = image_ops.phantom(shape=image_shape, num_coils=4,
                               dtype=tf.complex64)
