@@ -49,15 +49,19 @@ class ResizeAndConcatenate(tf.keras.layers.Layer):
           f"Layer {self.__class__.__name__} expects `axis` to be in the range "
           f"[-{rank}, {rank}) for an input of rank {rank}. "
           f"Received: {self.axis}")
-
+    # Canonical axis (always positive).
     axis = self.axis % rank
-    shape = tf.tensor_scatter_nd_update(tf.shape(inputs[0]), [[axis]], [-1])
-    static_shape = inputs[0].shape.as_list()
-    static_shape[axis] = None
-    static_shape = tf.TensorShape(static_shape)
 
-    resized = [tf.ensure_shape(
-        array_ops.resize_with_crop_or_pad(tensor, shape),
-        static_shape) for tensor in inputs[1:]]
+    # Resize inputs.
+    shape = tf.tensor_scatter_nd_update(tf.shape(inputs[0]), [[axis]], [-1])
+    resized = [array_ops.resize_with_crop_or_pad(tensor, shape)
+               for tensor in inputs[1:]]
+
+    # Set the static shape for each resized tensor.
+    for i, tensor in enumerate(resized):
+      static_shape = inputs[0].shape.as_list()
+      static_shape[axis] = inputs[i + 1].shape.as_list()[axis]
+      static_shape = tf.TensorShape(static_shape)
+      resized[i] = tf.ensure_shape(tensor, static_shape)
 
     return tf.concat(inputs[:1] + resized, axis=self.axis)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
