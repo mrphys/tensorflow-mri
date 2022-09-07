@@ -76,9 +76,10 @@ def meshgrid(*args):
   fields over N-D grids, given one-dimensional coordinate arrays
   `x1, x2, ..., xn`.
 
-  .. note::
+  ```{note}
     Similar to `tf.meshgrid`, but uses matrix indexing and returns a stacked
     tensor (along axis -1) instead of a list of tensors.
+  ```
 
   Args:
     *args: `Tensors` with rank 1.
@@ -98,10 +99,11 @@ def dynamic_meshgrid(vecs):
   fields over N-D grids, given one-dimensional coordinate arrays
   `x1, x2, ..., xn`.
 
-  .. note::
+  ```{note}
     Similar to `tf.meshgrid`, but uses matrix indexing, supports dynamic tensor
     arrays and returns a stacked tensor (along axis -1) instead of a list of
     tensors.
+  ```
 
   Args:
     vecs: A `tf.TensorArray` containing the coordinate vectors.
@@ -347,13 +349,15 @@ def update_tensor(tensor, slices, value):
 
   This operator performs slice assignment.
 
-  .. note::
+  ```{note}
     Equivalent to `tensor[slices] = value`.
+  ```
 
-  .. warning::
+  ```{warning}
     TensorFlow does not support slice assignment because tensors are immutable.
     This operator works around this limitation by creating a new tensor, which
     may have performance implications.
+  ```
 
   Args:
     tensor: A `tf.Tensor`.
@@ -388,9 +392,10 @@ def _with_index_update_helper(update_method, a, slice_spec, updates):  # pylint:
 def map_fn(fn, elems, batch_dims=1, **kwargs):
   """Transforms `elems` by applying `fn` to each element.
 
-  .. note::
+  ```{note}
     Similar to `tf.map_fn`, but it supports unstacking along multiple batch
     dimensions.
+  ```
 
   For the parameters, see `tf.map_fn`. The only difference is that there is an
   additional `batch_dims` keyword argument which allows specifying the number

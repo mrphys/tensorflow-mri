@@ -501,7 +501,7 @@ def project_onto_simplex(x, radius=1.0, name=None):
     ValueError: If inputs are invalid.
 
   References:
-    .. [1] Duchi, J., Shalev-Shwartz, S., Singer, Y., & Chandra, T. (2008).
+    1. Duchi, J., Shalev-Shwartz, S., Singer, Y., & Chandra, T. (2008).
       Efficient projections onto the l1-ball for learning in high dimensions.
       In Proceedings of the 25th International Conference on Machine Learning
       (pp. 272-279).
@@ -556,10 +556,10 @@ def project_onto_ball(x, order=2, radius=1.0, name=None):
     ValueError: If inputs are invalid.
 
   References:
-    .. [1] Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
+    1. Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
       Trends in optimization, 1(3), 127-239.
 
-    .. [2] Duchi, J., Shalev-Shwartz, S., Singer, Y., & Chandra, T. (2008).
+    2. Duchi, J., Shalev-Shwartz, S., Singer, Y., & Chandra, T. (2008).
       Efficient projections onto the l1-ball for learning in high dimensions.
       In Proceedings of the 25th International Conference on Machine Learning
       (pp. 272-279).

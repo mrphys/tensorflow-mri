@@ -117,8 +117,9 @@ def run_in_graph_and_eager_modes(func=None, config=None, use_gpu=True):
   execution enabled. This allows unittests to confirm the equivalence between
   eager and graph execution.
 
-  .. note::
+  ```{note}
     This decorator can only be used when executing eagerly in the outer scope.
+  ```
 
   Args:
     func: function to be annotated. If `func` is None, this method returns a

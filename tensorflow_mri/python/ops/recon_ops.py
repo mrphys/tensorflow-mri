@@ -169,28 +169,28 @@ def reconstruct_lstsq(kspace,
     it may be time-consuming, depending on the characteristics of the problem.
 
   References:
-    .. [1] Pruessmann, K.P., Weiger, M., Börnert, P. and Boesiger, P. (2001),
+    1. Pruessmann, K.P., Weiger, M., Börnert, P. and Boesiger, P. (2001),
       Advances in sensitivity encoding with arbitrary k-space trajectories.
       Magn. Reson. Med., 46: 638-651. https://doi.org/10.1002/mrm.1241
 
-    .. [2] Block, K.T., Uecker, M. and Frahm, J. (2007), Undersampled radial MRI
+    2. Block, K.T., Uecker, M. and Frahm, J. (2007), Undersampled radial MRI
       with multiple coils. Iterative image reconstruction using a total
       variation constraint. Magn. Reson. Med., 57: 1086-1098.
       https://doi.org/10.1002/mrm.21236
 
-    .. [3] Feng, L., Grimm, R., Block, K.T., Chandarana, H., Kim, S., Xu, J.,
+    3. Feng, L., Grimm, R., Block, K.T., Chandarana, H., Kim, S., Xu, J.,
       Axel, L., Sodickson, D.K. and Otazo, R. (2014), Golden-angle radial sparse
       parallel MRI: Combination of compressed sensing, parallel imaging, and
       golden-angle radial sampling for fast and flexible dynamic volumetric MRI.
       Magn. Reson. Med., 72: 707-717. https://doi.org/10.1002/mrm.24980
 
-    .. [4] Tsao, J., Boesiger, P., & Pruessmann, K. P. (2003). k-t BLAST and
+    4. Tsao, J., Boesiger, P., & Pruessmann, K. P. (2003). k-t BLAST and
       k-t SENSE: dynamic MRI with high frame rate exploiting spatiotemporal
       correlations. Magnetic Resonance in Medicine: An Official Journal of the
       International Society for Magnetic Resonance in Medicine, 50(5),
       1031-1042.
 
-    .. [5] Fessler, J. A., Lee, S., Olafsson, V. T., Shi, H. R., & Noll, D. C.
+    5. Fessler, J. A., Lee, S., Olafsson, V. T., Shi, H. R., & Noll, D. C.
       (2005). Toeplitz-based iterative image reconstruction for MRI with
       correction for magnetic field inhomogeneity. IEEE Transactions on Signal
       Processing, 53(9), 3393-3402.
@@ -405,7 +405,7 @@ def reconstruct_sense(kspace,
     ValueError: If `kspace` and `sensitivities` have incompatible batch shapes.
 
   References:
-    .. [1] Pruessmann, K.P., Weiger, M., Scheidegger, M.B. and Boesiger, P.
+    1. Pruessmann, K.P., Weiger, M., Scheidegger, M.B. and Boesiger, P.
       (1999), SENSE: Sensitivity encoding for fast MRI. Magn. Reson. Med.,
       42: 952-962.
       https://doi.org/10.1002/(SICI)1522-2594(199911)42:5<952::AID-MRM16>3.0.CO;2-S
@@ -586,7 +586,7 @@ def reconstruct_grappa(kspace,
     the spatial shape.
 
   References:
-    .. [1] Griswold, M.A., Jakob, P.M., Heidemann, R.M., Nittka, M., Jellus, V.,
+    1. Griswold, M.A., Jakob, P.M., Heidemann, R.M., Nittka, M., Jellus, V.,
       Wang, J., Kiefer, B. and Haase, A. (2002), Generalized autocalibrating
       partially parallel acquisitions (GRAPPA). Magn. Reson. Med., 47:
       1202-1210. https://doi.org/10.1002/mrm.10171
@@ -887,10 +887,10 @@ def reconstruct_pf(kspace,
         POCS algorithm. Defaults to `10`.
 
   References:
-    .. [1] Noll, D. C., Nishimura, D. G., & Macovski, A. (1991). Homodyne
+    1. Noll, D. C., Nishimura, D. G., & Macovski, A. (1991). Homodyne
       detection in magnetic resonance imaging. IEEE transactions on medical
       imaging, 10(2), 154-163.
-    .. [2] Haacke, E. M., Lindskogj, E. D., & Lin, W. (1991). A fast, iterative,
+    2. Haacke, E. M., Lindskogj, E. D., & Lin, W. (1991). A fast, iterative,
       partial-Fourier technique capable of local phase recovery. Journal of
       Magnetic Resonance (1969), 92(1), 126-145.
   """

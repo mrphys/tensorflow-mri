@@ -492,7 +492,7 @@ class TverskyIndex(ConfusionMetric):
     dtype: Data type of the metric result.
 
   References:
-    .. [1] Tversky, A. (1977). Features of similarity. Psychological review,
+    1. Tversky, A. (1977). Features of similarity. Psychological review,
       84(4), 327.
   """ # pylint: disable=line-too-long
   def __init__(self,

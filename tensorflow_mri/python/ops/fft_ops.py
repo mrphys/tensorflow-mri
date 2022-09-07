@@ -37,8 +37,9 @@ def fftn(x, shape=None, axes=None, norm='backward', shift=False):
   number of axes in an `M`-dimensional array by means of the Fast Fourier
   Transform (FFT).
 
-  .. note::
+  ```{note}
     `N` must be 1, 2 or 3.
+  ```
 
   Args:
     x: A `Tensor`. Must be one of the following types: `complex64`,
@@ -87,8 +88,9 @@ def ifftn(x, shape=None, axes=None, norm='backward', shift=False):
   Transform over any number of axes in an M-dimensional array by means of
   the Fast Fourier Transform (FFT).
 
-  .. note::
+  ```{note}
     `N` must be 1, 2 or 3.
+  ```
 
   Args:
     x: A `Tensor`. Must be one of the following types: `complex64`,

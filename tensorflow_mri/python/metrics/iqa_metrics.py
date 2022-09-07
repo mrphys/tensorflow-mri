@@ -194,7 +194,7 @@ class SSIM(MeanMetricWrapperIQA):
     dtype: Data type of the metric result.
 
   References:
-    .. [1] Wang, Z., Bovik, A. C., Sheikh, H. R., & Simoncelli, E. P. (2004).
+    1. Wang, Z., Bovik, A. C., Sheikh, H. R., & Simoncelli, E. P. (2004).
       Image quality assessment: from error visibility to structural similarity.
       IEEE transactions on image processing, 13(4), 600-612.
   """
@@ -276,7 +276,7 @@ class SSIMMultiscale(MeanMetricWrapperIQA):
     dtype: Data type of the metric result.
 
   References:
-    .. [1] Wang, Z., Simoncelli, E. P., & Bovik, A. C. (2003, November).
+    1. Wang, Z., Simoncelli, E. P., & Bovik, A. C. (2003, November).
       Multiscale structural similarity for image quality assessment. In The
       Thrity-Seventh Asilomar Conference on Signals, Systems & Computers, 2003
       (Vol. 2, pp. 1398-1402). Ieee.

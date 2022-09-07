@@ -430,7 +430,7 @@ class LinearOperator(LinearOperatorMixin, tf.linalg.LinearOperator):  # pylint: 
     name: A name for this `LinearOperator`.
 
   References:
-    .. [1] https://onlinelibrary.wiley.com/doi/full/10.1002/mrm.1241
+    1. https://onlinelibrary.wiley.com/doi/full/10.1002/mrm.1241
 
   .. _tf.linalg.LinearOperator: https://www.tensorflow.org/api_docs/python/tf/linalg/LinearOperator
   .. _tf.linalg.matvec: https://www.tensorflow.org/api_docs/python/tf/linalg/matvec

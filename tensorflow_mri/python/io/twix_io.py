@@ -39,8 +39,9 @@ NUL = b'\x00'
 def parse_twix(contents):
   """Parses the contents of a TWIX RAID file (Siemens raw data).
 
-  .. warning::
+  ```{warning}
     This function does not support graph execution.
+  ```
 
   Example:
     >>> # Read bytes from file.

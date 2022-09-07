@@ -255,7 +255,7 @@ def admm_minimize(function_f,
       during the search.
 
   References:
-    .. [1] Boyd, S., Parikh, N., & Chu, E. (2011). Distributed optimization and
+    1. Boyd, S., Parikh, N., & Chu, E. (2011). Distributed optimization and
       statistical learning via the alternating direction method of multipliers.
       Now Publishers Inc.
 

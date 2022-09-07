@@ -126,7 +126,7 @@ as follows:
 * A fixed-density portion between `vd_outer_cutoff` and 1.0, sampled at
   `vd_outer_density` times the Nyquist rate.
 
-.. [1] Pipe, J.G. and Zwart, N.R. (2014), Spiral trajectory design: A flexible
+1. Pipe, J.G. and Zwart, N.R. (2014), Spiral trajectory design: A flexible
   numerical algorithm and base analytical equations. Magn. Reson. Med, 71:
   278-285. https://doi.org/10.1002/mrm.24675
 

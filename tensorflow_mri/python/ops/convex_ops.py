@@ -435,7 +435,7 @@ class ConvexFunctionIndicatorL1Ball(ConvexFunctionIndicatorBall):  # pylint: dis
     name: A name for this `ConvexFunction`.
 
   References:
-    .. [1] Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
+    1. Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
       Trends in optimization, 1(3), 127-239.
   """
   def __init__(self,
@@ -459,7 +459,7 @@ class ConvexFunctionIndicatorL2Ball(ConvexFunctionIndicatorBall):  # pylint: dis
     name: A name for this `ConvexFunction`.
 
   References:
-    .. [1] Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
+    1. Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
       Trends in optimization, 1(3), 127-239.
   """
   def __init__(self,
@@ -485,7 +485,7 @@ class ConvexFunctionNorm(ConvexFunction):  # pylint: disable=abstract-method
     name: A name for this `ConvexFunction`.
 
   References:
-    .. [1] Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
+    1. Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
       Trends in optimization, 1(3), 127-239.
   """
   def __init__(self,
@@ -545,7 +545,7 @@ class ConvexFunctionL1Norm(ConvexFunctionNorm):  # pylint: disable=abstract-meth
     name: A name for this `ConvexFunction`.
 
   References:
-    .. [1] Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
+    1. Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
       Trends in optimization, 1(3), 127-239.
   """
   def __init__(self,
@@ -569,7 +569,7 @@ class ConvexFunctionL2Norm(ConvexFunctionNorm):  # pylint: disable=abstract-meth
     name: A name for this `ConvexFunction`.
 
   References:
-    .. [1] Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
+    1. Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
       Trends in optimization, 1(3), 127-239.
   """
   def __init__(self,
@@ -593,7 +593,7 @@ class ConvexFunctionL2NormSquared(ConvexFunction):  # pylint: disable=abstract-m
     name: A name for this `ConvexFunction`.
 
   References:
-    .. [1] Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
+    1. Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
       Trends in optimization, 1(3), 127-239.
   """
   def __init__(self,

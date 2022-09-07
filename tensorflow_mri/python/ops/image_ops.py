@@ -218,7 +218,7 @@ def ssim(img1,
     value for each image in the batch.
 
   References:
-    .. [1] Zhou Wang, A. C. Bovik, H. R. Sheikh and E. P. Simoncelli, "Image
+    1. Zhou Wang, A. C. Bovik, H. R. Sheikh and E. P. Simoncelli, "Image
       quality assessment: from error visibility to structural similarity," in
       IEEE Transactions on Image Processing, vol. 13, no. 4, pp. 600-612, April
       2004, doi: 10.1109/TIP.2003.819861.
@@ -293,7 +293,7 @@ def ssim2d(img1,
     value for each image in the batch.
 
   References:
-    .. [1] Zhou Wang, A. C. Bovik, H. R. Sheikh and E. P. Simoncelli, "Image
+    1. Zhou Wang, A. C. Bovik, H. R. Sheikh and E. P. Simoncelli, "Image
       quality assessment: from error visibility to structural similarity," in
       IEEE Transactions on Image Processing, vol. 13, no. 4, pp. 600-612, April
       2004, doi: 10.1109/TIP.2003.819861.
@@ -350,7 +350,7 @@ def ssim3d(img1,
     value for each image in the batch.
 
   References:
-    .. [1] Zhou Wang, A. C. Bovik, H. R. Sheikh and E. P. Simoncelli, "Image
+    1. Zhou Wang, A. C. Bovik, H. R. Sheikh and E. P. Simoncelli, "Image
       quality assessment: from error visibility to structural similarity," in
       IEEE Transactions on Image Processing, vol. 13, no. 4, pp. 600-612, April
       2004, doi: 10.1109/TIP.2003.819861.
@@ -435,7 +435,7 @@ def ssim_multiscale(img1,
     value for each image in the batch.
 
   References:
-    .. [1] Z. Wang, E. P. Simoncelli and A. C. Bovik, "Multiscale structural
+    1. Z. Wang, E. P. Simoncelli and A. C. Bovik, "Multiscale structural
       similarity for image quality assessment," The Thrity-Seventh Asilomar
       Conference on Signals, Systems & Computers, 2003, 2003, pp. 1398-1402
       Vol.2, doi: 10.1109/ACSSC.2003.1292216.
@@ -598,7 +598,7 @@ def ssim2d_multiscale(img1,
     value for each image in the batch.
 
   References:
-    .. [1] Z. Wang, E. P. Simoncelli and A. C. Bovik, "Multiscale structural
+    1. Z. Wang, E. P. Simoncelli and A. C. Bovik, "Multiscale structural
       similarity for image quality assessment," The Thrity-Seventh Asilomar
       Conference on Signals, Systems & Computers, 2003, 2003, pp. 1398-1402
       Vol.2, doi: 10.1109/ACSSC.2003.1292216.
@@ -664,7 +664,7 @@ def ssim3d_multiscale(img1,
     value for each image in the batch.
 
   References:
-    .. [1] Z. Wang, E. P. Simoncelli and A. C. Bovik, "Multiscale structural
+    1. Z. Wang, E. P. Simoncelli and A. C. Bovik, "Multiscale structural
       similarity for image quality assessment," The Thrity-Seventh Asilomar
       Conference on Signals, Systems & Computers, 2003, 2003, pp. 1398-1402
       Vol.2, doi: 10.1109/ACSSC.2003.1292216.
@@ -1104,7 +1104,7 @@ def gmsd(img1,
     returned tensor has type `tf.float32` and shape `batch_shape`.
 
   References:
-    .. [1] W. Xue, L. Zhang, X. Mou and A. C. Bovik, "Gradient Magnitude
+    1. W. Xue, L. Zhang, X. Mou and A. C. Bovik, "Gradient Magnitude
       Similarity Deviation: A Highly Efficient Perceptual Image Quality Index,"
       in IEEE Transactions on Image Processing, vol. 23, no. 2, pp. 684-695,
       Feb. 2014, doi: 10.1109/TIP.2013.2293423.
@@ -1175,7 +1175,7 @@ def gmsd2d(img1, img2, max_val=1.0, name=None):
     returned tensor has type `tf.float32` and shape `batch_shape`.
 
   References:
-    .. [1] W. Xue, L. Zhang, X. Mou and A. C. Bovik, "Gradient Magnitude
+    1. W. Xue, L. Zhang, X. Mou and A. C. Bovik, "Gradient Magnitude
       Similarity Deviation: A Highly Efficient Perceptual Image Quality Index,"
       in IEEE Transactions on Image Processing, vol. 23, no. 2, pp. 684-695,
       Feb. 2014, doi: 10.1109/TIP.2013.2293423.
@@ -1205,7 +1205,7 @@ def gmsd3d(img1, img2, max_val=1.0, name=None):
     returned tensor has type `tf.float32` and shape `batch_shape`.
 
   References:
-    .. [1] W. Xue, L. Zhang, X. Mou and A. C. Bovik, "Gradient Magnitude
+    1. W. Xue, L. Zhang, X. Mou and A. C. Bovik, "Gradient Magnitude
       Similarity Deviation: A Highly Efficient Perceptual Image Quality Index,"
       in IEEE Transactions on Image Processing, vol. 23, no. 2, pp. 684-695,
       Feb. 2014, doi: 10.1109/TIP.2013.2293423.
@@ -1642,13 +1642,13 @@ def phantom(phantom_type='modified_shepp_logan',  # pylint: disable=dangerous-de
     ValueError: If the requested ND phantom is not defined.
 
   References:
-    .. [1] Shepp, L. A., & Logan, B. F. (1974). The Fourier reconstruction of a
+    1. Shepp, L. A., & Logan, B. F. (1974). The Fourier reconstruction of a
       head section. IEEE Transactions on nuclear science, 21(3), 21-43.
-    .. [2] Toft, P. (1996). The radon transform. Theory and Implementation
+    2. Toft, P. (1996). The radon transform. Theory and Implementation
       (Ph. D. Dissertation)(Copenhagen: Technical University of Denmark).
-    .. [3] Kak, A. C., & Slaney, M. (2001). Principles of computerized
+    3. Kak, A. C., & Slaney, M. (2001). Principles of computerized
       tomographic imaging. Society for Industrial and Applied Mathematics.
-    .. [4] Koay, C. G., Sarlls, J. E., & Özarslan, E. (2007). Three‐dimensional
+    4. Koay, C. G., Sarlls, J. E., & Özarslan, E. (2007). Three‐dimensional
       analytical magnetic resonance imaging phantom in the Fourier domain.
       Magnetic Resonance in Medicine, 58(2), 430-436.
   """

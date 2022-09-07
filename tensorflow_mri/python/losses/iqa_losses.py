@@ -125,7 +125,7 @@ class SSIMLoss(LossFunctionWrapperIQA):
     name: String name of the loss instance.
 
   References:
-    .. [1] Zhao, H., Gallo, O., Frosio, I., & Kautz, J. (2016). Loss functions
+    1. Zhao, H., Gallo, O., Frosio, I., & Kautz, J. (2016). Loss functions
       for image restoration with neural networks. IEEE Transactions on
       computational imaging, 3(1), 47-57.
   """
@@ -204,7 +204,7 @@ class SSIMMultiscaleLoss(LossFunctionWrapperIQA):
     name: String name of the loss instance.
 
   References:
-    .. [1] Zhao, H., Gallo, O., Frosio, I., & Kautz, J. (2016). Loss functions
+    1. Zhao, H., Gallo, O., Frosio, I., & Kautz, J. (2016). Loss functions
       for image restoration with neural networks. IEEE Transactions on
       computational imaging, 3(1), 47-57.
   """
@@ -285,7 +285,7 @@ def ssim_loss(y_true, y_pred, max_val=None,
     value for each image in the batch.
 
   References:
-    .. [1] Zhao, H., Gallo, O., Frosio, I., & Kautz, J. (2016). Loss functions
+    1. Zhao, H., Gallo, O., Frosio, I., & Kautz, J. (2016). Loss functions
       for image restoration with neural networks. IEEE Transactions on
       computational imaging, 3(1), 47-57.
   """
@@ -357,7 +357,7 @@ def ssim_multiscale_loss(y_true, y_pred, max_val=None,
     value for each image in the batch.
 
   References:
-    .. [1] Zhao, H., Gallo, O., Frosio, I., & Kautz, J. (2016). Loss functions
+    1. Zhao, H., Gallo, O., Frosio, I., & Kautz, J. (2016). Loss functions
       for image restoration with neural networks. IEEE Transactions on
       computational imaging, 3(1), 47-57.
   """

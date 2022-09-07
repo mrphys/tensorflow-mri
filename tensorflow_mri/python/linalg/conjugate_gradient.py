@@ -99,7 +99,7 @@ def conjugate_gradient(operator,
     ValueError: If `operator` is not self-adjoint and positive definite.
 
   References:
-    .. [1] Aggarwal, H. K., Mani, M. P., & Jacob, M. (2018). MoDL: Model-based
+    1. Aggarwal, H. K., Mani, M. P., & Jacob, M. (2018). MoDL: Model-based
       deep learning architecture for inverse problems. IEEE transactions on
       medical imaging, 38(2), 394-405.
   """

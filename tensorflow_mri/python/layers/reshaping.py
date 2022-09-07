@@ -23,13 +23,12 @@ from tensorflow_mri.python.util import api_util
 
 EXTENSION_NOTE = string.Template("""
 
-  .. note::
+  ```{note}
     This layer can be used as a drop-in replacement for
-    `tf.keras.layers.${name}`_. However, this one also supports complex-valued
+    `tf.keras.layers.${name}`. However, this one also supports complex-valued
     operations. Simply pass `dtype='complex64'` or `dtype='complex128'` to the
     layer constructor.
-
-  .. _tf.keras.layers.${name}: https://www.tensorflow.org/api_docs/python/tf/keras/layers/${name}
+  ```
 
 """)
 

@@ -90,7 +90,7 @@ def atanfilt(arg, cutoff=np.pi, beta=100.0, name=None):
     A `Tensor` of shape `arg.shape`.
 
   References:
-    .. [1] Pruessmann, K.P., Weiger, M., Börnert, P. and Boesiger, P. (2001),
+    1. Pruessmann, K.P., Weiger, M., Börnert, P. and Boesiger, P. (2001),
       Advances in sensitivity encoding with arbitrary k-space trajectories.
       Magn. Reson. Med., 46: 638-651. https://doi.org/10.1002/mrm.1241
   """

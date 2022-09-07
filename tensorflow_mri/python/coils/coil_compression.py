@@ -131,7 +131,7 @@ class CoilCompressorSVD(CoilCompressor):
       together with `out_coils`.
 
   References:
-    .. [1] Huang, F., Vijayakumar, S., Li, Y., Hertel, S. and Duensing, G.R.
+    1. Huang, F., Vijayakumar, S., Li, Y., Hertel, S. and Duensing, G.R.
       (2008). A software channel compression technique for faster reconstruction
       with many channels. Magn Reson Imaging, 26(1): 133-141.
   """
