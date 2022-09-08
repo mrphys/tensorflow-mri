@@ -21,17 +21,128 @@ from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import tensor_util
 
 
+@api_util.export("linalg.LinearOperatorIdentity")
+@linear_operator.make_composite_tensor
+class LinearOperatorIdentity(linear_operator.LinearOperatorMixin,
+                             tf.linalg.LinearOperatorIdentity):
+  """Linear operator representing an identity matrix.
+
+  This operator acts like the identity matrix $A = I$ (or a batch of identity
+  matrices).
+
+  ```{note}
+  This operator is similar to `tf.linalg.LinearOperatorIdentity`, but
+  provides additional functionality. See the
+  [linear algebra guide](https://mrphys.github.io/tensorflow-mri/guide/linalg/)
+  for more details.
+  ```
+
+  ```{seealso}
+  The scaled identity operator `tfmri.linalg.LinearOperatorScaledIdentity`.
+  ```
+
+  Args:
+    domain_shape: A 1D integer `tf.Tensor`. The domain/range shape of the
+      operator.
+    batch_shape: An optional 1D integer `tf.Tensor`. The shape of the leading
+      batch dimensions. If `None`, this operator has no leading batch
+      dimensions.
+    dtype: A `tf.dtypes.DType`. The data type of the matrix that this operator
+      represents. Defaults to `float32`.
+    is_non_singular: Expect that this operator is non-singular.
+    is_self_adjoint: Expect that this operator is equal to its hermitian
+      transpose.
+    is_positive_definite: Expect that this operator is positive definite,
+      meaning the quadratic form $x^H A x$ has positive real part for all
+      nonzero $x$.  Note that we do not require the operator to be
+      self-adjoint to be positive-definite.  See:
+      https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices
+    is_square:  Expect that this operator acts like square [batch] matrices.
+    assert_proper_shapes: A boolean.  If `False`, only perform static
+      checks that initialization and method arguments have proper shape.
+      If `True`, and static checks are inconclusive, add asserts to the graph.
+    name: A name for this `LinearOperator`.
+  """
+  def __init__(self,
+               domain_shape,
+               batch_shape=None,
+               dtype=None,
+               is_non_singular=None,
+               is_self_adjoint=None,
+               is_positive_definite=None,
+               is_square=True,
+               assert_proper_shapes=False,
+               name="LinearOperatorIdentity"):
+    # Initialize the base class.
+    super().__init__(num_rows=tf.math.reduce_prod(domain_shape),
+                     batch_shape=batch_shape,
+                     dtype=dtype,
+                     is_non_singular=is_non_singular,
+                     is_self_adjoint=is_self_adjoint,
+                     is_positive_definite=is_positive_definite,
+                     is_square=is_square,
+                     assert_proper_shapes=assert_proper_shapes,
+                     name=name)
+
+    self._domain_shape_static, self._domain_shape_dynamic = (
+        tensor_util.static_and_dynamic_shapes_from_shape(domain_shape))
+    if batch_shape is not None:
+      self._batch_shape_static, self._batch_shape_dynamic = (
+          tensor_util.static_and_dynamic_shapes_from_shape(batch_shape))
+    else:
+      self._batch_shape_static = tf.TensorShape([])
+      self._batch_shape_dynamic = tf.constant([], dtype=tf.int32)
+
+  def _transform(self, x, adjoint=False):
+    output_shape = tf.concat([self.batch_shape_tensor(),
+                              self.domain_shape_tensor()], axis=0)
+    return tf.broadcast_to(x, output_shape)
+
+  def _domain_shape(self):
+    return self._domain_shape_static
+
+  def _range_shape(self):
+    return self._domain_shape_static
+
+  def _batch_shape(self):
+    return self._batch_shape_static
+
+  def _domain_shape_tensor(self):
+    return self._domain_shape_dynamic
+
+  def _range_shape_tensor(self):
+    return self._domain_shape_dynamic
+
+  def _batch_shape_tensor(self):
+    return self._batch_shape_dynamic
+
+  @property
+  def _composite_tensor_fields(self):
+    return ("domain_shape", "batch_shape", "dtype", "assert_proper_shapes")
+
+  @property
+  def _composite_tensor_prefer_static_fields(self):
+    return ("domain_shape", "batch_shape")
+
+
 @api_util.export("linalg.LinearOperatorScaledIdentity")
 @linear_operator.make_composite_tensor
 class LinearOperatorScaledIdentity(linear_operator.LinearOperatorMixin,  # pylint: disable=abstract-method
                                    tf.linalg.LinearOperatorScaledIdentity):
   """Linear operator representing a scaled identity matrix.
 
-  This operator acts like a scaled identity matrix $A = cI$.
+  This operator acts like a scaled identity matrix $A = cI$ (or a batch of
+  scaled identity matrices).
 
   ```{note}
-  This operator is a drop-in replacement of
-  `tf.linalg.LinearOperatorScaledIdentity`, with extended functionality.
+  This operator is similar to `tf.linalg.LinearOperatorScaledIdentity`, but
+  provides additional functionality. See the
+  [linear algebra guide](https://mrphys.github.io/tensorflow-mri/guide/linalg/)
+  for more details.
+  ```
+
+  ```{seealso}
+  The identity operator `tfmri.linalg.LinearOperatorIdentity`.
   ```
 
   Args:
@@ -63,11 +174,6 @@ class LinearOperatorScaledIdentity(linear_operator.LinearOperatorMixin,  # pylin
                assert_proper_shapes=False,
                name="LinearOperatorScaledIdentity"):
 
-    self._domain_shape_tensor_value = tensor_util.convert_shape_to_tensor(
-        domain_shape, name="domain_shape")
-    self._domain_shape_value = tf.TensorShape(tf.get_static_value(
-        self._domain_shape_tensor_value))
-
     super().__init__(
         num_rows=tf.math.reduce_prod(domain_shape),
         multiplier=multiplier,
@@ -77,6 +183,9 @@ class LinearOperatorScaledIdentity(linear_operator.LinearOperatorMixin,  # pylin
         is_square=is_square,
         assert_proper_shapes=assert_proper_shapes,
         name=name)
+
+    self._domain_shape_static, self._domain_shape_dynamic = (
+        tensor_util.static_and_dynamic_shapes_from_shape(domain_shape))
 
   def _transform(self, x, adjoint=False):
     domain_rank = tf.size(self.domain_shape_tensor())
@@ -89,19 +198,19 @@ class LinearOperatorScaledIdentity(linear_operator.LinearOperatorMixin,  # pylin
     return x * multiplier_matrix
 
   def _domain_shape(self):
-    return self._domain_shape_value
+    return self._domain_shape_static
 
   def _range_shape(self):
-    return self._domain_shape_value
+    return self._domain_shape_static
 
   def _batch_shape(self):
     return self.multiplier.shape
 
   def _domain_shape_tensor(self):
-    return self._domain_shape_tensor_value
+    return self._domain_shape_dynamic
 
   def _range_shape_tensor(self):
-    return self._domain_shape_tensor_value
+    return self._domain_shape_dynamic
 
   def _batch_shape_tensor(self):
     return tf.shape(self.multiplier)
