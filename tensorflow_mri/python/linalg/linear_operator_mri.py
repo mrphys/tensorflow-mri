@@ -304,26 +304,51 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
       self._batch_shape_static = self._batch_shape_static[:-extra_dims]
       self._batch_shape_dynamic = self._batch_shape_dynamic[:-extra_dims]
 
-    # If multicoil, add coil dimension to mask, trajectory and density.
-    if self._sensitivities is not None:
-      if self._mask is not None:
-        self._mask = tf.expand_dims(self._mask, axis=-(self._rank + 1))
-      if self._trajectory is not None:
-        self._trajectory = tf.expand_dims(self._trajectory, axis=-3)
-      if self._density is not None:
-        self._density = tf.expand_dims(self._density, axis=-2)
-      if self._phase is not None:
-        self._phase = tf.expand_dims(self._phase, axis=-(self._rank + 1))
+    # Save some tensors for later use during computation. The `_i_` prefix
+    # indicates that these tensors are for internal use. We cannot modify the
+    # original tensors because they are components of the composite tensor that
+    # represents this operator, and the overall composite tensor cannot be
+    # mutated in certain circumstances such as in Keras models.
+    self._i_mask = self._mask
+    self._i_trajectory = self._trajectory
+    self._i_density = self._density
+    self._i_phase = self._phase
+    self._i_sensitivities = self._sensitivities
 
-    # Save some tensors for later use during computation.
-    if self._mask is not None:
-      self._mask_linop_dtype = tf.cast(self._mask, dtype)
-    if self._density is not None:
-      self._dens_weights_sqrt = tf.cast(
-          tf.math.sqrt(tf.math.reciprocal_no_nan(self._density)), dtype)
-    if self._phase is not None:
-      self._phase_rotator = tf.math.exp(
-          tf.complex(tf.constant(0.0, dtype=phase.dtype), phase))
+    # If multicoil, add coil dimension to mask, trajectory and density.
+    if self._i_sensitivities is not None:
+      if self._i_mask is not None:
+        self._i_mask = tf.expand_dims(self._i_mask, axis=-(self._rank + 1))
+      if self._i_trajectory is not None:
+        self._i_trajectory = tf.expand_dims(self._i_trajectory, axis=-3)
+      if self._i_density is not None:
+        self._i_density = tf.expand_dims(self._i_density, axis=-2)
+      if self._i_phase is not None:
+        self._i_phase = tf.expand_dims(self._i_phase, axis=-(self._rank + 1))
+
+    # Select masking algorithm. Options are `multiplex` and `multiply`.
+    # `multiply` seems faster in most cases, but this needs better profiling.
+    self._masking_algorithm = 'multiply'
+
+    if self._i_mask is not None:
+      if self._masking_algorithm == 'multiplex':
+        # Preallocate zeros tensor for multiplexing.
+        self._i_zeros = tf.zeros(shape=tf.shape(self._i_mask), dtype=self.dtype)
+      elif self._masking_algorithm == 'multiply':
+        # Cast the mask to operator's dtype for multiplication.
+        self._i_mask = tf.cast(self._i_mask, dtype)
+      else:
+        raise ValueError(
+            f"Unknown masking algorithm: {self._masking_algorithm}")
+
+    # Compute the density compensation weights used internally.
+    if self._i_density is not None:
+      self._i_density = tf.cast(tf.math.sqrt(
+          tf.math.reciprocal_no_nan(self._i_density)), dtype)
+    # Compute the phase modulator used internally.
+    if self._i_phase is not None:
+      self._i_phase = tf.math.exp(tf.dtypes.complex(
+          tf.constant(0.0, dtype=dtype.real_dtype), self._i_phase))
 
     # Set normalization.
     self._fft_norm = check_util.validate_enum(
@@ -335,15 +360,16 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
 
     # Normalize coil sensitivities.
     self._sens_norm = sens_norm
-    if self._sensitivities is not None and self._sens_norm:
-      self._sensitivities = math_ops.normalize_no_nan(
-          self._sensitivities, axis=-(self._rank + 1))
+    if self._i_sensitivities is not None and self._sens_norm:
+      self._i_sensitivities = math_ops.normalize_no_nan(
+          self._i_sensitivities, axis=-(self._rank + 1))
 
     # Intensity correction.
     self._intensity_correction = intensity_correction
-    if self._sensitivities is not None and self._intensity_correction:
+    if self._i_sensitivities is not None and self._intensity_correction:
+      # This is redundant if `sens_norm` is `True`.
       self._intensity_weights_sqrt = tf.math.reciprocal_no_nan(
-          tf.math.sqrt(tf.norm(self._sensitivities, axis=-(self._rank + 1))))
+          tf.math.sqrt(tf.norm(self._i_sensitivities, axis=-(self._rank + 1))))
 
     # Set dynamic domain.
     if dynamic_domain is not None and self._extra_shape.rank == 0:
@@ -378,13 +404,13 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
     """
     if adjoint:
       # Apply density compensation.
-      if self._density is not None and not self._skip_nufft:
-        x *= self._dens_weights_sqrt
+      if self._i_density is not None and not self._skip_nufft:
+        x *= self._i_density
 
       # Apply adjoint Fourier operator.
       if self.is_non_cartesian:  # Non-Cartesian imaging, use NUFFT.
         if not self._skip_nufft:
-          x = fft_ops.nufft(x, self._trajectory,
+          x = fft_ops.nufft(x, self._i_trajectory,
                             grid_shape=self._image_shape_dynamic,
                             transform_type='type_1',
                             fft_direction='backward')
@@ -392,19 +418,26 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
             x *= self._fft_norm_factor
 
       else:  # Cartesian imaging, use FFT.
-        if self._mask is not None:
-          x *= self._mask_linop_dtype  # Undersampling.
+        if self._i_mask is not None:
+          # Apply undersampling.
+          if self._masking_algorithm == 'multiplex':
+            x = tf.where(self._i_mask, x, self._i_zeros)
+          elif self._masking_algorithm == 'multiply':
+            x *= self._i_mask
+          else:
+            raise ValueError(
+                f"Unknown masking algorithm: {self._masking_algorithm}")
         x = fft_ops.ifftn(x, axes=self._image_axes,
                           norm=self._fft_norm or 'forward', shift=True)
 
       # Apply coil combination.
       if self.is_multicoil:
-        x *= tf.math.conj(self._sensitivities)
+        x *= tf.math.conj(self._i_sensitivities)
         x = tf.math.reduce_sum(x, axis=-(self._rank + 1))
 
       # Maybe remove phase from image.
       if self.is_phase_constrained:
-        x *= tf.math.conj(self._phase_rotator)
+        x *= tf.math.conj(self._i_phase)
         x = tf.cast(tf.math.real(x), self.dtype)
 
       # Apply intensity correction.
@@ -430,17 +463,17 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
       # Add phase to real-valued image if reconstruction is phase-constrained.
       if self.is_phase_constrained:
         x = tf.cast(tf.math.real(x), self.dtype)
-        x *= self._phase_rotator
+        x *= self._i_phase
 
       # Apply sensitivity modulation.
       if self.is_multicoil:
         x = tf.expand_dims(x, axis=-(self._rank + 1))
-        x *= self._sensitivities
+        x *= self._i_sensitivities
 
       # Apply Fourier operator.
       if self.is_non_cartesian:  # Non-Cartesian imaging, use NUFFT.
         if not self._skip_nufft:
-          x = fft_ops.nufft(x, self._trajectory,
+          x = fft_ops.nufft(x, self._i_trajectory,
                             transform_type='type_2',
                             fft_direction='forward')
           if self._fft_norm is not None:
@@ -449,19 +482,26 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
       else:  # Cartesian imaging, use FFT.
         x = fft_ops.fftn(x, axes=self._image_axes,
                          norm=self._fft_norm or 'backward', shift=True)
-        if self._mask is not None:
-          x *= self._mask_linop_dtype  # Undersampling.
+        if self._i_mask is not None:
+          # Apply undersampling.
+          if self._masking_algorithm == 'multiplex':
+            x = tf.where(self._i_mask, x, self._i_zeros)
+          elif self._masking_algorithm == 'multiply':
+            x *= self._i_mask
+          else:
+            raise ValueError(
+                f"Unknown masking algorithm: {self._masking_algorithm}")
 
       # Apply density compensation.
-      if self._density is not None and not self._skip_nufft:
-        x *= self._dens_weights_sqrt
+      if self._i_density is not None and not self._skip_nufft:
+        x *= self._i_density
 
     return x
 
   def _preprocess(self, x, adjoint=False):
     if adjoint:
-      if self._density is not None:
-        x *= self._dens_weights_sqrt
+      if self._i_density is not None:
+        x *= self._i_density
     else:
       raise NotImplementedError(
           "`_preprocess` not implemented for forward transform.")
@@ -528,22 +568,40 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
 
   @property
   def rank(self):
-    """The number of spatial dimensions."""
+    """The number of spatial dimensions.
+
+    Returns:
+      An `int`, typically 2 or 3.
+    """
     return self._rank
+
+  @property
+  def mask(self):
+    """The sampling mask.
+
+    Returns:
+      A boolean `tf.Tensor` of shape `batch_shape + extra_shape + image_shape`,
+      or `None` if the operator is fully sampled or non-Cartesian.
+    """
+    return self._mask
 
   @property
   def trajectory(self):
     """The k-space trajectory.
 
-    Returns `None` for Cartesian imaging.
+    Returns:
+      A real `tf.Tensor` of shape `batch_shape + extra_shape + [samples, rank]`,
+      or `None` if the operator is Cartesian.
     """
     return self._trajectory
 
   @property
   def density(self):
-    """The density compensation function.
+    """The sampling density.
 
-    Returns `None` for Cartesian imaging.
+    Returns:
+      A real `tf.Tensor` of shape `batch_shape + extra_shape + [samples]`,
+      or `None` if the operator is Cartesian or has unknown sampling density.
     """
     return self._density
 
