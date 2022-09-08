@@ -505,12 +505,14 @@ class _LinearOperatorSpec(type_spec.BatchableTypeSpec):  # pylint: disable=abstr
   operators, so its easier to just store it.
   """
   __slots__ = ("_shape",
+               "_dtype",
                "_param_specs",
                "_non_tensor_params",
                "_prefer_static_fields")
 
   def __init__(self,
                shape,
+               dtype,
                param_specs,
                non_tensor_params,
                prefer_static_fields):
@@ -518,6 +520,7 @@ class _LinearOperatorSpec(type_spec.BatchableTypeSpec):  # pylint: disable=abstr
 
     Args:
       shape: A `tf.TensorShape`.
+      dtype: A `tf.dtypes.DType`.
       param_specs: Python `dict` of `tf.TypeSpec` instances that describe
         kwargs to the `LinearOperator`'s constructor that are `Tensor`-like or
         `CompositeTensor` subclasses.
@@ -529,6 +532,7 @@ class _LinearOperatorSpec(type_spec.BatchableTypeSpec):  # pylint: disable=abstr
         or axis values.
     """
     self._shape = shape
+    self._dtype = dtype
     self._param_specs = param_specs
     self._non_tensor_params = non_tensor_params
     self._prefer_static_fields = prefer_static_fields
@@ -566,6 +570,7 @@ class _LinearOperatorSpec(type_spec.BatchableTypeSpec):  # pylint: disable=abstr
 
     return cls(
         shape=operator.shape,
+        dtype=operator.dtype,
         param_specs=param_specs,
         non_tensor_params=non_tensor_params,
         prefer_static_fields=operator._composite_tensor_prefer_static_fields)  # pylint: disable=protected-access
@@ -583,13 +588,21 @@ class _LinearOperatorSpec(type_spec.BatchableTypeSpec):  # pylint: disable=abstr
 
   def _serialize(self):
     return (self._shape,
+            self._dtype,
             self._param_specs,
             self._non_tensor_params,
             self._prefer_static_fields)
 
+  def _to_legacy_output_shapes(self):
+    return self._shape
+
+  def _to_legacy_output_types(self):
+    return self._dtype
+
   def _copy(self, **overrides):
     kwargs = {
         "shape": self._shape,
+        "dtype": self._dtype,
         "param_specs": self._param_specs,
         "non_tensor_params": self._non_tensor_params,
         "prefer_static_fields": self._prefer_static_fields
@@ -616,6 +629,11 @@ class _LinearOperatorSpec(type_spec.BatchableTypeSpec):  # pylint: disable=abstr
     """Returns a `tf.TensorShape` representing the static shape."""
     # This property is required to use linear operators with Keras.
     return self._shape
+
+  @property
+  def dtype(self):
+    """Returns a `tf.dtypes.DType` representing the dtype."""
+    return self._dtype
 
   def with_shape(self, shape):
     """Returns a new `tf.TypeSpec` with the given shape."""
