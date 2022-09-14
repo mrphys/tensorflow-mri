@@ -33,7 +33,7 @@ class ResizeAndConcatenate(tf.keras.layers.Layer):
     super().__init__(**kwargs)
     self.axis = axis
 
-  def call(self, inputs):  # pylint: disable=missing-function-docstring
+  def call(self, inputs):  # pylint: disable=missing-function-docstring,arguments-differ
     if not isinstance(inputs, (list, tuple)):
       raise ValueError(
           f"Layer {self.__class__.__name__} expects a list of inputs. "

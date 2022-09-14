@@ -43,7 +43,7 @@ class DivisorPadding(tf.keras.layers.Layer):
                        f'Received: {divisor}')
     self.input_spec = tf.keras.layers.InputSpec(ndim=rank + 2)
 
-  def call(self, inputs):  # pylint: disable=missing-function-docstring
+  def call(self, inputs):  # pylint: disable=missing-function-docstring,arguments-differ
     static_input_shape = inputs.shape
     static_output_shape = tuple(
         ((s + d - 1) // d) * d if s is not None else None for s, d in zip(

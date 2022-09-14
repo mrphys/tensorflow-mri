@@ -24,7 +24,7 @@ from tensorflow_mri.python.util import doc_util
 
 
 class LeastSquaresGradientDescent(tf.keras.layers.Layer):
-  """Least squares gradient descent layer.
+  """Least squares gradient descent layer for ${rank}-D images.
   """
   def __init__(self,
                rank,
@@ -51,7 +51,7 @@ class LeastSquaresGradientDescent(tf.keras.layers.Layer):
         trainable=self.trainable,
         constraint=tf.keras.constraints.NonNeg())
 
-  def call(self, inputs):  # pylint: disable=missing-function-docstring
+  def call(self, inputs):  # pylint: disable=missing-function-docstring,arguments-differ
     image, data, operator = parse_inputs(inputs)
     if self.reinterpret_complex:
       image = math_ops.view_as_complex(image, stacked=False)

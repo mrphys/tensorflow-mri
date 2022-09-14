@@ -52,11 +52,11 @@ class Normalized(tf.keras.layers.Wrapper):
   def compute_output_shape(self, input_shape):
     return self.layer.compute_output_shape(input_shape)
 
-  def call(self, inputs, **kwargs):
+  def call(self, inputs, *args, **kwargs):
     mean, variance = tf.nn.moments(inputs, axes=self.axis, keepdims=True)
     std = tf.math.maximum(tf.math.sqrt(variance), tf.keras.backend.epsilon())
     inputs = (inputs - mean) / std
-    outputs = self.layer(inputs, **kwargs)
+    outputs = self.layer(inputs, *args, **kwargs)
     outputs = outputs * std + mean
     return outputs
 

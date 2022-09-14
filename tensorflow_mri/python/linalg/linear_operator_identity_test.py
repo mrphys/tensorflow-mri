@@ -14,8 +14,10 @@
 # ==============================================================================
 """Tests for module `linear_operator_identity`.
 
-Adapted from tensorflow/python/kernel_tests/linalg/linear_operator_identity_test.py
+Adapted from:
+  tensorflow/python/kernel_tests/linalg/linear_operator_identity_test.py
 """
+# pylint: disable=missing-function-docstring
 
 import numpy as np
 import tensorflow as tf
@@ -120,17 +122,20 @@ class LinearOperatorIdentityTest(
 
   def test_assert_positive_definite(self):
     with self.cached_session():
-      operator = linear_operator_identity.LinearOperatorIdentity(domain_shape=[2])
+      operator = linear_operator_identity.LinearOperatorIdentity(
+          domain_shape=[2])
       self.evaluate(operator.assert_positive_definite())  # Should not fail
 
   def test_assert_non_singular(self):
     with self.cached_session():
-      operator = linear_operator_identity.LinearOperatorIdentity(domain_shape=[2])
+      operator = linear_operator_identity.LinearOperatorIdentity(
+          domain_shape=[2])
       self.evaluate(operator.assert_non_singular())  # Should not fail
 
   def test_assert_self_adjoint(self):
     with self.cached_session():
-      operator = linear_operator_identity.LinearOperatorIdentity(domain_shape=[2])
+      operator = linear_operator_identity.LinearOperatorIdentity(
+          domain_shape=[2])
       self.evaluate(operator.assert_self_adjoint())  # Should not fail
 
   # TODO(jmontalt).
@@ -162,15 +167,18 @@ class LinearOperatorIdentityTest(
   def test_non_1d_batch_shape_raises_static(self):
     with self.assertRaisesRegex(
         ValueError, "batch_shape must be a 1-D Tensor"):
-      linear_operator_identity.LinearOperatorIdentity(domain_shape=[2], batch_shape=2)
+      linear_operator_identity.LinearOperatorIdentity(
+          domain_shape=[2], batch_shape=2)
 
   def test_non_integer_batch_shape_raises_static(self):
     with self.assertRaisesRegex(TypeError, "must be integer"):
-      linear_operator_identity.LinearOperatorIdentity(domain_shape=[2], batch_shape=[2.])
+      linear_operator_identity.LinearOperatorIdentity(
+          domain_shape=[2], batch_shape=[2.])
 
   def test_negative_batch_shape_raises_static(self):
     with self.assertRaisesRegex(ValueError, "must be non-negative"):
-      linear_operator_identity.LinearOperatorIdentity(domain_shape=[2], batch_shape=[-2])
+      linear_operator_identity.LinearOperatorIdentity(
+          domain_shape=[2], batch_shape=[-2])
 
   def test_non_1d_domain_shape_raises_dynamic(self):
     with self.cached_session():
@@ -228,9 +236,10 @@ class LinearOperatorIdentityTest(
     # These cannot be done in the automated (base test class) tests since they
     # test shapes that tf.batch_matmul cannot handle.
     # In particular, tf.batch_matmul does not broadcast.
-    with self.cached_session() as sess:
+    with self.cached_session():
       x = tf.random.normal(shape=(1, 2, 3, 4))
-      operator = linear_operator_identity.LinearOperatorIdentity(domain_shape=[3], dtype=x.dtype)
+      operator = linear_operator_identity.LinearOperatorIdentity(
+          domain_shape=[3], dtype=x.dtype)
 
       operator_matmul = operator.matmul(x)
       expected = x
@@ -243,8 +252,10 @@ class LinearOperatorIdentityTest(
     # test shapes that tf.batch_matmul cannot handle.
     # In particular, tf.batch_matmul does not broadcast.
     with self.cached_session():
-      x = tf.compat.v1.placeholder_with_default(rng.randn(1, 2, 3, 4), shape=None)
-      operator = linear_operator_identity.LinearOperatorIdentity(domain_shape=[3], dtype=x.dtype)
+      x = tf.compat.v1.placeholder_with_default(
+          rng.randn(1, 2, 3, 4), shape=None)
+      operator = linear_operator_identity.LinearOperatorIdentity(
+          domain_shape=[3], dtype=x.dtype)
 
       operator_matmul = operator.matmul(x)
       expected = x
@@ -255,7 +266,7 @@ class LinearOperatorIdentityTest(
     # These cannot be done in the automated (base test class) tests since they
     # test shapes that tf.batch_matmul cannot handle.
     # In particular, tf.batch_matmul does not broadcast.
-    with self.cached_session() as sess:
+    with self.cached_session():
       # Given this x and LinearOperatorIdentity shape of (2, 1, 6, 6), the
       # broadcast shape of operator and 'x' is (2, 2, 6, 4)
       x = tf.random.normal(shape=(1, 2, 6, 4))
@@ -279,7 +290,8 @@ class LinearOperatorIdentityTest(
     with self.cached_session():
       # Given this x and LinearOperatorIdentity shape of (2, 1, 6, 6), the
       # broadcast shape of operator and 'x' is (2, 2, 3, 4)
-      x = tf.compat.v1.placeholder_with_default(rng.rand(1, 2, 6, 4), shape=None)
+      x = tf.compat.v1.placeholder_with_default(
+          rng.rand(1, 2, 6, 4), shape=None)
       domain_shape = tf.compat.v1.placeholder_with_default((2, 3), shape=None)
       batch_shape = tf.compat.v1.placeholder_with_default((2, 1), shape=None)
 
@@ -535,7 +547,7 @@ class LinearOperatorScaledIdentityTest(
     # These cannot be done in the automated (base test class) tests since they
     # test shapes that tf.batch_matmul cannot handle.
     # In particular, tf.batch_matmul does not broadcast.
-    with self.cached_session() as sess:
+    with self.cached_session():
       # Given this x and LinearOperatorScaledIdentity shape of (2, 1, 6, 6), the
       # broadcast shape of operator and 'x' is (2, 2, 6, 4)
       x = tf.random.normal(shape=(1, 2, 6, 4))
@@ -563,7 +575,7 @@ class LinearOperatorScaledIdentityTest(
     # These cannot be done in the automated (base test class) tests since they
     # test shapes that tf.batch_matmul cannot handle.
     # In particular, tf.batch_matmul does not broadcast.
-    with self.cached_session() as sess:
+    with self.cached_session():
       # Given this x and LinearOperatorScaledIdentity shape of (6, 6), the
       # broadcast shape of operator and 'x' is (1, 2, 6, 4), which is the same
       # shape as x.
@@ -622,40 +634,41 @@ class LinearOperatorScaledIdentityTest(
   #       linear_operator_identity.LinearOperatorScaledIdentity)
   #   self.assertAllClose(3., self.evaluate(operator_matmul.multiplier))
 
-#   def test_identity_solve(self):
-#     operator1 = linear_operator_identity.LinearOperatorIdentity(domain_shape=[2])
-#     operator2 = linear_operator_identity.LinearOperatorScaledIdentity(
-#         domain_shape=[2], multiplier=3.)
-#     self.assertIsInstance(
-#         operator1.solve(operator1),
-#         linear_operator_identity.LinearOperatorIdentity)
+  # def test_identity_solve(self):
+  #   operator1 = linear_operator_identity.LinearOperatorIdentity(
+  #       domain_shape=[2])
+  #   operator2 = linear_operator_identity.LinearOperatorScaledIdentity(
+  #       domain_shape=[2], multiplier=3.)
+  #   self.assertIsInstance(
+  #       operator1.solve(operator1),
+  #       linear_operator_identity.LinearOperatorIdentity)
 
-#     self.assertIsInstance(
-#         operator2.solve(operator2),
-#         linear_operator_identity.LinearOperatorScaledIdentity)
+  #   self.assertIsInstance(
+  #       operator2.solve(operator2),
+  #       linear_operator_identity.LinearOperatorScaledIdentity)
 
-#     operator_solve = operator1.solve(operator2)
-#     self.assertIsInstance(
-#         operator_solve,
-#         linear_operator_identity.LinearOperatorScaledIdentity)
-#     self.assertAllClose(3., self.evaluate(operator_solve.multiplier))
+  #   operator_solve = operator1.solve(operator2)
+  #   self.assertIsInstance(
+  #       operator_solve,
+  #       linear_operator_identity.LinearOperatorScaledIdentity)
+  #   self.assertAllClose(3., self.evaluate(operator_solve.multiplier))
 
-#     operator_solve = operator2.solve(operator1)
-#     self.assertIsInstance(
-#         operator_solve,
-#         linear_operator_identity.LinearOperatorScaledIdentity)
-#     self.assertAllClose(1. / 3., self.evaluate(operator_solve.multiplier))
+  #   operator_solve = operator2.solve(operator1)
+  #   self.assertIsInstance(
+  #       operator_solve,
+  #       linear_operator_identity.LinearOperatorScaledIdentity)
+  #   self.assertAllClose(1. / 3., self.evaluate(operator_solve.multiplier))
 
-#   def test_scaled_identity_cholesky_type(self):
-#     operator = linear_operator_identity.LinearOperatorScaledIdentity(
-#         domain_shape=[2],
-#         multiplier=3.,
-#         is_positive_definite=True,
-#         is_self_adjoint=True,
-#     )
-#     self.assertIsInstance(
-#         operator.cholesky(),
-#         linear_operator_identity.LinearOperatorScaledIdentity)
+  # def test_scaled_identity_cholesky_type(self):
+  #   operator = linear_operator_identity.LinearOperatorScaledIdentity(
+  #       domain_shape=[2],
+  #       multiplier=3.,
+  #       is_positive_definite=True,
+  #       is_self_adjoint=True,
+  #   )
+  #   self.assertIsInstance(
+  #       operator.cholesky(),
+  #       linear_operator_identity.LinearOperatorScaledIdentity)
 
   def test_scaled_identity_inverse_type(self):
     operator = linear_operator_identity.LinearOperatorScaledIdentity(

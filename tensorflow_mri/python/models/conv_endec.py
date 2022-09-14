@@ -308,8 +308,7 @@ class UNet(tf.keras.Model):
       self._add = tf.keras.layers.Add()
       self._out_activation = tf.keras.layers.Activation(self.output_activation)
 
-  def call(self, inputs):  # pylint: disable=missing-param-doc
-    """Runs forward pass on the input tensors."""
+  def call(self, inputs):
     x = inputs
 
     # For skip connections to decoder.

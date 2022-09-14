@@ -65,7 +65,7 @@ class LinearOperatorMixin(tf.linalg.LinearOperator):
     Returns:
       The preprocessed `tf.Tensor` with the same `dtype` as `self`.
     """
-    with self._name_scope(name):
+    with self._name_scope(name):  # pylint: disable=not-callable
       x = tf.convert_to_tensor(x, name="x")
       self._check_input_dtype(x)
       input_shape = self.range_shape if adjoint else self.domain_shape
@@ -89,7 +89,7 @@ class LinearOperatorMixin(tf.linalg.LinearOperator):
     Returns:
       The preprocessed `tf.Tensor` with the same `dtype` as `self`.
     """
-    with self._name_scope(name):
+    with self._name_scope(name):  # pylint: disable=not-callable
       x = tf.convert_to_tensor(x, name="x")
       self._check_input_dtype(x)
       input_shape = self.domain_shape if adjoint else self.range_shape
@@ -572,14 +572,14 @@ class _LinearOperatorSpec(type_spec.BatchableTypeSpec):  # pylint: disable=abstr
     """
     validation_fields = ("is_non_singular", "is_self_adjoint",
                          "is_positive_definite", "is_square")
-    kwargs = tf_linear_operator._extract_attrs(
+    kwargs = tf_linear_operator._extract_attrs(  # pylint: disable=protected-access
         operator,
         keys=set(operator._composite_tensor_fields + validation_fields))  # pylint: disable=protected-access
 
     non_tensor_params = {}
     param_specs = {}
     for k, v in list(kwargs.items()):
-      type_spec_or_v = tf_linear_operator._extract_type_spec_recursively(v)
+      type_spec_or_v = tf_linear_operator._extract_type_spec_recursively(v)  # pylint: disable=protected-access
       is_tensor = [isinstance(x, type_spec.TypeSpec)
                    for x in tf.nest.flatten(type_spec_or_v)]
       if all(is_tensor):

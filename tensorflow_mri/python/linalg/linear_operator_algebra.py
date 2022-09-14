@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""Linear operator algebra."""
 
 from tensorflow.python.ops.linalg import linear_operator_algebra
 

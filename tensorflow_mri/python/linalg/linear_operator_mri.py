@@ -401,6 +401,9 @@ class LinearOperatorMRI(linear_operator.LinearOperator):  # pylint: disable=abst
       containing *k*-space data, if `adjoint` is `False`, or a `tf.Tensor` of
       type `self.dtype` and shape `[..., *self.domain_shape]` containing
       images, if `adjoint` is `True`.
+
+    Raises:
+      ValueError: If the masking algorithm is invalid.
     """
     if adjoint:
       # Apply density compensation.

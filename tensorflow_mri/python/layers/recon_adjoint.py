@@ -88,7 +88,7 @@ class ReconAdjoint(tf.keras.layers.Layer):
     self.expand_channel_dim = expand_channel_dim
     self.reinterpret_complex = reinterpret_complex
 
-  def call(self, inputs):
+  def call(self, inputs):  # pylint: arguments-differ
     data, operator = parse_inputs(inputs)
     image = recon_adjoint.recon_adjoint(data, operator)
     if self.expand_channel_dim:

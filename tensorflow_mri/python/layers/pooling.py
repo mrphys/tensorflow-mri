@@ -52,7 +52,7 @@ def complex_pool(base):
   if issubclass(base, (tf.keras.layers.AveragePooling1D,
                        tf.keras.layers.AveragePooling2D,
                        tf.keras.layers.AveragePooling3D)):
-    def call(self, inputs):
+    def call(self, inputs):  # pylint: arguments-differ
       if tf.as_dtype(self.dtype).is_complex:
         return tf.dtypes.complex(
             base.call(self, tf.math.real(inputs)),
@@ -64,7 +64,7 @@ def complex_pool(base):
   elif issubclass(base, (tf.keras.layers.MaxPooling1D,
                          tf.keras.layers.MaxPooling2D,
                          tf.keras.layers.MaxPooling3D)):
-    def call(self, inputs):
+    def call(self, inputs):  # pylint: arguments-differ
       if tf.as_dtype(self.dtype).is_complex:
         # For complex numbers the max is computed according to the magnitude
         # or absolute value of the complex input. To do this we rely on

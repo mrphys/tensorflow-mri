@@ -28,6 +28,7 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for module `fft_ops`."""
+# pylint: disable=missing-function-docstring,unused-argument,missing-class-docstring,no-else-return
 
 import distutils
 import itertools
@@ -54,7 +55,7 @@ VALID_FFT_RANKS = (1, 2, 3)
 
 
 class BaseFFTOpsTest(test.TestCase):
-
+  """Base class for FFT tests."""
   def _compare(self, x, rank, fft_length=None, use_placeholder=False,
                rtol=1e-4, atol=1e-4):
     self._compare_forward(x, rank, fft_length, use_placeholder, rtol, atol)
@@ -124,7 +125,7 @@ class BaseFFTOpsTest(test.TestCase):
 
 @test_util.run_all_in_graph_and_eager_modes
 class FFTNTest(BaseFFTOpsTest, parameterized.TestCase):
-
+  """Tests for `fftn`."""
   def _tf_fft(self, x, rank, fft_length=None, feed_dict=None):
     # fft_length unused for complex FFTs.
     with self.cached_session() as sess:

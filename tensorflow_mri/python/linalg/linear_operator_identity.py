@@ -25,7 +25,7 @@ from tensorflow_mri.python.util import types_util
 
 @api_util.export("linalg.LinearOperatorIdentity")
 @linear_operator.make_composite_tensor
-class LinearOperatorIdentity(linear_operator.LinearOperatorMixin,
+class LinearOperatorIdentity(linear_operator.LinearOperatorMixin,  # pylint: disable=abstract-method
                              tf.linalg.LinearOperatorIdentity):
   """Linear operator representing an identity matrix.
 
@@ -116,7 +116,7 @@ class LinearOperatorIdentity(linear_operator.LinearOperatorMixin,
       rank = tf.size(self.domain_shape_tensor())
     batch_shape = tf.broadcast_dynamic_shape(
         tf.shape(x)[:-rank], self.batch_shape_tensor())
-    output_shape = tf.concat([batch_shape, self.domain_shape_tensor()], axis=0)
+    output_shape = tf.concat([batch_shape, self.domain_shape_tensor()], axis=0)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
     return tf.broadcast_to(x, output_shape)
 
   def _domain_shape(self):

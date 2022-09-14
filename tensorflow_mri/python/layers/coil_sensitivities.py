@@ -66,7 +66,7 @@ class CoilSensitivityEstimation(tf.keras.layers.Layer):
       self.refinement_network = tf.keras.layers.TimeDistributed(
           network_class(**network_kwargs))
 
-  def call(self, inputs):
+  def call(self, inputs):  # pylint: arguments-differ
     data, operator, calib_data = parse_inputs(inputs)
 
     # Compute coil sensitivities.

@@ -51,7 +51,7 @@ def complex_reshape(base):
   if issubclass(base, (tf.keras.layers.UpSampling1D,
                        tf.keras.layers.UpSampling2D,
                        tf.keras.layers.UpSampling3D)):
-    def call(self, inputs):
+    def call(self, inputs):  # pylint: arguments-differ
       if tf.as_dtype(self.dtype).is_complex:
         return tf.dtypes.complex(
             base.call(self, tf.math.real(inputs)),

@@ -218,16 +218,12 @@ class ConvBlock(graph_like_network.GraphLikeNetwork):
     if self.use_residual:
       self._add = tf.keras.layers.Add()
 
-  def call(self, inputs): # pylint: disable=unused-argument, missing-param-doc
-    """Runs forward pass on the input tensor."""
+  def call(self, inputs):  # pylint: disable=unused-argument
     x = inputs
-
     for layer in self._layers:
       x = layer(x)
-
     if self.use_residual:
       x = self._add([x, inputs])
-
     return x
 
   def get_config(self):
