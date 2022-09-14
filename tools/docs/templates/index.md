@@ -2,8 +2,8 @@
 
 ```{include} ../../README.md
 ---
-start-after: start-intro
-end-before: end-intro
+start-after: <!-- start-intro -->
+end-before: <!-- end-intro -->
 ---
 ```
 

@@ -7,7 +7,7 @@
 [![Docs](https://img.shields.io/badge/api-reference-blue.svg)](https://mrphys.github.io/tensorflow-mri/)
 [![DOI](https://zenodo.org/badge/388094708.svg)](https://zenodo.org/badge/latestdoi/388094708)
 
-% start-intro
+<!-- start-intro -->
 
 TensorFlow MRI is a library of TensorFlow operators for computational MRI.
 The library has a Python interface and is mostly written in Python. However,

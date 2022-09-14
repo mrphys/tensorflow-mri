@@ -138,10 +138,14 @@ def static_and_dynamic_shapes_from_shape(shape,
 
   Raises:
     ValueError: If `shape` is not 1D.
+    TypeError: If `shape` does not have integer dtype.
   """
-  try:
-    dynamic = tf.convert_to_tensor(shape, tf.int32)
-  except TypeError:
+  if isinstance(shape, (tuple, list)) and not shape:
+    dtype = tf.int32
+  else:
+    dtype = None
+  dynamic = tf.convert_to_tensor(shape, dtype=dtype, name=arg_name)
+  if not dynamic.dtype.is_integer:
     raise TypeError(
         f"{arg_name or 'shape'} must be integer type. Found: {shape}")
   if dynamic.shape.rank not in (None, 1):

@@ -18,8 +18,8 @@ versions of TensorFlow and TensorFlow MRI according to the table below.
 
 ```{include} ../../../README.md
 ---
-start-after: start-compatibility-table
-end-before: end-compatibility-table
+start-after: <!-- start-compatibility-table -->
+end-before: <!-- end-compatibility-table -->
 ---
 ```
 
