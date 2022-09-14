@@ -17,8 +17,10 @@
 import tensorflow as tf
 
 from tensorflow_mri.python.linalg import linear_operator
+from tensorflow_mri.python.linalg import linear_operator_algebra
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import tensor_util
+from tensorflow_mri.python.util import types_util
 
 
 @api_util.export("linalg.LinearOperatorIdentity")
@@ -67,13 +69,36 @@ class LinearOperatorIdentity(linear_operator.LinearOperatorMixin,
                domain_shape,
                batch_shape=None,
                dtype=None,
-               is_non_singular=None,
-               is_self_adjoint=None,
-               is_positive_definite=None,
+               is_non_singular=True,
+               is_self_adjoint=True,
+               is_positive_definite=True,
                is_square=True,
                assert_proper_shapes=False,
                name="LinearOperatorIdentity"):
-    # Initialize the base class.
+    # Shape inputs must not have reference semantics.
+    types_util.assert_not_ref_type(domain_shape, "domain_shape")
+    types_util.assert_not_ref_type(batch_shape, "batch_shape")
+
+    # Parse domain shape.
+    self._domain_shape_static, self._domain_shape_dynamic = (
+        tensor_util.static_and_dynamic_shapes_from_shape(
+            domain_shape,
+            assert_proper_shape=assert_proper_shapes,
+            arg_name='domain_shape'))
+
+    # Parse batch shape.
+    if batch_shape is not None:
+      # Extra underscore at the end to distinguish from base class property of
+      # the same name.
+      self._batch_shape_static_, self._batch_shape_dynamic = (
+          tensor_util.static_and_dynamic_shapes_from_shape(
+              batch_shape,
+              assert_proper_shape=assert_proper_shapes,
+              arg_name='batch_shape'))
+    else:
+      self._batch_shape_static_ = tf.TensorShape([])
+      self._batch_shape_dynamic = tf.constant([], dtype=tf.int32)
+
     super().__init__(num_rows=tf.math.reduce_prod(domain_shape),
                      batch_shape=batch_shape,
                      dtype=dtype,
@@ -84,18 +109,14 @@ class LinearOperatorIdentity(linear_operator.LinearOperatorMixin,
                      assert_proper_shapes=assert_proper_shapes,
                      name=name)
 
-    self._domain_shape_static, self._domain_shape_dynamic = (
-        tensor_util.static_and_dynamic_shapes_from_shape(domain_shape))
-    if batch_shape is not None:
-      self._batch_shape_static, self._batch_shape_dynamic = (
-          tensor_util.static_and_dynamic_shapes_from_shape(batch_shape))
-    else:
-      self._batch_shape_static = tf.TensorShape([])
-      self._batch_shape_dynamic = tf.constant([], dtype=tf.int32)
-
   def _transform(self, x, adjoint=False):
-    output_shape = tf.concat([self.batch_shape_tensor(),
-                              self.domain_shape_tensor()], axis=0)
+    if self.domain_shape.rank is not None:
+      rank = self.domain_shape.rank
+    else:
+      rank = tf.size(self.domain_shape_tensor())
+    batch_shape = tf.broadcast_dynamic_shape(
+        tf.shape(x)[:-rank], self.batch_shape_tensor())
+    output_shape = tf.concat([batch_shape, self.domain_shape_tensor()], axis=0)
     return tf.broadcast_to(x, output_shape)
 
   def _domain_shape(self):
@@ -105,7 +126,7 @@ class LinearOperatorIdentity(linear_operator.LinearOperatorMixin,
     return self._domain_shape_static
 
   def _batch_shape(self):
-    return self._batch_shape_static
+    return self._batch_shape_static_
 
   def _domain_shape_tensor(self):
     return self._domain_shape_dynamic
@@ -173,6 +194,15 @@ class LinearOperatorScaledIdentity(linear_operator.LinearOperatorMixin,  # pylin
                is_square=True,
                assert_proper_shapes=False,
                name="LinearOperatorScaledIdentity"):
+    # Shape inputs must not have reference semantics.
+    types_util.assert_not_ref_type(domain_shape, "domain_shape")
+
+    # Parse domain shape.
+    self._domain_shape_static, self._domain_shape_dynamic = (
+        tensor_util.static_and_dynamic_shapes_from_shape(
+            domain_shape,
+            assert_proper_shape=assert_proper_shapes,
+            arg_name='domain_shape'))
 
     super().__init__(
         num_rows=tf.math.reduce_prod(domain_shape),
@@ -183,9 +213,6 @@ class LinearOperatorScaledIdentity(linear_operator.LinearOperatorMixin,  # pylin
         is_square=is_square,
         assert_proper_shapes=assert_proper_shapes,
         name=name)
-
-    self._domain_shape_static, self._domain_shape_dynamic = (
-        tensor_util.static_and_dynamic_shapes_from_shape(domain_shape))
 
   def _transform(self, x, adjoint=False):
     domain_rank = tf.size(self.domain_shape_tensor())
@@ -222,3 +249,39 @@ class LinearOperatorScaledIdentity(linear_operator.LinearOperatorMixin,  # pylin
   @property
   def _composite_tensor_prefer_static_fields(self):
     return ("domain_shape",)
+
+
+@linear_operator_algebra.RegisterAdjoint(LinearOperatorIdentity)
+def adjoint_identity(identity_operator):
+  return identity_operator
+
+
+@linear_operator_algebra.RegisterAdjoint(LinearOperatorScaledIdentity)
+def adjoint_scaled_identity(identity_operator):
+  multiplier = identity_operator.multiplier
+  if multiplier.dtype.is_complex:
+    multiplier = tf.math.conj(multiplier)
+
+  return LinearOperatorScaledIdentity(
+      domain_shape=identity_operator.domain_shape_tensor(),
+      multiplier=multiplier,
+      is_non_singular=identity_operator.is_non_singular,
+      is_self_adjoint=identity_operator.is_self_adjoint,
+      is_positive_definite=identity_operator.is_positive_definite,
+      is_square=True)
+
+
+@linear_operator_algebra.RegisterInverse(LinearOperatorIdentity)
+def inverse_identity(identity_operator):
+  return identity_operator
+
+
+@linear_operator_algebra.RegisterInverse(LinearOperatorScaledIdentity)
+def inverse_scaled_identity(identity_operator):
+  return LinearOperatorScaledIdentity(
+      domain_shape=identity_operator.domain_shape_tensor(),
+      multiplier=1. / identity_operator.multiplier,
+      is_non_singular=identity_operator.is_non_singular,
+      is_self_adjoint=True,
+      is_positive_definite=identity_operator.is_positive_definite,
+      is_square=True)

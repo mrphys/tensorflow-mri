@@ -14,7 +14,7 @@ TF_LDFLAGS := $(shell $(PYTHON) -c 'import tensorflow as tf; print(" ".join(tf.s
 CFLAGS := -O3 -march=x86-64 -mtune=generic
 
 CXXFLAGS := $(CFLAGS)
-CXXFLAGS += $(TF_CFLAGS) -fPIC -std=c++14 -fopenmp
+CXXFLAGS += $(TF_CFLAGS) -fPIC -std=c++17 -fopenmp
 CXXFLAGS += -I$(ROOT_DIR)
 
 LDFLAGS := $(TF_LDFLAGS)

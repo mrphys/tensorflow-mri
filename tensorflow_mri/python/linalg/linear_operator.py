@@ -15,6 +15,7 @@
 """Base linear operator."""
 
 import abc
+import functools
 
 import tensorflow as tf
 from tensorflow.python.framework import type_spec
@@ -175,18 +176,19 @@ class LinearOperatorMixin(tf.linalg.LinearOperator):
     return x
 
   def _matmul(self, x, adjoint=False, adjoint_arg=False):
-    # Default implementation of `matmul` for imaging operator. If outer
-    # dimension of argument is 1, call `matvec`. Otherwise raise an error.
-    # Typically subclasses should not need to override this method.
-    arg_outer_dim = -2 if adjoint_arg else -1
-
-    if x.shape[arg_outer_dim] != 1:
-      raise ValueError(
-        f"`{self.__class__.__name__}` does not support matrix multiplication.")
-
-    x = tf.squeeze(x, axis=arg_outer_dim)
-    x = self.matvec(x, adjoint=adjoint)
-    x = tf.expand_dims(x, axis=arg_outer_dim)
+    # Default implementation of `matmul` for imaging operator. Basically we
+    # just call `matvec` for each column of `x` (or for each row, if
+    # `adjoint_arg` is `True`). `tf.einsum` is used to transpose the input arg,
+    # moving the column/row dimension to be the leading batch dimension to be
+    # unpacked by `tf.map_fn`. Typically subclasses should not need to override
+    # this method.
+    batch_shape = tf.broadcast_static_shape(x.shape[:-2], self.batch_shape)
+    x = tf.einsum('...ij->i...j' if adjoint_arg else '...ij->j...i', x)
+    x = tf.map_fn(functools.partial(self.matvec, adjoint=adjoint), x,
+                  fn_output_signature=tf.TensorSpec(
+                      shape=batch_shape + [self.range_dimension],
+                      dtype=x.dtype))
+    x = tf.einsum('i...j->...ij' if adjoint_arg else 'j...i->...ij', x)
     return x
 
   @abc.abstractmethod
@@ -221,16 +223,16 @@ class LinearOperatorMixin(tf.linalg.LinearOperator):
   def _shape(self):
     # Default implementation of `_shape` for imaging operators. Typically
     # subclasses should not need to override this method.
-    return self._batch_shape() + tf.TensorShape(
+    return self._batch_shape().concatenate(tf.TensorShape(
         [self.range_shape.num_elements(),
-         self.domain_shape.num_elements()])
+         self.domain_shape.num_elements()]))
 
   def _shape_tensor(self):
     # Default implementation of `_shape_tensor` for imaging operators. Typically
     # subclasses should not need to override this method.
     return tf.concat([self.batch_shape_tensor(),
-                      [tf.size(self.range_shape_tensor()),
-                       tf.size(self.domain_shape_tensor())]], 0)
+                      [tf.math.reduce_prod(self.range_shape_tensor()),
+                       tf.math.reduce_prod(self.domain_shape_tensor())]], 0)
 
   def flatten_domain_shape(self, x):
     """Flattens `x` to match the domain dimension of this operator.
@@ -242,11 +244,21 @@ class LinearOperatorMixin(tf.linalg.LinearOperator):
       The flattened `Tensor`. Has shape `[..., self.domain_dimension]`.
     """
     # pylint: disable=invalid-unary-operand-type
-    self.domain_shape.assert_is_compatible_with(
-        x.shape[-self.domain_shape.rank:])
+    domain_rank_static = self.domain_shape.rank
+    if domain_rank_static is not None:
+      domain_rank_dynamic = domain_rank_static
+    else:
+      domain_rank_dynamic = tf.shape(self.domain_shape_tensor())[0]
 
-    batch_shape = x.shape[:-self.domain_shape.rank]
-    batch_shape_tensor = tf.shape(x)[:-self.domain_shape.rank]
+    if domain_rank_static is not None:
+      self.domain_shape.assert_is_compatible_with(
+          x.shape[-domain_rank_static:])
+
+    if domain_rank_static is not None:
+      batch_shape = x.shape[:-domain_rank_static]
+    else:
+      batch_shape = tf.TensorShape(None)
+    batch_shape_tensor = tf.shape(x)[:-domain_rank_dynamic]
 
     output_shape = batch_shape + self.domain_dimension
     output_shape_tensor = tf.concat(
@@ -265,11 +277,21 @@ class LinearOperatorMixin(tf.linalg.LinearOperator):
       The flattened `Tensor`. Has shape `[..., self.range_dimension]`.
     """
     # pylint: disable=invalid-unary-operand-type
-    self.range_shape.assert_is_compatible_with(
-        x.shape[-self.range_shape.rank:])
+    range_rank_static = self.range_shape.rank
+    if range_rank_static is not None:
+      range_rank_dynamic = range_rank_static
+    else:
+      range_rank_dynamic = tf.shape(self.range_shape_tensor())[0]
 
-    batch_shape = x.shape[:-self.range_shape.rank]
-    batch_shape_tensor = tf.shape(x)[:-self.range_shape.rank]
+    if range_rank_static is not None:
+      self.range_shape.assert_is_compatible_with(
+          x.shape[-range_rank_static:])
+
+    if range_rank_static is not None:
+      batch_shape = x.shape[:-range_rank_static]
+    else:
+      batch_shape = tf.TensorShape(None)
+    batch_shape_tensor = tf.shape(x)[:-range_rank_dynamic]
 
     output_shape = batch_shape + self.range_dimension
     output_shape_tensor = tf.concat(

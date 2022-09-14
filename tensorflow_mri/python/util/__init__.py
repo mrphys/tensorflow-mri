@@ -31,3 +31,4 @@ from tensorflow_mri.python.util import prefer_static
 from tensorflow_mri.python.util import sys_util
 from tensorflow_mri.python.util import tensor_util
 from tensorflow_mri.python.util import test_util
+from tensorflow_mri.python.util import types_util
