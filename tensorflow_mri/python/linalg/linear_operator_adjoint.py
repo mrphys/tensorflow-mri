@@ -14,9 +14,21 @@
 # ==============================================================================
 """Adjoint of a linear operator."""
 
+import tensorflow as tf
+
 from tensorflow_mri.python.linalg import linear_operator
+from tensorflow_mri.python.linalg import linear_operator_util
+from tensorflow_mri.python.util import api_util
+from tensorflow_mri.python.util import doc_util
 
 
-# This is actually defined in `linear_operator` module to avoid circular
-# dependencies.
-LinearOperatorAdjoint = linear_operator.LinearOperatorAdjoint
+LinearOperatorAdjoint = api_util.export(
+    "linalg.LinearOperatorAdjoint")(
+        doc_util.tf_linkcode(
+            linear_operator_util.patch_operator(
+                linear_operator.make_composite_tensor(
+                    tf.linalg.LinearOperatorAdjoint))))
+
+
+# Monkey-patch.
+tf.linalg.LinearOperatorAdjoint = LinearOperatorAdjoint

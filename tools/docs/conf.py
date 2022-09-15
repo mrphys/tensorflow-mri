@@ -37,7 +37,8 @@ import conf_helper
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 sys.path.insert(0, path.abspath('../..'))
-sys.path.insert(0, path.abspath('extensions'))
+sys.path.insert(0, path.abspath('/opt/sphinx'))
+sys.path.insert(0, path.abspath('/opt/sphinx/extensions'))
 
 
 # -- Project information -----------------------------------------------------
@@ -184,6 +185,10 @@ def linkcode_resolve(domain, info):
   # (type `types.FunctionType`).
   if not isinstance(obj, (type, types.FunctionType)):
     return None
+
+  # Check if object already defines its own link.
+  if hasattr(obj, '__linkcode__'):
+    return obj.__linkcode__
 
   # Get the file name of the current object.
   file = inspect.getsourcefile(obj)

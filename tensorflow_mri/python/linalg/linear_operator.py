@@ -459,63 +459,6 @@ class LinearOperator(LinearOperatorMixin, tf.linalg.LinearOperator):  # pylint: 
   """
 
 
-@api_util.export("linalg.LinearOperatorAdjoint")
-class LinearOperatorAdjoint(LinearOperatorMixin,  # pylint: disable=abstract-method
-                            tf.linalg.LinearOperatorAdjoint):
-  """Linear operator representing the adjoint of another operator.
-
-  `LinearOperatorAdjoint` is initialized with an operator $A$ and
-  represents its adjoint $A^H$.
-
-  .. note:
-    Similar to `tf.linalg.LinearOperatorAdjoint`_, but with imaging extensions.
-
-  Args:
-    operator: A `LinearOperator`.
-    is_non_singular: Expect that this operator is non-singular.
-    is_self_adjoint: Expect that this operator is equal to its Hermitian
-      transpose.
-    is_positive_definite: Expect that this operator is positive definite,
-      meaning the quadratic form $x^H A x$ has positive real part for all
-      nonzero $x$. Note that we do not require the operator to be
-      self-adjoint to be positive-definite.
-    is_square: Expect that this operator acts like square [batch] matrices.
-    name: A name for this `LinearOperator`. Default is `operator.name +
-      "_adjoint"`.
-
-  .. _tf.linalg.LinearOperatorAdjoint: https://www.tensorflow.org/api_docs/python/tf/linalg/LinearOperatorAdjoint
-  """
-  def _transform(self, x, adjoint=False):
-    # pylint: disable=protected-access
-    return self.operator._transform(x, adjoint=(not adjoint))
-
-  def _preprocess(self, x, adjoint=False):
-    # pylint: disable=protected-access
-    return self.operator._preprocess(x, adjoint=(not adjoint))
-
-  def _postprocess(self, x, adjoint=False):
-    # pylint: disable=protected-access
-    return self.operator._postprocess(x, adjoint=(not adjoint))
-
-  def _domain_shape(self):
-    return self.operator.range_shape
-
-  def _range_shape(self):
-    return self.operator.domain_shape
-
-  def _batch_shape(self):
-    return self.operator.batch_shape
-
-  def _domain_shape_tensor(self):
-    return self.operator.range_shape_tensor()
-
-  def _range_shape_tensor(self):
-    return self.operator.domain_shape_tensor()
-
-  def _batch_shape_tensor(self):
-    return self.operator.batch_shape_tensor()
-
-
 class _LinearOperatorSpec(type_spec.BatchableTypeSpec):  # pylint: disable=abstract-method
   """A tf.TypeSpec for `LinearOperator` objects.
 

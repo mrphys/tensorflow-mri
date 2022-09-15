@@ -17,13 +17,17 @@
 import tensorflow as tf
 
 from tensorflow_mri.python.linalg import linear_operator
+from tensorflow_mri.python.linalg import linear_operator_util
 from tensorflow_mri.python.util import api_util
+from tensorflow_mri.python.util import doc_util
 
 
 LinearOperatorDiag = api_util.export(
     "linalg.LinearOperatorDiag")(
-        linear_operator.make_composite_tensor(
-            tf.linalg.LinearOperatorDiag))
+        doc_util.tf_linkcode(
+            linear_operator_util.patch_operator(
+                linear_operator.make_composite_tensor(
+                    tf.linalg.LinearOperatorDiag))))
 
 
 # Monkey-patch.
