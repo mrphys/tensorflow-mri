@@ -28,8 +28,32 @@ from tensorflow_mri.python.util import tensor_util
 
 
 @api_util.export("linalg.LinearOperatorNUFFT")
+@linear_operator.make_composite_tensor
 class LinearOperatorNUFFT(linear_operator.LinearOperator):  # pylint: disable=abstract-method
-  """Linear operator acting like a nonuniform DFT matrix.
+  """Linear operator acting like a [batch] nonuniform Fourier matrix.
+
+  Performs an N-dimensional discrete Fourier transform via the nonuniform fast
+  Fourier transform (NUFFT) algorithm. Let $F$ represent this linear operator,
+  then:
+
+  - The forward operator $F$ evaluates the forward, type-2 NUFFT (signal domain
+    to frequency domain, uniform to nonuniform).
+  - The adjoint operator $F^H$ evaluates the backward, type-1 NUFFT
+    (frequency domain to signal domain, nonuniform to uniform).
+
+  The dimensionality of the grid is determined by `domain_shape`. The
+  non-uniform sampling locations are defined by `trajectory`.
+
+  ```{attention} Inverse NUFFT
+  Unlike with `tfmri.linalg.LinearOperatorFFT`, the adjoint NUFFT is **not**
+  equivalent to the inverse. To apply the inverse, you can use `solve` or
+  `solvevec`. Note that `solve` and `solvevec` require `density` to be
+  specified.
+  ```
+
+  ```{seealso}
+  `tfmri.linalg.LinearOperatorFFT` for uniformly sampled Fourier transforms.
+  ```
 
   Args:
     domain_shape: A 1D integer `tf.Tensor`. The domain shape of this
@@ -39,24 +63,20 @@ class LinearOperatorNUFFT(linear_operator.LinearOperator):  # pylint: disable=ab
       sampling locations or *k*-space trajectory. Must have shape
       `[..., M, N]`, where `N` is the rank (number of dimensions), `M` is
       the number of samples and `...` is the batch shape, which can have any
-      number of dimensions.
+      number of dimensions. Must be in the range `[-pi, pi]`.
     density: A `tf.Tensor` of type `float32` or `float64`. Contains the
       sampling density at each point in `trajectory`. Must have shape
       `[..., M]`, where `M` is the number of samples and `...` is the batch
       shape, which can have any number of dimensions. Defaults to `None`, in
       which case the density is assumed to be 1.0 in all locations.
+      ```{tip}
+      `density` is used to compute this operator's inverse during `solve` and
+      `solvevec`. If you do not need to compute the inverse, you can safely
+      ignore this argument.
+      ```
     norm: A `str`. The FFT normalization mode. Must be `None` (no normalization)
       or `'ortho'`.
     name: An optional `str`. The name of this operator.
-
-  Notes:
-    In MRI, sampling density compensation is typically performed during the
-    adjoint transform. However, in order to maintain certain properties of the
-    linear operator, this operator applies the compensation orthogonally, i.e.,
-    it scales the data by the square root of `density` in both forward and
-    adjoint transforms. If you are using this operator to compute the adjoint
-    and wish to apply the full compensation, you can do so via the
-    `preprocess` method.
 
   Example:
     >>> # Create some data.
