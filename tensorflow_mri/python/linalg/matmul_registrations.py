@@ -12,26 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""(Scaled) identity linear operators."""
-
-import tensorflow as tf
-
-from tensorflow_mri.python.linalg import linear_operator
-from tensorflow_mri.python.util import api_util
-
-
-LinearOperatorIdentity = api_util.export(
-    "linalg.LinearOperatorIdentity")(
-        linear_operator.make_composite_tensor(
-            tf.linalg.LinearOperatorIdentity))
-
-
-LinearOperatorScaledIdentity = api_util.export(
-    "linalg.LinearOperatorScaledIdentity")(
-        linear_operator.make_composite_tensor(
-            tf.linalg.LinearOperatorScaledIdentity))
-
-
-# Monkey-patch.
-tf.linalg.LinearOperatorIdentity = LinearOperatorIdentity
-tf.linalg.LinearOperatorScaledIdentity = LinearOperatorScaledIdentity
+"""Registrations for LinearOperator.matmul."""
