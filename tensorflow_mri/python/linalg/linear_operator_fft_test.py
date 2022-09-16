@@ -171,7 +171,6 @@ class LinearOperatorMaskedFFTTest(
         "trace"
     ]
 
-
   @staticmethod
   def dtypes_to_test():
     return [tf.complex64, tf.complex128]

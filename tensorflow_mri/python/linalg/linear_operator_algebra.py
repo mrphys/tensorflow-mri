@@ -14,8 +14,44 @@
 # ==============================================================================
 """Linear operator algebra."""
 
+import tensorflow as tf
+
 from tensorflow.python.ops.linalg import linear_operator_algebra
 
 
 RegisterAdjoint = linear_operator_algebra.RegisterAdjoint
 RegisterInverse = linear_operator_algebra.RegisterInverse
+RegisterMatmul = linear_operator_algebra.RegisterMatmul
+RegisterSolve = linear_operator_algebra.RegisterSolve
+_registered_function = linear_operator_algebra._registered_function  # pylint: disable=protected-access
+
+
+_PSEUDO_INVERSES = {}
+
+
+def _registered_pseudo_inverse(type_a):
+  """Get the PseudoInverse function registered for class a."""
+  return _registered_function([type_a], _PSEUDO_INVERSES)
+
+
+def pseudo_inverse(lin_op_a, name=None):
+  """Get the Pseudo-Inverse associated to lin_op_a.
+
+  Args:
+    lin_op_a: The LinearOperator to decompose.
+    name: Name to use for this operation.
+
+  Returns:
+    A LinearOperator that represents the inverse of `lin_op_a`.
+
+  Raises:
+    NotImplementedError: If no Pseudo-Inverse method is defined for the
+      LinearOperator type of `lin_op_a`.
+  """
+  pseudo_inverse_fn = _registered_pseudo_inverse(type(lin_op_a))
+  if pseudo_inverse_fn is None:
+    raise ValueError("No pseudo-inverse registered for {}".format(
+        type(lin_op_a)))
+
+  with tf.name_scope(name or "PseudoInverse"):
+    return pseudo_inverse_fn(lin_op_a)

@@ -203,6 +203,8 @@ class LinearOperatorFFT(linear_operator.LinearOperator):
     return x
 
   def _solvevec_nd(self, rhs, adjoint=False):
+    if self._mask is not None:
+      raise ValueError("cannot solve masked FFT operator: singular matrix")
     return self._matvec_nd(rhs, adjoint=(not adjoint))
 
   def _apply_mask(self, x):

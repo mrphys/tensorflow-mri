@@ -12,15 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Registrations for LinearOperator.inverse."""
-
-from tensorflow_mri.python.linalg import linear_operator_algebra
-from tensorflow_mri.python.linalg import linear_operator_fft
-
-
-@linear_operator_algebra.RegisterInverse(
-    linear_operator_fft.LinearOperatorFFT)
-def _inverse_fft(linop):
-  if linop.mask is not None:
-    raise ValueError("cannot invert masked FFT operator: singular matrix")
-  return linop.adjoint()
+"""Tests for `LinearOperatorInversion`."""
