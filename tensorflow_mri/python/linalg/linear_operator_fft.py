@@ -18,6 +18,7 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.linalg import linear_operator
+from tensorflow_mri.python.linalg import slicing
 from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import tensor_util
@@ -62,7 +63,8 @@ class LinearOperatorFFT(linear_operator.LinearOperator):
     mask: A boolean `tf.Tensor` of shape `batch_shape + domain_shape` (or a
       broadcast-compatible shape). The sampling mask.
     is_non_singular: A boolean, or `None`. Whether this operator is expected
-      to be non-singular. Defaults to `True`.
+      to be non-singular. Defaults to `None`, which defaults to `True` if mask
+      is `None` and `False` otherwise.
     is_self_adjoint: A boolean, or `None`. Whether this operator is expected
       to be equal to its Hermitian transpose. If `dtype` is real, this is
       equivalent to being symmetric. Defaults to `False`.
@@ -81,7 +83,7 @@ class LinearOperatorFFT(linear_operator.LinearOperator):
                batch_shape=None,
                dtype=None,
                mask=None,
-               is_non_singular=True,
+               is_non_singular=None,
                is_self_adjoint=False,
                is_positive_definite=None,
                is_square=True,
@@ -101,9 +103,14 @@ class LinearOperatorFFT(linear_operator.LinearOperator):
     dtype = dtype or tf.complex64
 
     with tf.name_scope(name):
+      if is_non_singular is None:
+        is_non_singular = mask is None
+
       dtype = tf.dtypes.as_dtype(dtype)
-      if not is_non_singular:
-        raise ValueError("An FFT operator is always non-singular.")
+      if not is_non_singular and mask is None:
+        raise ValueError("A non-masked FFT operator is always non-singular.")
+      if is_non_singular and mask is not None:
+        raise ValueError("A masked FFT operator is always singular.")
       if is_self_adjoint:
         raise ValueError("An FFT operator is never self-adjoint.")
       if not is_square:
@@ -228,6 +235,10 @@ class LinearOperatorFFT(linear_operator.LinearOperator):
     return self._batch_shape_dynamic
 
   @property
+  def mask(self):
+    return self._mask
+
+  @property
   def rank(self):
     return self.domain_shape.rank
 
@@ -243,21 +254,21 @@ class LinearOperatorFFT(linear_operator.LinearOperator):
 
   @property
   def _composite_tensor_fields(self):
-    return ('domain_shape', 'batch_shape', 'dtype')
+    return ('domain_shape', 'batch_shape', 'dtype', 'mask')
 
   @property
   def _composite_tensor_prefer_static_fields(self):
-    return ("domain_shape", "batch_shape")
+    return ('domain_shape', 'batch_shape')
 
   @property
   def _experimental_parameter_ndims_to_matrix_ndims(self):
-    return {}
+    return {'mask': self.rank}
 
   def __getitem__(self, slices):
     # Support slicing.
     new_batch_shape = tf.shape(tf.ones(self.batch_shape_tensor())[slices])
-    parameters = dict(self.parameters, batch_shape=new_batch_shape)
-    return LinearOperatorFFT(**parameters)
+    return slicing.batch_slice(
+        self, params_overrides={'batch_shape': new_batch_shape}, slices=slices)
 
 
 @api_util.export("linalg.dft_matrix")
@@ -274,7 +285,7 @@ def dft_matrix(num_rows,
     batch_shape: A 1D integer `tf.Tensor`. If provided, the returned
       `tf.Tensor` will have leading batch dimensions of this shape.
     dtype: A `tf.dtypes.DType`. The type of an element in the resulting
-      `tf.Tensor`.
+      `tf.Tensor`. Must be complex. Defaults to `tf.complex64`.
     shift: A boolean. If `True`, returns the matrix for a DC-centred DFT.
     name: A name for this op.
 
@@ -287,6 +298,8 @@ def dft_matrix(num_rows,
     if batch_shape is not None:
       batch_shape = tensor_util.convert_shape_to_tensor(batch_shape)
     dtype = tf.dtypes.as_dtype(dtype)
+    if not dtype.is_complex:
+      raise TypeError(f"dtype must be complex, got {str(dtype)}")
 
     i = tf.range(num_rows, dtype=dtype.real_dtype)
     omegas = tf.reshape(
