@@ -29,8 +29,52 @@ from tensorflow_mri.python.util import types_util
 class LinearOperatorFFT(linear_operator.LinearOperator):
   r"""Linear operator acting like a [batch] DFT matrix.
 
+  If this operator is $A$, then $A x$ computes the Fourier transform of $x$,
+  while $A^H x$ computes the inverse Fourier transform of $x$. Note that the
+  inverse and the adjoint are equivalent, i.e. $A^H = A^{-1}$.
+
+  The DFT matrix is never materialized internally. Instead matrix-matrix and
+  matrix-vector products are computed using the fast Fourier transform (FFT)
+  algorithm.
+
+  This operator supports N-dimensional inputs, whose shape must be specified
+  through the `domain_shape` argument. This operator also acccepts an optional
+  `batch_shape` argument, which will be relevant for broadcasting purposes.
+
+  This operator only supports complex inputs. Specify the desired type using
+  the `dtype` argument.
+
+  This operator supports masking to implement subsampling in the frequency
+  domain (e.g., for MRI). The sampling mask is specified through the
+  `mask` argument.
+
+  Example:
+
+  >>> # Create a 2-dimensional 128x128 DFT operator.
+  >>> linop = tfmri.linalg.LinearOperatorFFT(domain_shape=[128, 128])
+
   Args:
-    domain_shape:  Shape of the domain of the operator.
+    domain_shape: A 1D integer `tf.Tensor`. The domain shape of the operator,
+      representing the shape of the inputs to `matvec`.
+    batch_shape: A 1D integer `tf.Tensor`. The batch shape of the operator.
+      Defaults to `None`, which is equivalent to `[]`.
+    dtype: A `tf.dtypes.DType`. Must be complex. Defaults to `tf.complex64`.
+    mask: A boolean `tf.Tensor` of shape `batch_shape + domain_shape` (or a
+      broadcast-compatible shape). The sampling mask.
+    is_non_singular: A boolean, or `None`. Whether this operator is expected
+      to be non-singular. Defaults to `True`.
+    is_self_adjoint: A boolean, or `None`. Whether this operator is expected
+      to be equal to its Hermitian transpose. If `dtype` is real, this is
+      equivalent to being symmetric. Defaults to `False`.
+    is_positive_definite: A boolean, or `None`. Whether this operators is
+      expected to be positive definite, meaning the quadratic form $x^H A x$
+      has positive real part for all nonzero $x$. Note that we do not require
+      the operator to be self-adjoint to be positive-definite. See:
+      https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices.
+      Defaults to `None`.
+    is_square: A boolean, or `None`. Expect that this operator acts like a
+      square matrix (or a batch of square matrices). Defaults to `True`.
+    name: A `name`. The name to give to the ops created by this class.
   """
   def __init__(self,
                domain_shape,
