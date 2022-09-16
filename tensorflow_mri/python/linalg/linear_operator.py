@@ -27,26 +27,61 @@ from tensorflow_mri.python.util import tensor_util
 
 class LinearOperatorMixin(tf.linalg.LinearOperator):
   """Mixin for linear operators meant to operate on images."""
-  def transform(self, x, adjoint=False, name="transform"):
-    """Transforms a batch of inputs.
+  def matvec_nd(self, x, adjoint=False, name="matvec_nd"):
+    """Transforms [batch] N-D input `x` with left multiplication `x --> Ax`.
 
-    Applies this operator to a batch of non-vectorized inputs `x`.
+    ```{note}
+    Similar to `matvec`, but works with non-vectorized N-D inputs `x`.
+    ```
 
     Args:
       x: A `tf.Tensor` with compatible shape and same dtype as `self`.
-      adjoint: A `boolean`. If `True`, transforms the input using the adjoint
+      adjoint: A boolean. If `True`, transforms the input using the adjoint
         of the operator, instead of the operator itself.
       name: A name for this operation.
 
     Returns:
-      The transformed `tf.Tensor` with the same `dtype` as `self`.
+      A `tf.Tensor` with same dtype as `x` and shape `[..., *nd_shape]`,
+      where `nd_shape` is the equal to `domain_shape` if `adjoint` is `True`
+      and `range_shape` otherwise.
     """
     with self._name_scope(name):  # pylint: disable=not-callable
       x = tf.convert_to_tensor(x, name="x")
       self._check_input_dtype(x)
       input_shape = self.range_shape if adjoint else self.domain_shape
       input_shape.assert_is_compatible_with(x.shape[-input_shape.rank:])  # pylint: disable=invalid-unary-operand-type
-      return self._transform(x, adjoint=adjoint)
+      return self._matvec_nd(x, adjoint=adjoint)
+
+  def solvevec_nd(self, rhs, adjoint=False, name="solve"):
+    """Solve single equation with N-D right-hand side: `A x = rhs`.
+
+    The returned `tf.Tensor` will be close to an exact solution if `A` is well
+    conditioned. Otherwise closeness will vary. See class docstring for details.
+
+    ```{note}
+    Similar to `solvevec`, but works with non-vectorized N-D inputs `rhs`.
+    ```
+
+    Args:
+      rhs: A `tf.Tensor` with same `dtype` as this operator.
+        `rhs` is treated like a [batch] vector meaning for every set of leading
+        dimensions, the last dimension defines a vector.  See class docstring
+        for definition of compatibility regarding batch dimensions.
+      adjoint: A boolean. If `True`, solve the system involving the adjoint of
+        this operator: $A^H x = b$. Defaults to `False`.
+      name:  A name scope to use for ops added by this method.
+
+    Returns:
+      A `tf.Tensor` with same dtype as `x` and shape `[..., *nd_shape]`,
+      where `nd_shape` is the equal to `range_shape` if `adjoint` is `True`
+      and `domain_shape` otherwise.
+    """
+    with self._name_scope(name):  # pylint: disable=not-callable
+      rhs = tf.convert_to_tensor(rhs, name="rhs")
+      self._check_input_dtype(rhs)
+      input_shape = self.domain_shape if adjoint else self.range_shape
+      input_shape.assert_is_compatible_with(rhs.shape[-input_shape.rank:])  # pylint: disable=invalid-unary-operand-type
+      return self._solvevec_nd(rhs, adjoint=adjoint)
 
   def preprocess(self, x, adjoint=False, name="preprocess"):
     """Preprocesses a batch of inputs.
@@ -130,9 +165,13 @@ class LinearOperatorMixin(tf.linalg.LinearOperator):
       return self._batch_shape_tensor()
 
   @abc.abstractmethod
-  def _transform(self, x, adjoint=False):
+  def _matvec_nd(self, x, adjoint=False):
     # Subclasses must override this method.
-    raise NotImplementedError("Method `_transform` is not implemented.")
+    raise NotImplementedError("Method `_matvec_nd` is not implemented.")
+
+  def _solvevec_nd(self, x, adjoint=False):
+    # Subclasses may override this method.
+    raise NotImplementedError("Method `_solvevec_nd` is not implemented.")
 
   def _preprocess(self, x, adjoint=False):
     # Subclasses may override this method.
@@ -147,33 +186,55 @@ class LinearOperatorMixin(tf.linalg.LinearOperator):
     # input `x` is first expanded to the its full shape, then transformed, then
     # vectorized again. Typically subclasses should not need to override this
     # method.
-    x = self.expand_range_dimension(x) if adjoint else \
-        self.expand_domain_dimension(x)
-    x = self._transform(x, adjoint=adjoint)
-    x = self.flatten_domain_shape(x) if adjoint else \
-        self.flatten_range_shape(x)
+    x = (self.expand_range_dimension(x) if adjoint else
+         self.expand_domain_dimension(x))
+    x = self._matvec_nd(x, adjoint=adjoint)
+    x = (self.flatten_domain_shape(x) if adjoint else \
+         self.flatten_range_shape(x))
     return x
 
   def _matmul(self, x, adjoint=False, adjoint_arg=False):
     # Default implementation of `matmul` for imaging operator. Basically we
     # just call `matvec` for each column of `x` (or for each row, if
-    # `adjoint_arg` is `True`). `tf.einsum` is used to transpose the input arg,
-    # moving the column/row dimension to be the leading batch dimension to be
-    # unpacked by `tf.map_fn`. Typically subclasses should not need to override
-    # this method.
+    # `adjoint_arg` is `True`). `tf.einsum` is used to transpose the input arg.
     batch_shape = tf.broadcast_static_shape(x.shape[:-2], self.batch_shape)
-    print("begin")
-    print(x.shape)
+    output_dim = self.domain_dimension if adjoint else self.range_dimension
+    if adjoint_arg and x.dtype.is_complex:
+      x = tf.math.conj(x)
     x = tf.einsum('...ij->i...j' if adjoint_arg else '...ij->j...i', x)
-    print(x.shape)
-
-    x = tf.map_fn(functools.partial(self.matvec, adjoint=adjoint), x,
+    y = tf.map_fn(functools.partial(self.matvec, adjoint=adjoint), x,
                   fn_output_signature=tf.TensorSpec(
-                      shape=batch_shape + [self.range_dimension],
+                      shape=batch_shape + [output_dim],
                       dtype=x.dtype))
-    print(x.shape)
-    x = tf.einsum('i...j->...ij' if adjoint_arg else 'j...i->...ij', x)
-    print(x.shape)
+    y = tf.einsum('i...j->...ji' if adjoint_arg else 'j...i->...ij', y)
+    return y
+
+  def _solvevec(self, rhs, adjoint=False):
+    # Default implementation of `_solvevec` for imaging operator. The
+    # vectorized input `rhs` is first expanded to the its full shape, then
+    # solved, then vectorized again. Typically subclasses should not need to
+    # override this method.
+    rhs = (self.expand_domain_dimension(rhs) if adjoint else
+           self.expand_range_dimension(rhs))
+    rhs = self._solvevec_nd(rhs, adjoint=adjoint)
+    rhs = (self.flatten_range_shape(rhs) if adjoint else
+           self.flatten_domain_shape(rhs))
+    return rhs
+
+  def _solve(self, rhs, adjoint=False, adjoint_arg=False):
+    # Default implementation of `_solve` for imaging operator. Basically we
+    # just call `solvevec` for each column of `rhs` (or for each row, if
+    # `adjoint_arg` is `True`). `tf.einsum` is used to transpose the input arg.
+    batch_shape = tf.broadcast_static_shape(rhs.shape[:-2], self.batch_shape)
+    output_dim = self.range_dimension if adjoint else self.domain_dimension
+    if adjoint_arg and rhs.dtype.is_complex:
+      rhs = tf.math.conj(rhs)
+    rhs = tf.einsum('...ij->i...j' if adjoint_arg else '...ij->j...i', rhs)
+    x = tf.map_fn(functools.partial(self.solvevec, adjoint=adjoint), rhs,
+                  fn_output_signature=tf.TensorSpec(
+                      shape=batch_shape + [output_dim],
+                      dtype=rhs.dtype))
+    x = tf.einsum('i...j->...ji' if adjoint_arg else 'j...i->...ij', x)
     return x
 
   @abc.abstractmethod

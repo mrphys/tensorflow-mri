@@ -27,6 +27,32 @@ from tensorflow_mri.python.ops import traj_ops
 from tensorflow_mri.python.util import test_util
 
 
+  # @staticmethod
+  # def skip_these_tests():
+  #   return [
+  #       # "add_to_tensor",
+  #       # "adjoint",
+  #       "cholesky", #x
+  #       # "cond",
+  #       # "composite_tensor",
+  #       # "det",
+  #       # "diag_part",
+  #       "eigvalsh",  #x
+  #       # "inverse",
+  #       # "log_abs_det",
+  #       # "operator_matmul_with_same_type",
+  #       # "operator_solve_with_same_type",
+  #       # "matmul",
+  #       # "matmul_with_broadcast",
+  #       # "saved_model",
+  #       # "slicing",
+  #       # "solve",
+  #       # "solve_with_broadcast",
+  #       # "to_dense",
+  #       # "trace"
+  #   ]
+
+
 class LinearOperatorNUFFTTest(test_util.TestCase):
   @parameterized.named_parameters(
       ("normalized", "ortho"),
