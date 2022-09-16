@@ -1,4 +1,4 @@
-# Copyright 2019 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,3 +13,13 @@
 # limitations under the License.
 # ==============================================================================
 """Registrations for LinearOperator.inverse."""
+
+from tensorflow_mri.python.linalg import linear_operator_algebra
+from tensorflow_mri.python.linalg import linear_operator_fft
+
+
+@linear_operator_algebra.RegisterInverse(
+    linear_operator_fft.LinearOperatorFFT)
+def _inverse_fft(linop):
+  # The inverse of the FFT is equal to the adjoint of the FFT.
+  return linop.adjoint()

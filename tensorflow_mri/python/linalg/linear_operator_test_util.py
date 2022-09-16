@@ -13,3 +13,14 @@
 # limitations under the License.
 # ==============================================================================
 """Utilities for testing linear operators."""
+
+
+from tensorflow.python.ops.linalg import linear_operator_test_util
+
+
+def add_tests(test_cls):
+  return linear_operator_test_util.add_tests(test_cls)
+
+
+SquareLinearOperatorDerivedClassTest = (
+    linear_operator_test_util.SquareLinearOperatorDerivedClassTest)

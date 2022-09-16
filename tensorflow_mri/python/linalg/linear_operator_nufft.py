@@ -109,6 +109,7 @@ class LinearOperatorNUFFT(linear_operator.LinearOperator):  # pylint: disable=ab
     parameters = dict(
         domain_shape=domain_shape,
         trajectory=trajectory,
+        density=density,
         norm=norm,
         name=name
     )
@@ -118,13 +119,13 @@ class LinearOperatorNUFFT(linear_operator.LinearOperator):  # pylint: disable=ab
         tensor_util.static_and_dynamic_shapes_from_shape(domain_shape))
 
     # Validate the remaining inputs.
-    self.trajectory = check_util.validate_tensor_dtype(
+    self._trajectory = check_util.validate_tensor_dtype(
         tf.convert_to_tensor(trajectory), 'floating', 'trajectory')
-    self.norm = check_util.validate_enum(norm, {None, 'ortho'}, 'norm')
+    self._norm = check_util.validate_enum(norm, {None, 'ortho'}, 'norm')
 
     # We infer the operation's rank from the trajectory.
-    self._rank_static = self.trajectory.shape[-1]
-    self._rank_dynamic = tf.shape(self.trajectory)[-1]
+    self._rank_static = self._trajectory.shape[-1]
+    self._rank_dynamic = tf.shape(self._trajectory)[-1]
     # The domain rank is >= the operation rank.
     domain_rank_static = self._domain_shape_static.rank
     domain_rank_dynamic = tf.shape(self._domain_shape_dynamic)[0]
@@ -147,21 +148,21 @@ class LinearOperatorNUFFT(linear_operator.LinearOperator):  # pylint: disable=ab
     # `batch_dims + extra_dims + 2`.
     # Compute the true batch shape (i.e., the batch dimensions that are
     # NOT included in the domain shape).
-    batch_dims_dynamic = tf.rank(self.trajectory) - extra_dims_dynamic - 2
-    if (self.trajectory.shape.rank is not None and
+    batch_dims_dynamic = tf.rank(self._trajectory) - extra_dims_dynamic - 2
+    if (self._trajectory.shape.rank is not None and
         extra_dims_static is not None):
       # We know the total number of dimensions in `trajectory` and we know
       # the number of extra dims, so we can compute the number of batch dims
       # statically.
-      batch_dims_static = self.trajectory.shape.rank - extra_dims_static - 2
+      batch_dims_static = self._trajectory.shape.rank - extra_dims_static - 2
     else:
       # We are missing at least some information, so the number of batch
       # dimensions is unknown.
       batch_dims_static = None
 
-    self._batch_shape_dynamic = tf.shape(self.trajectory)[:batch_dims_dynamic]
+    self._batch_shape_dynamic = tf.shape(self._trajectory)[:batch_dims_dynamic]
     if batch_dims_static is not None:
-      self._batch_shape_static = self.trajectory.shape[:batch_dims_static]
+      self._batch_shape_static = self._trajectory.shape[:batch_dims_static]
     else:
       self._batch_shape_static = tf.TensorShape(None)
 
@@ -176,7 +177,7 @@ class LinearOperatorNUFFT(linear_operator.LinearOperator):  # pylint: disable=ab
 
     # Check that the "extra" shape in `domain_shape` and `trajectory` are
     # compatible for broadcasting.
-    shape1, shape2 = extra_shape_static, self.trajectory.shape[:-2]
+    shape1, shape2 = extra_shape_static, self._trajectory.shape[:-2]
     try:
       tf.broadcast_static_shape(shape1, shape2)
     except ValueError as err:
@@ -186,29 +187,29 @@ class LinearOperatorNUFFT(linear_operator.LinearOperator):  # pylint: disable=ab
 
     # Compute the range shape.
     self._range_shape_dynamic = tf.concat(
-        [extra_shape_dynamic, tf.shape(self.trajectory)[-2:-1]], 0)
+        [extra_shape_dynamic, tf.shape(self._trajectory)[-2:-1]], 0)
     self._range_shape_static = extra_shape_static.concatenate(
-        self.trajectory.shape[-2:-1])
+        self._trajectory.shape[-2:-1])
 
     # Statically check that density can be broadcasted with trajectory.
     if density is not None:
       try:
-        tf.broadcast_static_shape(self.trajectory.shape[:-1], density.shape)
+        tf.broadcast_static_shape(self._trajectory.shape[:-1], density.shape)
       except ValueError as err:
         raise ValueError(
             f"The \"batch\" shapes in `trajectory` and `density` are not "
-            f"compatible for broadcasting: {self.trajectory.shape[:-1]} vs "
+            f"compatible for broadcasting: {self._trajectory.shape[:-1]} vs "
             f"{density.shape}") from err
-      self.density = tf.convert_to_tensor(density)
-      self.weights = tf.math.reciprocal_no_nan(self.density)
+      self._density = tf.convert_to_tensor(density)
+      self._weights = tf.math.reciprocal_no_nan(self._density)
       self._weights_sqrt = tf.cast(
-          tf.math.sqrt(self.weights),
-          tensor_util.get_complex_dtype(self.trajectory.dtype))
+          tf.math.sqrt(self._weights),
+          tensor_util.get_complex_dtype(self._trajectory.dtype))
     else:
-      self.density = None
-      self.weights = None
+      self._density = None
+      self._weights = None
 
-    super().__init__(tensor_util.get_complex_dtype(self.trajectory.dtype),
+    super().__init__(tensor_util.get_complex_dtype(self._trajectory.dtype),
                      is_non_singular=None,
                      is_self_adjoint=None,
                      is_positive_definite=None,
@@ -217,7 +218,7 @@ class LinearOperatorNUFFT(linear_operator.LinearOperator):  # pylint: disable=ab
                      parameters=parameters)
 
     # Compute normalization factors.
-    if self.norm == 'ortho':
+    if self._norm == 'ortho':
       norm_factor = tf.math.reciprocal(
           tf.math.sqrt(tf.cast(tf.math.reduce_prod(self._grid_shape),
           self.dtype)))
@@ -226,27 +227,27 @@ class LinearOperatorNUFFT(linear_operator.LinearOperator):  # pylint: disable=ab
 
   def _transform(self, x, adjoint=False):
     if adjoint:
-      if self.density is not None:
+      if self._density is not None:
         x *= self._weights_sqrt
-      x = fft_ops.nufft(x, self.trajectory,
+      x = fft_ops.nufft(x, self._trajectory,
                         grid_shape=self._grid_shape,
                         transform_type='type_1',
                         fft_direction='backward')
-      if self.norm is not None:
+      if self._norm is not None:
         x *= self._norm_factor_adjoint
     else:
-      x = fft_ops.nufft(x, self.trajectory,
+      x = fft_ops.nufft(x, self._trajectory,
                         transform_type='type_2',
                         fft_direction='forward')
-      if self.norm is not None:
+      if self._norm is not None:
         x *= self._norm_factor_forward
-      if self.density is not None:
+      if self._density is not None:
         x *= self._weights_sqrt
     return x
 
   def _preprocess(self, x, adjoint=False):
     if adjoint:
-      if self.density is not None:
+      if self._density is not None:
         x *= self._weights_sqrt
     else:
       raise NotImplementedError(
@@ -285,6 +286,14 @@ class LinearOperatorNUFFT(linear_operator.LinearOperator):  # pylint: disable=ab
 
   def rank_tensor(self):
     return self._rank_dynamic
+
+  @property
+  def trajectory(self):
+    return self._trajectory
+
+  @property
+  def density(self):
+    return self._density
 
 
 @api_util.export("linalg.LinearOperatorGramNUFFT")
@@ -370,8 +379,8 @@ class LinearOperatorGramNUFFT(LinearOperatorNUFFT):  # pylint: disable=abstract-
 
   def _compute_toeplitz_kernel(self):
     """Computes the kernel for the Toeplitz approach."""
-    trajectory = self.trajectory
-    weights = self.weights
+    trajectory = self._trajectory
+    weights = self._weights
     if self.rank is None:
       raise NotImplementedError(
           f"The rank of {self.name} must be known statically.")
@@ -391,12 +400,12 @@ class LinearOperatorGramNUFFT(LinearOperatorNUFFT):  # pylint: disable=abstract-
 
     # Additional normalization by sqrt(2 ** rank). This is required because
     # we are using FFTs with twice the length of the original image.
-    if self.norm == 'ortho':
+    if self._norm == 'ortho':
       kernel *= tf.cast(tf.math.sqrt(2.0 ** self.rank), kernel.dtype)
 
     # Put the kernel in Fourier space.
     fft_axes = list(range(-self.rank, 0))
-    fft_norm = self.norm or "backward"
+    fft_norm = self._norm or "backward"
     return fft_ops.fftn(kernel, axes=fft_axes, norm=fft_norm)
 
   def _compute_kernel_recursive(self, trajectory, weights, axis):
@@ -492,11 +501,11 @@ class LinearOperatorGramNUFFT(LinearOperatorNUFFT):  # pylint: disable=abstract-
         tf.math.reduce_sum(trajectory * self._fft_shift, -1)))
     # Temporarily update trajectory.
     if trajectory is not None:
-      temp = self.trajectory
-      self.trajectory = trajectory
+      temp = self._trajectory
+      self._trajectory = trajectory
     x = super()._transform(x, adjoint=True)
     if trajectory is not None:
-      self.trajectory = temp
+      self._trajectory = temp
     return x
 
   def _enforce_kernel_symmetry(self, kernel):

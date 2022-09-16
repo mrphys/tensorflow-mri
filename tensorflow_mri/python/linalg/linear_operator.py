@@ -129,27 +129,6 @@ class LinearOperatorMixin(tf.linalg.LinearOperator):
         return tensor_util.convert_shape_to_tensor(self.batch_shape.as_list())
       return self._batch_shape_tensor()
 
-  def adjoint(self, name="adjoint"):
-    """Returns the adjoint of this linear operator.
-
-    The returned operator is a valid `LinearOperatorMixin` instance.
-
-    Calling `self.adjoint()` and `self.H` are equivalent.
-
-    Args:
-      name: A name for this operation.
-
-    Returns:
-      A `LinearOperator` derived from `LinearOperatorMixin`, which
-      represents the adjoint of this linear operator.
-    """
-    if self.is_self_adjoint:
-      return self
-    with self._name_scope(name):  # pylint: disable=not-callable
-      return LinearOperatorAdjoint(self)
-
-  H = property(adjoint, None)
-
   @abc.abstractmethod
   def _transform(self, x, adjoint=False):
     # Subclasses must override this method.
@@ -183,12 +162,18 @@ class LinearOperatorMixin(tf.linalg.LinearOperator):
     # unpacked by `tf.map_fn`. Typically subclasses should not need to override
     # this method.
     batch_shape = tf.broadcast_static_shape(x.shape[:-2], self.batch_shape)
+    print("begin")
+    print(x.shape)
     x = tf.einsum('...ij->i...j' if adjoint_arg else '...ij->j...i', x)
+    print(x.shape)
+
     x = tf.map_fn(functools.partial(self.matvec, adjoint=adjoint), x,
                   fn_output_signature=tf.TensorSpec(
                       shape=batch_shape + [self.range_dimension],
                       dtype=x.dtype))
+    print(x.shape)
     x = tf.einsum('i...j->...ij' if adjoint_arg else 'j...i->...ij', x)
+    print(x.shape)
     return x
 
   @abc.abstractmethod
