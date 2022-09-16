@@ -55,8 +55,7 @@ def tf_linkcode(obj):
 
 def no_linkcode(obj):
   """Indicates that an object's source code is not available."""
-  obj.__linkcode__ = None
-  return obj
+  return custom_linkcode(lambda _: None)(obj)
 
 
 def get_tf_linkcode(obj):

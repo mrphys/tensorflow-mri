@@ -14,7 +14,6 @@
 # ==============================================================================
 """Tests for `LinearOperatorFFT`."""
 
-from cgi import print_environ_usage
 import numpy as np
 import tensorflow as tf
 
@@ -168,7 +167,9 @@ class LinearOperatorMaskedFFTTest(
         "saved_model",
         "slicing",
         "to_dense",
-        "trace"
+        "trace",
+        "solve_ls",
+        "solve_ls_with_broadcast"
     ]
 
   @staticmethod

@@ -393,71 +393,6 @@ class LinearOperatorMixin(tf.linalg.LinearOperator):
 
 class LinearOperatorBase(tf.linalg.LinearOperator):
   """Base class for linear operators."""
-  def pseudo_inverse(self, name="pseudo_inverse"):
-    """Returns the pseudo-inverse of this operator.
-
-    Given $A$ representing this `LinearOperator`, return a `LinearOperator`
-    representing $A^+$.
-
-    Args:
-      name: A name scope to use for ops added by this method.
-
-    Returns:
-      A `LinearOperator` representing the pseudo-inverse of this operator.
-    """
-    with self._name_scope(name):  # pylint: disable=not-callable
-      return linear_operator_algebra.pseudo_inverse(self)
-
-  # def lstsq(self, rhs, adjoint=False, adjoint_arg=False, name="lstsq"):
-  #   """Solve the linear system $A X = B$ in the least-squares sense.
-
-  #   Given $A$ represented by this linear operator with shape `[..., M, N]`,
-  #   computes the least-squares solution $X$ to the batch of linear systems
-  #   $A X = B$. For systems without an exact solution, returns a "best fit"
-  #   solution in the least squares sense. For systems with multiple solutions,
-  #   returns the solution with the smallest Euclidean norm.
-
-  #   This is equivalent to solving for the normal equations $A^H A X = A^H B$.
-
-  #   Args:
-  #     rhs: A `tf.Tensor` with same `dtype` as this operator and shape
-  #       `[..., M, K]`. `rhs` is treated like a [batch] matrix meaning for
-  #       every set of leading dimensions, the last two dimensions define a
-  #       matrix.
-  #     adjoint: A boolean. If `True`, solve the system involving the adjoint
-  #       of this operator, $A^H X = B$.
-  #     adjoint_arg: A boolean. If `True`, solve $A X = B^H$ where $B^H$ is the
-  #       Hermitian transpose (transposition and complex conjugation).
-  #     name: A name scope to use for ops added by this method.
-
-  #   Returns:
-  #     A `tf.Tensor` with shape `[..., N, K]` and same `dtype` as `rhs`.
-  #   """
-  #   if isinstance(rhs, LinearOperator):
-  #     left_operator = self.adjoint() if adjoint else self
-  #     right_operator = rhs.adjoint() if adjoint_arg else rhs
-
-  #     if (right_operator.range_dimension is not None and
-  #         left_operator.domain_dimension is not None and
-  #         right_operator.range_dimension != left_operator.domain_dimension):
-  #       raise ValueError(
-  #           "Operators are incompatible. Expected `rhs` to have dimension"
-  #           " {} but got {}.".format(
-  #               left_operator.domain_dimension, right_operator.range_dimension))
-  #     with self._name_scope(name):  # pylint: disable=not-callable
-  #       return linear_operator_algebra.solve(left_operator, right_operator)
-
-  #   with self._name_scope(name):  # pylint: disable=not-callable
-  #     rhs = ops.convert_to_tensor_v2_with_dispatch(rhs, name="rhs")
-  #     self._check_input_dtype(rhs)
-
-  #     self_dim = -1 if adjoint else -2
-  #     arg_dim = -1 if adjoint_arg else -2
-  #     tensor_shape.dimension_at_index(
-  #         self.shape, self_dim).assert_is_compatible_with(
-  #             rhs.shape[arg_dim])
-
-  #     return self._solve(rhs, adjoint=adjoint, adjoint_arg=adjoint_arg)
 
 
 @api_util.export("linalg.LinearOperator")
@@ -734,8 +669,3 @@ def make_composite_tensor(cls, module_name="tfmri.linalg"):
   type_spec.register("{}.{}".format(module_name, spec_name))(spec_type)
   cls._type_spec = property(spec_type.from_operator)  # pylint: disable=protected-access
   return cls
-
-
-@dispatch.dispatch_for_types(tf.linalg.pinv, LinearOperator)
-def _pseudo_inverse(a, rcond=None, validate_args=False, name=None):
-  return a.pseudo_inverse(name)

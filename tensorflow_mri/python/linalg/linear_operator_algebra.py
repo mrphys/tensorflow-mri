@@ -27,11 +27,17 @@ _registered_function = linear_operator_algebra._registered_function  # pylint: d
 
 
 _PSEUDO_INVERSES = {}
+_SOLVE_LSS = {}
 
 
 def _registered_pseudo_inverse(type_a):
   """Get the PseudoInverse function registered for class a."""
   return _registered_function([type_a], _PSEUDO_INVERSES)
+
+
+def _registered_solve_ls(type_a):
+  """Get the SolveLS function registered for class a."""
+  return _registered_function([type_a], _SOLVE_LSS)
 
 
 def pseudo_inverse(lin_op_a, name=None):
@@ -55,3 +61,28 @@ def pseudo_inverse(lin_op_a, name=None):
 
   with tf.name_scope(name or "PseudoInverse"):
     return pseudo_inverse_fn(lin_op_a)
+
+
+def solve_ls(lin_op_a, lin_op_b, name=None):
+  """Compute lin_op_a.solve_ls(lin_op_b).
+
+  Args:
+    lin_op_a: The LinearOperator on the left.
+    lin_op_b: The LinearOperator on the right.
+    name: Name to use for this operation.
+
+  Returns:
+    A LinearOperator that represents the solve_ls between `lin_op_a` and
+      `lin_op_b`.
+
+  Raises:
+    NotImplementedError: If no solve_ls method is defined between types of
+      `lin_op_a` and `lin_op_b`.
+  """
+  solve_fn = _registered_solve_ls(type(lin_op_a), type(lin_op_b))
+  if solve_fn is None:
+    raise ValueError("No solve registered for {}.solve({})".format(
+        type(lin_op_a), type(lin_op_b)))
+
+  with tf.name_scope(name or "SolveLS"):
+    return solve_fn(lin_op_a, lin_op_b)

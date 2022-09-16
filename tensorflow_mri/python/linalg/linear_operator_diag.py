@@ -24,8 +24,8 @@ from tensorflow_mri.python.util import doc_util
 
 LinearOperatorDiag = api_util.export(
     "linalg.LinearOperatorDiag")(
-        doc_util.tf_linkcode(
-            linear_operator_util.patch_operator(
+        doc_util.no_linkcode(
+            linear_operator_util.with_mri_extensions(
                 linear_operator.make_composite_tensor(
                     tf.linalg.LinearOperatorDiag))))
 

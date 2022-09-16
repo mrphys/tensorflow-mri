@@ -19,6 +19,7 @@ import tensorflow as tf
 
 from tensorflow_mri.python.linalg import linear_operator
 from tensorflow_mri.python.linalg import slicing
+from tensorflow_mri.python.linalg import linear_operator_util
 from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import tensor_util
@@ -27,6 +28,7 @@ from tensorflow_mri.python.util import types_util
 
 @api_util.export("linalg.LinearOperatorFFT")
 @linear_operator.make_composite_tensor
+@linear_operator_util.with_mri_extensions
 class LinearOperatorFFT(linear_operator.LinearOperator):
   r"""Linear operator acting like a [batch] DFT matrix.
 
