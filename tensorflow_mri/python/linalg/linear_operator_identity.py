@@ -17,7 +17,6 @@
 import tensorflow as tf
 
 from tensorflow_mri.python.linalg import linear_operator
-from tensorflow_mri.python.linalg import linear_operator_util
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import doc_util
 
@@ -25,19 +24,16 @@ from tensorflow_mri.python.util import doc_util
 LinearOperatorIdentity = api_util.export(
     "linalg.LinearOperatorIdentity")(
         doc_util.no_linkcode(
-            linear_operator_util.with_mri_extensions(
-                linear_operator.make_composite_tensor(
-                    tf.linalg.LinearOperatorIdentity))))
+            linear_operator.make_mri_operator(
+                tf.linalg.LinearOperatorIdentity)))
 
 
 LinearOperatorScaledIdentity = api_util.export(
     "linalg.LinearOperatorScaledIdentity")(
         doc_util.no_linkcode(
-            linear_operator_util.with_mri_extensions(
-                linear_operator.make_composite_tensor(
-                    tf.linalg.LinearOperatorScaledIdentity))))
+            linear_operator.make_mri_operator(
+                tf.linalg.LinearOperatorScaledIdentity)))
 
 
-# Monkey-patch.
 tf.linalg.LinearOperatorIdentity = LinearOperatorIdentity
 tf.linalg.LinearOperatorScaledIdentity = LinearOperatorScaledIdentity

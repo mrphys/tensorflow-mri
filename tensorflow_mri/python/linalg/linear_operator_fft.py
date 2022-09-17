@@ -17,7 +17,7 @@
 import numpy as np
 import tensorflow as tf
 
-from tensorflow_mri.python.linalg import linear_operator
+from tensorflow_mri.python.linalg import linear_operator_nd
 from tensorflow_mri.python.linalg import slicing
 from tensorflow_mri.python.linalg import linear_operator_util
 from tensorflow_mri.python.ops import fft_ops
@@ -27,9 +27,8 @@ from tensorflow_mri.python.util import types_util
 
 
 @api_util.export("linalg.LinearOperatorFFT")
-@linear_operator.make_composite_tensor
-@linear_operator_util.with_mri_extensions
-class LinearOperatorFFT(linear_operator.LinearOperator):
+@linear_operator_nd.make_mri_operator_nd
+class LinearOperatorFFT(linear_operator_nd.LinearOperatorND):
   r"""Linear operator acting like a [batch] DFT matrix.
 
   If this operator is $A$, then $A x$ computes the Fourier transform of $x$,

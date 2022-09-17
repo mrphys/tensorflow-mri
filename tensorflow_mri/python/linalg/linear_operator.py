@@ -1,4 +1,4 @@
-# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
+# Copyright 2022 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,501 +14,201 @@
 # ==============================================================================
 """Base linear operator."""
 
-import abc
-import functools
+import string
 
 import tensorflow as tf
 from tensorflow.python.framework import type_spec
-from tensorflow.python.ops.linalg import linear_operator as tf_linear_operator
-from tensorflow.python.util import dispatch
+from tensorflow.python.ops.linalg.linear_operator import (
+    _extract_attrs, _extract_type_spec_recursively)
 
 from tensorflow_mri.python.linalg import linear_operator_algebra
 from tensorflow_mri.python.util import api_util
-from tensorflow_mri.python.util import tensor_util
-
-
-class LinearOperatorMixin(tf.linalg.LinearOperator):
-  """Mixin for linear operators meant to operate on images."""
-  def matvec_nd(self, x, adjoint=False, name="matvec_nd"):
-    """Transforms [batch] N-D input `x` with left multiplication `x --> Ax`.
-
-    ```{note}
-    Similar to `matvec`, but works with non-vectorized N-D inputs `x`.
-    ```
-
-    Args:
-      x: A `tf.Tensor` with compatible shape and same dtype as `self`.
-      adjoint: A boolean. If `True`, transforms the input using the adjoint
-        of the operator, instead of the operator itself.
-      name: A name for this operation.
-
-    Returns:
-      A `tf.Tensor` with same dtype as `x` and shape `[..., *nd_shape]`,
-      where `nd_shape` is the equal to `domain_shape` if `adjoint` is `True`
-      and `range_shape` otherwise.
-    """
-    with self._name_scope(name):  # pylint: disable=not-callable
-      x = tf.convert_to_tensor(x, name="x")
-      self._check_input_dtype(x)
-      input_shape = self.range_shape if adjoint else self.domain_shape
-      input_shape.assert_is_compatible_with(x.shape[-input_shape.rank:])  # pylint: disable=invalid-unary-operand-type
-      return self._matvec_nd(x, adjoint=adjoint)
-
-  def solvevec_nd(self, rhs, adjoint=False, name="solve"):
-    """Solve single equation with N-D right-hand side: `A x = rhs`.
-
-    The returned `tf.Tensor` will be close to an exact solution if `A` is well
-    conditioned. Otherwise closeness will vary. See class docstring for details.
-
-    ```{note}
-    Similar to `solvevec`, but works with non-vectorized N-D inputs `rhs`.
-    ```
-
-    Args:
-      rhs: A `tf.Tensor` with same `dtype` as this operator.
-        `rhs` is treated like a [batch] vector meaning for every set of leading
-        dimensions, the last dimension defines a vector.  See class docstring
-        for definition of compatibility regarding batch dimensions.
-      adjoint: A boolean. If `True`, solve the system involving the adjoint of
-        this operator: $A^H x = b$. Defaults to `False`.
-      name:  A name scope to use for ops added by this method.
-
-    Returns:
-      A `tf.Tensor` with same dtype as `x` and shape `[..., *nd_shape]`,
-      where `nd_shape` is the equal to `range_shape` if `adjoint` is `True`
-      and `domain_shape` otherwise.
-    """
-    with self._name_scope(name):  # pylint: disable=not-callable
-      rhs = tf.convert_to_tensor(rhs, name="rhs")
-      self._check_input_dtype(rhs)
-      input_shape = self.domain_shape if adjoint else self.range_shape
-      input_shape.assert_is_compatible_with(rhs.shape[-input_shape.rank:])  # pylint: disable=invalid-unary-operand-type
-      return self._solvevec_nd(rhs, adjoint=adjoint)
-
-  def preprocess(self, x, adjoint=False, name="preprocess"):
-    """Preprocesses a batch of inputs.
-
-    This method should be called **before** applying the operator via
-    `transform`, `matvec` or `matmul`. The `adjoint` flag should be set to the
-    same value as the `adjoint` flag passed to `transform`, `matvec` or
-    `matmul`.
-
-    Args:
-      x: A `tf.Tensor` with compatible shape and same dtype as `self`.
-      adjoint: A `boolean`. If `True`, preprocesses the input in preparation
-        for applying the adjoint.
-      name: A name for this operation.
-
-    Returns:
-      The preprocessed `tf.Tensor` with the same `dtype` as `self`.
-    """
-    with self._name_scope(name):  # pylint: disable=not-callable
-      x = tf.convert_to_tensor(x, name="x")
-      self._check_input_dtype(x)
-      input_shape = self.range_shape if adjoint else self.domain_shape
-      input_shape.assert_is_compatible_with(x.shape[-input_shape.rank:])  # pylint: disable=invalid-unary-operand-type
-      return self._preprocess(x, adjoint=adjoint)
-
-  def postprocess(self, x, adjoint=False, name="postprocess"):
-    """Postprocesses a batch of inputs.
-
-    This method should be called **after** applying the operator via
-    `transform`, `matvec` or `matmul`. The `adjoint` flag should be set to the
-    same value as the `adjoint` flag passed to `transform`, `matvec` or
-    `matmul`.
-
-    Args:
-      x: A `tf.Tensor` with compatible shape and same dtype as `self`.
-      adjoint: A `boolean`. If `True`, postprocesses the input after applying
-        the adjoint.
-      name: A name for this operation.
-
-    Returns:
-      The preprocessed `tf.Tensor` with the same `dtype` as `self`.
-    """
-    with self._name_scope(name):  # pylint: disable=not-callable
-      x = tf.convert_to_tensor(x, name="x")
-      self._check_input_dtype(x)
-      input_shape = self.domain_shape if adjoint else self.range_shape
-      input_shape.assert_is_compatible_with(x.shape[-input_shape.rank:])  # pylint: disable=invalid-unary-operand-type
-      return self._postprocess(x, adjoint=adjoint)
-
-  @property
-  def domain_shape(self):
-    """Domain shape of this linear operator."""
-    return self._domain_shape()
-
-  @property
-  def range_shape(self):
-    """Range shape of this linear operator."""
-    return self._range_shape()
-
-  def domain_shape_tensor(self, name="domain_shape_tensor"):
-    """Domain shape of this linear operator, determined at runtime."""
-    with self._name_scope(name):  # pylint: disable=not-callable
-      # Prefer to use statically defined shape if available.
-      if self.domain_shape.is_fully_defined():
-        return tensor_util.convert_shape_to_tensor(self.domain_shape.as_list())
-      return self._domain_shape_tensor()
-
-  def range_shape_tensor(self, name="range_shape_tensor"):
-    """Range shape of this linear operator, determined at runtime."""
-    with self._name_scope(name):  # pylint: disable=not-callable
-      # Prefer to use statically defined shape if available.
-      if self.range_shape.is_fully_defined():
-        return tensor_util.convert_shape_to_tensor(self.range_shape.as_list())
-      return self._range_shape_tensor()
-
-  def batch_shape_tensor(self, name="batch_shape_tensor"):
-    """Batch shape of this linear operator, determined at runtime."""
-    with self._name_scope(name):  # pylint: disable=not-callable
-      if self.batch_shape.is_fully_defined():
-        return tensor_util.convert_shape_to_tensor(self.batch_shape.as_list())
-      return self._batch_shape_tensor()
-
-  @abc.abstractmethod
-  def _matvec_nd(self, x, adjoint=False):
-    # Subclasses must override this method.
-    raise NotImplementedError("Method `_matvec_nd` is not implemented.")
-
-  def _solvevec_nd(self, x, adjoint=False):
-    # Subclasses may override this method.
-    raise NotImplementedError("Method `_solvevec_nd` is not implemented.")
-
-  def _preprocess(self, x, adjoint=False):
-    # Subclasses may override this method.
-    return x
-
-  def _postprocess(self, x, adjoint=False):
-    # Subclasses may override this method.
-    return x
-
-  def _matvec(self, x, adjoint=False):
-    # Default implementation of `_matvec` for imaging operator. The vectorized
-    # input `x` is first expanded to the its full shape, then transformed, then
-    # vectorized again. Typically subclasses should not need to override this
-    # method.
-    x = (self.expand_range_dimension(x) if adjoint else
-         self.expand_domain_dimension(x))
-    x = self._matvec_nd(x, adjoint=adjoint)
-    x = (self.flatten_domain_shape(x) if adjoint else \
-         self.flatten_range_shape(x))
-    return x
-
-  def _matmul(self, x, adjoint=False, adjoint_arg=False):
-    # Default implementation of `matmul` for imaging operator. Basically we
-    # just call `matvec` for each column of `x` (or for each row, if
-    # `adjoint_arg` is `True`). `tf.einsum` is used to transpose the input arg.
-    batch_shape = tf.broadcast_static_shape(x.shape[:-2], self.batch_shape)
-    output_dim = self.domain_dimension if adjoint else self.range_dimension
-    if adjoint_arg and x.dtype.is_complex:
-      x = tf.math.conj(x)
-    x = tf.einsum('...ij->i...j' if adjoint_arg else '...ij->j...i', x)
-    y = tf.map_fn(functools.partial(self.matvec, adjoint=adjoint), x,
-                  fn_output_signature=tf.TensorSpec(
-                      shape=batch_shape + [output_dim],
-                      dtype=x.dtype))
-    y = tf.einsum('i...j->...ji' if adjoint_arg else 'j...i->...ij', y)
-    return y
-
-  def _solvevec(self, rhs, adjoint=False):
-    # Default implementation of `_solvevec` for imaging operator. The
-    # vectorized input `rhs` is first expanded to the its full shape, then
-    # solved, then vectorized again. Typically subclasses should not need to
-    # override this method.
-    rhs = (self.expand_domain_dimension(rhs) if adjoint else
-           self.expand_range_dimension(rhs))
-    rhs = self._solvevec_nd(rhs, adjoint=adjoint)
-    rhs = (self.flatten_range_shape(rhs) if adjoint else
-           self.flatten_domain_shape(rhs))
-    return rhs
-
-  def _solve(self, rhs, adjoint=False, adjoint_arg=False):
-    # Default implementation of `_solve` for imaging operator. Basically we
-    # just call `solvevec` for each column of `rhs` (or for each row, if
-    # `adjoint_arg` is `True`). `tf.einsum` is used to transpose the input arg.
-    batch_shape = tf.broadcast_static_shape(rhs.shape[:-2], self.batch_shape)
-    output_dim = self.range_dimension if adjoint else self.domain_dimension
-    if adjoint_arg and rhs.dtype.is_complex:
-      rhs = tf.math.conj(rhs)
-    rhs = tf.einsum('...ij->i...j' if adjoint_arg else '...ij->j...i', rhs)
-    x = tf.map_fn(functools.partial(self.solvevec, adjoint=adjoint), rhs,
-                  fn_output_signature=tf.TensorSpec(
-                      shape=batch_shape + [output_dim],
-                      dtype=rhs.dtype))
-    x = tf.einsum('i...j->...ji' if adjoint_arg else 'j...i->...ij', x)
-    return x
-
-  @abc.abstractmethod
-  def _domain_shape(self):
-    # Users must override this method.
-    return tf.TensorShape(None)
-
-  @abc.abstractmethod
-  def _range_shape(self):
-    # Users must override this method.
-    return tf.TensorShape(None)
-
-  def _batch_shape(self):
-    # Users should override this method if this operator has a batch shape.
-    return tf.TensorShape([])
-
-  def _domain_shape_tensor(self):
-    # Users should override this method if they need to provide a dynamic domain
-    # shape.
-    raise NotImplementedError("_domain_shape_tensor is not implemented.")
-
-  def _range_shape_tensor(self):
-    # Users should override this method if they need to provide a dynamic range
-    # shape.
-    raise NotImplementedError("_range_shape_tensor is not implemented.")
-
-  def _batch_shape_tensor(self):  # pylint: disable=arguments-differ
-    # Users should override this method if they need to provide a dynamic batch
-    # shape.
-    return tf.constant([], dtype=tf.dtypes.int32)
-
-  def _shape(self):
-    # Default implementation of `_shape` for imaging operators. Typically
-    # subclasses should not need to override this method.
-    return self._batch_shape().concatenate(tf.TensorShape(
-        [self.range_shape.num_elements(),
-         self.domain_shape.num_elements()]))
-
-  def _shape_tensor(self):
-    # Default implementation of `_shape_tensor` for imaging operators. Typically
-    # subclasses should not need to override this method.
-    return tf.concat([self.batch_shape_tensor(),
-                      [tf.math.reduce_prod(self.range_shape_tensor()),
-                       tf.math.reduce_prod(self.domain_shape_tensor())]], 0)
-
-  def flatten_domain_shape(self, x):
-    """Flattens `x` to match the domain dimension of this operator.
-
-    Args:
-      x: A `Tensor`. Must have shape `[...] + self.domain_shape`.
-
-    Returns:
-      The flattened `Tensor`. Has shape `[..., self.domain_dimension]`.
-    """
-    # pylint: disable=invalid-unary-operand-type
-    domain_rank_static = self.domain_shape.rank
-    if domain_rank_static is not None:
-      domain_rank_dynamic = domain_rank_static
-    else:
-      domain_rank_dynamic = tf.shape(self.domain_shape_tensor())[0]
-
-    if domain_rank_static is not None:
-      self.domain_shape.assert_is_compatible_with(
-          x.shape[-domain_rank_static:])
-
-    if domain_rank_static is not None:
-      batch_shape = x.shape[:-domain_rank_static]
-    else:
-      batch_shape = tf.TensorShape(None)
-    batch_shape_tensor = tf.shape(x)[:-domain_rank_dynamic]
-
-    output_shape = batch_shape + self.domain_dimension
-    output_shape_tensor = tf.concat(
-        [batch_shape_tensor, [self.domain_dimension_tensor()]], 0)
-
-    x = tf.reshape(x, output_shape_tensor)
-    return tf.ensure_shape(x, output_shape)
-
-  def flatten_range_shape(self, x):
-    """Flattens `x` to match the range dimension of this operator.
-
-    Args:
-      x: A `Tensor`. Must have shape `[...] + self.range_shape`.
-
-    Returns:
-      The flattened `Tensor`. Has shape `[..., self.range_dimension]`.
-    """
-    # pylint: disable=invalid-unary-operand-type
-    range_rank_static = self.range_shape.rank
-    if range_rank_static is not None:
-      range_rank_dynamic = range_rank_static
-    else:
-      range_rank_dynamic = tf.shape(self.range_shape_tensor())[0]
-
-    if range_rank_static is not None:
-      self.range_shape.assert_is_compatible_with(
-          x.shape[-range_rank_static:])
-
-    if range_rank_static is not None:
-      batch_shape = x.shape[:-range_rank_static]
-    else:
-      batch_shape = tf.TensorShape(None)
-    batch_shape_tensor = tf.shape(x)[:-range_rank_dynamic]
-
-    output_shape = batch_shape + self.range_dimension
-    output_shape_tensor = tf.concat(
-        [batch_shape_tensor, [self.range_dimension_tensor()]], 0)
-
-    x = tf.reshape(x, output_shape_tensor)
-    return tf.ensure_shape(x, output_shape)
-
-  def expand_domain_dimension(self, x):
-    """Expands `x` to match the domain shape of this operator.
-
-    Args:
-      x: A `Tensor`. Must have shape `[..., self.domain_dimension]`.
-
-    Returns:
-      The expanded `Tensor`. Has shape `[...] + self.domain_shape`.
-    """
-    self.domain_dimension.assert_is_compatible_with(x.shape[-1])
-
-    batch_shape = x.shape[:-1]
-    batch_shape_tensor = tf.shape(x)[:-1]
-
-    output_shape = batch_shape + self.domain_shape
-    output_shape_tensor = tf.concat([
-        batch_shape_tensor, self.domain_shape_tensor()], 0)
-
-    x = tf.reshape(x, output_shape_tensor)
-    return tf.ensure_shape(x, output_shape)
-
-  def expand_range_dimension(self, x):
-    """Expands `x` to match the range shape of this operator.
-
-    Args:
-      x: A `Tensor`. Must have shape `[..., self.range_dimension]`.
-
-    Returns:
-      The expanded `Tensor`. Has shape `[...] + self.range_shape`.
-    """
-    self.range_dimension.assert_is_compatible_with(x.shape[-1])
-
-    batch_shape = x.shape[:-1]
-    batch_shape_tensor = tf.shape(x)[:-1]
-
-    output_shape = batch_shape + self.range_shape
-    output_shape_tensor = tf.concat([
-        batch_shape_tensor, self.range_shape_tensor()], 0)
-
-    x = tf.reshape(x, output_shape_tensor)
-    return tf.ensure_shape(x, output_shape)
-
-
-class LinearOperatorBase(tf.linalg.LinearOperator):
-  """Base class for linear operators."""
-
-
-@api_util.export("linalg.LinearOperator")
-class LinearOperator(LinearOperatorMixin, LinearOperatorBase):  # pylint: disable=abstract-method
-  r"""Base class defining a [batch of] linear operator[s].
-
-  Provides access to common matrix operations without the need to materialize
-  the matrix.
-
-  This operator is similar to `tf.linalg.LinearOperator`_, but has additional
-  methods to simplify operations on images, while maintaining compatibility
-  with the TensorFlow linear algebra framework.
-
-  Inputs and outputs to this linear operator or its subclasses may have
-  meaningful non-vectorized N-D shapes. Thus this class defines the additional
-  properties `domain_shape` and `range_shape` and the methods
-  `domain_shape_tensor` and `range_shape_tensor`. These enrich the information
-  provided by the built-in properties `shape`, `domain_dimension`,
-  `range_dimension` and methods `domain_dimension_tensor` and
-  `range_dimension_tensor`, which only have information about the vectorized 1D
-  shapes.
-
-  Subclasses of this operator must define the methods `_domain_shape` and
-  `_range_shape`, which return the static domain and range shapes of the
-  operator. Optionally, subclasses may also define the methods
-  `_domain_shape_tensor` and `_range_shape_tensor`, which return the dynamic
-  domain and range shapes of the operator. These two methods will only be called
-  if `_domain_shape` and `_range_shape` do not return fully defined static
-  shapes.
-
-  Subclasses must define the abstract method `_transform`, which
-  applies the operator (or its adjoint) to a [batch of] images. This internal
-  method is called by `transform`. In general, subclasses of this operator
-  should not define the methods `_matvec` or `_matmul`. These have default
-  implementations which call `_transform`.
-
-  Operators derived from this class may be used in any of the following ways:
-
-  1. Using method `transform`, which expects a full-shaped input and returns
-     a full-shaped output, i.e. a tensor with shape `[...] + shape`, where
-     `shape` is either the `domain_shape` or the `range_shape`. This method is
-     unique to operators derived from this class.
-  2. Using method `matvec`, which expects a vectorized input and returns a
-     vectorized output, i.e. a tensor with shape `[..., n]` where `n` is
-     either the `domain_dimension` or the `range_dimension`. This method is
-     part of the TensorFlow linear algebra framework.
-  3. Using method `matmul`, which expects matrix inputs and returns matrix
-     outputs. Note that a matrix is just a column vector in this context, i.e.
-     a tensor with shape `[..., n, 1]`, where `n` is either the
-     `domain_dimension` or the `range_dimension`. Matrices which are not column
-     vectors (i.e. whose last dimension is not 1) are not supported. This
-     method is part of the TensorFlow linear algebra framework.
-
-  Operators derived from this class may also be used with the functions
-  `tf.linalg.matvec`_ and `tf.linalg.matmul`_, which will call the
-  corresponding methods.
-
-  This class also provides the convenience functions `flatten_domain_shape` and
-  `flatten_range_shape` to flatten full-shaped inputs/outputs to their
-  vectorized form. Conversely, `expand_domain_dimension` and
-  `expand_range_dimension` may be used to expand vectorized inputs/outputs to
-  their full-shaped form.
-
-  **Preprocessing and post-processing**
-
-  It can sometimes be useful to modify a linear operator in order to maintain
-  certain mathematical properties, such as Hermitian symmetry or positive
-  definiteness (e.g., [1]). As a result of these modifications the linear
-  operator may no longer accurately represent the physical system under
-  consideration. This can be compensated through the use of a pre-processing
-  step and/or post-processing step. To this end linear operators expose a
-  `preprocess` method and a `postprocess` method. The user may define their
-  behavior by overriding the `_preprocess` and/or `_postprocess` methods. If
-  not overriden, the default behavior is to apply the identity. In the context
-  of optimization methods, these steps typically only need to be applied at the
-  beginning or at the end of the optimization.
-
-  **Subclassing**
-
-  Subclasses must always define `_transform`, which implements this operator's
-  functionality (and its adjoint). In general, subclasses should not define the
-  methods `_matvec` or `_matmul`. These have default implementations which call
-  `_transform`.
-
-  Subclasses must always define `_domain_shape`
-  and `_range_shape`, which return the static domain/range shapes of the
-  operator. If the subclassed operator needs to provide dynamic domain/range
-  shapes and the static shapes are not always fully-defined, it must also define
-  `_domain_shape_tensor` and `_range_shape_tensor`, which return the dynamic
-  domain/range shapes of the operator. In general, subclasses should not define
-  the methods `_shape` or `_shape_tensor`. These have default implementations.
-
-  If the subclassed operator has a non-scalar batch shape, it must also define
-  `_batch_shape` which returns the static batch shape. If the static batch shape
-  is not always fully-defined, the subclass must also define
-  `_batch_shape_tensor`, which returns the dynamic batch shape.
+
+
+def make_mri_operator(cls):
+  """Class decorator for subclasses of `LinearOperator`."""
+  # Add extensions if decorating base class.
+  if cls is tf.linalg.LinearOperator:
+    extensions = {
+        "solve_ls": solve_ls,
+        "_solve_ls": _solve_ls,
+        "solvevec_ls": solvevec_ls,
+        "_solvevec_ls": _solvevec_ls,
+    }
+
+    for key, value in extensions.items():
+      if hasattr(cls, key):
+        raise ValueError(f"{cls.__name__} already has attribute: {key}")
+      setattr(cls, key, value)
+
+  # Make composite tensor. This also adds additional functionality to the class.
+  cls = make_composite_tensor(cls)
+
+  # Add notice to docstring.
+  cls = update_docstring(cls)
+
+  return cls
+
+
+def make_composite_tensor(cls, module_name="tfmri.linalg"):
+  """Class decorator to convert `LinearOperator`s to `CompositeTensor`s.
+
+  Overrides the default `make_composite_tensor` to use the custom
+  `LinearOperatorSpec`.
+  """
+  spec_name = "{}Spec".format(cls.__name__)
+  spec_type = type(spec_name, (_LinearOperatorSpec,), {"value_type": cls})
+  type_spec.register("{}.{}".format(module_name, spec_name))(spec_type)
+  cls._type_spec = property(spec_type.from_operator)  # pylint: disable=protected-access
+  return cls
+
+
+def update_docstring(cls):
+  """Updates docstring to describe new functionality."""
+  tfmri_additional_functionality = string.Template("""
+  ```{rubric} Additional functionality (TensorFlow MRI)
+  ```
+
+  This operator supports additional functionality not present in core TF
+  operators.
+
+  - `solve_ls` finds the least-squares solution to the linear system defined
+    by this operator.
+  - `_solve_ls` can be overridden to provide a custom implementation of
+    `solve_ls`.
+  - `_type_spec` has been patched to improve support in Keras models.
+
+  ```{seealso}
+  The TensorFlow MRI
+  [linear algebra guide](https://mrphys.github.io/tensorflow-mri/guide/linalg/).
+  ```
+  """).substitute()
+
+  tfmri_tf_compatibility = string.Template("""
+  ```{rubric} Compatibility with core TensorFlow
+  ```
+
+  This operator is a drop-in replacement for `tf.linalg.${class_name}`.
+
+  ```{tip}
+  You can use `tfmri.linalg.${class_name}` and `tf.linalg.${class_name}`
+  interchangeably, as the latter has been monkey-patched to be an alias of
+  this operator.
+  ```
+  """).substitute(class_name=cls.__name__)
+
+  docstring = cls.__doc__
+  doclines = docstring.split('\n')
+  doclines += tfmri_additional_functionality.split('\n')
+  if is_tf_builtin(cls):
+    doclines += tfmri_tf_compatibility.split('\n')
+  docstring = '\n'.join(doclines)
+  cls.__doc__ = docstring
+
+  return cls
+
+
+def is_tf_builtin(cls):
+  """Returns `True` if `cls` is a built-in linear operator."""
+  return hasattr(tf.linalg, cls.__name__)
+
+
+# New attributes to be added to `LinearOperator` class.
+
+def solve_ls(self, rhs, adjoint=False, adjoint_arg=False, name="solve_ls"):
+  """Solve the (batch) linear system $A X = B$ in the least-squares sense.
+
+  Given $A$ represented by this linear operator with shape `[..., M, N]`,
+  computes the least-squares solution $X$ to the batch of linear systems
+  $A X = B$. For systems without an exact solution, returns a "best fit"
+  solution in the least squares sense. For systems with multiple solutions,
+  returns the solution with the smallest Euclidean norm.
+
+  This is equivalent to solving for the normal equations $A^H A X = A^H B$.
 
   Args:
-    dtype: The `tf.dtypes.DType` of the matrix that this operator represents.
-    is_non_singular: Expect that this operator is non-singular.
-    is_self_adjoint: Expect that this operator is equal to its Hermitian
-      transpose. If `dtype` is real, this is equivalent to being symmetric.
-    is_positive_definite: Expect that this operator is positive definite,
-      meaning the quadratic form $x^H A x$ has positive real part for all
-      nonzero $x$. Note that we do not require the operator to be
-      self-adjoint to be positive-definite.
-    is_square: Expect that this operator acts like square [batch] matrices.
-    name: A name for this `LinearOperator`.
+    rhs: A `tf.Tensor` with same `dtype` as this operator and shape
+      `[..., M, K]`. `rhs` is treated like a [batch] matrix meaning for
+      every set of leading dimensions, the last two dimensions define a
+      matrix.
+    adjoint: A boolean. If `True`, solve the system involving the adjoint
+      of this operator, $A^H X = B$. Default is `False`.
+    adjoint_arg: A boolean. If `True`, solve $A X = B^H$ where $B^H$ is the
+      Hermitian transpose (transposition and complex conjugation). Default
+      is `False`.
+    name: A name scope to use for ops added by this method.
 
-  References:
-    1. https://onlinelibrary.wiley.com/doi/full/10.1002/mrm.1241
-
-  .. _tf.linalg.LinearOperator: https://www.tensorflow.org/api_docs/python/tf/linalg/LinearOperator
-  .. _tf.linalg.matvec: https://www.tensorflow.org/api_docs/python/tf/linalg/matvec
-  .. _tf.linalg.matmul: https://www.tensorflow.org/api_docs/python/tf/linalg/matmul
+  Returns:
+    A `tf.Tensor` with shape `[..., N, K]` and same `dtype` as `rhs`.
   """
+  if isinstance(rhs, LinearOperator):
+    left_operator = self.adjoint() if adjoint else self
+    right_operator = rhs.adjoint() if adjoint_arg else rhs
+
+    if (right_operator.range_dimension is not None and
+        left_operator.domain_dimension is not None and
+        right_operator.range_dimension != left_operator.domain_dimension):
+      raise ValueError(
+          "Operators are incompatible. Expected `rhs` to have dimension"
+          " {} but got {}.".format(
+              left_operator.domain_dimension, right_operator.range_dimension))
+    with self._name_scope(name):  # pylint: disable=not-callable
+      return linear_operator_algebra.solve_ls(left_operator, right_operator)
+
+  with self._name_scope(name):  # pylint: disable=not-callable
+    rhs = tf.convert_to_tensor(rhs, name="rhs")
+    self._check_input_dtype(rhs)
+
+    self_dim = -1 if adjoint else -2
+    arg_dim = -1 if adjoint_arg else -2
+    tf.compat.dimension_at_index(
+        self.shape, self_dim).assert_is_compatible_with(
+            rhs.shape[arg_dim])
+
+    return self._solve_ls(rhs, adjoint=adjoint, adjoint_arg=adjoint_arg)
+
+def _solve_ls(self, rhs, adjoint=False, adjoint_arg=False):
+  """Default implementation of `_solve_ls`."""
+  raise NotImplementedError(
+      f"solve_ls is not implemented for {self.__class__.__name__}.")
+
+def solvevec_ls(self, rhs, adjoint=False, name="solvevec_ls"):
+  """Solve the linear system $A x = b$ in the least-squares sense.
+
+  Given $A$ represented by this linear operator with shape `[..., M, N]`,
+  computes the least-squares solution $x$ to the linear system $A x = b$.
+  For systems without an exact solution, returns a "best fit" solution in
+  the least squares sense. For systems with multiple solutions, returns the
+  solution with the smallest Euclidean norm.
+
+  This is equivalent to solving for the normal equations $A^H A x = A^H b$.
+
+  Args:
+    rhs: A `tf.Tensor` with same `dtype` as this operator and shape
+      `[..., M]`. `rhs` is treated like a [batch] matrix meaning for
+      every set of leading dimensions, the last two dimensions define a
+      matrix.
+    adjoint: A boolean. If `True`, solve the system involving the adjoint
+      of this operator, $A^H x = b$. Default is `False`.
+    name: A name scope to use for ops added by this method.
+
+  Returns:
+    A `tf.Tensor` with shape `[..., N]` and same `dtype` as `rhs`.
+  """
+  with self._name_scope(name):  # pylint: disable=not-callable
+    rhs = tf.convert_to_tensor(rhs, name="rhs")
+    self._check_input_dtype(rhs)
+    self_dim = -1 if adjoint else -2
+    tf.compat.dimension_at_index(
+        self.shape, self_dim).assert_is_compatible_with(rhs.shape[-1])
+
+    return self._solvevec_ls(rhs, adjoint=adjoint)
+
+def _solvevec_ls(self, rhs, adjoint=False):
+  """Default implementation of `_solvevec_ls`."""
+  rhs_mat = tf.expand_dims(rhs, axis=-1)
+  solution_mat = self.solve_ls(rhs_mat, adjoint=adjoint)
+  return tf.squeeze(solution_mat, axis=-1)
 
 
 class _LinearOperatorSpec(type_spec.BatchableTypeSpec):  # pylint: disable=abstract-method
@@ -567,14 +267,14 @@ class _LinearOperatorSpec(type_spec.BatchableTypeSpec):  # pylint: disable=abstr
     """
     validation_fields = ("is_non_singular", "is_self_adjoint",
                          "is_positive_definite", "is_square")
-    kwargs = tf_linear_operator._extract_attrs(  # pylint: disable=protected-access
+    kwargs = _extract_attrs(  # pylint: disable=protected-access
         operator,
         keys=set(operator._composite_tensor_fields + validation_fields))  # pylint: disable=protected-access
 
     non_tensor_params = {}
     param_specs = {}
     for k, v in list(kwargs.items()):
-      type_spec_or_v = tf_linear_operator._extract_type_spec_recursively(v)  # pylint: disable=protected-access
+      type_spec_or_v = _extract_type_spec_recursively(v)  # pylint: disable=protected-access
       is_tensor = [isinstance(x, type_spec.TypeSpec)
                    for x in tf.nest.flatten(type_spec_or_v)]
       if all(is_tensor):
@@ -593,7 +293,7 @@ class _LinearOperatorSpec(type_spec.BatchableTypeSpec):  # pylint: disable=abstr
         prefer_static_fields=operator._composite_tensor_prefer_static_fields)  # pylint: disable=protected-access
 
   def _to_components(self, obj):
-    return tf_linear_operator._extract_attrs(obj, keys=list(self._param_specs))
+    return _extract_attrs(obj, keys=list(self._param_specs))
 
   def _from_components(self, components):
     kwargs = dict(self._non_tensor_params, **components)
@@ -658,14 +358,11 @@ class _LinearOperatorSpec(type_spec.BatchableTypeSpec):  # pylint: disable=abstr
     return self._copy(shape=shape)
 
 
-def make_composite_tensor(cls, module_name="tfmri.linalg"):
-  """Class decorator to convert `LinearOperator`s to `CompositeTensor`s.
+# Define new `LinearOperator` class.
+LinearOperator = api_util.export("linalg.LinearOperator")(
+    make_mri_operator(tf.linalg.LinearOperator))
 
-  Overrides the default `make_composite_tensor` to use the custom
-  `LinearOperatorSpec`.
-  """
-  spec_name = "{}Spec".format(cls.__name__)
-  spec_type = type(spec_name, (_LinearOperatorSpec,), {"value_type": cls})
-  type_spec.register("{}.{}".format(module_name, spec_name))(spec_type)
-  cls._type_spec = property(spec_type.from_operator)  # pylint: disable=protected-access
-  return cls
+
+# Monkey-patch original operator so that core TF operator and TFMRI
+# operator become aliases.
+tf.linalg.LinearOperator = LinearOperator

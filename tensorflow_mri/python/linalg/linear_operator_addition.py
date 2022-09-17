@@ -21,8 +21,7 @@ from tensorflow_mri.python.util import linalg_ext
 
 
 @api_util.export("linalg.LinearOperatorAddition")
-class LinearOperatorAddition(linear_operator.LinearOperatorMixin,  # pylint: disable=abstract-method
-                             linalg_ext.LinearOperatorAddition):
+class LinearOperatorAddition(linalg_ext.LinearOperatorAddition):
   """Adds one or more linear operators.
 
   `LinearOperatorAddition` is initialized with a list of operators

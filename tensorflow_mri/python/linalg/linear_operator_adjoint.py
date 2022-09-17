@@ -17,7 +17,6 @@
 import tensorflow as tf
 
 from tensorflow_mri.python.linalg import linear_operator
-from tensorflow_mri.python.linalg import linear_operator_util
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import doc_util
 
@@ -25,10 +24,8 @@ from tensorflow_mri.python.util import doc_util
 LinearOperatorAdjoint = api_util.export(
     "linalg.LinearOperatorAdjoint")(
         doc_util.no_linkcode(
-            linear_operator_util.with_mri_extensions(
-                linear_operator.make_composite_tensor(
-                    tf.linalg.LinearOperatorAdjoint))))
+            linear_operator.make_mri_operator(
+                tf.linalg.LinearOperatorAdjoint)))
 
 
-# Monkey-patch.
 tf.linalg.LinearOperatorAdjoint = LinearOperatorAdjoint

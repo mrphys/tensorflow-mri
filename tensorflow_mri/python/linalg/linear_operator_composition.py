@@ -25,10 +25,8 @@ from tensorflow_mri.python.util import doc_util
 LinearOperatorComposition = api_util.export(
     "linalg.LinearOperatorComposition")(
         doc_util.no_linkcode(
-            linear_operator_util.with_mri_extensions(
-                linear_operator.make_composite_tensor(
-                    tf.linalg.LinearOperatorComposition))))
+            linear_operator.make_mri_operator(
+                tf.linalg.LinearOperatorComposition)))
 
 
-# Monkey-patch.
 tf.linalg.LinearOperatorComposition = LinearOperatorComposition
