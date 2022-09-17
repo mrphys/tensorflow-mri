@@ -168,8 +168,8 @@ class LinearOperatorMaskedFFTTest(
         "slicing",
         "to_dense",
         "trace",
-        "solve_ls",
-        "solve_ls_with_broadcast"
+        # "lstsq",
+        # "lstsq_with_broadcast"
     ]
 
   @staticmethod

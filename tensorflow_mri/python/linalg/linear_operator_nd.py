@@ -66,7 +66,8 @@ class LinearOperatorND(linear_operator.LinearOperator):
   """Base class defining a [batch of] N-D linear operator(s)."""
   # Overrides of existing methods.
   def _matmul(self, x, adjoint=False, adjoint_arg=False):
-    # Default implementation of `matmul` for imaging operator. Basically we
+    """Default implementation of `_matmul` for N-D operator."""
+    # Default implementation of `matmul` for N-D operator. Basically we
     # just call `matvec` for each column of `x` (or for each row, if
     # `adjoint_arg` is `True`). `tf.einsum` is used to transpose the input arg.
     batch_shape = tf.broadcast_static_shape(x.shape[:-2], self.batch_shape)
@@ -82,7 +83,8 @@ class LinearOperatorND(linear_operator.LinearOperator):
     return y
 
   def _matvec(self, x, adjoint=False):
-    # Default implementation of `_matvec` for imaging operator. The vectorized
+    """Default implementation of `_matvec` for N-D operator."""
+    # Default implementation of `_matvec` for N-D operator. The vectorized
     # input `x` is first expanded to the its full shape, then transformed, then
     # vectorized again. Typically subclasses should not need to override this
     # method.
@@ -93,14 +95,62 @@ class LinearOperatorND(linear_operator.LinearOperator):
          self.flatten_range_shape(x))
     return x
 
+  def _solve(self, rhs, adjoint=False, adjoint_arg=False):
+    """Default implementation of `_solve` for N-D operator."""
+    # Default implementation of `_solve` for imaging operator. Basically we
+    # just call `solvevec` for each column of `rhs` (or for each row, if
+    # `adjoint_arg` is `True`). `tf.einsum` is used to transpose the input arg.
+    batch_shape = tf.broadcast_static_shape(rhs.shape[:-2], self.batch_shape)
+    output_dim = self.range_dimension if adjoint else self.domain_dimension
+    if adjoint_arg and rhs.dtype.is_complex:
+      rhs = tf.math.conj(rhs)
+    rhs = tf.einsum('...ij->i...j' if adjoint_arg else '...ij->j...i', rhs)
+    x = tf.map_fn(functools.partial(self.solvevec, adjoint=adjoint), rhs,
+                  fn_output_signature=tf.TensorSpec(
+                      shape=batch_shape + [output_dim],
+                      dtype=rhs.dtype))
+    x = tf.einsum('i...j->...ji' if adjoint_arg else 'j...i->...ij', x)
+    return x
+
   def _solvevec(self, rhs, adjoint=False):
-    # Default implementation of `_solvevec` for imaging operator. The
+    """Default implementation of `_solvevec` for N-D operator."""
+    # Default implementation of `_solvevec` for N-D operator. The
     # vectorized input `rhs` is first expanded to the its full shape, then
     # solved, then vectorized again. Typically subclasses should not need to
     # override this method.
     rhs = (self.expand_domain_dimension(rhs) if adjoint else
            self.expand_range_dimension(rhs))
     rhs = self._solvevec_nd(rhs, adjoint=adjoint)
+    rhs = (self.flatten_range_shape(rhs) if adjoint else
+           self.flatten_domain_shape(rhs))
+    return rhs
+
+  def _lstsq(self, rhs, adjoint=False, adjoint_arg=False):
+    """Default implementation of `_lstsq` for N-D operator."""
+    # Default implementation of `_solve` for N-D operator. Basically we
+    # just call `solvevec` for each column of `rhs` (or for each row, if
+    # `adjoint_arg` is `True`). `tf.einsum` is used to transpose the input arg.
+    batch_shape = tf.broadcast_static_shape(rhs.shape[:-2], self.batch_shape)
+    output_dim = self.range_dimension if adjoint else self.domain_dimension
+    if adjoint_arg and rhs.dtype.is_complex:
+      rhs = tf.math.conj(rhs)
+    rhs = tf.einsum('...ij->i...j' if adjoint_arg else '...ij->j...i', rhs)
+    x = tf.map_fn(functools.partial(self.lstsqvec, adjoint=adjoint), rhs,
+                  fn_output_signature=tf.TensorSpec(
+                      shape=batch_shape + [output_dim],
+                      dtype=rhs.dtype))
+    x = tf.einsum('i...j->...ji' if adjoint_arg else 'j...i->...ij', x)
+    return x
+
+  def _lstsqvec(self, rhs, adjoint=False):
+    """Default implementation of `_lstsqvec` for N-D operator."""
+    # Default implementation of `_solvevec` for N-D operator. The
+    # vectorized input `rhs` is first expanded to the its full shape, then
+    # solved, then vectorized again. Typically subclasses should not need to
+    # override this method.
+    rhs = (self.expand_domain_dimension(rhs) if adjoint else
+           self.expand_range_dimension(rhs))
+    rhs = self._solvevec_ls_nd(rhs, adjoint=adjoint)
     rhs = (self.flatten_range_shape(rhs) if adjoint else
            self.flatten_domain_shape(rhs))
     return rhs
@@ -183,6 +233,41 @@ class LinearOperatorND(linear_operator.LinearOperator):
   def _solvevec_nd(self, x, adjoint=False):
     # Subclasses may override this method.
     raise NotImplementedError("Method `_solvevec_nd` is not implemented.")
+
+  def solvevec_ls_nd(self, rhs, adjoint=False, name="solve"):
+    """Solve single equation with N-D right-hand side: `A x = rhs`.
+
+    The returned `tf.Tensor` is the least squares solution to the system of
+    equations.
+
+    ```{note}
+    Similar to `solvevec`, but works with non-vectorized N-D inputs `rhs`.
+    ```
+
+    Args:
+      rhs: A `tf.Tensor` with same `dtype` as this operator.
+        `rhs` is treated like a [batch] vector meaning for every set of leading
+        dimensions, the last dimension defines a vector.  See class docstring
+        for definition of compatibility regarding batch dimensions.
+      adjoint: A boolean. If `True`, solve the system involving the adjoint of
+        this operator: $A^H x = b$. Defaults to `False`.
+      name:  A name scope to use for ops added by this method.
+
+    Returns:
+      A `tf.Tensor` with same dtype as `x` and shape `[..., *nd_shape]`,
+      where `nd_shape` is the equal to `range_shape` if `adjoint` is `True`
+      and `domain_shape` otherwise.
+    """
+    with self._name_scope(name):  # pylint: disable=not-callable
+      rhs = tf.convert_to_tensor(rhs, name="rhs")
+      self._check_input_dtype(rhs)
+      input_shape = self.domain_shape if adjoint else self.range_shape
+      input_shape.assert_is_compatible_with(rhs.shape[-input_shape.rank:])  # pylint: disable=invalid-unary-operand-type
+      return self._solvevec_ls_nd(rhs, adjoint=adjoint)
+
+  def _solvevec_ls_nd(self, x, adjoint=False):
+    # Subclasses may override this method.
+    raise NotImplementedError("Method `_solvevec_ls_nd` is not implemented.")
 
   @property
   def domain_shape(self):

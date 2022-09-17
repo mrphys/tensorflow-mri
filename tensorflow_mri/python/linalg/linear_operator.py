@@ -30,10 +30,10 @@ def make_mri_operator(cls):
   # Add extensions if decorating base class.
   if cls is tf.linalg.LinearOperator:
     extensions = {
-        "solve_ls": solve_ls,
-        "_solve_ls": _solve_ls,
-        "solvevec_ls": solvevec_ls,
-        "_solvevec_ls": _solvevec_ls,
+        "lstsq": lstsq,
+        "_lstsq": _lstsq,
+        "lstsqvec": lstsqvec,
+        "_lstsqvec": _lstsqvec,
     }
 
     for key, value in extensions.items():
@@ -72,10 +72,10 @@ def update_docstring(cls):
   This operator supports additional functionality not present in core TF
   operators.
 
-  - `solve_ls` finds the least-squares solution to the linear system defined
-    by this operator.
-  - `_solve_ls` can be overridden to provide a custom implementation of
-    `solve_ls`.
+  - `lstsq` and `lstsqvec` finds the least-squares solution to the linear
+    system(s) defined by this operator.
+  - `_lstsq` and `_lstsqvec` can be overridden to provide a custom
+    implementation of `lstsq` and `lstsqvec`, respectively.
   - `_type_spec` has been patched to improve support in Keras models.
 
   ```{seealso}
@@ -115,7 +115,7 @@ def is_tf_builtin(cls):
 
 # New attributes to be added to `LinearOperator` class.
 
-def solve_ls(self, rhs, adjoint=False, adjoint_arg=False, name="solve_ls"):
+def lstsq(self, rhs, adjoint=False, adjoint_arg=False, name="lstsq"):
   """Solve the (batch) linear system $A X = B$ in the least-squares sense.
 
   Given $A$ represented by this linear operator with shape `[..., M, N]`,
@@ -153,7 +153,7 @@ def solve_ls(self, rhs, adjoint=False, adjoint_arg=False, name="solve_ls"):
           " {} but got {}.".format(
               left_operator.domain_dimension, right_operator.range_dimension))
     with self._name_scope(name):  # pylint: disable=not-callable
-      return linear_operator_algebra.solve_ls(left_operator, right_operator)
+      return linear_operator_algebra.lstsq(left_operator, right_operator)
 
   with self._name_scope(name):  # pylint: disable=not-callable
     rhs = tf.convert_to_tensor(rhs, name="rhs")
@@ -165,14 +165,14 @@ def solve_ls(self, rhs, adjoint=False, adjoint_arg=False, name="solve_ls"):
         self.shape, self_dim).assert_is_compatible_with(
             rhs.shape[arg_dim])
 
-    return self._solve_ls(rhs, adjoint=adjoint, adjoint_arg=adjoint_arg)
+    return self._lstsq(rhs, adjoint=adjoint, adjoint_arg=adjoint_arg)
 
-def _solve_ls(self, rhs, adjoint=False, adjoint_arg=False):
-  """Default implementation of `_solve_ls`."""
+def _lstsq(self, rhs, adjoint=False, adjoint_arg=False):
+  """Default implementation of `_lstsq`."""
   raise NotImplementedError(
-      f"solve_ls is not implemented for {self.__class__.__name__}.")
+      f"lstsq is not implemented for {self.__class__.__name__}.")
 
-def solvevec_ls(self, rhs, adjoint=False, name="solvevec_ls"):
+def lstsqvec(self, rhs, adjoint=False, name="lstsqvec"):
   """Solve the linear system $A x = b$ in the least-squares sense.
 
   Given $A$ represented by this linear operator with shape `[..., M, N]`,
@@ -202,12 +202,12 @@ def solvevec_ls(self, rhs, adjoint=False, name="solvevec_ls"):
     tf.compat.dimension_at_index(
         self.shape, self_dim).assert_is_compatible_with(rhs.shape[-1])
 
-    return self._solvevec_ls(rhs, adjoint=adjoint)
+    return self._lstsqvec(rhs, adjoint=adjoint)
 
-def _solvevec_ls(self, rhs, adjoint=False):
-  """Default implementation of `_solvevec_ls`."""
+def _lstsqvec(self, rhs, adjoint=False):
+  """Default implementation of `_lstsqvec`."""
   rhs_mat = tf.expand_dims(rhs, axis=-1)
-  solution_mat = self.solve_ls(rhs_mat, adjoint=adjoint)
+  solution_mat = self.lstsq(rhs_mat, adjoint=adjoint)
   return tf.squeeze(solution_mat, axis=-1)
 
 

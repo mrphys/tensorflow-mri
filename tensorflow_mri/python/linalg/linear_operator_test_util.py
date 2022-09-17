@@ -17,9 +17,10 @@
 import itertools
 
 import tensorflow as tf
-
 from tensorflow.python.framework import test_util
 from tensorflow.python.ops.linalg import linear_operator_test_util
+
+from tensorflow_mri.python.linalg import linear_operator_util
 
 
 DEFAULT_GRAPH_SEED = 87654321
@@ -31,12 +32,13 @@ def add_tests(test_cls):
 
   test_name_dict = {
       # "pseudo_inverse": _test_pseudo_inverse,
-      "solve_ls": _test_solve_ls
+      "lstsq": _test_lstsq,
+      "lstsq_with_broadcast": _test_lstsq_with_broadcast
   }
   optional_tests = []
   tests_with_adjoint_args = [
-      "solve_ls",
-      "solve_ls_with_broadcast"
+      "lstsq",
+      "lstsq_with_broadcast"
   ]
 
   for name, test_template_fn in test_name_dict.items():
@@ -92,10 +94,10 @@ def _test_pseudo_inverse(use_placeholder, shapes_info, dtype):
   return test_pseudo_inverse
 
 
-def _test_solve_ls(
+def _test_lstsq(
     use_placeholder, shapes_info, dtype, adjoint, adjoint_arg, blockwise_arg):
-  def test_solve_ls(self):
-    _test_solve_ls_base(
+  def test_lstsq(self):
+    _test_lstsq_base(
         self,
         use_placeholder,
         shapes_info,
@@ -104,13 +106,13 @@ def _test_solve_ls(
         adjoint_arg,
         blockwise_arg,
         with_batch=True)
-  return test_solve_ls
+  return test_lstsq
 
 
-def _test_solve_ls_with_broadcast(
+def _test_lstsq_with_broadcast(
     use_placeholder, shapes_info, dtype, adjoint, adjoint_arg, blockwise_arg):
-  def test_solve_ls_with_broadcast(self):
-    _test_solve_ls_base(
+  def test_lstsq_with_broadcast(self):
+    _test_lstsq_base(
         self,
         use_placeholder,
         shapes_info,
@@ -119,10 +121,10 @@ def _test_solve_ls_with_broadcast(
         adjoint_arg,
         blockwise_arg,
         with_batch=False)
-  return test_solve_ls_with_broadcast
+  return test_lstsq_with_broadcast
 
 
-def _test_solve_ls_base(
+def _test_lstsq_base(
     self,
     use_placeholder,
     shapes_info,
@@ -145,14 +147,14 @@ def _test_solve_ls_base(
         operator, adjoint=adjoint, with_batch=with_batch)
     # If adjoint_arg, solve A X = (rhs^H)^H = rhs.
     if adjoint_arg:
-      op_solve = operator.solve_ls(
+      op_solve = operator.lstsq(
           tf.linalg.adjoint(rhs),
           adjoint=adjoint,
           adjoint_arg=adjoint_arg)
     else:
-      op_solve = operator.solve_ls(
+      op_solve = operator.lstsq(
           rhs, adjoint=adjoint, adjoint_arg=adjoint_arg)
-    mat_solve = linear_operator_util.matrix_solve_with_broadcast(
+    mat_solve = linear_operator_util.matrix_solve_ls_with_broadcast(
         mat, rhs, adjoint=adjoint)
     if not use_placeholder:
       self.assertAllEqual(op_solve.shape,
@@ -175,13 +177,13 @@ def _test_solve_ls_base(
           block_dimensions_fn,
           rhs, axis=-2)
       if adjoint_arg:
-        split_rhs = [linalg.adjoint(y) for y in split_rhs]
+        split_rhs = [tf.linalg.adjoint(y) for y in split_rhs]
       split_solve = operator.solve(
           split_rhs, adjoint=adjoint, adjoint_arg=adjoint_arg)
       self.assertEqual(len(split_solve), len(operator.operators))
       split_solve = linear_operator_util.broadcast_matrix_batch_dims(
           split_solve)
-      fused_block_solve = array_ops.concat(split_solve, axis=-2)
+      fused_block_solve = tf.concat(split_solve, axis=-2)
       op_solve_v, mat_solve_v, fused_block_solve_v = sess.run([
           op_solve, mat_solve, fused_block_solve])
 

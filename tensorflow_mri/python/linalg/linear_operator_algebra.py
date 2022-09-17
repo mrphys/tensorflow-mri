@@ -27,7 +27,7 @@ _registered_function = linear_operator_algebra._registered_function  # pylint: d
 
 
 _PSEUDO_INVERSES = {}
-_SOLVE_LSS = {}
+_LEASTSQS = {}
 
 
 def _registered_pseudo_inverse(type_a):
@@ -35,9 +35,9 @@ def _registered_pseudo_inverse(type_a):
   return _registered_function([type_a], _PSEUDO_INVERSES)
 
 
-def _registered_solve_ls(type_a):
+def _registered_lstsq(type_a):
   """Get the SolveLS function registered for class a."""
-  return _registered_function([type_a], _SOLVE_LSS)
+  return _registered_function([type_a], _LEASTSQS)
 
 
 def pseudo_inverse(lin_op_a, name=None):
@@ -63,8 +63,8 @@ def pseudo_inverse(lin_op_a, name=None):
     return pseudo_inverse_fn(lin_op_a)
 
 
-def solve_ls(lin_op_a, lin_op_b, name=None):
-  """Compute lin_op_a.solve_ls(lin_op_b).
+def lstsq(lin_op_a, lin_op_b, name=None):
+  """Compute lin_op_a.lstsq(lin_op_b).
 
   Args:
     lin_op_a: The LinearOperator on the left.
@@ -72,14 +72,14 @@ def solve_ls(lin_op_a, lin_op_b, name=None):
     name: Name to use for this operation.
 
   Returns:
-    A LinearOperator that represents the solve_ls between `lin_op_a` and
+    A LinearOperator that represents the lstsq between `lin_op_a` and
       `lin_op_b`.
 
   Raises:
-    NotImplementedError: If no solve_ls method is defined between types of
+    NotImplementedError: If no lstsq method is defined between types of
       `lin_op_a` and `lin_op_b`.
   """
-  solve_fn = _registered_solve_ls(type(lin_op_a), type(lin_op_b))
+  solve_fn = _registered_lstsq(type(lin_op_a), type(lin_op_b))
   if solve_fn is None:
     raise ValueError("No solve registered for {}.solve({})".format(
         type(lin_op_a), type(lin_op_b)))
