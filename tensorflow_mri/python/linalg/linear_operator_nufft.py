@@ -76,6 +76,19 @@ class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
       ```
     norm: A `str`. The FFT normalization mode. Must be `None` (no normalization)
       or `'ortho'`.
+    is_non_singular: A boolean, or `None`. Whether this operator is expected
+      to be non-singular. Defaults to `None`.
+    is_self_adjoint: A boolean, or `None`. Whether this operator is expected
+      to be equal to its Hermitian transpose. If `dtype` is real, this is
+      equivalent to being symmetric. Defaults to `False`.
+    is_positive_definite: A boolean, or `None`. Whether this operators is
+      expected to be positive definite, meaning the quadratic form $x^H A x$
+      has positive real part for all nonzero $x$. Note that we do not require
+      the operator to be self-adjoint to be positive-definite. See:
+      https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices.
+      Defaults to `None`.
+    is_square: A boolean, or `None`. Expect that this operator acts like a
+      square matrix (or a batch of square matrices). Defaults to `False`.
     name: An optional `str`. The name of this operator.
 
   Example:
@@ -98,6 +111,10 @@ class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
                trajectory,
                density=None,
                norm='ortho',
+               is_non_singular=None,
+               is_self_adjoint=False,
+               is_positive_definite=None,
+               is_square=False,
                name="LinearOperatorNUFFT"):
 
     parameters = dict(
@@ -105,6 +122,10 @@ class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
         trajectory=trajectory,
         density=density,
         norm=norm,
+        is_non_singular=is_non_singular,
+        is_self_adjoint=is_self_adjoint,
+        is_positive_definite=is_positive_definite,
+        is_square=is_square,
         name=name
     )
 
@@ -204,20 +225,18 @@ class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
       self._weights = None
 
     super().__init__(tensor_util.get_complex_dtype(self._trajectory.dtype),
-                     is_non_singular=None,
-                     is_self_adjoint=None,
-                     is_positive_definite=None,
-                     is_square=None,
-                     name=name,
-                     parameters=parameters)
+                     is_non_singular=is_non_singular,
+                     is_self_adjoint=is_self_adjoint,
+                     is_positive_definite=is_positive_definite,
+                     is_square=is_square,
+                     parameters=parameters,
+                     name=name)
 
     # Compute normalization factors.
     if self._norm == 'ortho':
-      norm_factor = tf.math.reciprocal(
+      self._norm_factor = tf.math.reciprocal(
           tf.math.sqrt(tf.cast(tf.math.reduce_prod(self._grid_shape),
           self.dtype)))
-      self._norm_factor_forward = norm_factor
-      self._norm_factor_adjoint = norm_factor
 
     self._tol = 1e-12 if self.dtype == tf.complex128 else 1e-6
 
@@ -231,17 +250,23 @@ class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
                         fft_direction='backward',
                         tol=self._tol)
       if self._norm is not None:
-        x *= self._norm_factor_adjoint
+        x *= self._norm_factor
     else:
       x = fft_ops.nufft(x, self._trajectory,
                         transform_type='type_2',
                         fft_direction='forward',
                         tol=self._tol)
       if self._norm is not None:
-        x *= self._norm_factor_forward
+        x *= self._norm_factor
       if self._density is not None:
         x *= self._weights_sqrt
     return x
+
+  # def _solvevec_nd(self, rhs, adjoint=False):
+  #   raise ValueError("_solvevec_nd")
+
+  def _lstsqvec_nd(self, rhs, adjoint=False):
+    return self._matvec_nd(rhs, adjoint=(not adjoint))
 
   def _domain_shape(self):
     return self._domain_shape_static
@@ -275,6 +300,18 @@ class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
   @property
   def density(self):
     return self._density
+
+  @property
+  def _composite_tensor_fields(self):
+    return ('domain_shape', 'trajectory', 'density')
+
+  @property
+  def _composite_tensor_prefer_static_fields(self):
+    return ('domain_shape',)
+
+  @property
+  def _experimental_parameter_ndims_to_matrix_ndims(self):
+    return {'trajectory': 2, 'density': 1}
 
 
 @api_util.export("linalg.LinearOperatorGramNUFFT")

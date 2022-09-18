@@ -45,7 +45,7 @@ def update_docstring(op_cls):
   problems more easily.
 
   - Process non-vectorized N-dimensional inputs via `matvec_nd`, `solvevec_nd`
-    and `solvevec_ls_nd`.
+    and `lstsqvec_nd`.
   - Access static N-D shape information via `domain_shape` and `range_shape`.
   - Access dynamic N-D shape information via `domain_shape_tensor` and
     `range_shape_tensor`.
@@ -150,7 +150,7 @@ class LinearOperatorND(linear_operator.LinearOperator):
     # override this method.
     rhs = (self.expand_domain_dimension(rhs) if adjoint else
            self.expand_range_dimension(rhs))
-    rhs = self._solvevec_ls_nd(rhs, adjoint=adjoint)
+    rhs = self._lstsqvec_nd(rhs, adjoint=adjoint)
     rhs = (self.flatten_range_shape(rhs) if adjoint else
            self.flatten_domain_shape(rhs))
     return rhs
@@ -234,7 +234,7 @@ class LinearOperatorND(linear_operator.LinearOperator):
     # Subclasses may override this method.
     raise NotImplementedError("Method `_solvevec_nd` is not implemented.")
 
-  def solvevec_ls_nd(self, rhs, adjoint=False, name="solve"):
+  def lstsqvec_nd(self, rhs, adjoint=False, name="solve"):
     """Solve single equation with N-D right-hand side: `A x = rhs`.
 
     The returned `tf.Tensor` is the least squares solution to the system of
@@ -263,11 +263,11 @@ class LinearOperatorND(linear_operator.LinearOperator):
       self._check_input_dtype(rhs)
       input_shape = self.domain_shape if adjoint else self.range_shape
       input_shape.assert_is_compatible_with(rhs.shape[-input_shape.rank:])  # pylint: disable=invalid-unary-operand-type
-      return self._solvevec_ls_nd(rhs, adjoint=adjoint)
+      return self._lstsqvec_nd(rhs, adjoint=adjoint)
 
-  def _solvevec_ls_nd(self, x, adjoint=False):
+  def _lstsqvec_nd(self, x, adjoint=False):
     # Subclasses may override this method.
-    raise NotImplementedError("Method `_solvevec_ls_nd` is not implemented.")
+    raise NotImplementedError("Method `_lstsqvec_nd` is not implemented.")
 
   @property
   def domain_shape(self):

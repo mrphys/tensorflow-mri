@@ -78,10 +78,16 @@ def add_tests(test_cls):
                 use_placeholder, shape_info, dtype)))
 
 
-SquareLinearOperatorDerivedClassTest = (
-    linear_operator_test_util.SquareLinearOperatorDerivedClassTest)
-NonSquareLinearOperatorDerivedClassTest = (
-    linear_operator_test_util.NonSquareLinearOperatorDerivedClassTest)
+class SquareLinearOperatorDerivedClassTest(
+    linear_operator_test_util.SquareLinearOperatorDerivedClassTest):
+  pass
+
+
+class NonSquareLinearOperatorDerivedClassTest(
+    linear_operator_test_util.NonSquareLinearOperatorDerivedClassTest):
+
+  def make_rhs(self, operator, adjoint, with_batch=True):
+    return self.make_x(operator, adjoint=not adjoint, with_batch=with_batch)
 
 
 def _test_pseudo_inverse(use_placeholder, shapes_info, dtype):

@@ -298,30 +298,24 @@ class LinearOperatorNUFFTTest(
   #     tf.complex128: 1e-12
   # }
 
+  @staticmethod
   def skip_these_tests():
-    return [
+    return super(LinearOperatorNUFFTTest, LinearOperatorNUFFTTest).skip_these_tests() + [
         "add_to_tensor",
         "adjoint",
-        "cholesky", #x
         "cond",
         "composite_tensor",
-        "det",
         "diag_part",
-        "eigvalsh",  #x
-        "inverse",
-        "log_abs_det",
         "operator_matmul_with_same_type",
         "operator_solve_with_same_type",
-        # "matmul",
-        # "matmul_with_broadcast",
+        "matmul",
+        "matmul_with_broadcast",
         "saved_model",
         "slicing",
-        "solve",
-        "solve_with_broadcast",
         "to_dense",
         "trace",
-        "lstsq",
-        "lstsq_with_broadcast"
+        # "lstsq",
+        # "lstsq_with_broadcast"
     ]
 
   @staticmethod
