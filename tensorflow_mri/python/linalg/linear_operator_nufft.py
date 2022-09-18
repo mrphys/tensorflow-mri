@@ -19,17 +19,17 @@ This module contains linear operators and solvers.
 
 import tensorflow as tf
 
-from tensorflow_mri.python.ops import array_ops
+from tensorflow_mri.python.linalg import linear_operator_nd
+from tensorflow_mri.python.ops import array_ops, traj_ops
 from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
-from tensorflow_mri.python.linalg import linear_operator
 from tensorflow_mri.python.util import tensor_util
 
 
 @api_util.export("linalg.LinearOperatorNUFFT")
-@linear_operator.make_composite_tensor
-class LinearOperatorNUFFT(linear_operator.LinearOperator):  # pylint: disable=abstract-method
+@linear_operator_nd.make_mri_operator_nd
+class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
   """Linear operator acting like a [batch] nonuniform Fourier matrix.
 
   Performs an N-dimensional discrete Fourier transform via the nonuniform fast
@@ -89,14 +89,8 @@ class LinearOperatorNUFFT(linear_operator.LinearOperator):  # pylint: disable=ab
     >>> # Create a NUFFT operator.
     >>> linop = tfmri.linalg.LinearOperatorNUFFT(
     ...     image_shape, trajectory=trajectory, density=density)
-    >>> # Create k-space.
+    >>> # Create non-uniform k-space.
     >>> kspace = tfmri.signal.nufft(image, trajectory)
-    >>> # This reconstructs the image applying only partial compensation
-    >>> # (square root of weights).
-    >>> image = linop.transform(kspace, adjoint=True)
-    >>> # This reconstructs the image with full compensation.
-    >>> image = linop.transform(
-    ...     linop.preprocess(kspace, adjoint=True), adjoint=True)
 
   """
   def __init__(self,
@@ -225,41 +219,28 @@ class LinearOperatorNUFFT(linear_operator.LinearOperator):  # pylint: disable=ab
       self._norm_factor_forward = norm_factor
       self._norm_factor_adjoint = norm_factor
 
-  def _transform(self, x, adjoint=False):
+    self._tol = 1e-12 if self.dtype == tf.complex128 else 1e-6
+
+  def _matvec_nd(self, x, adjoint=False):
     if adjoint:
       if self._density is not None:
         x *= self._weights_sqrt
       x = fft_ops.nufft(x, self._trajectory,
                         grid_shape=self._grid_shape,
                         transform_type='type_1',
-                        fft_direction='backward')
+                        fft_direction='backward',
+                        tol=self._tol)
       if self._norm is not None:
         x *= self._norm_factor_adjoint
     else:
       x = fft_ops.nufft(x, self._trajectory,
                         transform_type='type_2',
-                        fft_direction='forward')
+                        fft_direction='forward',
+                        tol=self._tol)
       if self._norm is not None:
         x *= self._norm_factor_forward
       if self._density is not None:
         x *= self._weights_sqrt
-    return x
-
-  def _preprocess(self, x, adjoint=False):
-    if adjoint:
-      if self._density is not None:
-        x *= self._weights_sqrt
-    else:
-      raise NotImplementedError(
-          "_preprocess not implemented for forward transform.")
-    return x
-
-  def _postprocess(self, x, adjoint=False):
-    if adjoint:
-      pass  # nothing to do
-    else:
-      raise NotImplementedError(
-          "_postprocess not implemented for forward transform.")
     return x
 
   def _domain_shape(self):
@@ -531,3 +512,35 @@ class LinearOperatorGramNUFFT(LinearOperatorNUFFT):  # pylint: disable=abstract-
 
   def _range_shape_tensor(self):
     return self._domain_shape_tensor()
+
+
+@api_util.export("linalg.nudft_matrix")
+def nudft_matrix(domain_shape, trajectory):
+  """Constructs a non-uniform discrete Fourier transform (NUDFT) matrix.
+
+  Args:
+    grid_shape: Shape of the grid.
+    points: Nonuniform points, in the range [-pi, pi].
+
+  Returns:
+    The non-uniform Fourier transform matrix.
+  """
+  domain_shape_static, domain_shape_dynamic = (
+      tensor_util.static_and_dynamic_shapes_from_shape(domain_shape))
+  if domain_shape_static.is_fully_defined():
+    domain_shape = domain_shape_static.as_list()
+  else:
+    domain_shape = domain_shape_dynamic
+
+  # Create a signal-domain grid.
+  grid = traj_ops.frequency_grid(
+      domain_shape, max_val=tf.constant(0.5, dtype=trajectory.dtype))
+  grid *= tf.cast(domain_shape, dtype=trajectory.dtype)
+
+  grid = tf.linalg.matmul(trajectory, tf.transpose(grid))
+
+  m = tf.math.exp(tf.dtypes.complex(
+      tf.constant(0.0, dtype=trajectory.dtype), tf.math.negative(grid)))
+  m /= tf.math.sqrt(tf.cast(tf.math.reduce_prod(domain_shape), m.dtype))
+
+  return m

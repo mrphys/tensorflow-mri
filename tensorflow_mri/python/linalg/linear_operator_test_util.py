@@ -80,6 +80,8 @@ def add_tests(test_cls):
 
 SquareLinearOperatorDerivedClassTest = (
     linear_operator_test_util.SquareLinearOperatorDerivedClassTest)
+NonSquareLinearOperatorDerivedClassTest = (
+    linear_operator_test_util.NonSquareLinearOperatorDerivedClassTest)
 
 
 def _test_pseudo_inverse(use_placeholder, shapes_info, dtype):

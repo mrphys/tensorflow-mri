@@ -277,13 +277,12 @@ class LinearOperatorFFT(linear_operator_nd.LinearOperatorND):
         self, params_overrides={'batch_shape': new_batch_shape}, slices=slices)
 
 
-@api_util.export("linalg.dft_matrix")
 def dft_matrix(num_rows,
                batch_shape=None,
                dtype=tf.complex64,
                shift=False,
                name=None):
-  """Constructs a DFT matrix.
+  """Constructs a discrete Fourier transform (DFT) matrix.
 
   Args:
     num_rows: A non-negative `int32` scalar `tf.Tensor` giving the number

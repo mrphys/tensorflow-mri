@@ -128,23 +128,47 @@ def frequency_grid(shape, max_val=1.0):
     A tensor of shape [*shape, tf.size(shape)] such that `tensor[..., i]`
     contains the frequencies along axis `i`. Has the same dtype as `max_val`.
   """
-  shape = tf.convert_to_tensor(shape, dtype=tf.int32)
+  shape_static, shape = (
+      tensor_util.static_and_dynamic_shapes_from_shape(shape))
   max_val = tf.convert_to_tensor(max_val)
   dtype = max_val.dtype
 
-  vecs = tf.TensorArray(dtype=dtype,
-                        size=tf.size(shape),
-                        infer_shape=False,
-                        clear_after_read=False)
+  # Prefer static.
+  if shape_static.is_fully_defined():
+    shape = shape_static.as_list()
+  rank_static = shape_static.rank
+  if rank_static is not None:
+    rank = rank_static
+  else:
+    rank = tf.size(shape)
 
-  def _cond(i, vecs):  # pylint: disable=unused-argument
-    return tf.less(i, tf.size(shape))
-  def _body(i, vecs):
+  def _make_vec(i):
+    """Returns the i-th coordinate vector."""
     step = (2.0 * max_val) / tf.cast(shape[i], dtype)
     low = -max_val
-    high = tf.cond(shape[i] % 2 == 0, lambda: max_val - step, lambda: max_val)
-    return i + 1, vecs.write(i, tf.linspace(low, high, shape[i]))
-  _, vecs = tf.while_loop(_cond, _body, [0, vecs])
+    high = tf.cond(tf.math.equal(shape[i] % 2, 0),
+                   lambda: max_val - step,
+                   lambda: max_val)
+    vec = tf.linspace(low, high, shape[i])
+    # If length is 1, make its value 0 rather than `low`.
+    return tf.cond(tf.math.equal(shape[i], 1),
+                   lambda: tf.zeros_like(vec),
+                   lambda: vec)
+
+  if rank_static is not None:
+    # We can use a regular list.
+    vecs = [_make_vec(i) for i in range(rank_static)]
+  else:
+    # We need to use a dynamic tensor array.
+    vecs = tf.TensorArray(dtype=dtype,
+                          size=rank,
+                          infer_shape=False,
+                          clear_after_read=False)
+    def _cond(i, vecs):  # pylint: disable=unused-argument
+      return tf.less(i, rank)
+    def _body(i, vecs):
+      return i + 1, vecs.write(i, _make_vec(i))
+    _, vecs = tf.while_loop(_cond, _body, [0, vecs])
 
   return array_ops.dynamic_meshgrid(vecs)
 
