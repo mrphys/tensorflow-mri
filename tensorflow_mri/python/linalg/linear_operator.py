@@ -214,30 +214,28 @@ def _lstsqvec(self, rhs, adjoint=False):
 class _LinearOperatorSpec(type_spec.BatchableTypeSpec):  # pylint: disable=abstract-method
   """A tf.TypeSpec for `LinearOperator` objects.
 
-  This is very similar to `tf.linalg.LinearOperatorSpec`, but it adds a
-  `shape` attribute which is required by Keras.
+  This is very similar to `tf.linalg.LinearOperatorSpec`, but it adds
+  `shape` and `dtype` attributes which are required by Keras.
 
-  Note that this attribute is redundant, as it can always be computed from
-  other attributes. However, the details of this computation vary between
-  operators, so its easier to just store it.
+  These attributes are redundant, as they can always be computed from
+  other parameters. However, the details of this computation vary between
+  operators, so it's easier to just store it.
   """
-  __slots__ = ("_shape",
-               "_dtype",
-               "_param_specs",
+  __slots__ = ("_param_specs",
                "_non_tensor_params",
-               "_prefer_static_fields")
+               "_prefer_static_fields",
+               "_shape",
+               "_dtype")
 
   def __init__(self,
-               shape,
-               dtype,
                param_specs,
                non_tensor_params,
-               prefer_static_fields):
+               prefer_static_fields,
+               shape=None,
+               dtype=None):
     """Initializes a new `_LinearOperatorSpec`.
 
     Args:
-      shape: A `tf.TensorShape`.
-      dtype: A `tf.dtypes.DType`.
       param_specs: Python `dict` of `tf.TypeSpec` instances that describe
         kwargs to the `LinearOperator`'s constructor that are `Tensor`-like or
         `CompositeTensor` subclasses.
@@ -247,12 +245,14 @@ class _LinearOperatorSpec(type_spec.BatchableTypeSpec):  # pylint: disable=abstr
         of `Tensor`-like args to the `LinearOperator`s constructor that may be
         stored as static values, if known. These are typically shapes, indices,
         or axis values.
+      shape: A `tf.TensorShape`. The shape of the `LinearOperator`.
+      dtype: A `tf.dtypes.DType`. The dtype of the `LinearOperator`.
     """
-    self._shape = shape
-    self._dtype = dtype
     self._param_specs = param_specs
     self._non_tensor_params = non_tensor_params
     self._prefer_static_fields = prefer_static_fields
+    self._shape = shape
+    self._dtype = dtype
 
   @classmethod
   def from_operator(cls, operator):
@@ -286,11 +286,11 @@ class _LinearOperatorSpec(type_spec.BatchableTypeSpec):  # pylint: disable=abstr
                                   f" non-`Tensor` values.")
 
     return cls(
-        shape=operator.shape,
-        dtype=operator.dtype,
         param_specs=param_specs,
         non_tensor_params=non_tensor_params,
-        prefer_static_fields=operator._composite_tensor_prefer_static_fields)  # pylint: disable=protected-access
+        prefer_static_fields=operator._composite_tensor_prefer_static_fields,  # pylint: disable=protected-access
+        shape=operator.shape,
+        dtype=operator.dtype)
 
   def _to_components(self, obj):
     return _extract_attrs(obj, keys=list(self._param_specs))
@@ -304,25 +304,19 @@ class _LinearOperatorSpec(type_spec.BatchableTypeSpec):  # pylint: disable=abstr
     return self._param_specs
 
   def _serialize(self):
-    return (self._shape,
-            self._dtype,
-            self._param_specs,
+    return (self._param_specs,
             self._non_tensor_params,
-            self._prefer_static_fields)
-
-  def _to_legacy_output_shapes(self):
-    return self._shape
-
-  def _to_legacy_output_types(self):
-    return self._dtype
+            self._prefer_static_fields,
+            self._shape,
+            self._dtype)
 
   def _copy(self, **overrides):
     kwargs = {
-        "shape": self._shape,
-        "dtype": self._dtype,
         "param_specs": self._param_specs,
         "non_tensor_params": self._non_tensor_params,
-        "prefer_static_fields": self._prefer_static_fields
+        "prefer_static_fields": self._prefer_static_fields,
+        "shape": self._shape,
+        "dtype": self._dtype
     }
     kwargs.update(overrides)
     return type(self)(**kwargs)
@@ -356,6 +350,12 @@ class _LinearOperatorSpec(type_spec.BatchableTypeSpec):  # pylint: disable=abstr
     """Returns a new `tf.TypeSpec` with the given shape."""
     # This method is required to use linear operators with Keras.
     return self._copy(shape=shape)
+
+  def _to_legacy_output_shapes(self):
+    return self._shape
+
+  def _to_legacy_output_types(self):
+    return self._dtype
 
 
 # Define new `LinearOperator` class.
