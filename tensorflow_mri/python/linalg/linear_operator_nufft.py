@@ -14,15 +14,19 @@
 # ==============================================================================
 """Non-uniform Fourier linear operators."""
 
+import warnings
+
 import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.linalg import linear_operator_nd
-from tensorflow_mri.python.ops import array_ops, traj_ops
+from tensorflow_mri.python.linalg import linear_operator_util
+from tensorflow_mri.python.ops import array_ops
+from tensorflow_mri.python.ops import traj_ops
 from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.util import api_util
-from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import tensor_util
+from tensorflow_mri.python.util import types_util
 
 
 @api_util.export("linalg.LinearOperatorNUFFT")
@@ -39,8 +43,8 @@ class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
   - The adjoint operator $A^H$ evaluates the backward, type-1 NUFFT
     (frequency domain to signal domain, nonuniform to uniform).
 
-  The dimensionality of the grid $N_0 \times ... \times N_d$ is determined by
-  `domain_shape`. The $M$ non-uniform sampling locations in the frequency
+  The dimensionality of the grid $n = n_0 \times ... \times n_d$ is determined
+  by `domain_shape`. The $m$ non-uniform sampling locations in the frequency
   domain are defined by `points`.
 
   ```{rubric} Inverse NUFFT
@@ -68,24 +72,26 @@ class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
 
   ```{rubric} Fourier crosstalk matrix
   ```
-  The Fourier crosstalk matrix is the matrix $D = A A^H$. The solution to the
-  least-squares problem can be written in terms of $D$ as $x = A^H D^{-1} y$.
+  The Fourier crosstalk matrix is the matrix $D = A A^H$ (if $m < n$) or the
+  matrix $D = A^H A$ (if $m > n$). The solution to the least-squares problem
+  can be written in terms of $D$ as $x = A^H D^{-1} b$ (if $m < n$) or
+  $x = D^{-1} A b$ (if $m$ > $n$).
 
   Hence, if $D{-1}$ is known, the least-squares problem can be solved without
   performing an explicit inversion. The argument `crosstalk_inverse` allows
-  you to provide $D{-1}$.
+  you to provide $D^{-1}$.
 
-  The matrix $D$ (and hence, $D{-1}$) is dependent on the sampling locations
+  The matrix $D$ (and hence, $D^{-1}$) is dependent on the sampling locations
   `points`. For arbitrary sampling patterns, this matrix is full and requires
-  $O(M^2)$ storage, with a runtime complexity of $O(M^3)$ for matrix-matrix
-  multiplication (where $M$ is the number of non-uniform samples). This is
-  clearly impractical for large $M$. Furthermore, in this case one might as
-  well just store and apply $A{-1}$ directly.
+  $O(l^2)$ storage, with a runtime complexity of $O(l^3)$ for matrix-matrix
+  multiplication (where $l = \min{(m, n)}$). This is clearly impractical for
+  large $l$. Furthermore, in this case one might as well just store and apply
+  $A^{-1}$ directly.
 
   A more interesting use of `crosstalk_inverse` is to provide an approximation
-  to $D{-1}$ with a more favorable structure. A common choice is to use a
-  diagonal matrix, which requires only $O(M)$ storage and whose matrix-matrix
-  product runs in $O(M^2)$ time. In MRI, this is often referred to as
+  to $D^{-1}$ with a more favorable structure. A common choice is to use a
+  diagonal matrix, which requires only $O(l)$ storage and whose matrix-matrix
+  product runs in $O(l^2)$ time. In MRI, this is often referred to as
   **sampling density compensation**.
 
   ```{tip}
@@ -95,20 +101,28 @@ class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
 
   ```{rubric} TLDR: how do I invert the NUFFT?
   ```
-  Essentially, you have two options:
+  Essentially, you have three options:
 
-  1. **Direct approximation** (in MRI, sometimes called the **conjugate phase**
-     method): If the inverse of the Fourier crosstalk matrix $D^{-1}$ has
-     favorable structure (i.e., it does not have large storage requirements and
-     it can be applied quickly), or you can use an approximation which does,
-     specify `crosstalk_inverse` and then use `lstsq` (or one of the related
-     methods `lstsqvec` and `lstsqvec_nd`). Under these conditions, this method
-     is probably faster, but might compromise accuracy depending on your choice
-     of $D^{-1}$.
-  2. **Minimum-norm least-squares solution**: If you do not know `D{-1}`, or if
-     accuracy is paramount, use `tfmri.linalg.lsqr` or
-     `tfmri.linalg.conjugate_gradient` to solve the least-squares problem
-     iteratively. This method might be slower due to its iterative nature.
+  1. **Direct solve** (not recommmended). Simply call `lstsq` (or one of the
+     related methods `lstsqvec` and `lstsqvec_nd`). This is the most
+     straightforward approach, but it is likely to be very slow for large $l$.
+     If you can't or don't want to provide $D^{-1}$ (or an approximation
+     thereof), you're probably better off using method 3.
+  2. **Direct solve with crosstalk approximation** (in MRI, sometimes called
+     the **conjugate phase** method): If the inverse of the Fourier crosstalk
+     matrix $D^{-1}$ has favorable structure (i.e., it does not have large
+     storage requirements and it can be applied quickly), or you can use an
+     approximation which does, specify `crosstalk_inverse` and then use `lstsq`
+     (or one of the related methods `lstsqvec` and `lstsqvec_nd`). In MRI, a
+     common choice of approximation is a diagonal matrix containing whose
+     diagonal elements are the density compensation weights. Under these
+     conditions, this method is probably the fastest, but might compromise
+     accuracy depending on your choice of $D^{-1}$.
+  3. **Iterative solve**: If you do not know `D{-1}`, or if accuracy is
+     paramount, use `tfmri.linalg.lsqr` or `tfmri.linalg.conjugate_gradient`
+     to solve the least-squares problem iteratively. This method is likely
+     to be slower than method 2 but faster than method 3 due to its iterative
+     nature.
   ```
 
   ```{seealso}
@@ -118,23 +132,27 @@ class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
   Args:
     domain_shape: A 1D integer `tf.Tensor`. The domain shape of this
       operator. This is usually the shape of the image but may include
-      additional dimensions. Must have length 1, 2 or 3.
+      additional leading dimensions. The trailing `d` dimensions (inferred
+      from `points`) are the signal dimensions, and any additional leading
+      dimensions are technically batch dimensions which are included in the
+      domain rather than the batch.
     points: A `tf.Tensor` of type `float32` or `float64`. Contains the
       non-uniform sampling locations in the frequency domain. Must have
-      shape `[..., M, N]`, where `N` is the number of dimensions (rank,
-      must be 1, 2 or 3), `M` is the number of samples and `...` is the
+      shape `[..., m, d]`, where `d` is the dimension of the Fourier transform
+      (must be 1, 2 or 3), `m` is the number of samples and `...` is the
       batch shape, which can have any number of dimensions. Must be in the
-      range `[-pi, pi]`.
+      range $[-\pi, \pi]$.
       ```{tip}
       In MRI, this is the *k*-space trajectory.
       ```
     crosstalk_inverse: A `tf.Tensor` or `tf.linalg.LinearOperator` of shape
-      `[..., M, M]` representing the inverse of the Fourier crosstalk
-      matrix [2]. This matrix is used to simplify the computation of the
-      pseudo-inverse $A^{+}$ and/or to solve the least-squares problem defined
-      by this operator. Ideally this matrix should be equal to $(A A^H)^{-1}$,
-      where $A$ is this operator, but you can also provide an approximation
-      with a more favorable structure depending on your purposes. Defaults to
+      `[..., l, l]` representing the inverse of the Fourier crosstalk
+      matrix [2], where $l = \min{(m, n)}$. This matrix is used to simplify the
+      computation of the pseudo-inverse $A^{+}$ and/or to solve the
+      least-squares problem defined by this operator. Ideally this matrix
+      should be equal to $(A A^H)^{-1}$ (if $m < n$) or $(A^H A)^{-1}$
+      (if $m > n$), where $A$ is this operator, but you can also provide a
+      suitable approximation with a more favorable structure. Defaults to
       `None`.
       ```{attention}
       If you intend to use `lstsq`, `lstsqvec`, or `lstsqvec_nd`, you are
@@ -208,17 +226,17 @@ class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
   def __init__(self,
                domain_shape,
                points,
-               density=None,
+               crosstalk_inverse=None,
                is_non_singular=None,
                is_self_adjoint=False,
                is_positive_definite=None,
-               is_square=False,
+               is_square=None,
                name="LinearOperatorNUFFT"):
 
     parameters = dict(
         domain_shape=domain_shape,
         points=points,
-        density=density,
+        crosstalk_inverse=crosstalk_inverse,
         is_non_singular=is_non_singular,
         is_self_adjoint=is_self_adjoint,
         is_positive_definite=is_positive_definite,
@@ -226,13 +244,22 @@ class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
         name=name
     )
 
+    # Check non-reference types.
+    types_util.assert_not_ref_type(domain_shape, "domain_shape")
+
     # Get domain shapes.
     self._domain_shape_static, self._domain_shape_dynamic = (
         tensor_util.static_and_dynamic_shapes_from_shape(domain_shape))
 
     # Validate the remaining inputs.
-    self._points = check_util.validate_tensor_dtype(
-        tf.convert_to_tensor(points), 'floating', 'points')
+    self._points = tf.convert_to_tensor(points, name="points")
+    if self._points.dtype not in (tf.float32, tf.float64):
+      raise TypeError(
+          f"points must be a float32 or float64 tensor, "
+          f"not {str(self._points.dtype)}")
+
+    # Get dtype for this operator.
+    dtype = tensor_util.get_complex_dtype(self._points.dtype)
 
     # We infer the operation's rank from the points.
     self._rank_static = self._points.shape[-1]
@@ -250,7 +277,7 @@ class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
     self._grid_shape = self._domain_shape_dynamic[-self._rank_dynamic:]
 
     # We need to do some work to figure out the batch shapes. This operator
-    # could have a batch shape, if the points has a batch shape. However,
+    # could have a batch shape, if the points have a batch shape. However,
     # we allow the user to include one or more batch dimensions in the domain
     # shape, if they so wish. Therefore, not all batch dimensions in the
     # points are necessarily part of the batch shape.
@@ -302,40 +329,50 @@ class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
     self._range_shape_static = extra_shape_static.concatenate(
         self._points.shape[-2:-1])
 
-    # # Statically check that density can be broadcasted with points.
-    # if density is not None:
-    #   try:
-    #     tf.broadcast_static_shape(self._points.shape[:-1], density.shape)
-    #   except ValueError as err:
-    #     raise ValueError(
-    #         f"The \"batch\" shapes in `points` and `density` are not "
-    #         f"compatible for broadcasting: {self._points.shape[:-1]} vs "
-    #         f"{density.shape}") from err
-    #   # self._density = tf.convert_to_tensor(density)
-    #   # self._weights = tf.math.reciprocal_no_nan(self._density)
-    #   # self._weights_complex = tf.cast(
-    #   #     self._weights, tensor_util.get_complex_dtype(self._points.dtype))
-    #   # self._weights_sqrt = tf.cast(
-    #   #     tf.math.sqrt(self._weights),
-    #   #     tensor_util.get_complex_dtype(self._points.dtype))
-    # else:
-    #   # self._density = None
-    #   # self._weights = None
+    # Set inverse of Fourier crosstalk matrix.
+    # This needs to be done after setting all the shapes, as `self.shape`
+    # must be valid at this point.
+    self._crosstalk_inverse = crosstalk_inverse
+    if self._crosstalk_inverse is not None:
+      if not isinstance(self._crosstalk_inverse, tf.linalg.LinearOperator):
+        # Not a linear operator, assume a full matrix was passed.
+        self._crosstalk_inverse = tf.linalg.LinearOperatorFullMatrix(
+            self._crosstalk_inverse)
+      if not self._crosstalk_inverse.shape[-2:-1].is_compatible_with(
+          self._crosstalk_inverse.shape[-1:]):
+        raise ValueError(
+            f"The crosstalk matrix must be square. Got shape "
+            f"{self._crosstalk_inverse.shape}.")
+      if self.shape[-2:].is_fully_defined():
+        if self.shape[-2] < self.shape[-1]:
+          if not self._crosstalk_inverse.shape[-2:-1].is_compatible_with(
+              self.shape[-2:-1]):
+            raise ValueError(
+                f"The crosstalk matrix must have the same number of rows as "
+                f"this operator. Got shape {self._crosstalk_inverse.shape} for "
+                f"operator shape {self.shape}.")
+        else:
+          if not self._crosstalk_inverse.shape[-1:].is_compatible_with(
+              self.shape[-1:]):
+            raise ValueError(
+                f"The crosstalk matrix must have the same number of columns as "
+                f"this operator. Got shape {self._crosstalk_inverse.shape} for "
+                f"operator shape {self.shape}.")
 
-    super().__init__(tensor_util.get_complex_dtype(self._points.dtype),
+    # Compute normalization factors.
+    self._norm_factor = tf.math.reciprocal(
+        tf.math.sqrt(tf.cast(tf.math.reduce_prod(self._grid_shape), dtype)))
+
+    # Default tolerance for NUFFT.
+    self._tol = {tf.complex64: 1e-6, tf.complex128: 1e-12}[dtype]
+
+    super().__init__(dtype,
                      is_non_singular=is_non_singular,
                      is_self_adjoint=is_self_adjoint,
                      is_positive_definite=is_positive_definite,
                      is_square=is_square,
                      parameters=parameters,
                      name=name)
-
-    # Compute normalization factors.
-    self._norm_factor = tf.math.reciprocal(
-        tf.math.sqrt(tf.cast(tf.math.reduce_prod(self._grid_shape),
-        self.dtype)))
-
-    self._tol = 1e-12 if self.dtype == tf.complex128 else 1e-6
 
   def _matvec_nd(self, x, adjoint=False):
     if adjoint:
@@ -353,12 +390,80 @@ class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
       x *= self._norm_factor
     return x
 
-  # def _solvevec_nd(self, rhs, adjoint=False):
-  #   raise ValueError("_solvevec_nd")
+  def _solvevec_nd(self, rhs, adjoint=False):
+    raise ValueError(
+        f"{self.name} is not invertible. If you intend to solve the "
+        f"associated least-squares problem, use `lstsq`, `lstsqvec` or "
+        f"`lstsqvec_nd`.")
 
   def _lstsqvec_nd(self, rhs, adjoint=False):
-    rhs *= self._weights_complex
-    return self._matvec_nd(rhs, adjoint=(not adjoint))
+    if self._crosstalk_inverse is None:
+      warnings.warn(
+          f"{self.name}: Using (possibly slow) implementation of lstsq which "
+          f"requires conversion to a dense matrix and O(n^3) operations. "
+          f"For a more efficient computation, consider specifying the "
+          f"`crosstalk_inverse` argument (see class documentation) or using "
+          f"an iterative solver such as `tfmri.linalg.lsqr` or "
+          f"`tfmri.linalg.conjugate_gradient`.")
+      rhs = tf.expand_dims(rhs, -1)
+      x = linear_operator_util.matrix_solve_ls_with_broadcast(
+          self.to_dense(), rhs, adjoint=adjoint)
+      x = tf.squeeze(x, -1)
+      return x
+    if self.shape[-2:].is_fully_defined():
+      # We know the static shape of the operator, so we can select the
+      # appropriate code path when building the graph.
+      if (self.shape[-2] < self.shape[-1]) ^ adjoint:  # pylint: disable=no-else-return
+        return self._lstsqvec_nd_underdetermined(rhs, adjoint=adjoint)
+      else:
+        return self._lstsqvec_nd_overdetermined(rhs, adjoint=adjoint)
+    else:
+      # We don't know the static shape of the operator, so we need to
+      # defer the selection of the code path until runtime.
+      return tf.cond(
+          tf.math.logical_xor(
+              tf.math.less(self.shape_tensor()[-2], self.shape_tensor()[-1]),
+              adjoint),
+          lambda: self._lstsqvec_nd_underdetermined(rhs, adjoint=adjoint),
+          lambda: self._lstsqvec_nd_overdetermined(rhs, adjoint=adjoint))
+
+  def _lstsqvec_nd_underdetermined(self, rhs, adjoint=False):
+    # Solve A x = b as A^H (A A^H)^-1 b, where (A A^H)^-1 is the inverse of
+    # the Fourier crosstalk matrix.
+    if isinstance(self._crosstalk_inverse,
+                  linear_operator_nd.LinearOperatorND):
+      rhs = self._crosstalk_inverse.matvec_nd(rhs)
+    else:
+      if adjoint:
+        rhs = self.flatten_domain_shape(rhs)
+      else:
+        rhs = self.flatten_range_shape(rhs)
+      rhs = self._crosstalk_inverse.matvec(rhs)
+      if adjoint:
+        rhs = self.expand_domain_dimension(rhs)
+      else:
+        rhs = self.expand_range_dimension(rhs)
+    x = self._matvec_nd(rhs, adjoint=(not adjoint))
+    return x
+
+  def _lstsqvec_nd_overdetermined(self, rhs, adjoint=False):
+    # Solve A x = b as (A^H A)^-1 A^H b, where (A^H A)^-1 is the inverse of
+    # the Fourier crosstalk matrix.
+    x = self._matvec_nd(rhs, adjoint=(not adjoint))
+    if isinstance(self._crosstalk_inverse,
+                  linear_operator_nd.LinearOperatorND):
+      x = self._crosstalk_inverse.matvec_nd(x)
+    else:
+      if adjoint:
+        x = self.flatten_range_shape(x)
+      else:
+        x = self.flatten_domain_shape(x)
+      x = self._crosstalk_inverse.matvec(x)
+      if adjoint:
+        x = self.expand_range_dimension(x)
+      else:
+        x = self.expand_domain_dimension(x)
+    return x
 
   def _domain_shape(self):
     return self._domain_shape_static
@@ -390,8 +495,12 @@ class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
     return self._points
 
   @property
+  def crosstalk_inverse(self):
+    return self._crosstalk_inverse
+
+  @property
   def _composite_tensor_fields(self):
-    return ('domain_shape', 'points', 'density')
+    return ('domain_shape', 'points', 'crosstalk_inverse')
 
   @property
   def _composite_tensor_prefer_static_fields(self):
@@ -399,7 +508,7 @@ class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
 
   @property
   def _experimental_parameter_ndims_to_matrix_ndims(self):
-    return {'points': 2, 'density': 1}
+    return {'points': 2, 'crosstalk_inverse': 0}
 
 
 @api_util.export("linalg.LinearOperatorGramNUFFT")
@@ -415,12 +524,12 @@ class LinearOperatorGramNUFFT(LinearOperatorNUFFT):  # pylint: disable=abstract-
       additional dimensions.
     trajectory: A `tf.Tensor` of type `float32` or `float64`. Contains the
       sampling locations or *k*-space trajectory. Must have shape
-      `[..., M, N]`, where `N` is the rank (number of dimensions), `M` is
+      `[..., m, n]`, where `n` is the rank (number of dimensions), `m` is
       the number of samples and `...` is the batch shape, which can have any
       number of dimensions.
     density: A `tf.Tensor` of type `float32` or `float64`. Contains the
       sampling density at each point in `trajectory`. Must have shape
-      `[..., M]`, where `M` is the number of samples and `...` is the batch
+      `[..., m]`, where `m` is the number of samples and `...` is the batch
       shape, which can have any number of dimensions. Defaults to `None`, in
       which case the density is assumed to be 1.0 in all locations.
     norm: A `str`. The FFT normalization mode. Must be `None` (no normalization)
@@ -649,11 +758,18 @@ def nudft_matrix(domain_shape, points):
   else:
     domain_shape = domain_shape_dynamic
 
+  # For reshape.
+  if domain_shape_static.rank is not None:
+    grid_shape = [-1, domain_shape_static.rank]
+  else:
+    grid_shape = tf.concat([[-1], tf.size(domain_shape)], 0)
+
   grid = traj_ops.frequency_grid(
       domain_shape, max_val=tf.constant(0.5, dtype=points.dtype))
+  grid = tf.reshape(grid, grid_shape)
   grid *= tf.cast(domain_shape, dtype=points.dtype)
 
-  m = tf.linalg.matmul(points, tf.transpose(grid))
+  m = tf.linalg.matmul(points, tf.linalg.matrix_transpose(grid))
   m = tf.math.exp(tf.dtypes.complex(
       tf.constant(0.0, dtype=points.dtype), tf.math.negative(m)))
   m /= tf.math.sqrt(tf.cast(tf.math.reduce_prod(domain_shape), m.dtype))

@@ -23,7 +23,7 @@ from tensorflow.python.ops.linalg import linear_operator_test_util
 from tensorflow_mri.python.linalg import linear_operator_util
 
 
-DEFAULT_GRAPH_SEED = 87654321
+DEFAULT_GRAPH_SEED = 876543213
 
 
 def add_tests(test_cls):
@@ -76,6 +76,9 @@ def add_tests(test_cls):
             base_test_name,
             test_util.run_deprecated_v1(test_template_fn(
                 use_placeholder, shape_info, dtype)))
+
+
+OperatorShapesInfo = linear_operator_test_util.OperatorShapesInfo
 
 
 class SquareLinearOperatorDerivedClassTest(
