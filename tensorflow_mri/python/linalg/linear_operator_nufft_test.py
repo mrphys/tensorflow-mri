@@ -197,7 +197,7 @@ from tensorflow_mri.python.util import test_util
 #   def test_with_density(self):
 #     image_shape = (128, 128)
 #     image = image_ops.phantom(shape=image_shape, dtype=tf.complex64)
-#     trajectory = traj_ops.radial_trajectory(
+#     points = traj_ops.radial_trajectory(
 #         128, 128, flatten_encoding_dims=True)
 #     density = traj_ops.radial_density(
 #         128, 128, flatten_encoding_dims=True)
@@ -205,9 +205,9 @@ from tensorflow_mri.python.util import test_util
 #                       tf.complex64)
 
 #     linop = linear_operator_nufft.LinearOperatorNUFFT(
-#         image_shape, trajectory=trajectory)
+#         image_shape, points=points)
 #     linop_d = linear_operator_nufft.LinearOperatorNUFFT(
-#         image_shape, trajectory=trajectory, density=density)
+#         image_shape, points=points, density=density)
 
 #     # Test forward.
 #     kspace = linop.transform(image)
@@ -236,7 +236,7 @@ from tensorflow_mri.python.util import test_util
 #     with tf.device('/cpu:0'):
 #       image_shape = (128, 128)
 #       image = image_ops.phantom(shape=image_shape, dtype=tf.complex64)
-#       trajectory = traj_ops.radial_trajectory(
+#       points = traj_ops.radial_trajectory(
 #           128, 129, flatten_encoding_dims=True)
 #       if density is True:
 #         density = traj_ops.radial_density(
@@ -247,16 +247,16 @@ from tensorflow_mri.python.util import test_util
 #       # If testing batches, create new inputs to generate a batch.
 #       if batch:
 #         image = tf.stack([image, image * 0.5])
-#         trajectory = tf.stack([
-#             trajectory,
-#             rotation_2d.Rotation2D.from_euler([np.pi / 2]).rotate(trajectory)])
+#         points = tf.stack([
+#             points,
+#             rotation_2d.Rotation2D.from_euler([np.pi / 2]).rotate(points)])
 #         if density is not None:
 #           density = tf.stack([density, density])
 
 #       linop = linear_operator_nufft.LinearOperatorNUFFT(
-#           image_shape, trajectory=trajectory, density=density, norm=norm)
+#           image_shape, points=points, density=density, norm=norm)
 #       linop_gram = linear_operator_nufft.LinearOperatorGramNUFFT(
-#           image_shape, trajectory=trajectory, density=density, norm=norm,
+#           image_shape, points=points, density=density, norm=norm,
 #           toeplitz=toeplitz)
 
 #       recon = linop.transform(linop.transform(image), adjoint=True)
@@ -284,7 +284,7 @@ from tensorflow_mri.python.util import test_util
 rng = np.random.RandomState(2016)
 
 
-@test_util.run_all_in_graph_and_eager_modes
+# @test_util.run_all_in_graph_and_eager_modes
 class LinearOperatorNUFFTTest(
     linear_operator_test_util.NonSquareLinearOperatorDerivedClassTest):
   """Most tests done in the base class LinearOperatorDerivedClassTest."""
@@ -314,8 +314,8 @@ class LinearOperatorNUFFTTest(
         "slicing",
         "to_dense",
         "trace",
-        # "lstsq",
-        # "lstsq_with_broadcast"
+        "lstsq",
+        "lstsq_with_broadcast"
     ]
 
   @staticmethod
@@ -333,28 +333,122 @@ class LinearOperatorNUFFTTest(
     num_rows = shape[-2]
     num_columns = shape[-1]
 
-    trajectory = tf.random.uniform(
+    points = tf.random.uniform(
         shape=batch_shape + [num_rows, 1],
         minval=-np.pi, maxval=np.pi,
         dtype=dtype.real_dtype)
+    density = linear_operator_nufft.density_1d(points)
+    op1 = tf.print("points", points)
+    op2 = tf.print("density", density)
+    with tf.control_dependencies([op1, op2]):
+      points = tf.identity(points)
+
 
     operator = linear_operator_nufft.LinearOperatorNUFFT(
-        domain_shape=[num_columns], trajectory=trajectory)
+        domain_shape=[num_columns], points=points, density=density)
 
     matrix = linear_operator_nufft.nudft_matrix(
-        domain_shape=[num_columns], trajectory=trajectory)
+        domain_shape=[num_columns], points=points)
 
     return operator, matrix
 
-  # def test_nudft_matrix(self):
+  def test_density(self):
+    batch_shape = []
+    num_rows = 3
+    num_columns = 4
+
+    points = tf.random.uniform(
+        shape=batch_shape + [num_rows, 1],
+        minval=-np.pi, maxval=np.pi,
+        dtype=tf.float32)
+    # points = tf.sort(points, axis=-2)
+    # step = 2 * np.pi / num_rows
+    # points = tf.expand_dims(
+    #     tf.linspace(-np.pi, np.pi - step, num_rows), 1)
+    # density = tf.expand_dims(linear_operator_nufft.density_1d([num_columns], points), -1)
+    # weights = tf.cast(tf.math.reciprocal(density), tf.complex64)
+
+    operator = linear_operator_nufft.LinearOperatorNUFFT(
+        domain_shape=[num_columns], points=points)
+
+    print(operator.to_dense())
+    print("points", points)
+
+    fwd = linear_operator_nufft.nudft_matrix(
+        domain_shape=[num_columns], points=points)
+
+    adj = tf.linalg.adjoint(fwd)
+    pinv = np.linalg.pinv(fwd)
+    cross = tf.linalg.inv(fwd @ adj)
+
+    x = tf.ones([num_columns, 1], dtype=tf.complex64)
+    rhs = fwd @ x
+
+    dens = tf.linalg.lstsq(adj, pinv, fast=False)
+    # s, u, v = tf.linalg.svd(dens)
+    # dens_real = tf.cast(tf.math.real(dens), dens.dtype)
+    # dens = tf.linalg.solve(adj, pinv)
+    with np.printoptions(precision=3, suppress=True):
+      print("dens", dens.numpy(), tf.linalg.diag_part(dens).numpy())
+    # print("u", u)
+    # print("s", s)
+    # print("v", v)
+
+    # # apply dens
+    # dens_o_rhs = dens @ rhs
+    # print("rhs", rhs.numpy())
+    # # print("dens @ rhs", dens_o_rhs.numpy())
+
+    # weights_from_pinv = tf.cast(tf.math.abs(dens_o_rhs / rhs), tf.complex64)
+    # print("weights_from_pinv", weights_from_pinv.numpy())
+
+    # # weights_lsqr = tf.linalg.lstsq(fwd @ adj, tf.ones_like(rhs), fast=False)
+    # weights_lsqr = tf.linalg.lstsq(spread, tf.ones(x.shape, tf.float32), fast=False)
+    # print("weights_lsqr", weights_lsqr.numpy())
+    # weights_lsqr = tf.cast(weights_lsqr, tf.complex64)
+
+    r1 = tf.linalg.lstsq(fwd, rhs, fast=False)
+    r2 = pinv @ rhs
+    r3 = adj @ dens @ rhs
+    # r4 = adj @ dens_real @ rhs
+    # r5 = adj @ (rhs * weights_from_pinv)
+    # r6 = adj @ (rhs * weights)
+    # r7 = adj @ (rhs * weights_lsqr)
+    r8 = adj @ cross @ rhs
+
+    print("r1", r1)
+    print("r2", r2)
+    print("r3", r3)
+    # print("r4", r4)
+    # print("r5", r5)
+    # print("r6", r6)
+    # print("r7", r7)
+    print("r8", r8)
+
+    # print("r1(abs)", tf.math.abs(r1))
+    # print("r2(abs)", tf.math.abs(r2))
+    # print("r3(abs)", tf.math.abs(r3))
+    # # print("r4(abs)", tf.math.abs(r4))
+    # print("r5(abs)", tf.math.abs(r5))
+    # print("r6(abs)", tf.math.abs(r6))
+    # print("r6(abs)", tf.math.abs(r6))
+
+
+    # # rec1 = tf.linalg.lstsq(rec1)
+    # self.assertAllClose()
+    # print("dens", dens)
+
+    # print("adj pinv", adj / pinv)
+    # print(tf.ones((4, 4)) @ tf.linalg.diag([1., 2., 3., 4.]))
+          # def test_nudft_matrix(self):
   #   # shape = [128, 128]
-  #   trajectory = tf.random.uniform(
+  #   points = tf.random.uniform(
   #       shape=[16, 1], minval=-np.pi, maxval=np.pi, dtype=tf.float32)
   #   other = linear_operator_nufft._nudft_matrix(
-  #       trajectory, [16], 'forward') / 4.0
-  #   trajectory = tf.stack([trajectory, trajectory], axis=0)
+  #       points, [16], 'forward') / 4.0
+  #   points = tf.stack([points, points], axis=0)
   #   matrix = linear_operator_nufft.nudft_matrix(
-  #       domain_shape=[16], trajectory=trajectory)
+  #       domain_shape=[16], points=points)
 
   #   print(matrix.shape)
   #   self.assertAllEqual(other, matrix[0])
@@ -362,13 +456,13 @@ class LinearOperatorNUFFTTest(
 
   # def test_nudft_matrix_dc_only(self):
   #   # shape = [128, 128]
-  #   trajectory = tf.random.uniform(
+  #   points = tf.random.uniform(
   #       shape=[2, 1], minval=-np.pi, maxval=np.pi, dtype=tf.float32)
   #   other = linear_operator_nufft._nudft_matrix(
-  #       trajectory, [1], 'forward') / 4.0
-  #   trajectory = tf.stack([trajectory, trajectory], axis=0)
+  #       points, [1], 'forward') / 4.0
+  #   points = tf.stack([points, points], axis=0)
   #   matrix = linear_operator_nufft.nudft_matrix(
-  #       domain_shape=[1], trajectory=trajectory)
+  #       domain_shape=[1], points=points)
   #   print(matrix)
   #   # print(matrix.shape)
   #   # self.assertAllEqual(other, matrix[0])
