@@ -196,11 +196,18 @@ class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
     ...     base_resolution=128, views=129, flatten_encoding_dims=True)
     >>> density = tfmri.sampling.radial_density(
     ...     base_resolution=128, views=129, flatten_encoding_dims=True)
+    >>> # Create a density compensation matrix. This will be used to invert
+    >>> # the operator more efficiently.
+    >>> weights = tf.math.reciprocal(density)
+    >>> linop_density = tf.linalg.LinearOperatorDiag(weights)
     >>> # Create a NUFFT operator.
     >>> linop = tfmri.linalg.LinearOperatorNUFFT(
-    ...     image_shape, trajectory=trajectory)
-    >>> # Create non-uniform k-space.
-    >>> kspace = tfmri.signal.nufft(image, trajectory)
+    ...     image_shape, points=trajectory, crosstalk_inverse=linop_density)
+    >>> # Compute k-space by applying the forward operator.
+    >>> kspace = linop.matvec_nd(image)
+    >>> # Reconstruct the image by solving the corresponding least-squares
+    >>> # problem.
+    >>> recon = linop.lstsqvec_nd(kspace)
 
   References:
     1. A. H. Barnett, J. Magland, and L. af Klinteberg, "A Parallel Nonuniform
