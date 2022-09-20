@@ -16,6 +16,7 @@
 
 from tensorflow_mri.python.linalg import linear_operator_algebra
 from tensorflow_mri.python.linalg import linear_operator_fft
+from tensorflow_mri.python.linalg import linear_operator_nufft
 
 
 @linear_operator_algebra.RegisterInverse(
@@ -24,3 +25,12 @@ def _inverse_fft(linop):
   if linop.mask is not None:
     raise ValueError("cannot invert masked FFT operator: singular matrix")
   return linop.adjoint()
+
+
+@linear_operator_algebra.RegisterInverse(
+    linear_operator_nufft.LinearOperatorNUFFT)
+def _inverse_nufft(linop):
+  raise ValueError(
+      f"{linop.name} is not invertible. If you wish to compute the "
+      f"Moore-Penrose pseudo-inverse, use `linop.pseudo_inverse()` "
+      f"instead.")

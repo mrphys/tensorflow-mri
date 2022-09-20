@@ -108,13 +108,17 @@ class LinearOperatorNUFFTTest(
         domain_shape=[2], points=[[0.]])
     self.assertFalse(operator.is_self_adjoint)
 
-  def test_inverse_type(self):
+  def test_solve_raises(self):
     operator = linear_operator_nufft.LinearOperatorNUFFT(
-        domain_shape=[4], points=[[0.]], is_non_singular=True)
-    self.assertIsInstance(
-        operator.inverse(), linear_operator_inversion.LinearOperatorInversion)
-    self.assertIsInstance(
-        operator.inverse().operator, linear_operator_nufft.LinearOperatorNUFFT)
+        domain_shape=[2], points=[[-np.pi], [0.]])
+    with self.assertRaisesRegex(ValueError, "not invertible.*lstsq"):
+      operator.solve(tf.ones([2, 1], dtype=tf.complex64))
+
+  def test_inverse_raises(self):
+    operator = linear_operator_nufft.LinearOperatorNUFFT(
+        domain_shape=[4], points=[[0.], [-np.pi]], is_square=True)
+    with self.assertRaisesRegex(ValueError, "not invertible.*pseudo_inverse"):
+      operator.inverse()
 
   def test_identity_matmul(self):
     operator1 = linear_operator_nufft.LinearOperatorNUFFT(
