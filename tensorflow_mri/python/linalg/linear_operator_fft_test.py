@@ -79,6 +79,16 @@ class LinearOperatorFFTTest(
     with self.assertRaisesRegex(ValueError, "must be non-negative"):
       linear_operator_fft.LinearOperatorFFT(domain_shape=[-2])
 
+  def test_unknown_rank_domain_shape_raises_static(self):
+    if tf.executing_eagerly():
+      return
+    with self.cached_session():
+      domain_shape = tf.compat.v1.placeholder_with_default([2], shape=None)
+      with self.assertRaisesRegex(ValueError, "must have known static rank"):
+        operator = linear_operator_fft.LinearOperatorFFT(
+            domain_shape=domain_shape)
+        self.evaluate(operator.to_dense())
+
   def test_non_1d_batch_shape_raises_static(self):
     with self.assertRaisesRegex(ValueError, "must be a 1-D"):
       linear_operator_fft.LinearOperatorFFT(domain_shape=[2], batch_shape=2)

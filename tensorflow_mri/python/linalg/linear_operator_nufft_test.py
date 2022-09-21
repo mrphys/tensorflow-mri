@@ -1,4 +1,4 @@
-# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
+# Copyright 2022 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -231,7 +231,6 @@ class LinearOperatorNUFFTNDTest(
   @staticmethod
   def operator_shapes_infos():
     shapes_info = OperatorShapesInfoNUFFT
-    # non-batch operators (n, n) and batch operators.
     return [
         shapes_info((2, 2), 3, ()),
         shapes_info((2, 4), 5, (3,)),

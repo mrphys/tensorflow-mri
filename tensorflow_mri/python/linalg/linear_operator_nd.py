@@ -271,7 +271,11 @@ class LinearOperatorND(linear_operator.LinearOperator):
 
   @property
   def domain_shape(self):
-    """Domain shape of this linear operator."""
+    """Domain shape of this linear operator, determined statically.
+
+    Returns:
+      A `tf.TensorShape` representing the shape of the domain of this operator.
+    """
     return self._domain_shape()
 
   def _domain_shape(self):
@@ -280,7 +284,11 @@ class LinearOperatorND(linear_operator.LinearOperator):
 
   @property
   def range_shape(self):
-    """Range shape of this linear operator."""
+    """Range shape of this linear operator, determined statically.
+
+    Returns:
+      A `tf.TensorShape` representing the shape of the range of this operator.
+    """
     return self._range_shape()
 
   def _range_shape(self):
@@ -292,7 +300,15 @@ class LinearOperatorND(linear_operator.LinearOperator):
     return tf.TensorShape([])
 
   def domain_shape_tensor(self, name="domain_shape_tensor"):
-    """Domain shape of this linear operator, determined at runtime."""
+    """Domain shape of this linear operator, determined at runtime.
+
+    Args:
+      name: A `str`. A name scope to use for ops added by this method.
+
+    Returns:
+      A 1D integer `tf.Tensor` representing the shape of the domain of this
+      operator.
+    """
     with self._name_scope(name):  # pylint: disable=not-callable
       # Prefer to use statically defined shape if available.
       if self.domain_shape.is_fully_defined():
@@ -305,7 +321,15 @@ class LinearOperatorND(linear_operator.LinearOperator):
     raise NotImplementedError("_domain_shape_tensor is not implemented.")
 
   def range_shape_tensor(self, name="range_shape_tensor"):
-    """Range shape of this linear operator, determined at runtime."""
+    """Range shape of this linear operator, determined at runtime.
+
+    Args:
+      name: A `str`. A name scope to use for ops added by this method.
+
+    Returns:
+      A 1D integer `tf.Tensor` representing the shape of the range of this
+      operator.
+    """
     with self._name_scope(name):  # pylint: disable=not-callable
       # Prefer to use statically defined shape if available.
       if self.range_shape.is_fully_defined():
@@ -328,6 +352,25 @@ class LinearOperatorND(linear_operator.LinearOperator):
     # Users should override this method if they need to provide a dynamic batch
     # shape.
     return tf.constant([], dtype=tf.dtypes.int32)
+
+  @property
+  def ndim(self):
+    """Logical number of dimensions of this linear operator.
+
+    ```{note}
+    `ndim` can always be determined statically.
+    ```
+
+    ```{attention}
+    This number may differ from the number of dimensions in `domain_shape`,
+    `range_shape`, or both.
+    ```
+    """
+    return self._ndim()
+
+  def _ndim(self):
+    # Users must override this method.
+    return None
 
   def flatten_domain_shape(self, x):
     """Flattens `x` to match the domain dimension of this operator.

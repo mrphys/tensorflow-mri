@@ -69,11 +69,10 @@ class LinearOperatorFFT(linear_operator_nd.LinearOperatorND):
     is_self_adjoint: A boolean, or `None`. Whether this operator is expected
       to be equal to its Hermitian transpose. If `dtype` is real, this is
       equivalent to being symmetric. Defaults to `False`.
-    is_positive_definite: A boolean, or `None`. Whether this operators is
+    is_positive_definite: A boolean, or `None`. Whether this operator is
       expected to be positive definite, meaning the quadratic form $x^H A x$
-      has positive real part for all nonzero $x$. Note that we do not require
-      the operator to be self-adjoint to be positive-definite. See:
-      https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices.
+      has positive real part for all nonzero $x$. Note that an operator [does
+      not need to be self-adjoint to be positive definite](https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices)
       Defaults to `None`.
     is_square: A boolean, or `None`. Expect that this operator acts like a
       square matrix (or a batch of square matrices). Defaults to `True`.
@@ -121,6 +120,9 @@ class LinearOperatorFFT(linear_operator_nd.LinearOperatorND):
       types_util.assert_not_ref_type(domain_shape, 'domain_shape')
       self._domain_shape_static, self._domain_shape_dynamic = (
           tensor_util.static_and_dynamic_shapes_from_shape(domain_shape))
+      if self._domain_shape_static.rank is None:
+        raise ValueError('domain_shape must have known static rank')
+
       # Get static/dynamic batch shape.
       if batch_shape is not None:
         types_util.assert_not_ref_type(batch_shape, 'batch_shape')
@@ -135,36 +137,26 @@ class LinearOperatorFFT(linear_operator_nd.LinearOperatorND):
         self._mask_mult = tf.cast(self._mask, dtype)
         self._mask_algo = 'multiply'
 
-        rank_static = self._domain_shape_static.rank
-        if rank_static is not None:
-          mask_domain_shape = self._mask.shape[-rank_static:]
-          if not self._domain_shape_static.is_compatible_with(
-              mask_domain_shape):
-            raise ValueError(
-                f"The domain dimensions of mask {mask_domain_shape} must be "
-                f"compatible with this operator's domain shape "
-                f"{self._domain_shape_static}.")
+        mask_domain_shape = self._mask.shape[-self.ndim:]
+        if not self._domain_shape_static.is_compatible_with(
+            mask_domain_shape):
+          raise ValueError(
+              f"The domain dimensions of mask {mask_domain_shape} must be "
+              f"compatible with this operator's domain shape "
+              f"{self._domain_shape_static}.")
 
-          # Update batch shape.
-          mask_batch_shape = self._mask.shape[:-rank_static]
-          try:
-            self._batch_shape_static = tf.broadcast_static_shape(
-                self._batch_shape_static, mask_batch_shape)
-          except ValueError:
-            raise ValueError(
-                f"The batch dimensions of mask {mask_batch_shape} must be "
-                f"broadcastable with this operator's batch shape "
-                f"{self._batch_shape_static}.")
-          self._batch_shape_dynamic = tf.broadcast_dynamic_shape(
-              self._batch_shape_dynamic, tf.shape(self._mask)[:-rank_static])
-
-        else:
-          # Need to use dynamic rank, and we can't figure out the static batch
-          # shape.
-          rank_dynamic = tf.size(self._domain_shape_dynamic)
-          self._batch_shape_static = tf.TensorShape(None)
-          self._batch_shape_dynamic = tf.broadcast_dynamic_shape(
-              self._batch_shape_dynamic, tf.shape(self._mask)[:-rank_dynamic])
+        # Update batch shape.
+        mask_batch_shape = self._mask.shape[:-self.ndim]
+        try:
+          self._batch_shape_static = tf.broadcast_static_shape(
+              self._batch_shape_static, mask_batch_shape)
+        except ValueError:
+          raise ValueError(
+              f"The batch dimensions of mask {mask_batch_shape} must be "
+              f"broadcastable with this operator's batch shape "
+              f"{self._batch_shape_static}.")
+        self._batch_shape_dynamic = tf.broadcast_dynamic_shape(
+            self._batch_shape_dynamic, tf.shape(self._mask)[:-self.ndim])
 
       else:
         self._mask = None
@@ -178,10 +170,7 @@ class LinearOperatorFFT(linear_operator_nd.LinearOperatorND):
                        name=name)
 
   def _matvec_nd(self, x, adjoint=False):
-    if self.rank is not None:
-      axes = list(range(-self.rank, 0))
-    else:
-      axes = tf.range(-self.rank_tensor(), 0)
+    axes = list(range(-self.ndim, 0))
 
     if adjoint:
       x = self._apply_mask(x)
@@ -222,6 +211,9 @@ class LinearOperatorFFT(linear_operator_nd.LinearOperatorND):
       raise ValueError(f"Unknown masking algorithm: {self._mask_algo}")
     return x
 
+  def _ndim(self):
+    return self.domain_shape.rank
+
   def _domain_shape(self):
     return self._domain_shape_static
 
@@ -245,20 +237,6 @@ class LinearOperatorFFT(linear_operator_nd.LinearOperatorND):
     return self._mask
 
   @property
-  def rank(self):
-    return self.domain_shape.rank
-
-  def rank_tensor(self):
-    if self.rank is not None:  # Prefer static rank if available.
-      return tf.convert_to_tensor(self.rank, dtype=tf.int32)
-    return tf.size(self.domain_shape_tensor())
-
-  def _prefer_static_rank(self):
-    if self.rank is not None:
-      return self.rank
-    return self.rank_tensor()
-
-  @property
   def _composite_tensor_fields(self):
     return ('domain_shape', 'batch_shape', 'dtype', 'mask')
 
@@ -268,7 +246,7 @@ class LinearOperatorFFT(linear_operator_nd.LinearOperatorND):
 
   @property
   def _experimental_parameter_ndims_to_matrix_ndims(self):
-    return {'mask': self.rank}
+    return {'mask': self.ndim}
 
   def __getitem__(self, slices):
     # Support slicing.

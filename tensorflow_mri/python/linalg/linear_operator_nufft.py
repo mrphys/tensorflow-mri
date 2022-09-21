@@ -1,4 +1,4 @@
-# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
+# Copyright 2022 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 import warnings
 
-import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.linalg import linear_operator_nd
@@ -178,11 +177,10 @@ class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
     is_self_adjoint: A boolean, or `None`. Whether this operator is expected
       to be equal to its Hermitian transpose. If `dtype` is real, this is
       equivalent to being symmetric. Defaults to `False`.
-    is_positive_definite: A boolean, or `None`. Whether this operators is
+    is_positive_definite: A boolean, or `None`. Whether this operator is
       expected to be positive definite, meaning the quadratic form $x^H A x$
-      has positive real part for all nonzero $x$. Note that we do not require
-      the operator to be self-adjoint to be positive-definite. See:
-      https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices.
+      has positive real part for all nonzero $x$. Note that an operator [does
+      not need to be self-adjoint to be positive definite](https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices)
       Defaults to `None`.
     is_square: A boolean, or `None`. Expect that this operator acts like a
       square matrix (or a batch of square matrices). Defaults to `False`.
@@ -269,14 +267,14 @@ class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
     dtype = tensor_util.get_complex_dtype(self._points.dtype)
 
     # We infer the operation's rank from the points.
-    self._rank_static = self._points.shape[-1]
+    self._ndim_static = self._points.shape[-1]
     self._rank_dynamic = tf.shape(self._points)[-1]
     # The domain rank is >= the operation rank.
     domain_rank_static = self._domain_shape_static.rank
     domain_rank_dynamic = tf.shape(self._domain_shape_dynamic)[0]
     # The difference between this operation's rank and the domain rank is the
     # number of extra dims.
-    extra_dims_static = domain_rank_static - self._rank_static
+    extra_dims_static = domain_rank_static - self._ndim_static
     extra_dims_dynamic = domain_rank_dynamic - self._rank_dynamic
 
     # The grid shape are the last `rank` dimensions of domain_shape. We don't
@@ -315,8 +313,8 @@ class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
     # are not part of the NUFFT (e.g., they are effectively batch dimensions),
     # but which are included in the domain shape rather than in the batch shape.
     extra_shape_dynamic = self._domain_shape_dynamic[:-self._rank_dynamic]
-    if self._rank_static is not None:
-      extra_shape_static = self._domain_shape_static[:-self._rank_static]
+    if self._ndim_static is not None:
+      extra_shape_static = self._domain_shape_static[:-self._ndim_static]
     else:
       extra_shape_static = tf.TensorShape(None)
 
@@ -490,12 +488,8 @@ class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
   def _batch_shape_tensor(self):
     return self._batch_shape_dynamic
 
-  @property
-  def rank(self):
-    return self._rank_static
-
-  def rank_tensor(self):
-    return self._rank_dynamic
+  def _ndim(self):
+    return self._ndim_static
 
   @property
   def points(self):
