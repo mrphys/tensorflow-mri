@@ -184,13 +184,13 @@ class CGConvEncoder(Layer):
 
 class CGGenerator(Model):
   """CycleGAN Generator Model."""
-  def __init__(self, image_shape, n_resnet=None):
+  def __init__(self, image_shape, n_resnet=9):
     super().__init__()
 
     # If image size is less than 256x256, only use
     # 6 resnet blocks
-    if image_shape[1] < 256 and n_resnet is None:
-      pass
+    if (image_shape[1] < 256 and n_resnet is None) or n_resnet is None:
+      n_resnet = 6
 
     self.n_resnet = n_resnet
     self.encoder = CGEncoder()
