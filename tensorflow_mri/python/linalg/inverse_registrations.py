@@ -15,8 +15,18 @@
 """Registrations for LinearOperator.inverse."""
 
 from tensorflow_mri.python.linalg import linear_operator_algebra
+from tensorflow_mri.python.linalg import linear_operator_coils
 from tensorflow_mri.python.linalg import linear_operator_fft
 from tensorflow_mri.python.linalg import linear_operator_nufft
+
+
+@linear_operator_algebra.RegisterInverse(
+    linear_operator_coils.LinearOperatorCoils)
+def _inverse_coils(linop):
+  raise ValueError(
+      f"{linop.name} is not invertible. If you wish to compute the "
+      f"Moore-Penrose pseudo-inverse, use `linop.pseudo_inverse()` "
+      f"instead.")
 
 
 @linear_operator_algebra.RegisterInverse(

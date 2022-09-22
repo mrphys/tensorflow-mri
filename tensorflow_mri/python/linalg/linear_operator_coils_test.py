@@ -20,8 +20,6 @@ import functools
 import numpy as np
 import tensorflow as tf
 
-from tensorflow_mri.python.linalg import linear_operator_identity
-from tensorflow_mri.python.linalg import linear_operator_inversion
 from tensorflow_mri.python.linalg import linear_operator_coils
 from tensorflow_mri.python.linalg import linear_operator_test_util
 from tensorflow_mri.python.util import test_util
@@ -51,42 +49,6 @@ class OperatorShapesInfoCoils():
 class LinearOperatorCoilsTest(
     linear_operator_test_util.NonSquareLinearOperatorDerivedClassTest):
   """Most tests done in the base class LinearOperatorDerivedClassTest."""
-  # _atol = {
-  #     tf.complex64: 1e-5,  # 1e-6
-  #     tf.complex128: 1e-10  # 1e-12
-  # }
-
-  # _rtol = {
-  #     tf.complex64: 1e-5,  # 1e-6
-  #     tf.complex128: 1e-10  # 1e-12
-  # }
-
-  @staticmethod
-  def skip_these_tests():
-    return [
-        "add_to_tensor",
-        "adjoint",
-        "cholesky",
-        "cond",
-        "composite_tensor",
-        "det",
-        "diag_part",
-        "eigvalsh",
-        "inverse",
-        "log_abs_det",
-        "operator_matmul_with_same_type",
-        "operator_solve_with_same_type",
-        # "matmul",
-        # "matmul_with_broadcast",
-        "saved_model",
-        "slicing",
-        "solve",
-        "solve_with_broadcast",
-        "to_dense",
-        "trace",
-        # "lstsq",
-        "lstsq_with_broadcast"
-    ]
 
   @staticmethod
   def operator_shapes_infos():
@@ -134,73 +96,68 @@ class LinearOperatorCoilsTest(
 
     return operator, matrix
 
-  # def test_assert_self_adjoint(self):
-  #   with self.cached_session():
-  #     operator = linear_operator_nufft.LinearOperatorNUFFT(
-  #         domain_shape=[4], points=[[0.]])
-  #     with self.assertRaisesOpError("not equal to its adjoint"):
-  #       self.evaluate(operator.assert_self_adjoint())
+  def test_1d_maps_raises_static(self):
+    with self.assertRaisesRegex(ValueError, "must be at least 2-D"):
+      linear_operator_coils.LinearOperatorCoils(
+          maps=np.ones((4,)).astype(np.complex64))
 
-  # def test_non_1d_domain_shape_raises_static(self):
-  #   with self.assertRaisesRegex(ValueError, "must be a 1-D"):
-  #     linear_operator_nufft.LinearOperatorNUFFT(
-  #         domain_shape=2, points=[[0.]])
+    with self.assertRaisesRegex(ValueError, "must be at least 2-D"):
+      linear_operator_coils.LinearOperatorCoils(
+          maps=np.ones((3, 4, 4)).astype(np.complex64),
+          batch_dims=2)
 
-  # def test_non_integer_domain_shape_raises_static(self):
-  #   with self.assertRaisesRegex(TypeError, "must be integer"):
-  #     linear_operator_nufft.LinearOperatorNUFFT(
-  #         domain_shape=[2.], points=[[0.]])
+    linear_operator_coils.LinearOperatorCoils(
+          maps=np.ones((3, 4, 4)).astype(np.complex64),
+          batch_dims=1)  # should not raise
 
-  # def test_non_negative_domain_shape_raises_static(self):
-  #   with self.assertRaisesRegex(ValueError, "must be non-negative"):
-  #     linear_operator_nufft.LinearOperatorNUFFT(
-  #         domain_shape=[-2], points=[[0.]])
+  def test_non_complex_maps_raises_static(self):
+    with self.assertRaisesRegex(TypeError, "must be complex"):
+      linear_operator_coils.LinearOperatorCoils(
+          maps=np.ones((3, 4, 4)).astype(np.float32))
 
-  # def test_non_float_type_points_raises(self):
-  #   with self.assertRaisesRegex(
-  #       TypeError, "must be a float32 or float64 tensor"):
-  #     linear_operator_nufft.LinearOperatorNUFFT(
-  #         domain_shape=[2], points=[[0]])
+  def test_unknown_rank_domain_shape_raises_static(self):
+    if tf.executing_eagerly():
+      return
+    with self.cached_session():
+      maps = tf.compat.v1.placeholder_with_default(
+          np.ones((3, 4, 4)).astype(np.complex64), shape=None)
+      with self.assertRaisesRegex(ValueError, "must have known static rank"):
+        operator = linear_operator_coils.LinearOperatorCoils(maps=maps)
+        self.evaluate(operator.to_dense())
 
-  # def test_is_x_flags(self):
-  #   operator = linear_operator_nufft.LinearOperatorNUFFT(
-  #       domain_shape=[2], points=[[0.]])
-  #   self.assertFalse(operator.is_self_adjoint)
+  def test_non_integer_batch_dims_raises_static(self):
+    with self.assertRaisesRegex(TypeError, "must be an int"):
+      linear_operator_coils.LinearOperatorCoils(
+          maps=np.ones((3, 4, 4)).astype(np.complex64), batch_dims=1.)
 
-  # def test_solve_raises(self):
-  #   operator = linear_operator_nufft.LinearOperatorNUFFT(
-  #       domain_shape=[2], points=[[-np.pi], [0.]])
-  #   with self.assertRaisesRegex(ValueError, "not invertible.*lstsq"):
-  #     operator.solve(tf.ones([2, 1], dtype=tf.complex64))
+  def test_negative_batch_dims_raises_static(self):
+    with self.assertRaisesRegex(ValueError, "must be non-negative"):
+      linear_operator_coils.LinearOperatorCoils(
+          maps=np.ones((3, 4, 4)).astype(np.complex64), batch_dims=-1)
 
-  # def test_inverse_raises(self):
-  #   operator = linear_operator_nufft.LinearOperatorNUFFT(
-  #       domain_shape=[4], points=[[0.], [-np.pi]], is_square=True)
-  #   with self.assertRaisesRegex(ValueError, "not invertible.*pseudo_inverse"):
-  #     operator.inverse()
+  def test_is_x_flags(self):
+    operator = linear_operator_coils.LinearOperatorCoils(
+          maps=np.ones((3, 4, 4)).astype(np.complex64))
+    self.assertFalse(operator.is_self_adjoint)
 
-  # def test_identity_matmul(self):
-  #   operator1 = linear_operator_nufft.LinearOperatorNUFFT(
-  #       domain_shape=[2], points=[[0.], [-np.pi]])
-  #   operator2 = linear_operator_identity.LinearOperatorIdentity(num_rows=2)
-  #   self.assertIsInstance(operator1.matmul(operator2),
-  #                         linear_operator_nufft.LinearOperatorNUFFT)
-  #   self.assertIsInstance(operator2.matmul(operator1),
-  #                         linear_operator_nufft.LinearOperatorNUFFT)
+  def test_solve_raises(self):
+    operator = linear_operator_coils.LinearOperatorCoils(
+          maps=np.ones((1, 4, 4)).astype(np.complex64), is_square=True)
+    with self.assertRaisesRegex(ValueError, "not invertible.*lstsq"):
+      operator.solve(tf.ones([16, 1], dtype=tf.complex64))
 
-  # def test_ref_type_domain_shape_raises(self):
-  #   with self.assertRaisesRegex(TypeError, "domain_shape.cannot.be.reference"):
-  #     linear_operator_nufft.LinearOperatorNUFFT(
-  #         domain_shape=tf.Variable([2]), points=[[0.]])
+  def test_inverse_raises(self):
+    operator = linear_operator_coils.LinearOperatorCoils(
+          maps=np.ones((1, 4, 4)).astype(np.complex64), is_square=True)
+    with self.assertRaisesRegex(ValueError, "not invertible.*pseudo_inverse"):
+      operator.inverse()
 
-  # def test_convert_variables_to_tensors(self):
-  #   points = tf.Variable([[0.]])
-  #   operator = linear_operator_nufft.LinearOperatorNUFFT(
-  #       domain_shape=[2], points=points)
-  #   with self.cached_session() as sess:
-  #     sess.run([points.initializer])
-  #     self.check_convert_variables_to_tensors(operator)
-
+  def test_convert_variables_to_tensors(self):
+    maps = tf.Variable(np.ones((3, 4, 4)).astype(np.complex64))
+    operator = linear_operator_coils.LinearOperatorCoils(maps=maps)
+    with self.cached_session() as sess:
+      sess.run([maps.initializer])
+      self.check_convert_variables_to_tensors(operator)
 
 
 linear_operator_test_util.add_tests(LinearOperatorCoilsTest)

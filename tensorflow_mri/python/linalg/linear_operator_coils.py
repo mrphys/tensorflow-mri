@@ -14,8 +14,7 @@
 # ==============================================================================
 """Non-uniform Fourier linear operators."""
 
-import warnings
-
+import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.linalg import linear_operator_nd
@@ -68,19 +67,27 @@ class LinearOperatorCoils(linear_operator_nd.LinearOperatorND):
         name=name
     )
 
-    self._maps = tf.convert_to_tensor(maps, name="maps")
-    self._batch_dims = int(batch_dims)
-
-    if self._maps.dtype not in (tf.complex64, tf.complex128):
+    self._batch_dims = np.asarray(tf.get_static_value(batch_dims))
+    if (not self._batch_dims.ndim == 0 or
+        not np.issubdtype(self._batch_dims.dtype, np.integer)):
+      raise TypeError(
+          f"batch_dims must be an int, but got: {batch_dims}")
+    self._batch_dims = self._batch_dims.item()
+    if self._batch_dims < 0:
       raise ValueError(
-          f"maps must be complex64 or complex128, got {str(self._maps.dtype)}")
+          f"batch_dims must be non-negative, but got: {batch_dims}")
+
+    self._maps = tf.convert_to_tensor(maps, name="maps")
+    if self._maps.dtype not in (tf.complex64, tf.complex128):
+      raise TypeError(
+          f"maps must be complex, but got dtype: {str(self._maps.dtype)}")
     if self._maps.shape.rank is None:
       raise ValueError("maps must have known static rank")
     self._ndim_static = self._maps.shape.rank - self._batch_dims - 1
     if self._ndim_static < 1:
       raise ValueError(
-          f"maps must have at least 2 dimensions (excluding batch dimensions), "
-          f"got shape: {self._maps.shape}")
+          f"maps must be at least 2-D (excluding batch dimensions), "
+          f"but got shape: {self._maps.shape}")
     self._coil_axis = -(self._ndim_static + 1)
 
     super().__init__(
@@ -99,6 +106,26 @@ class LinearOperatorCoils(linear_operator_nd.LinearOperatorND):
     else:
       rhs = tf.expand_dims(x, self._coil_axis) * self._maps
     return rhs
+
+  def _solvevec_nd(self, rhs, adjoint=False):
+    raise ValueError(
+        f"{self.name} is not invertible. If you intend to solve the "
+        f"associated least-squares problem, use `lstsq`, `lstsqvec` or "
+        f"`lstsqvec_nd`.")
+
+  def _lstsqvec_nd(self, rhs, adjoint=False):
+    if adjoint:
+      x = self._matvec_nd(self._normalize(rhs), adjoint=(not adjoint))
+    else:
+      x = self._normalize(self._matvec_nd(rhs, adjoint=(not adjoint)))
+    return x
+
+  def _normalize(self, x):
+    # Using safe division so that we can work with coil arrays whose
+    # sensitivities are all zero for certain pixels (e.g. ESPIRiT maps).
+    return tf.math.divide_no_nan(
+        x, tf.math.reduce_sum(tf.math.conj(self._maps) * self._maps,
+                              axis=self._coil_axis))
 
   def _ndim(self):
     return self._ndim_static
@@ -122,11 +149,27 @@ class LinearOperatorCoils(linear_operator_nd.LinearOperatorND):
     return tf.shape(self._maps)[:self._coil_axis]
 
   @property
+  def maps(self):
+    return self._maps
+
+  @property
   def num_coils(self):
     return self._maps.shape[self._coil_axis]
 
   def num_coils_tensor(self):
     return tf.shape(self._maps)[self._coil_axis]
+
+  @property
+  def _composite_tensor_fields(self):
+    return ('maps', 'batch_dims')
+
+  @property
+  def _composite_tensor_prefer_static_fields(self):
+    return ('batch_dims',)
+
+  @property
+  def _experimental_parameter_ndims_to_matrix_ndims(self):
+    return {'maps': self.ndim + 1}
 
 
 def coils_matrix(maps, batch_dims=0):

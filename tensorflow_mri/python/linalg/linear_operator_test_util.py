@@ -31,7 +31,6 @@ def add_tests(test_cls):
   linear_operator_test_util.add_tests(test_cls)
 
   test_name_dict = {
-      # "pseudo_inverse": _test_pseudo_inverse,
       "lstsq": _test_lstsq,
       "lstsq_with_broadcast": _test_lstsq_with_broadcast
   }
@@ -91,18 +90,6 @@ class NonSquareLinearOperatorDerivedClassTest(
 
   def make_rhs(self, operator, adjoint, with_batch=True):
     return self.make_x(operator, adjoint=not adjoint, with_batch=with_batch)
-
-
-def _test_pseudo_inverse(use_placeholder, shapes_info, dtype):
-  def test_pseudo_inverse(self):
-    with self.session(graph=tf.Graph()) as sess:
-      sess.graph.seed = DEFAULT_GRAPH_SEED
-      operator, mat = self.operator_and_matrix(
-          shapes_info, dtype, use_placeholder=use_placeholder)
-      op_inverse_v, mat_inverse_v = sess.run([
-          operator.pseudo_inverse().to_dense(), tf.linalg.pinv(mat)])
-      self.assertAC(op_inverse_v, mat_inverse_v, check_dtype=True)
-  return test_pseudo_inverse
 
 
 def _test_lstsq(
