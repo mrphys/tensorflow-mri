@@ -12,19 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Non-uniform Fourier linear operators."""
+"""Coil array linear operator."""
 
 import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.linalg import linear_operator_nd
-from tensorflow_mri.python.linalg import linear_operator_util
-from tensorflow_mri.python.ops import array_ops
-from tensorflow_mri.python.ops import traj_ops
-from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.util import api_util
-from tensorflow_mri.python.util import tensor_util
-from tensorflow_mri.python.util import types_util
 
 
 @api_util.export("linalg.LinearOperatorCoils")
@@ -180,10 +174,10 @@ def coils_matrix(maps, batch_dims=0):
     batch_dims: An `int`, the number of batch dimensions in `maps`.
 
   Returns:
-    A `LinearOperatorCoils` instance.
+    A `tf.Tensor` representing a dense coil array matrix equivalent to
+    `LinearOperatorCoils`.
   """
   maps = tf.convert_to_tensor(maps, name="maps")
-  batch_dims = int(batch_dims)
 
   # Vectorize N-D maps.
   maps = tf.reshape(

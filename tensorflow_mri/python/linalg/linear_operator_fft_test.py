@@ -75,7 +75,7 @@ class LinearOperatorFFTTest(
     with self.assertRaisesRegex(TypeError, "must be integer"):
       linear_operator_fft.LinearOperatorFFT(domain_shape=[2.])
 
-  def test_non_1d_domain_shape_raises_static(self):
+  def test_non_negative_domain_shape_raises_static(self):
     with self.assertRaisesRegex(ValueError, "must be non-negative"):
       linear_operator_fft.LinearOperatorFFT(domain_shape=[-2])
 
@@ -87,6 +87,16 @@ class LinearOperatorFFTTest(
       with self.assertRaisesRegex(ValueError, "must have known static rank"):
         operator = linear_operator_fft.LinearOperatorFFT(
             domain_shape=domain_shape)
+        self.evaluate(operator.to_dense())
+
+  def test_unknown_rank_batch_shape_raises_static(self):
+    if tf.executing_eagerly():
+      return
+    with self.cached_session():
+      batch_shape = tf.compat.v1.placeholder_with_default([2], shape=None)
+      with self.assertRaisesRegex(ValueError, "must have known static rank"):
+        operator = linear_operator_fft.LinearOperatorFFT(
+            domain_shape=[2], batch_shape=batch_shape)
         self.evaluate(operator.to_dense())
 
   def test_non_1d_batch_shape_raises_static(self):
@@ -150,88 +160,7 @@ class LinearOperatorFFTTest(
         self.assertAllClose(expected, y)
 
 
-@test_util.run_all_in_graph_and_eager_modes
-class LinearOperatorMaskedFFTTest(
-    linear_operator_test_util.SquareLinearOperatorDerivedClassTest):
-  """Most tests done in the base class LinearOperatorDerivedClassTest."""
-  @staticmethod
-  def skip_these_tests():
-    return [
-        "cholesky",
-        # cond is infinite for masked FFT.
-        "cond",
-        "eigvalsh",
-        # solve and inverse are not possible because a masked FFT is not
-        # invertible.
-        "inverse",
-        "solve",
-        "solve_with_broadcast"
-    ]
-
-  @staticmethod
-  def dtypes_to_test():
-    return [tf.complex64, tf.complex128]
-
-  def operator_and_matrix(
-      self, build_info, dtype, use_placeholder,
-      ensure_self_adjoint_and_pd=False):
-    del ensure_self_adjoint_and_pd
-    del use_placeholder
-    shape = list(build_info.shape)
-    assert shape[-1] == shape[-2]
-
-    batch_shape = shape[:-2]
-    num_rows = shape[-1]
-
-    mask = rng.binomial(1, 0.5, size=batch_shape + [num_rows]).astype(
-        np.bool_)
-
-    operator = linear_operator_fft.LinearOperatorFFT(
-        domain_shape=[num_rows], batch_shape=batch_shape, dtype=dtype,
-        mask=mask)
-
-    matrix = linear_operator_fft.dft_matrix(
-        num_rows, batch_shape=batch_shape, dtype=dtype, shift=True)
-    matrix = matrix * mask[..., :, None]
-
-    return operator, matrix
-
-  def test_inverse_raises(self):
-    operator = linear_operator_fft.LinearOperatorFFT(
-        domain_shape=[2], mask=[True, False])
-    with self.assertRaisesRegex(ValueError, "singular matrix"):
-      operator.inverse()
-
-  def test_solve_raises(self):
-    operator = linear_operator_fft.LinearOperatorFFT(
-        domain_shape=[2], mask=[True, False])
-    rhs = rng.randn(2, 2).astype(np.complex64)
-    with self.assertRaisesRegex(
-        NotImplementedError, "Exact solve not implemented.*singular"):
-      operator.solve(rhs)
-
-  def test_matvec_nd(self):
-    for adjoint in [False, True]:
-      with self.subTest(adjoint=adjoint):
-        mask = np.eye(4, dtype=np.bool_)
-        operator = linear_operator_fft.LinearOperatorFFT(
-            domain_shape=[4, 4], mask=mask)
-        x = tf.constant(rng.randn(4, 4).astype(np.complex64))
-        y = operator.matvec_nd(x, adjoint=adjoint)
-
-        expected = x
-        if adjoint:
-          expected = tf.where(mask, expected, 0.)
-        fn = tf.signal.ifft2d if adjoint else tf.signal.fft2d
-        expected = tf.signal.fftshift(fn(tf.signal.ifftshift(expected)))
-        expected = expected * 4 if adjoint else expected / 4
-        if not adjoint:
-          expected = tf.where(mask, expected, 0.)
-        self.assertAllClose(expected, y)
-
-
 linear_operator_test_util.add_tests(LinearOperatorFFTTest)
-linear_operator_test_util.add_tests(LinearOperatorMaskedFFTTest)
 
 
 if __name__ == "__main__":

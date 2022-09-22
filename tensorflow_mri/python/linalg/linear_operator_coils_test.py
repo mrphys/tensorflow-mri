@@ -115,7 +115,7 @@ class LinearOperatorCoilsTest(
       linear_operator_coils.LinearOperatorCoils(
           maps=np.ones((3, 4, 4)).astype(np.float32))
 
-  def test_unknown_rank_domain_shape_raises_static(self):
+  def test_unknown_rank_maps_raises_static(self):
     if tf.executing_eagerly():
       return
     with self.cached_session():

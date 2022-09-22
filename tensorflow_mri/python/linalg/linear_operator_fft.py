@@ -46,10 +46,6 @@ class LinearOperatorFFT(linear_operator_nd.LinearOperatorND):
   This operator only supports complex inputs. Specify the desired type using
   the `dtype` argument.
 
-  This operator supports masking to implement subsampling in the frequency
-  domain (e.g., for MRI). The sampling mask is specified through the
-  `mask` argument.
-
   Example:
 
   >>> # Create a 2-dimensional 128x128 DFT operator.
@@ -60,12 +56,9 @@ class LinearOperatorFFT(linear_operator_nd.LinearOperatorND):
       representing the shape of the inputs to `matvec`.
     batch_shape: A 1D integer `tf.Tensor`. The batch shape of the operator.
       Defaults to `None`, which is equivalent to `[]`.
-    dtype: A `tf.dtypes.DType`. Must be complex. Defaults to `tf.complex64`.
-    mask: A boolean `tf.Tensor` of shape `batch_shape + domain_shape` (or a
-      broadcast-compatible shape). The sampling mask.
+    dtype: A `tf.dtypes.DType`. Must be complex. Defaults to `complex64`.
     is_non_singular: A boolean, or `None`. Whether this operator is expected
-      to be non-singular. Defaults to `None`, which defaults to `True` if mask
-      is `None` and `False` otherwise.
+      to be non-singular. Defaults to `True`.
     is_self_adjoint: A boolean, or `None`. Whether this operator is expected
       to be equal to its Hermitian transpose. If `dtype` is real, this is
       equivalent to being symmetric. Defaults to `False`.
@@ -82,8 +75,7 @@ class LinearOperatorFFT(linear_operator_nd.LinearOperatorND):
                domain_shape,
                batch_shape=None,
                dtype=None,
-               mask=None,
-               is_non_singular=None,
+               is_non_singular=True,
                is_self_adjoint=False,
                is_positive_definite=None,
                is_square=True,
@@ -93,7 +85,6 @@ class LinearOperatorFFT(linear_operator_nd.LinearOperatorND):
         domain_shape=domain_shape,
         batch_shape=batch_shape,
         dtype=dtype,
-        mask=mask,
         is_non_singular=is_non_singular,
         is_self_adjoint=is_self_adjoint,
         is_positive_definite=is_positive_definite,
@@ -103,14 +94,9 @@ class LinearOperatorFFT(linear_operator_nd.LinearOperatorND):
     dtype = dtype or tf.complex64
 
     with tf.name_scope(name):
-      if is_non_singular is None:
-        is_non_singular = mask is None
-
       dtype = tf.dtypes.as_dtype(dtype)
-      if not is_non_singular and mask is None:
-        raise ValueError("A non-masked FFT operator is always non-singular.")
-      if is_non_singular and mask is not None:
-        raise ValueError("A masked FFT operator is always singular.")
+      if not is_non_singular:
+        raise ValueError("An FFT operator is always non-singular.")
       if is_self_adjoint:
         raise ValueError("An FFT operator is never self-adjoint.")
       if not is_square:
@@ -128,38 +114,11 @@ class LinearOperatorFFT(linear_operator_nd.LinearOperatorND):
         types_util.assert_not_ref_type(batch_shape, 'batch_shape')
         self._batch_shape_static, self._batch_shape_dynamic = (
             tensor_util.static_and_dynamic_shapes_from_shape(batch_shape))
+        if self._batch_shape_static.rank is None:
+          raise ValueError('batch_shape must have known static rank')
       else:
         self._batch_shape_static = tf.TensorShape([])
         self._batch_shape_dynamic = tf.constant([], dtype=tf.int32)
-
-      if mask is not None:
-        self._mask = tf.convert_to_tensor(mask, dtype=tf.bool, name='mask')
-        self._mask_mult = tf.cast(self._mask, dtype)
-        self._mask_algo = 'multiply'
-
-        mask_domain_shape = self._mask.shape[-self.ndim:]
-        if not self._domain_shape_static.is_compatible_with(
-            mask_domain_shape):
-          raise ValueError(
-              f"The domain dimensions of mask {mask_domain_shape} must be "
-              f"compatible with this operator's domain shape "
-              f"{self._domain_shape_static}.")
-
-        # Update batch shape.
-        mask_batch_shape = self._mask.shape[:-self.ndim]
-        try:
-          self._batch_shape_static = tf.broadcast_static_shape(
-              self._batch_shape_static, mask_batch_shape)
-        except ValueError:
-          raise ValueError(
-              f"The batch dimensions of mask {mask_batch_shape} must be "
-              f"broadcastable with this operator's batch shape "
-              f"{self._batch_shape_static}.")
-        self._batch_shape_dynamic = tf.broadcast_dynamic_shape(
-            self._batch_shape_dynamic, tf.shape(self._mask)[:-self.ndim])
-
-      else:
-        self._mask = None
 
       super().__init__(dtype,
                        is_non_singular=is_non_singular,
@@ -173,12 +132,9 @@ class LinearOperatorFFT(linear_operator_nd.LinearOperatorND):
     axes = list(range(-self.ndim, 0))
 
     if adjoint:
-      x = self._apply_mask(x)
       x = fft_ops.ifftn(x, axes=axes, norm='ortho', shift=True)
-
     else:
       x = fft_ops.fftn(x, axes=axes, norm='ortho', shift=True)
-      x = self._apply_mask(x)
 
     # For consistent broadcasting semantics.
     if adjoint:
@@ -186,30 +142,17 @@ class LinearOperatorFFT(linear_operator_nd.LinearOperatorND):
     else:
       output_shape = self.range_shape_tensor()
 
-    if self.batch_shape.rank is None or self.batch_shape.rank > 0:
+    if self.batch_shape.rank > 0:
       x = tf.broadcast_to(
           x, tf.concat([self.batch_shape_tensor(), output_shape], 0))
 
     return x
 
   def _solvevec_nd(self, rhs, adjoint=False):
-    if self._mask is not None:
-      raise ValueError("cannot solve masked FFT operator: singular matrix")
     return self._matvec_nd(rhs, adjoint=(not adjoint))
 
   def _lstsqvec_nd(self, rhs, adjoint=False):
-    return self._matvec_nd(rhs, adjoint=(not adjoint))
-
-  def _apply_mask(self, x):
-    if self._mask is None:
-      return x
-    if self._mask_algo == 'multiply':
-      x = x * self._mask_mult
-    elif self._mask_algo == 'multiplex':
-      x = tf.where(self._mask, x, tf.zeros_like(x))
-    else:
-      raise ValueError(f"Unknown masking algorithm: {self._mask_algo}")
-    return x
+    return self._solvevec_nd(rhs, adjoint=adjoint)
 
   def _ndim(self):
     return self.domain_shape.rank
@@ -233,12 +176,8 @@ class LinearOperatorFFT(linear_operator_nd.LinearOperatorND):
     return self._batch_shape_dynamic
 
   @property
-  def mask(self):
-    return self._mask
-
-  @property
   def _composite_tensor_fields(self):
-    return ('domain_shape', 'batch_shape', 'dtype', 'mask')
+    return ('domain_shape', 'batch_shape', 'dtype')
 
   @property
   def _composite_tensor_prefer_static_fields(self):
@@ -246,7 +185,7 @@ class LinearOperatorFFT(linear_operator_nd.LinearOperatorND):
 
   @property
   def _experimental_parameter_ndims_to_matrix_ndims(self):
-    return {'mask': self.ndim}
+    return {}
 
   def __getitem__(self, slices):
     # Support slicing.
