@@ -25,7 +25,7 @@ from tensorflow_mri.python.util import doc_util
 LinearOperatorDiag = api_util.export(
     "linalg.LinearOperatorDiag")(
         doc_util.no_linkcode(
-            linear_operator.make_mri_operator(
+            linear_operator.make_linear_operator(
                     tf.linalg.LinearOperatorDiag)))
 
 

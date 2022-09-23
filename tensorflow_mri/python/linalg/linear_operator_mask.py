@@ -22,7 +22,7 @@ from tensorflow_mri.python.util import api_util
 
 
 @api_util.export("linalg.LinearOperatorMask")
-@linear_operator_nd.make_mri_operator_nd
+@linear_operator_nd.make_linear_operator_nd
 class LinearOperatorMask(linear_operator_nd.LinearOperatorND):
   """Linear operator acting like a [batch] masking matrix.
 

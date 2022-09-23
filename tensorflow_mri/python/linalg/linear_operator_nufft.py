@@ -29,7 +29,7 @@ from tensorflow_mri.python.util import types_util
 
 
 @api_util.export("linalg.LinearOperatorNUFFT")
-@linear_operator_nd.make_mri_operator_nd
+@linear_operator_nd.make_linear_operator_nd
 class LinearOperatorNUFFT(linear_operator_nd.LinearOperatorND):
   r"""Linear operator acting like a [batch] nonuniform Fourier matrix.
 

@@ -22,7 +22,7 @@ from tensorflow_mri.python.util import api_util
 
 
 @api_util.export("linalg.LinearOperatorCoils")
-@linear_operator_nd.make_mri_operator_nd
+@linear_operator_nd.make_linear_operator_nd
 class LinearOperatorCoils(linear_operator_nd.LinearOperatorND):
   """Linear operator acting like a [batch] coil array.
 

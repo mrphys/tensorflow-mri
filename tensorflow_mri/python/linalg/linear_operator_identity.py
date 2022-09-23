@@ -24,14 +24,14 @@ from tensorflow_mri.python.util import doc_util
 LinearOperatorIdentity = api_util.export(
     "linalg.LinearOperatorIdentity")(
         doc_util.no_linkcode(
-            linear_operator.make_mri_operator(
+            linear_operator.make_linear_operator(
                 tf.linalg.LinearOperatorIdentity)))
 
 
 LinearOperatorScaledIdentity = api_util.export(
     "linalg.LinearOperatorScaledIdentity")(
         doc_util.no_linkcode(
-            linear_operator.make_mri_operator(
+            linear_operator.make_linear_operator(
                 tf.linalg.LinearOperatorScaledIdentity)))
 
 

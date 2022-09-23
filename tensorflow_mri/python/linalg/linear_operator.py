@@ -26,7 +26,7 @@ from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import doc_util
 
 
-def make_mri_operator(cls):
+def make_linear_operator(cls):
   """Class decorator for subclasses of `LinearOperator`."""
   # Add extensions if decorating base class.
   if cls is tf.linalg.LinearOperator:
@@ -361,7 +361,7 @@ class _LinearOperatorSpec(type_spec.BatchableTypeSpec):  # pylint: disable=abstr
 
 # Define new `LinearOperator` class.
 LinearOperator = api_util.export("linalg.LinearOperator")(
-    doc_util.no_linkcode(make_mri_operator(tf.linalg.LinearOperator)))
+    doc_util.no_linkcode(make_linear_operator(tf.linalg.LinearOperator)))
 
 
 # Monkey-patch original operator so that core TF operator and TFMRI

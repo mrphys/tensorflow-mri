@@ -22,7 +22,7 @@ from tensorflow_mri.python.util import check_util
 
 
 @api_util.export("linalg.LinearOperatorAddition")
-@linear_operator.make_mri_operator
+@linear_operator.make_linear_operator
 class LinearOperatorAddition(linear_operator.LinearOperator):
   """Adds one or more `LinearOperators`.
 

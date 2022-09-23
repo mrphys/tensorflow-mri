@@ -24,10 +24,10 @@ from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import tensor_util
 
 
-def make_mri_operator_nd(cls):
+def make_linear_operator_nd(cls):
   """Class decorator for subclasses of `LinearOperatorND`."""
   # Call the original decorator.
-  cls = linear_operator.make_mri_operator(cls)
+  cls = linear_operator.make_linear_operator(cls)
 
   # Add the N-D specific doclines.
   cls = update_docstring(cls)
@@ -61,7 +61,7 @@ def update_docstring(op_cls):
 
 
 @api_util.export("linalg.LinearOperatorND")
-@make_mri_operator_nd
+@make_linear_operator_nd
 class LinearOperatorND(linear_operator.LinearOperator):
   """Base class defining a [batch of] N-D linear operator(s)."""
   # Overrides of existing methods.
