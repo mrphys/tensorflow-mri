@@ -17,7 +17,7 @@
 import tensorflow as tf
 
 from tensorflow_mri.python.linalg import linear_operator
-from tensorflow_mri.python.linalg import linear_operator_addition
+from tensorflow_mri.python.linalg import linear_operator_addition_nd
 from tensorflow_mri.python.linalg import linear_operator_composition
 from tensorflow_mri.python.linalg import linear_operator_identity
 from tensorflow_mri.python.util import api_util
@@ -111,7 +111,7 @@ class LinearOperatorGramMatrix(linear_operator.LinearOperator):  # pylint: disab
             operators=[reg_operator_gm,
                        self._reg_operator.H,
                        self._reg_operator])
-      self._composed = linear_operator_addition.LinearOperatorAddition(
+      self._composed = linear_operator_addition_nd.LinearOperatorAddition(
           operators=[self._composed, reg_operator_gm])
 
     super().__init__(operator.dtype,

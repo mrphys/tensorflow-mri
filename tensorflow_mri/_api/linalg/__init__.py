@@ -6,7 +6,7 @@ from tensorflow.python.ops.linalg.linear_operator import LinearOperator as Linea
 from tensorflow_mri.python.linalg.conjugate_gradient import conjugate_gradient as conjugate_gradient
 from tensorflow_mri.python.linalg.linear_operator_nd import LinearOperatorND as LinearOperatorND
 from tensorflow_mri.python.linalg.linear_operator_fft import LinearOperatorFFT as LinearOperatorFFT
-from tensorflow_mri.python.linalg.linear_operator_addition import LinearOperatorAddition as LinearOperatorAddition
+from tensorflow_mri.python.linalg.linear_operator_addition_nd import LinearOperatorAddition as LinearOperatorAddition
 from tensorflow.python.ops.linalg.linear_operator_adjoint import LinearOperatorAdjoint as LinearOperatorAdjoint
 from tensorflow.python.ops.linalg.linear_operator_composition import LinearOperatorComposition as LinearOperatorComposition
 from tensorflow.python.ops.linalg.linear_operator_diag import LinearOperatorDiag as LinearOperatorDiag

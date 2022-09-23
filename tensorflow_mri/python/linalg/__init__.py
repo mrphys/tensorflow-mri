@@ -18,6 +18,7 @@ from tensorflow_mri.python.linalg import adjoint_registrations
 from tensorflow_mri.python.linalg import conjugate_gradient
 from tensorflow_mri.python.linalg import inverse_registrations
 from tensorflow_mri.python.linalg import linear_operator_addition
+from tensorflow_mri.python.linalg import linear_operator_addition_nd
 from tensorflow_mri.python.linalg import linear_operator_adjoint
 from tensorflow_mri.python.linalg import linear_operator_algebra
 from tensorflow_mri.python.linalg import linear_operator_composition
