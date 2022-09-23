@@ -24,71 +24,61 @@ from tensorflow_mri.python.util import check_util
 @api_util.export("linalg.LinearOperatorAddition")
 @linear_operator.make_linear_operator
 class LinearOperatorAddition(linear_operator.LinearOperator):
-  """Adds one or more `LinearOperators`.
+  r"""Adds one or more [batch] linear operators.
 
-  This operator adds one or more linear operators `op1 + op2 + ... + opJ`,
-  building a new `LinearOperator` with action defined by:
+  This operator adds one or more linear operators $A_1, A_2, \dots, A_n$ to
+  build a new `LinearOperator` $A$ with action defined by:
 
+  $$
+  Ax = (A_1 + A_2 + \dots + A_n)(x) = A_1 x + A_2 x + \dots + A_n x
+  $$
+
+  All input `operators` must have shape `[..., M, N]` and the resulting
+  operator also has shape `[..., M, N]`. The batch shape of the resulting
+  operator is the result of broadcasting the batch shape of all input
+  operators.
+
+  ```{rubric} Performance
   ```
-  op_addition(x) := op1(x) + op2(x) + op3(x)
+  In general, performance in matrix-vector multiplication is the sum
+  of the individual operators. More efficient implementations may be
+  used for specific operators.
+
+  ```{rubric} Matrix properties
   ```
+  The properties of this operator are determined by the properties of the
+  input operators.
 
-  If `opj` acts like [batch] matrix `Aj`, then `op_addition` acts like the
-  [batch] matrix formed with the addition `A1 + A2 + ... + AJ`.
-
-  If each `opj` has shape `batch_shape_j + [M, N]`, then the addition operator
-  has shape equal to `broadcast_batch_shape + [M, N]`, where
-  `broadcast_batch_shape` is the mutual broadcast of `batch_shape_j`,
-  `j = 1, ..., J`, assuming the intermediate batch shapes broadcast.
-
-  ```python
-  # Create a 2 x 2 linear operator composed of two 2 x 2 operators.
-  operator_1 = LinearOperatorFullMatrix([[1., 2.], [3., 4.]])
-  operator_2 = LinearOperatorFullMatrix([[1., 0.], [0., 1.]])
-  operator = LinearOperatorAddition([operator_1, operator_2])
-
-  operator.to_dense()
-  ==> [[2., 2.]
-       [3., 5.]]
-
-  operator.shape
-  ==> [2, 2]
+  ```{rubric} Inversion
   ```
+  At present, this operator does not implement an efficient algorithm for
+  inversion. `solve` and `lstsq` will trigger conversion to a dense matrix.
 
-  #### Performance
-
-  The performance of `LinearOperatorAddition` on any operation is equal to
-  the sum of the individual operators' operations.
-
-
-  #### Matrix property hints
-
-  This `LinearOperator` is initialized with boolean flags of the form `is_X`,
-  for `X = non_singular, self_adjoint, positive_definite, square`.
-  These have the following meaning:
-
-  * If `is_X == True`, callers should expect the operator to have the
-    property `X`.  This is a promise that should be fulfilled, but is *not* a
-    runtime assert.  For example, finite floating point precision may result
-    in these promises being violated.
-  * If `is_X == False`, callers should expect the operator to not have `X`.
-  * If `is_X == None` (the default), callers should have no expectation either
-    way.
+  Example:
+    >>> # Create a 2 x 2 linear operator composed of two 2 x 2 operators.
+    >>> op1 = tfmri.linalg.LinearOperatorFullMatrix([[1., 2.], [3., 4.]])
+    >>> op2 = tfmri.linalg.LinearOperatorIdentity(2)
+    >>> operator = LinearOperatorAddition([op1, op2])
+    >>> operator.to_dense().numpy()
+    array([[2., 2.],
+           [3., 5.]], dtype=float32)
 
   Args:
-    operators: Iterable of `LinearOperator` objects, each with
-      the same shape and dtype.
-    is_non_singular: Expect that this operator is non-singular.
-    is_self_adjoint: Expect that this operator is equal to its hermitian
-      transpose.
-    is_positive_definite: Expect that this operator is positive definite,
-      meaning the quadratic form `x^H A x` has positive real part for all
-      nonzero `x`.  Note that we do not require the operator to be
-      self-adjoint to be positive-definite.  See:
-      https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices
-    is_square:  Expect that this operator acts like square [batch] matrices.
-    name: A name for this `LinearOperator`.  Default is the individual
-      operators names joined with `_p_`.
+    operators: A `list` of `tf.linalg.LinearOperator`s of equal shape and
+      dtype. Batch dimensions may vary but must be broadcastable.
+    is_non_singular: A boolean, or `None`. Whether this operator is expected
+      to be non-singular. Defaults to `None`.
+    is_self_adjoint: A boolean, or `None`. Whether this operator is expected
+      to be equal to its Hermitian transpose. If `dtype` is real, this is
+      equivalent to being symmetric. Defaults to `None`.
+    is_positive_definite: A boolean, or `None`. Whether this operator is
+      expected to be positive definite, meaning the quadratic form $x^H A x$
+      has positive real part for all nonzero $x$. Note that an operator [does
+      not need to be self-adjoint to be positive definite](https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices)
+      Defaults to `None`.
+    is_square: A boolean, or `None`. Expect that this operator acts like a
+      square matrix (or a batch of square matrices). Defaults to `None`.
+    name: An optional `str`. The name of this operator.
 
   Raises:
     TypeError: If all operators do not have the same `dtype`.
@@ -115,7 +105,7 @@ class LinearOperatorAddition(linear_operator.LinearOperator):
     operators = list(operators)
     if not operators:
       raise ValueError(
-          "Expected a non-empty list of operators. Found: %s" % operators)
+          f"Expected a non-empty list of operators. Found: {operators}")
     self._operators = operators
 
     # Validate dtype.
@@ -124,7 +114,7 @@ class LinearOperatorAddition(linear_operator.LinearOperator):
       if operator.dtype != dtype:
         name_type = (str((o.name, o.dtype)) for o in operators)
         raise TypeError(
-            "Expected all operators to have the same dtype.  Found %s"
+            "Expected all operators to have the same dtype. Found %s"
             % "   ".join(name_type))
 
     # Infer operator properties.
@@ -212,3 +202,7 @@ class LinearOperatorAddition(linear_operator.LinearOperator):
   @property
   def _composite_tensor_fields(self):
     return ("operators",)
+
+  @property
+  def _experimental_parameter_ndims_to_matrix_ndims(self):
+    return {"operators": [0] * len(self.operators)}

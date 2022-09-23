@@ -24,30 +24,46 @@ from tensorflow_mri.python.util import api_util
 @api_util.export("linalg.LinearOperatorMask")
 @linear_operator_nd.make_linear_operator_nd
 class LinearOperatorMask(linear_operator_nd.LinearOperatorND):
-  """Linear operator acting like a [batch] masking matrix.
+  r"""Linear operator acting like a [batch] masking matrix.
 
-  A masking matrix is a diagonal matrix whose diagonal entries are either one
-  or zero. This operator is useful for masking out certain entries in a vector
-  or matrix.
+  Represents a diagonal matrix $A \in \mathbb{F}^{n \times n}$ whose diagonal
+  entries are either one or zero. This operator is useful for masking out
+  certain entries in a vector or matrix.
 
   ```{tip}
   You can use this operator to mask *k*-space values in undersampled Cartesian
   MRI.
   ```
 
+  ```{rubric} Performance
+  ```
+  - Matrix-vector multiplication is $O(n)$.
+  - Exact solve is not supported.
+  - Least-squares solve is $O(n)$.
+
+  ```{rubric} Properties
+  ```
+  - This operator is self-adjoint, i.e. $A^H = A$.
+  - This operator is singular, i.e. $A^{-1}$ does not exist.
+  - This operator is not positive definite, i.e. $x^H A x <= 0$ for some $x$.
+  - This operator is square, i.e. $A \in \mathbb{F}^{n \times n}$.
+
   ```{rubric} Inversion
   ```
-  In general, this operator is singular and cannot be inverted, so `solve`
-  and `inverse` will raise an error.
+  In general, the masking operator is singular and cannot be inverted, so
+  `solve` and `inverse` will raise an error.
 
-  However, you can use `lstsq` to solve the associated least-squares problem.
+  However, you can use `lstsq` or `pseudo_inverse` to solve the associated
+  least-squares problem. The pseudo-inverse of the masking operator is the
+  operator itself, i.e., $A^+ = A$.
 
   Example:
     >>> mask = [True, False, True, False]
     >>> linop = tfmri.linalg.LinearOperatorMask(mask)
     >>> x = tf.constant([1., 2., 3., 4.])
-    >>> linop.matvec_nd(x).numpy()
-    <tf.Tensor: shape=(2,), dtype=float32, numpy=array([1., 0., 3., 0.], dtype=float32)>
+    >>> y = linop.matvec_nd(x)
+    >>> y.numpy()
+    array([1., 0., 3., 0.])
 
   Args:
     mask: A boolean `tf.Tensor` of shape `[..., *spatial_shape]`.
@@ -79,7 +95,7 @@ class LinearOperatorMask(linear_operator_nd.LinearOperatorND):
       expected to be positive definite, meaning the quadratic form $x^H A x$
       has positive real part for all nonzero $x$. Note that an operator [does
       not need to be self-adjoint to be positive definite](https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices)
-      Defaults to `None`.
+      Defaults to `False`.
     is_square: A boolean, or `None`. Expect that this operator acts like a
       square matrix (or a batch of square matrices). Defaults to `True`.
     name: An optional `str`. The name of this operator.
@@ -91,7 +107,7 @@ class LinearOperatorMask(linear_operator_nd.LinearOperatorND):
                algorithm='multiply',
                is_non_singular=False,
                is_self_adjoint=True,
-               is_positive_definite=None,
+               is_positive_definite=False,
                is_square=True,
                name='LinearOperatorMask'):
     parameters = dict(
@@ -106,7 +122,7 @@ class LinearOperatorMask(linear_operator_nd.LinearOperatorND):
         name=name
     )
 
-    with tf.name_scope(name) as name:
+    with tf.name_scope(name):
       if dtype is None:
         dtype = tf.float32
       dtype = tf.dtypes.as_dtype(dtype)
@@ -147,6 +163,8 @@ class LinearOperatorMask(linear_operator_nd.LinearOperatorND):
         raise ValueError("A mask operator is always self-adjoint.")
       if is_non_singular:
         raise ValueError("A mask operator is always singular.")
+      if is_positive_definite:
+        raise ValueError("A mask operator is never positive definite.")
       if not is_square:
         raise ValueError("A mask operator is always square.")
 

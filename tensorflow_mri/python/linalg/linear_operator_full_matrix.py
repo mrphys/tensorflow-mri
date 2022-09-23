@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Diagonal linear operator."""
+"""Full matrix linear operator."""
 
 import tensorflow as tf
 
@@ -21,11 +21,11 @@ from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import doc_util
 
 
-LinearOperatorDiag = api_util.export(
-    "linalg.LinearOperatorDiag")(
+LinearOperatorFullMatrix = api_util.export(
+    "linalg.LinearOperatorFullMatrix")(
         doc_util.no_linkcode(
             linear_operator.make_linear_operator(
-                    tf.linalg.LinearOperatorDiag)))
+                    tf.linalg.LinearOperatorFullMatrix)))
 
 
-tf.linalg.LinearOperatorDiag = LinearOperatorDiag
+tf.linalg.LinearOperatorFullMatrix = LinearOperatorFullMatrix

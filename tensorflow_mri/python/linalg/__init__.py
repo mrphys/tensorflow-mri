@@ -25,6 +25,7 @@ from tensorflow_mri.python.linalg import linear_operator_composition
 from tensorflow_mri.python.linalg import linear_operator_diag
 from tensorflow_mri.python.linalg import linear_operator_fft
 from tensorflow_mri.python.linalg import linear_operator_finite_difference
+from tensorflow_mri.python.linalg import linear_operator_full_matrix
 from tensorflow_mri.python.linalg import linear_operator_gram_matrix
 from tensorflow_mri.python.linalg import linear_operator_identity
 from tensorflow_mri.python.linalg import linear_operator_inversion
