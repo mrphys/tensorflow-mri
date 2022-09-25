@@ -80,6 +80,12 @@ def add_tests(test_cls):
 OperatorShapesInfo = linear_operator_test_util.OperatorShapesInfo
 
 
+random_normal = linear_operator_test_util.random_normal
+random_uniform = linear_operator_test_util.random_uniform
+random_positive_definite_matrix = (
+    linear_operator_test_util.random_positive_definite_matrix)
+
+
 class SquareLinearOperatorDerivedClassTest(
     linear_operator_test_util.SquareLinearOperatorDerivedClassTest):
   pass

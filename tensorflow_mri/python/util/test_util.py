@@ -21,10 +21,12 @@ from keras.testing_infra import test_combinations
 from keras.testing_infra import test_utils
 import numpy as np
 import tensorflow as tf
+from tensorflow.python.framework import test_util
 
 
 layer_test = test_utils.layer_test
 run_all_execution_modes = test_combinations.run_all_keras_modes
+run_deprecated_v1 = test_util.run_deprecated_v1
 
 
 class TestCase(tf.test.TestCase, parameterized.TestCase):

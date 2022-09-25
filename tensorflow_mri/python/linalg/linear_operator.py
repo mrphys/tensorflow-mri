@@ -15,6 +15,7 @@
 """Base linear operator."""
 
 import string
+import warnings
 
 import tensorflow as tf
 from tensorflow.python.framework import type_spec
@@ -22,6 +23,7 @@ from tensorflow.python.ops.linalg.linear_operator import (
     _extract_attrs, _extract_type_spec_recursively)
 
 from tensorflow_mri.python.linalg import linear_operator_algebra
+from tensorflow_mri.python.linalg import linear_operator_util
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import doc_util
 
@@ -35,6 +37,7 @@ def make_linear_operator(cls):
         "_lstsq": _lstsq,
         "lstsqvec": lstsqvec,
         "_lstsqvec": _lstsqvec,
+        "_dense_lstsq": _dense_lstsq
     }
 
     for key, value in extensions.items():
@@ -170,8 +173,10 @@ def lstsq(self, rhs, adjoint=False, adjoint_arg=False, name="lstsq"):
 
 def _lstsq(self, rhs, adjoint=False, adjoint_arg=False):
   """Default implementation of `_lstsq`."""
-  raise NotImplementedError(
-      f"lstsq is not implemented for {self.__class__.__name__}.")
+  warnings.warn(
+      "Using (possibly slow) default implementation of lstsq. "
+      "Requires conversion to a dense matrix and O(N^3) operations.")
+  return self._dense_lstsq(rhs, adjoint=adjoint, adjoint_arg=adjoint_arg)
 
 def lstsqvec(self, rhs, adjoint=False, name="lstsqvec"):
   """Solve the linear system $A x = b$ in the least-squares sense.
@@ -210,6 +215,12 @@ def _lstsqvec(self, rhs, adjoint=False):
   rhs_mat = tf.expand_dims(rhs, axis=-1)
   solution_mat = self.lstsq(rhs_mat, adjoint=adjoint)
   return tf.squeeze(solution_mat, axis=-1)
+
+def _dense_lstsq(self, rhs, adjoint=False, adjoint_arg=False):
+  """Solve least squares by conversion to a dense matrix."""
+  rhs = tf.linalg.adjoint(rhs) if adjoint_arg else rhs
+  return linear_operator_util.matrix_solve_ls_with_broadcast(
+      self.to_dense(), rhs, adjoint=adjoint)
 
 
 class _LinearOperatorSpec(type_spec.BatchableTypeSpec):  # pylint: disable=abstract-method

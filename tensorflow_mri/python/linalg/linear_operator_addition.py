@@ -114,26 +114,34 @@ class LinearOperatorAddition(linear_operator.LinearOperator):
       if operator.dtype != dtype:
         name_type = (str((o.name, o.dtype)) for o in operators)
         raise TypeError(
-            "Expected all operators to have the same dtype. Found %s"
-            % "   ".join(name_type))
+            f"Expected all operators to have the same dtype. "
+            f"Found: {', '.join(name_type)}")
+
+    # Validate shapes.
+    self._matrix_shape = operators[0].shape[-2:]
+    for operator in operators:
+      if not operator.shape[-2:].is_compatible_with(self._matrix_shape):
+        raise ValueError(
+            f"Expected all operators to have the same shape. "
+            f"Found: {', '.join([str(o.shape[-2:]) for o in operators])}")
 
     # Infer operator properties.
-    if is_self_adjoint is None:
-      # If all operators are self-adjoint, so is the sum.
-      if all(operator.is_self_adjoint for operator in operators):
-        is_self_adjoint = True
-    if is_positive_definite is None:
-      # If all operators are positive definite, so is the sum.
-      if all(operator.is_positive_definite for operator in operators):
-        is_positive_definite = True
-    if is_non_singular is None:
-      # A positive definite operator is always non-singular.
-      if is_positive_definite:
-        is_non_singular = True
-    if is_square is None:
-      # If all operators are square, so is the sum.
-      if all(operator.is_square for operator in operators):
-        is_square=True
+    is_non_singular = check_hint(
+        combined_non_singular_hint(*operators),
+        is_non_singular,
+        "non-singular")
+    is_self_adjoint = check_hint(
+        combined_self_adjoint_hint(*operators),
+        is_self_adjoint,
+        "self-adjoint")
+    is_positive_definite = check_hint(
+        combined_positive_definite_hint(*operators),
+        is_positive_definite,
+        "positive-definite")
+    is_square = check_hint(
+        combined_square_hint(*operators),
+        is_square,
+        "square")
 
     if name is None:
       name = "_p_".join(operator.name for operator in operators)
@@ -152,45 +160,24 @@ class LinearOperatorAddition(linear_operator.LinearOperator):
     return self._operators
 
   def _shape(self):
-    # Get final matrix shape.
-    domain_dimension = self.operators[0].domain_dimension
-    range_dimension = self.operators[1].range_dimension
-    for operator in self.operators[1:]:
-      domain_dimension.assert_is_compatible_with(operator.domain_dimension)
-      range_dimension.assert_is_compatible_with(operator.range_dimension)
-
-    matrix_shape = tf.TensorShape([range_dimension, domain_dimension])
-
     # Get broadcast batch shape.
-    # tf.broadcast_static_shape checks for compatibility.
     batch_shape = self.operators[0].batch_shape
     for operator in self.operators[1:]:
       batch_shape = tf.broadcast_static_shape(
           batch_shape, operator.batch_shape)
 
-    return batch_shape.concatenate(matrix_shape)
+    return batch_shape.concatenate(self._matrix_shape)
 
   def _shape_tensor(self):
-    # Avoid messy broadcasting if possible.
-    if self.shape.is_fully_defined():
-      return tf.convert_to_tensor(
-          self.shape.as_list(), dtype=tf.dtypes.int32, name="shape")
+    matrix_shape = self.operators[0].shape_tensor()[-2:]
 
-    # Don't check the matrix dimensions.  That would add unnecessary Asserts to
-    # the graph.  Things will fail at runtime naturally if shapes are
-    # incompatible.
-    matrix_shape = tf.stack([
-        self.operators[0].range_dimension_tensor(),
-        self.operators[0].domain_dimension_tensor()
-    ])
-
-    # Dummy Tensor of zeros.  Will never be materialized.
+    # Dummy tensor of zeros. In graph mode, it will never be materialized.
     zeros = tf.zeros(shape=self.operators[0].batch_shape_tensor())
     for operator in self.operators[1:]:
       zeros += tf.zeros(shape=operator.batch_shape_tensor())
     batch_shape = tf.shape(zeros)
 
-    return tf.concat((batch_shape, matrix_shape), 0)
+    return tf.concat([batch_shape, matrix_shape], 0)
 
   def _matmul(self, x, adjoint=False, adjoint_arg=False):
     result = self.operators[0].matmul(
@@ -206,3 +193,102 @@ class LinearOperatorAddition(linear_operator.LinearOperator):
   @property
   def _experimental_parameter_ndims_to_matrix_ndims(self):
     return {"operators": [0] * len(self.operators)}
+
+
+def combined_non_singular_hint(*operators):
+  """Returns a hint for the non-singularity of a sum of operators.
+
+  Args:
+    *operators: A list of `LinearOperator` objects.
+
+  Returns:
+    A boolean, or `None`. Whether the sum of the operators is expected to be
+    non-singular.
+  """
+  # In general, there is nothing we can say about the non-singularity of the
+  # sum of operators, regardless of the non-singularity of the individual
+  # operators.
+  return None
+
+
+def combined_self_adjoint_hint(*operators):
+  """Returns a hint for the self-adjointness of a sum of operators.
+
+  Args:
+    *operators: A list of `LinearOperator` objects.
+
+  Returns:
+    A boolean, or `None`. Whether the sum of the operators is expected to be
+    self-adjoint.
+  """
+  # If all operators are self-adjoint, so is the sum.
+  if all(o.is_self_adjoint is True for o in operators):
+    return True
+  # If all operators are self-adjoint except one which is not, then the sum is
+  # not self-adjoint.
+  self_adjoint_operators = [
+      o for o in operators if o.is_self_adjoint is True]
+  non_self_adjoint_operators = [
+      o for o in operators if o.is_self_adjoint is False]
+  if (len(self_adjoint_operators) == len(operators) - 1 and
+      len(non_self_adjoint_operators) == 1):
+    return False
+  # In all other cases, we don't know.
+  return None
+
+
+def combined_positive_definite_hint(*operators):
+  """Returns a hint for the positive-definiteness of a sum of operators.
+
+  Args:
+    *operators: A list of `LinearOperator` objects.
+
+  Returns:
+    A boolean, or `None`. Whether the sum of the operators is expected to be
+    positive-definite.
+  """
+  # If all operators are positive definite, so is the sum.
+  if all(o.is_positive_definite is True for o in operators):
+    return True
+  # In all other cases, we don't know.
+  return None
+
+
+def combined_square_hint(*operators):
+  """Returns a hint for the squareness of a sum of operators.
+
+  Args:
+    *operators: A list of `LinearOperator` objects.
+
+  Returns:
+    A boolean, or `None`. Whether the sum of the operators is expected to be
+    square.
+  """
+  # If any operator is square, so is the sum.
+  if (any(o.is_square is True for o in operators) and
+      not any(o.is_square is False for o in operators)):
+    return True
+  # If any operator is not square, so is the sum.
+  if (any(o.is_square is False for o in operators) and
+      not any(o.is_square is True for o in operators)):
+    return False
+  # In all other cases, we don't know.
+  return None
+
+
+def check_hint(expected, received, name):
+  """Checks that a hint is consistent with its expected value.
+
+  Args:
+    expected: A boolean, or `None`. The expected value of the hint.
+    received: A boolean, or `None`. The received value of the hint.
+    name: A string. The name of the hint.
+
+  Raises:
+    ValueError: If `expected` and `value` are not consistent.
+  """
+  if expected is not None and received is not None and expected != received:
+    raise ValueError(
+        f"Inconsistent {name} hint: expected {expected} based on input "
+        f"operators, but got {received}")
+  return received if received is not None else expected
