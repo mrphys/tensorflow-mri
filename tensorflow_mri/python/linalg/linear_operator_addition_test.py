@@ -18,6 +18,7 @@
 import numpy as np
 import tensorflow as tf
 
+from tensorflow_mri.python.linalg import linear_operator_test
 from tensorflow_mri.python.linalg import linear_operator_addition
 from tensorflow_mri.python.linalg import linear_operator_full_matrix
 from tensorflow_mri.python.linalg import linear_operator_test_util
@@ -152,6 +153,14 @@ class SquareLinearOperatorAdditionTest(
   def test_empty_operators_raises(self):
     with self.assertRaisesRegex(ValueError, "non-empty"):
       linear_operator_addition.LinearOperatorAddition([])
+
+  def test_registration(self):
+    matrix = [[11., 0.], [1., 8.]]
+    operator_1 = linear_operator_test.LinearOperatorMatmulSolve(matrix)
+    operator_2 = linear_operator_test.LinearOperatorMatmulSolve(matrix)
+    operator = operator_1 + operator_2
+    self.assertIsInstance(
+        operator, linear_operator_addition.LinearOperatorAddition)
 
 
 class NonSquareLinearOperatorAdditionTest(

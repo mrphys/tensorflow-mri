@@ -14,6 +14,7 @@
 # ==============================================================================
 """Linear algebra operators."""
 
+from tensorflow_mri.python.linalg import add_registrations
 from tensorflow_mri.python.linalg import adjoint_registrations
 from tensorflow_mri.python.linalg import conjugate_gradient
 from tensorflow_mri.python.linalg import inverse_registrations

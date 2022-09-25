@@ -21,6 +21,7 @@ import tensorflow as tf
 from tensorflow.python.framework import type_spec
 from tensorflow.python.ops.linalg.linear_operator import (
     _extract_attrs, _extract_type_spec_recursively)
+from tensorflow.python.util import dispatch
 
 from tensorflow_mri.python.linalg import linear_operator_algebra
 from tensorflow_mri.python.linalg import linear_operator_util
@@ -37,7 +38,9 @@ def make_linear_operator(cls):
         "_lstsq": _lstsq,
         "lstsqvec": lstsqvec,
         "_lstsqvec": _lstsqvec,
-        "_dense_lstsq": _dense_lstsq
+        "_dense_lstsq": _dense_lstsq,
+        "add": add,
+        "__add__": __add__
     }
 
     for key, value in extensions.items():
@@ -222,6 +225,44 @@ def _dense_lstsq(self, rhs, adjoint=False, adjoint_arg=False):
   return linear_operator_util.matrix_solve_ls_with_broadcast(
       self.to_dense(), rhs, adjoint=adjoint)
 
+def add(self, x, name="add"):
+  """Add this operator to matrix `x`.
+
+  Example:
+    >>> operator = LinearOperatorIdentity(2)
+    >>> x = tf.linalg.eye(2)
+    >>> x = operator.add(x)
+    >>> x.numpy()
+    array([[2., 0.],
+           [0., 2.]], dtype=float32)
+
+  Args:
+    x: A `LinearOperator` or `Tensor` with compatible shape and same `dtype` as
+      `self`. See class docstring for definition of compatibility.
+    name: A name for this `Op`.
+
+  Returns:
+    A `LinearOperator` or `Tensor` with same shape and same dtype as `self`.
+  """
+  if isinstance(x, LinearOperator):
+    left_operator = self
+    right_operator = x
+
+    if (not left_operator.shape[-2:].is_compatible_with(
+        right_operator.shape[-2:])):
+      raise ValueError(
+          f"Operators are incompatible. Expected `x` to have shape "
+          f"{left_operator.shape[-2:]} but got {right_operator.shape[-2:]}.")
+    with self._name_scope(name):
+      return linear_operator_algebra.add(left_operator, right_operator)
+
+  with self._name_scope(name):  # pylint: disable=not-callable
+    return self.add_to_tensor(x)
+
+def __add__(self, other):
+  return self.add(other)
+
+
 
 class _LinearOperatorSpec(type_spec.BatchableTypeSpec):  # pylint: disable=abstract-method
   """A tf.TypeSpec for `LinearOperator` objects.
@@ -378,3 +419,10 @@ LinearOperator = api_util.export("linalg.LinearOperator")(
 # Monkey-patch original operator so that core TF operator and TFMRI
 # operator become aliases.
 tf.linalg.LinearOperator = LinearOperator
+
+
+@dispatch.dispatch_for_types(tf.math.add, LinearOperator)
+def _add(x, y, name=None):
+  if not isinstance(x, LinearOperator):
+    return y.add(x, name=name)
+  return x.add(y, name=name)
