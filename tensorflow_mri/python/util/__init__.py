@@ -1,4 +1,4 @@
-# Copyright 2022 University College London. All Rights Reserved.
+# Copyright 2022 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import deprecation
+from tensorflow_mri.python.util import doc_util
 from tensorflow_mri.python.util import import_util
 from tensorflow_mri.python.util import io_util
 from tensorflow_mri.python.util import keras_util
 from tensorflow_mri.python.util import layer_util
 from tensorflow_mri.python.util import linalg_ext
-from tensorflow_mri.python.util import linalg_imaging
 from tensorflow_mri.python.util import math_util
 from tensorflow_mri.python.util import model_util
 from tensorflow_mri.python.util import nest_util
@@ -31,3 +31,4 @@ from tensorflow_mri.python.util import prefer_static
 from tensorflow_mri.python.util import sys_util
 from tensorflow_mri.python.util import tensor_util
 from tensorflow_mri.python.util import test_util
+from tensorflow_mri.python.util import types_util

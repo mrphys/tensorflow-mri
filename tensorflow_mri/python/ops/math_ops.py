@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -253,7 +253,7 @@ def block_soft_threshold(x, threshold, name=None):
   r"""Block soft thresholding operator.
 
   In the context of proximal gradient methods, this function is the proximal
-  operator of :math:`f = {\left\| x \right\|}_{2}` (L2 norm).
+  operator of $f = {\left\| x \right\|}_{2}$ (L2 norm).
 
   Args:
     x: A `Tensor` of shape `[..., n]`.
@@ -280,7 +280,7 @@ def shrinkage(x, threshold, name=None):
   r"""Shrinkage operator.
 
   In the context of proximal gradient methods, this function is the proximal
-  operator of :math:`f = \frac{1}{2}{\left\| x \right\|}_{2}^{2}`.
+  operator of $f = \frac{1}{2}{\left\| x \right\|}_{2}^{2}$.
 
   Args:
     x: A `Tensor` of shape `[..., n]`.
@@ -302,7 +302,7 @@ def soft_threshold(x, threshold, name=None):
   r"""Soft thresholding operator.
 
   In the context of proximal gradient methods, this function is the proximal
-  operator of :math:`f = {\left\| x \right\|}_{1}` (L1 norm).
+  operator of $f = {\left\| x \right\|}_{1}$ (L1 norm).
 
   Args:
     x: A `Tensor` of shape `[..., n]`.
@@ -326,11 +326,12 @@ def indicator_box(x, lower_bound=-1.0, upper_bound=1.0, name=None):
 
   Returns `0` if `x` is in the box, `inf` otherwise.
 
-  The box of radius :math:`r` is defined as the set of points of
-  :math:`{R}^{n}` whose components are within the range :math:`[l, u]`.
+  The box of radius $r$ is defined as the set of points of
+  ${R}^{n}$ whose components are within the range $[l, u]$.
 
-  .. math::
+  $$
     \mathcal{C} = \left\{x \in \mathbb{R}^{n} : l \leq x_i \leq u, \forall i = 1, \dots, n \right\}
+  $$
 
   Args:
     x: A `tf.Tensor` of shape `[..., n]`.
@@ -378,13 +379,14 @@ def indicator_simplex(x, radius=1.0, name=None):
 
   Returns `0` if `x` is in the simplex, `inf` otherwise.
 
-  The simplex of radius :math:`r` is defined as the set of points of
-  :math:`\mathbb{R}^{n}` whose elements are nonnegative and sum up to `r`.
+  The simplex of radius $r$ is defined as the set of points of
+  $\mathbb{R}^{n}$ whose elements are nonnegative and sum up to `r`.
 
-  .. math::
+  $$
     \Delta_r = \left\{x \in \mathbb{R}^{n} : \sum_{i=1}^{n} x_i = r \text{ and } x_i >= 0, \forall i = 1, \dots, n \right\}
+  $$
 
-  If :math:`r` is 1, the simplex is also called the unit simplex, standard
+  If $r$ is 1, the simplex is also called the unit simplex, standard
   simplex or probability simplex.
 
   Args:
@@ -426,14 +428,15 @@ def indicator_ball(x, order=2, radius=1.0, name=None):
 
   Returns `0` if `x` is in the Lp ball, `inf` otherwise.
 
-  The :math:`L_p` ball of radius :math:`r` is defined as the set of points of
-  :math:`{R}^{n}` whose distance from the origin, as defined by the :math:`L_p`
-  norm, is less than or equal to :math:`r`.
+  The $L_p$ ball of radius $r$ is defined as the set of points of
+  ${R}^{n}$ whose distance from the origin, as defined by the $L_p$
+  norm, is less than or equal to $r$.
 
-  .. math::
+  $$
     \mathcal{B}_r = \left\{x \in \mathbb{R}^{n} : \left\|x\right\|_{p} \leq r \right\}
+  $$
 
-  If :math:`r` is 1, this ball is also called the unit ball of the
+  If $r$ is 1, this ball is also called the unit ball of the
   :math`L_p` norm.
 
   Args:
@@ -501,7 +504,7 @@ def project_onto_simplex(x, radius=1.0, name=None):
     ValueError: If inputs are invalid.
 
   References:
-    .. [1] Duchi, J., Shalev-Shwartz, S., Singer, Y., & Chandra, T. (2008).
+    1. Duchi, J., Shalev-Shwartz, S., Singer, Y., & Chandra, T. (2008).
       Efficient projections onto the l1-ball for learning in high dimensions.
       In Proceedings of the 25th International Conference on Machine Learning
       (pp. 272-279).
@@ -556,10 +559,10 @@ def project_onto_ball(x, order=2, radius=1.0, name=None):
     ValueError: If inputs are invalid.
 
   References:
-    .. [1] Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
+    1. Parikh, N., & Boyd, S. (2014). Proximal algorithms. Foundations and
       Trends in optimization, 1(3), 127-239.
 
-    .. [2] Duchi, J., Shalev-Shwartz, S., Singer, Y., & Chandra, T. (2008).
+    2. Duchi, J., Shalev-Shwartz, S., Singer, Y., & Chandra, T. (2008).
       Efficient projections onto the l1-ball for learning in high dimensions.
       In Proceedings of the 25th International Conference on Machine Learning
       (pp. 272-279).

@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,10 +21,12 @@ from keras.testing_infra import test_combinations
 from keras.testing_infra import test_utils
 import numpy as np
 import tensorflow as tf
+from tensorflow.python.framework import test_util
 
 
 layer_test = test_utils.layer_test
 run_all_execution_modes = test_combinations.run_all_keras_modes
+run_deprecated_v1 = test_util.run_deprecated_v1
 
 
 class TestCase(tf.test.TestCase, parameterized.TestCase):
@@ -117,8 +119,9 @@ def run_in_graph_and_eager_modes(func=None, config=None, use_gpu=True):
   execution enabled. This allows unittests to confirm the equivalence between
   eager and graph execution.
 
-  .. note::
+  ```{note}
     This decorator can only be used when executing eagerly in the outer scope.
+  ```
 
   Args:
     func: function to be annotated. If `func` is None, this method returns a

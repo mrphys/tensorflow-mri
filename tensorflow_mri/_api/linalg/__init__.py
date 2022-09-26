@@ -2,17 +2,22 @@
 # Do not edit.
 """Linear algebra operations."""
 
-from tensorflow_mri.python.util.linalg_imaging import LinearOperator as LinearOperator
-from tensorflow_mri.python.util.linalg_imaging import LinearOperatorAdjoint as LinearOperatorAdjoint
-from tensorflow_mri.python.util.linalg_imaging import LinearOperatorComposition as LinearOperatorComposition
-from tensorflow_mri.python.util.linalg_imaging import LinearOperatorAddition as LinearOperatorAddition
-from tensorflow_mri.python.util.linalg_imaging import LinearOperatorScaledIdentity as LinearOperatorScaledIdentity
-from tensorflow_mri.python.util.linalg_imaging import LinearOperatorDiag as LinearOperatorDiag
-from tensorflow_mri.python.util.linalg_imaging import LinearOperatorGramMatrix as LinearOperatorGramMatrix
-from tensorflow_mri.python.ops.linalg_ops import LinearOperatorNUFFT as LinearOperatorNUFFT
-from tensorflow_mri.python.ops.linalg_ops import LinearOperatorGramNUFFT as LinearOperatorGramNUFFT
-from tensorflow_mri.python.ops.linalg_ops import LinearOperatorFiniteDifference as LinearOperatorFiniteDifference
-from tensorflow_mri.python.ops.linalg_ops import LinearOperatorWavelet as LinearOperatorWavelet
-from tensorflow_mri.python.ops.linalg_ops import LinearOperatorMRI as LinearOperatorMRI
-from tensorflow_mri.python.ops.linalg_ops import LinearOperatorGramMRI as LinearOperatorGramMRI
-from tensorflow_mri.python.ops.linalg_ops import conjugate_gradient as conjugate_gradient
+from tensorflow.python.ops.linalg.linear_operator import LinearOperator as LinearOperator
+from tensorflow_mri.python.linalg.conjugate_gradient import conjugate_gradient as conjugate_gradient
+from tensorflow_mri.python.linalg.linear_operator_nd import LinearOperatorND as LinearOperatorND
+from tensorflow_mri.python.linalg.linear_operator_fft import LinearOperatorFFT as LinearOperatorFFT
+# from tensorflow_mri.python.linalg.linear_operator_addition_nd import LinearOperatorAddition as LinearOperatorAddition
+from tensorflow.python.ops.linalg.linear_operator_adjoint import LinearOperatorAdjoint as LinearOperatorAdjoint
+from tensorflow.python.ops.linalg.linear_operator_composition import LinearOperatorComposition as LinearOperatorComposition
+from tensorflow.python.ops.linalg.linear_operator_diag import LinearOperatorDiag as LinearOperatorDiag
+from tensorflow_mri.python.linalg.linear_operator_finite_difference import LinearOperatorFiniteDifference as LinearOperatorFiniteDifference
+from tensorflow.python.ops.linalg.linear_operator_identity import LinearOperatorIdentity as LinearOperatorIdentity
+from tensorflow.python.ops.linalg.linear_operator_identity import LinearOperatorScaledIdentity as LinearOperatorScaledIdentity
+from tensorflow_mri.python.linalg.linear_operator_gram_matrix import LinearOperatorGramMatrix as LinearOperatorGramMatrix
+from tensorflow.python.ops.linalg.linear_operator_inversion import LinearOperatorInversion as LinearOperatorInversion
+from tensorflow_mri.python.linalg.linear_operator_nufft import LinearOperatorNUFFT as LinearOperatorNUFFT
+from tensorflow_mri.python.linalg.linear_operator_nufft import LinearOperatorGramNUFFT as LinearOperatorGramNUFFT
+from tensorflow_mri.python.linalg.linear_operator_nufft import nudft_matrix as nudft_matrix
+from tensorflow_mri.python.linalg.linear_operator_mri import LinearOperatorMRI as LinearOperatorMRI
+from tensorflow_mri.python.linalg.linear_operator_mri import LinearOperatorGramMRI as LinearOperatorGramMRI
+from tensorflow_mri.python.linalg.linear_operator_wavelet import LinearOperatorWavelet as LinearOperatorWavelet

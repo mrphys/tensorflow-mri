@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,3 +22,28 @@ INTEGER_TYPES = SIGNED_INTEGER_TYPES + UNSIGNED_INTEGER_TYPES
 
 FLOATING_TYPES = [tf.float16, tf.float32, tf.float64]
 COMPLEX_TYPES = [tf.complex64, tf.complex128]
+
+
+def is_ref(x):
+  """Evaluates if the object has reference semantics.
+
+  An object is deemed "reference" if it is a `tf.Variable` instance or is
+  derived from a `tf.Module` with `dtype` and `shape` properties.
+
+  Args:
+    x: Any object.
+
+  Returns:
+    is_ref: Python `bool` indicating input is has nonreference semantics, i.e.,
+      is a `tf.Variable` or a `tf.Module` with `dtype` and `shape` properties.
+  """
+  return (
+      isinstance(x, tf.Variable) or
+      (isinstance(x, tf.Module) and hasattr(x, "dtype") and
+       hasattr(x, "shape")))
+
+
+def assert_not_ref_type(x, arg_name):
+  if is_ref(x):
+    raise TypeError(
+        f"Argument {arg_name} cannot be reference type. Found: {type(x)}.")

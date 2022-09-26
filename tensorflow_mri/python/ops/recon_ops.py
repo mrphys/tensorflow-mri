@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,130 +22,19 @@ import collections
 
 import tensorflow as tf
 
+from tensorflow_mri.python.coils import coil_combination
+from tensorflow_mri.python.linalg import conjugate_gradient
+from tensorflow_mri.python.linalg import linear_operator_gram_matrix
+from tensorflow_mri.python.linalg import linear_operator_mri
 from tensorflow_mri.python.ops import array_ops
-from tensorflow_mri.python.ops import coil_ops
 from tensorflow_mri.python.ops import convex_ops
 from tensorflow_mri.python.ops import fft_ops
 from tensorflow_mri.python.ops import image_ops
-from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.ops import math_ops
 from tensorflow_mri.python.ops import optimizer_ops
 from tensorflow_mri.python.ops import signal_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
-from tensorflow_mri.python.util import deprecation
-from tensorflow_mri.python.util import linalg_imaging
-
-
-@api_util.export("recon.adjoint", "recon.adj")
-def reconstruct_adj(kspace,
-                    image_shape,
-                    mask=None,
-                    trajectory=None,
-                    density=None,
-                    sensitivities=None,
-                    phase=None,
-                    sens_norm=True):
-  r"""Reconstructs an MR image using the adjoint MRI operator.
-
-  Given *k*-space data :math:`b`, this function estimates the corresponding
-  image as :math:`x = A^H b`, where :math:`A` is the MRI linear operator.
-
-  This operator supports Cartesian and non-Cartesian *k*-space data.
-
-  Additional density compensation and intensity correction steps are applied
-  depending on the input arguments.
-
-  This operator supports batched inputs. All batch shapes should be
-  broadcastable with each other.
-
-  This operator supports multicoil imaging. Coil combination is triggered
-  when `sensitivities` is not `None`. If you have multiple coils but wish to
-  reconstruct each coil separately, simply set `sensitivities` to `None`. The
-  coil dimension will then be treated as a standard batch dimension (i.e., it
-  becomes part of `...`).
-
-  Args:
-    kspace: A `Tensor`. The *k*-space samples. Must have type `complex64` or
-      `complex128`. `kspace` can be either Cartesian or non-Cartesian. A
-      Cartesian `kspace` must have shape
-      `[..., num_coils, *image_shape]`, where `...` are batch dimensions. A
-      non-Cartesian `kspace` must have shape `[..., num_coils, num_samples]`.
-      If not multicoil (`sensitivities` is `None`), then the `num_coils` axis
-      must be omitted.
-    image_shape: A `TensorShape` or a list of `ints`. Must have length 2 or 3.
-      The shape of the reconstructed image[s].
-    mask: An optional `Tensor` of type `bool`. The sampling mask. Must have
-      shape `[..., image_shape]`. `mask` should be passed for reconstruction
-      from undersampled Cartesian *k*-space. For each point, `mask` should be
-      `True` if the corresponding *k*-space sample was measured and `False`
-      otherwise.
-    trajectory: An optional `Tensor` of type `float32` or `float64`. Must have
-      shape `[..., num_samples, rank]`. `trajectory` should be passed for
-      reconstruction from non-Cartesian *k*-space.
-    density: An optional `Tensor` of type `float32` or `float64`. The sampling
-      densities. Must have shape `[..., num_samples]`. This input is only
-      relevant for non-Cartesian MRI reconstruction. If passed, the MRI linear
-      operator will include sampling density compensation. If `None`, the MRI
-      operator will not perform sampling density compensation.
-    sensitivities: An optional `Tensor` of type `complex64` or `complex128`.
-      The coil sensitivity maps. Must have shape
-      `[..., num_coils, *image_shape]`. If provided, a multi-coil parallel
-      imaging reconstruction will be performed.
-    phase: An optional `Tensor` of type `float32` or `float64`. Must have shape
-      `[..., *image_shape]`. A phase estimate for the reconstructed image. If
-      provided, a phase-constrained reconstruction will be performed. This
-      improves the conditioning of the reconstruction problem in applications
-      where there is no interest in the phase data. However, artefacts may
-      appear if an inaccurate phase estimate is passed.
-    sens_norm: A `boolean`. Whether to normalize coil sensitivities. Defaults to
-      `True`.
-
-  Returns:
-    A `Tensor`. The reconstructed image. Has the same type as `kspace` and
-    shape `[..., *image_shape]`, where `...` is the broadcasted batch shape of
-    all inputs.
-
-  Notes:
-    Reconstructs an image by applying the adjoint MRI operator to the *k*-space
-    data. This typically involves an inverse FFT or a (density-compensated)
-    NUFFT, and coil combination for multicoil inputs. This type of
-    reconstruction is often called zero-filled reconstruction, because missing
-    *k*-space samples are assumed to be zero. Therefore, the resulting image is
-    likely to display aliasing artefacts if *k*-space is not sufficiently
-    sampled according to the Nyquist criterion.
-  """
-  kspace = tf.convert_to_tensor(kspace)
-
-  # Create the linear operator.
-  operator = linalg_ops.LinearOperatorMRI(image_shape,
-                                          mask=mask,
-                                          trajectory=trajectory,
-                                          density=density,
-                                          sensitivities=sensitivities,
-                                          phase=phase,
-                                          fft_norm='ortho',
-                                          sens_norm=sens_norm)
-  rank = operator.rank
-
-  # Apply density compensation, if provided.
-  if density is not None:
-    dens_weights_sqrt = tf.math.sqrt(tf.math.reciprocal_no_nan(density))
-    dens_weights_sqrt = tf.cast(dens_weights_sqrt, kspace.dtype)
-    if operator.is_multicoil:
-      dens_weights_sqrt = tf.expand_dims(dens_weights_sqrt, axis=-2)
-    kspace *= dens_weights_sqrt
-
-  # Compute zero-filled image using the adjoint operator.
-  image = operator.H.transform(kspace)
-
-  # Apply intensity correction, if requested.
-  if operator.is_multicoil and sens_norm:
-    sens_weights_sqrt = tf.math.reciprocal_no_nan(
-        tf.norm(sensitivities, axis=-(rank + 1), keepdims=False))
-    image *= sens_weights_sqrt
-
-  return image
 
 
 @api_util.export("recon.least_squares", "recon.lstsq")
@@ -170,11 +59,12 @@ def reconstruct_lstsq(kspace,
   This is an iterative reconstruction method which formulates the image
   reconstruction problem as follows:
 
-  .. math::
+  $$
     \hat{x} = {\mathop{\mathrm{argmin}}_x} \left (\left\| Ax - y \right\|_2^2 + g(x) \right )
+  $$
 
-  where :math:`A` is the MRI `LinearOperator`, :math:`x` is the solution, `y` is
-  the measured *k*-space data, and :math:`g(x)` is an optional `ConvexFunction`
+  where $A$ is the MRI `LinearOperator`, $x$ is the solution, `y` is
+  the measured *k*-space data, and $g(x)$ is an optional `ConvexFunction`
   used for regularization.
 
   This operator supports Cartesian and non-Cartesian *k*-space data.
@@ -213,7 +103,8 @@ def reconstruct_lstsq(kspace,
       densities. Must have shape `[..., num_samples]`. This input is only
       relevant for non-Cartesian MRI reconstruction. If passed, the MRI linear
       operator will include sampling density compensation. If `None`, the MRI
-      operator will not perform sampling density compensation.
+      operator will not perform sampling density compensation. Providing
+      `density` may speed up convergence but results in suboptimal SNR.
     sensitivities: An optional `Tensor` of type `complex64` or `complex128`.
       The coil sensitivity maps. Must have shape
       `[..., num_coils, *image_shape]`. If provided, a multi-coil parallel
@@ -249,7 +140,7 @@ def reconstruct_lstsq(kspace,
     return_optimizer_state: A `boolean`. If `True`, returns the optimizer
       state along with the reconstructed image.
     toeplitz_nufft: A `boolean`. If `True`, uses the Toeplitz approach [5]
-      to compute :math:`F^H F x`, where :math:`F` is the non-uniform Fourier
+      to compute $F^H F x$, where $F$ is the non-uniform Fourier
       operator. If `False`, the same operation is performed using the standard
       NUFFT operation. The Toeplitz approach might be faster than the direct
       approach but is slightly less accurate. This argument is only relevant
@@ -278,28 +169,28 @@ def reconstruct_lstsq(kspace,
     it may be time-consuming, depending on the characteristics of the problem.
 
   References:
-    .. [1] Pruessmann, K.P., Weiger, M., Börnert, P. and Boesiger, P. (2001),
+    1. Pruessmann, K.P., Weiger, M., Börnert, P. and Boesiger, P. (2001),
       Advances in sensitivity encoding with arbitrary k-space trajectories.
       Magn. Reson. Med., 46: 638-651. https://doi.org/10.1002/mrm.1241
 
-    .. [2] Block, K.T., Uecker, M. and Frahm, J. (2007), Undersampled radial MRI
+    2. Block, K.T., Uecker, M. and Frahm, J. (2007), Undersampled radial MRI
       with multiple coils. Iterative image reconstruction using a total
       variation constraint. Magn. Reson. Med., 57: 1086-1098.
       https://doi.org/10.1002/mrm.21236
 
-    .. [3] Feng, L., Grimm, R., Block, K.T., Chandarana, H., Kim, S., Xu, J.,
+    3. Feng, L., Grimm, R., Block, K.T., Chandarana, H., Kim, S., Xu, J.,
       Axel, L., Sodickson, D.K. and Otazo, R. (2014), Golden-angle radial sparse
       parallel MRI: Combination of compressed sensing, parallel imaging, and
       golden-angle radial sampling for fast and flexible dynamic volumetric MRI.
       Magn. Reson. Med., 72: 707-717. https://doi.org/10.1002/mrm.24980
 
-    .. [4] Tsao, J., Boesiger, P., & Pruessmann, K. P. (2003). k-t BLAST and
+    4. Tsao, J., Boesiger, P., & Pruessmann, K. P. (2003). k-t BLAST and
       k-t SENSE: dynamic MRI with high frame rate exploiting spatiotemporal
       correlations. Magnetic Resonance in Medicine: An Official Journal of the
       International Society for Magnetic Resonance in Medicine, 50(5),
       1031-1042.
 
-    .. [5] Fessler, J. A., Lee, S., Olafsson, V. T., Shi, H. R., & Noll, D. C.
+    5. Fessler, J. A., Lee, S., Olafsson, V. T., Shi, H. R., & Noll, D. C.
       (2005). Toeplitz-based iterative image reconstruction for MRI with
       correction for magnetic field inhomogeneity. IEEE Transactions on Signal
       Processing, 53(9), 3393-3402.
@@ -321,21 +212,21 @@ def reconstruct_lstsq(kspace,
   kspace = tf.convert_to_tensor(kspace)
 
   # Create the linear operator.
-  operator = linalg_ops.LinearOperatorMRI(image_shape,
-                                          extra_shape=extra_shape,
-                                          mask=mask,
-                                          trajectory=trajectory,
-                                          density=density,
-                                          sensitivities=sensitivities,
-                                          phase=phase,
-                                          fft_norm='ortho',
-                                          sens_norm=sens_norm,
-                                          dynamic_domain=dynamic_domain)
+  operator = linear_operator_mri.LinearOperatorMRI(image_shape,
+                                                   extra_shape=extra_shape,
+                                                   mask=mask,
+                                                   trajectory=trajectory,
+                                                   density=density,
+                                                   sensitivities=sensitivities,
+                                                   phase=phase,
+                                                   fft_norm='ortho',
+                                                   sens_norm=sens_norm,
+                                                   dynamic_domain=dynamic_domain)
   rank = operator.rank
 
   # If using Toeplitz NUFFT, we need to use the specialized Gram MRI operator.
   if toeplitz_nufft and operator.is_non_cartesian:
-    gram_operator = linalg_ops.LinearOperatorGramMRI(
+    gram_operator = linear_operator_mri.LinearOperatorGramMRI(
         image_shape,
         extra_shape=extra_shape,
         mask=mask,
@@ -352,8 +243,7 @@ def reconstruct_lstsq(kspace,
     gram_operator = None
 
   # Apply density compensation, if provided.
-  if density is not None:
-    kspace *= operator._dens_weights_sqrt  # pylint: disable=protected-access
+  kspace = operator.preprocess(kspace, adjoint=True)
 
   initial_image = operator.H.transform(kspace)
 
@@ -372,7 +262,7 @@ def reconstruct_lstsq(kspace,
       reg_operator = None
       reg_prior = None
 
-    operator_gm = linalg_imaging.LinearOperatorGramMatrix(
+    operator_gm = linear_operator_gram_matrix.LinearOperatorGramMatrix(
         operator, reg_parameter=reg_parameter, reg_operator=reg_operator,
         gram_operator=gram_operator)
     rhs = initial_image
@@ -383,7 +273,8 @@ def reconstruct_lstsq(kspace,
             reg_operator.transform(reg_prior), adjoint=True)
       rhs += tf.cast(reg_parameter, reg_prior.dtype) * reg_prior
     # Solve the (maybe regularized) linear system.
-    result = linalg_ops.conjugate_gradient(operator_gm, rhs, **optimizer_kwargs)
+    result = conjugate_gradient.conjugate_gradient(
+        operator_gm, rhs, **optimizer_kwargs)
     image = result.x
 
   elif optimizer == 'admm':
@@ -438,16 +329,7 @@ def reconstruct_lstsq(kspace,
   else:
     raise ValueError(f"Unknown optimizer: {optimizer}")
 
-  # Apply temporal Fourier operator, if necessary.
-  if operator.is_dynamic and operator.dynamic_domain == 'frequency':
-    image = fft_ops.ifftn(image, axes=[operator.dynamic_axis],
-                          norm='ortho', shift=True)
-
-  # Apply intensity correction, if requested.
-  if operator.is_multicoil and sens_norm:
-    sens_weights_sqrt = tf.math.reciprocal_no_nan(
-        tf.norm(sensitivities, axis=-(rank + 1), keepdims=False))
-    image *= sens_weights_sqrt
+  image = operator.postprocess(image, adjoint=True)
 
   # If necessary, filter the image to remove k-space corners. This can be
   # done if the trajectory has circular coverage and does not cover the k-space
@@ -523,7 +405,7 @@ def reconstruct_sense(kspace,
     ValueError: If `kspace` and `sensitivities` have incompatible batch shapes.
 
   References:
-    .. [1] Pruessmann, K.P., Weiger, M., Scheidegger, M.B. and Boesiger, P.
+    1. Pruessmann, K.P., Weiger, M., Scheidegger, M.B. and Boesiger, P.
       (1999), SENSE: Sensitivity encoding for fast MRI. Magn. Reson. Med.,
       42: 952-962.
       https://doi.org/10.1002/(SICI)1522-2594(199911)42:5<952::AID-MRM16>3.0.CO;2-S
@@ -704,7 +586,7 @@ def reconstruct_grappa(kspace,
     the spatial shape.
 
   References:
-    .. [1] Griswold, M.A., Jakob, P.M., Heidemann, R.M., Nittka, M., Jellus, V.,
+    1. Griswold, M.A., Jakob, P.M., Heidemann, R.M., Nittka, M., Jellus, V.,
       Wang, J., Kiefer, B. and Haase, A. (2002), Generalized autocalibrating
       partially parallel acquisitions (GRAPPA). Magn. Reson. Med., 47:
       1202-1210. https://doi.org/10.1002/mrm.10171
@@ -853,9 +735,9 @@ def reconstruct_grappa(kspace,
 
   # Combine coils if requested.
   if combine_coils:
-    result = coil_ops.combine_coils(result,
-                                    maps=sensitivities,
-                                    coil_axis=-rank-1)
+    result = coil_combination.combine_coils(result,
+                                            maps=sensitivities,
+                                            coil_axis=-rank-1)
 
   return result
 
@@ -951,15 +833,10 @@ def _flatten_last_dimensions(x):
 
 
 @api_util.export("recon.partial_fourier", "recon.pf")
-@deprecation.deprecated_args(
-    deprecation.REMOVAL_DATE['0.19.0'],
-    'Use argument `preserve_phase` instead.',
-    ('return_complex', None))
 def reconstruct_pf(kspace,
                    factors,
                    preserve_phase=None,
                    return_kspace=False,
-                   return_complex=None,
                    method='zerofill',
                    **kwargs):
   """Reconstructs an MR image using partial Fourier methods.
@@ -980,8 +857,6 @@ def reconstruct_pf(kspace,
       be complex-valued.
     return_kspace: A `boolean`. If `True`, returns the filled *k*-space instead
       of the reconstructed images. This is always complex-valued.
-    return_complex: A `boolean`. If `True`, returns complex instead of
-      real-valued images.
     method: A `string`. The partial Fourier reconstruction algorithm. Must be
       one of `"zerofill"`, `"homodyne"` (homodyne detection method) or `"pocs"`
       (projection onto convex sets method).
@@ -1012,10 +887,10 @@ def reconstruct_pf(kspace,
         POCS algorithm. Defaults to `10`.
 
   References:
-    .. [1] Noll, D. C., Nishimura, D. G., & Macovski, A. (1991). Homodyne
+    1. Noll, D. C., Nishimura, D. G., & Macovski, A. (1991). Homodyne
       detection in magnetic resonance imaging. IEEE transactions on medical
       imaging, 10(2), 154-163.
-    .. [2] Haacke, E. M., Lindskogj, E. D., & Lin, W. (1991). A fast, iterative,
+    2. Haacke, E. M., Lindskogj, E. D., & Lin, W. (1991). A fast, iterative,
       partial-Fourier technique capable of local phase recovery. Journal of
       Magnetic Resonance (1969), 92(1), 126-145.
   """
@@ -1028,8 +903,6 @@ def reconstruct_pf(kspace,
     f"`factors` must be greater than or equal to 0.5, but got: {factors}"))
   tf.debugging.assert_less_equal(factors, 1.0, message=(
     f"`factors` must be less than or equal to 1.0, but got: {factors}"))
-  preserve_phase = deprecation.deprecated_argument_lookup(
-      'preserve_phase', preserve_phase, 'return_complex', return_complex)
   if preserve_phase is None:
     preserve_phase = False
 

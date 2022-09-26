@@ -1,4 +1,4 @@
-/*Copyright 2021 University College London. All Rights Reserved.
+/*Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -126,7 +126,7 @@ as follows:
 * A fixed-density portion between `vd_outer_cutoff` and 1.0, sampled at
   `vd_outer_density` times the Nyquist rate.
 
-.. [1] Pipe, J.G. and Zwart, N.R. (2014), Spiral trajectory design: A flexible
+1. Pipe, J.G. and Zwart, N.R. (2014), Spiral trajectory design: A flexible
   numerical algorithm and base analytical equations. Magn. Reson. Med, 71:
   278-285. https://doi.org/10.1002/mrm.24675
 

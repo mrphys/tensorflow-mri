@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ from tensorflow.python.util import deprecation
 # The following dictionary contains the removal date for deprecations
 # at a given release.
 REMOVAL_DATE = {
-    '0.19.0': '2022-09-01',
     '0.20.0': '2022-10-01'
 }
 

@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ class PeakSignalToNoiseRatioTest(test_util.TestCase):
     img1 = tf.expand_dims(img1, -1)
     img2 = tf.expand_dims(img2, -1)
 
-    result = image_ops.psnr(img1, img2, max_val=255, rank=2)
+    result = image_ops.psnr(img1, img2, max_val=255, image_dims=2)
     self.assertAllClose(result, 22.73803845)
 
     result = image_ops.psnr2d(img1, img2, max_val=255)
@@ -60,7 +60,7 @@ class PeakSignalToNoiseRatioTest(test_util.TestCase):
     img1 = tf.expand_dims(img1, 0)
     img2 = tf.expand_dims(img2, 0)
 
-    result = image_ops.psnr(img1, img2, max_val=255, rank=2)
+    result = image_ops.psnr(img1, img2, max_val=255, image_dims=2)
     self.assertAllClose(result, [22.73803845])
 
   @test_util.run_in_graph_and_eager_modes
@@ -94,7 +94,7 @@ class PeakSignalToNoiseRatioTest(test_util.TestCase):
            [17.80788841, 18.18428580],
            [18.06558658, 17.16817389]]
 
-    result = image_ops.psnr(img1, img2, max_val=255, rank=2)
+    result = image_ops.psnr(img1, img2, max_val=255, image_dims=2)
     self.assertAllClose(result, ref)
 
   @test_util.run_in_graph_and_eager_modes
@@ -132,7 +132,7 @@ class PeakSignalToNoiseRatioTest(test_util.TestCase):
     img1 = tf.expand_dims(img1, -1)
     img2 = tf.expand_dims(img2, -1)
 
-    result = image_ops.psnr(img1, img2, rank=3)
+    result = image_ops.psnr(img1, img2, image_dims=3)
     self.assertAllClose(result, 32.3355765)
 
   @test_util.run_in_graph_and_eager_modes
@@ -170,7 +170,7 @@ class PeakSignalToNoiseRatioTest(test_util.TestCase):
     img1 = tf.reshape(img1, (3, 2) + img1.shape[1:])
     img2 = tf.reshape(img2, (3, 2) + img2.shape[1:])
 
-    result = image_ops.psnr(img1, img2, max_val=255, rank=3)
+    result = image_ops.psnr(img1, img2, max_val=255, image_dims=3)
     self.assertAllClose(result, ref, rtol=1e-3, atol=1e-3)
 
     result = image_ops.psnr3d(img1, img2, max_val=255)
@@ -190,7 +190,7 @@ class PeakSignalToNoiseRatioTest(test_util.TestCase):
     img1 = tf.transpose(img1, [0, 2, 3, 4, 1])
     img2 = tf.transpose(img2, [0, 2, 3, 4, 1])
 
-    result = image_ops.psnr(img1, img2, max_val=255, rank=3)
+    result = image_ops.psnr(img1, img2, max_val=255, image_dims=3)
     self.assertAllClose(result, ref, rtol=1e-4, atol=1e-4)
 
   def test_psnr_invalid_rank(self):
@@ -228,7 +228,7 @@ class MultiscaleStructuralSimilarityTest(test_util.TestCase):
     img1 = tf.expand_dims(img1, -1)
     img2 = tf.expand_dims(img2, -1)
 
-    result = image_ops.ssim_multiscale(img1, img2, max_val=255, rank=2)
+    result = image_ops.ssim_multiscale(img1, img2, max_val=255, image_dims=2)
     self.assertAllClose(result, 0.8270784)
 
     result = image_ops.ssim2d_multiscale(img1, img2, max_val=255)
@@ -245,7 +245,7 @@ class MultiscaleStructuralSimilarityTest(test_util.TestCase):
     img1 = tf.expand_dims(img1, 0)
     img2 = tf.expand_dims(img2, 0)
 
-    result = image_ops.ssim_multiscale(img1, img2, max_val=255, rank=2)
+    result = image_ops.ssim_multiscale(img1, img2, max_val=255, image_dims=2)
     self.assertAllClose(result, [0.8270784])
 
   @test_util.run_in_graph_and_eager_modes
@@ -279,7 +279,7 @@ class MultiscaleStructuralSimilarityTest(test_util.TestCase):
            [0.71863150, 0.76113180],
            [0.77840980, 0.71724670]]
 
-    result = image_ops.ssim_multiscale(img1, img2, max_val=255, rank=2)
+    result = image_ops.ssim_multiscale(img1, img2, max_val=255, image_dims=2)
     self.assertAllClose(result, ref, rtol=1e-5, atol=1e-5)
 
     result = image_ops.ssim2d_multiscale(img1, img2, max_val=255)
@@ -330,7 +330,7 @@ class MultiscaleStructuralSimilarityTest(test_util.TestCase):
     # img1 = tf.expand_dims(img1, -1)
     # img2 = tf.expand_dims(img2, -1)
 
-    # result = image_ops.ssim_multiscale(img1, img2, rank=3)
+    # result = image_ops.ssim_multiscale(img1, img2, image_dims=3)
 
     # self.assertAllClose(result, 0.96301770)
 
@@ -579,7 +579,7 @@ class BaseTestCases():
       img1 = tf.expand_dims(img1, -1)
       img2 = tf.expand_dims(img2, -1)
 
-      result = self.test_fn(img1, img2, max_val=255, rank=2)
+      result = self.test_fn(img1, img2, max_val=255, image_dims=2)
       self.assertAllClose(result, self.expected[test_name],
                           rtol=1e-5, atol=1e-5)
 
@@ -604,7 +604,7 @@ class BaseTestCases():
       img1 = tf.expand_dims(img1, 0)
       img2 = tf.expand_dims(img2, 0)
 
-      result = self.test_fn(img1, img2, max_val=255, rank=2)
+      result = self.test_fn(img1, img2, max_val=255, image_dims=2)
       self.assertAllClose(result, self.expected[test_name],
                           rtol=1e-5, atol=1e-5)
 
@@ -648,7 +648,7 @@ class BaseTestCases():
       img1 = tf.reshape(img1, (3, 2) + img1.shape[1:])
       img2 = tf.reshape(img2, (3, 2) + img2.shape[1:])
 
-      result = self.test_fn(img1, img2, max_val=255, rank=2)
+      result = self.test_fn(img1, img2, max_val=255, image_dims=2)
       self.assertAllClose(result, self.expected[test_name],
                           rtol=1e-4, atol=1e-4)
 
@@ -686,7 +686,7 @@ class BaseTestCases():
       img1 = tf.expand_dims(img1, -1)
       img2 = tf.expand_dims(img2, -1)
 
-      result = self.test_fn(img1, img2, rank=3)
+      result = self.test_fn(img1, img2, image_dims=3)
       self.assertAllClose(result, self.expected[test_name])
 
     @test_util.run_in_graph_and_eager_modes
@@ -786,7 +786,7 @@ class PhantomTest(test_util.TestCase):
     result = image_ops.phantom(shape=[128, 128, 128])
     self.assertAllClose(result, expected)
 
-  @parameterized.product(rank=[2, 3],
+  @parameterized.product(image_dims=[2, 3],
                          dtype=[tf.float32, tf.complex64])
   @test_util.run_in_graph_and_eager_modes
   def test_parallel_imaging(self, rank, dtype): # pylint: disable=missing-param-doc
@@ -870,7 +870,7 @@ class PhantomTest(test_util.TestCase):
 
 
 class TestResolveBatchAndImageDims(test_util.TestCase):
-  """Tests for `_resolve_batch_and_image_dims`."""
+  """Tests for `resolve_batch_and_image_dims`."""
   # pylint: disable=missing-function-docstring
   @parameterized.parameters(
       # rank, batch_dims, image_dims, expected_batch_dims, expected_image_dims
@@ -885,7 +885,7 @@ class TestResolveBatchAndImageDims(test_util.TestCase):
       self, rank, input_batch_dims, input_image_dims,
       expected_batch_dims, expected_image_dims):
     image = tf.zeros((4,) * rank)
-    batch_dims, image_dims = image_ops._resolve_batch_and_image_dims(  # pylint: disable=protected-access
+    batch_dims, image_dims = image_ops.resolve_batch_and_image_dims(  # pylint: disable=protected-access
         image, input_batch_dims, input_image_dims)
     self.assertEqual(expected_batch_dims, batch_dims)
     self.assertEqual(expected_image_dims, image_dims)

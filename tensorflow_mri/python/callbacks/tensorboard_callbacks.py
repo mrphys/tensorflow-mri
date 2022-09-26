@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -53,7 +53,10 @@ class TensorBoardImages(tf.keras.callbacks.Callback):
       logs. Defaults to 1.
     max_images: Maximum number of images to be written at each step. Defaults
       to 3.
-    summary_name: Name for the image summaries. Defaults to `'val_images'`.
+    summary_name: Name for the image summaries. Defaults to `'val_images'`. Can
+      be a list of names if you wish to write multiple image summaries for each
+      example. In this case, you must also specify a list of display functions
+      in the `display_fn` parameter.
     volume_mode: Specifies how to save 3D images. Must be `None`, `'gif'` or an
       integer. If `None` (default), inputs are expected to be 2D images. In
       `'gif'` mode, each 3D volume is stored as an animated GIF. If an integer,
@@ -63,7 +66,9 @@ class TensorBoardImages(tf.keras.callbacks.Callback):
       image to be written to TensorBoard. Overrides the default function, which
       concatenates selected features, labels and predictions according to
       `concat_axis`, `feature_keys`, `label_keys`, `prediction_keys` and
-      `complex_part`.
+      `complex_part`. Can be a list of callables if you wish to write multiple
+      image summaries for each example. In this case, you must also specify a
+      list of summary names in the `summary_name` parameter.
     concat_axis: An `int`. The axis along which to concatenate
       features/labels/predictions. Defaults to -2.
     feature_keys: A list of `str` or `int` specifying which features to
@@ -105,6 +110,13 @@ class TensorBoardImages(tf.keras.callbacks.Callback):
     self.label_keys = label_keys
     self.prediction_keys = prediction_keys
     self.complex_part = complex_part
+    if not isinstance(self.summary_name, (list, tuple)):
+      self.summary_name = (self.summary_name,)
+    if not isinstance(self.display_fn, (list, tuple)):
+      self.display_fn = (self.display_fn,)
+    if len(self.summary_name) != len(self.display_fn):
+      raise ValueError(
+          "The number of summary names and display functions must be the same.")
 
   def on_epoch_end(self, epoch, logs=None): # pylint: disable=unused-argument
     """Called at the end of an epoch."""
@@ -122,7 +134,7 @@ class TensorBoardImages(tf.keras.callbacks.Callback):
     image_dir = os.path.join(self.log_dir, 'image')
     self.file_writer = tf.summary.create_file_writer(image_dir)
 
-    images = []
+    images = {k: [] for k in self.summary_name}
 
     # For each batch.
     for batch in self.x:
@@ -140,29 +152,30 @@ class TensorBoardImages(tf.keras.callbacks.Callback):
       y_pred = nest_util.unstack_nested_tensors(y_pred)
 
       # Create display images.
-      images.extend(list(map(self.display_fn, x, y, y_pred)))
+      for name, func in zip(self.summary_name, self.display_fn):
+        images[name].extend(list(map(func, x, y, y_pred)))
 
       # Check how many outputs we have processed.
-      if len(images) >= self.max_images:
+      if len(images[tuple(images.keys())[0]]) >= self.max_images:
         break
 
-    # Stack all the images.
-    images = tf.stack(images)
+    # Stack all the images. Converting to tensor is required to avoid unexpected
+    # casting (e.g., without it, a list of NumPy arrays of uint8 inputs returns
+    # an int32 tensor).
+    images = {k: tf.stack([tf.convert_to_tensor(image) for image in v])
+              for k, v in images.items()}
 
     # Keep only selected slice, if requested.
     if isinstance(self.volume_mode, int):
-      images = images[:, self.volume_mode, ...]
+      images = {k: v[:, self.volume_mode, ...] for k, v in images.items()}
 
     # Write images.
     with self.file_writer.as_default(step=step):
-      if self.volume_mode == 'gif':
-        image_summary.gif(self.summary_name,
-                          images,
-                          max_outputs=self.max_images)
-      else:
-        tf.summary.image(self.summary_name,
-                         images,
-                         max_outputs=self.max_images)
+      for name, image in images.items():
+        if self.volume_mode == 'gif':
+          image_summary.gif(name, image, max_outputs=self.max_images)
+        else:
+          tf.summary.image(name, image, max_outputs=self.max_images)
 
     # Close writer.
     self.file_writer.close()

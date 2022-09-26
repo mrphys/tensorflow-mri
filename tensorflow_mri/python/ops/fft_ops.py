@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,6 +20,13 @@ import tensorflow_nufft as tfft
 from tensorflow_mri.python.ops import array_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
+from tensorflow_mri.python.util import sys_util
+
+
+if sys_util.is_op_library_enabled():
+  # Load library in order to register the FFT kernels.
+  _mri_ops = tf.load_op_library(
+      tf.compat.v1.resource_loader.get_path_to_datafile('_mri_ops.so'))
 
 
 @api_util.export("signal.fft")
@@ -30,8 +37,9 @@ def fftn(x, shape=None, axes=None, norm='backward', shift=False):
   number of axes in an `M`-dimensional array by means of the Fast Fourier
   Transform (FFT).
 
-  .. note::
+  ```{note}
     `N` must be 1, 2 or 3.
+  ```
 
   Args:
     x: A `Tensor`. Must be one of the following types: `complex64`,
@@ -80,8 +88,9 @@ def ifftn(x, shape=None, axes=None, norm='backward', shift=False):
   Transform over any number of axes in an M-dimensional array by means of
   the Fast Fourier Transform (FFT).
 
-  .. note::
+  ```{note}
     `N` must be 1, 2 or 3.
+  ```
 
   Args:
     x: A `Tensor`. Must be one of the following types: `complex64`,

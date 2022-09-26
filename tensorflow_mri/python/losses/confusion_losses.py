@@ -1,4 +1,4 @@
-# Copyright 2022 University College London. All Rights Reserved.
+# Copyright 2022 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -228,8 +228,9 @@ class FocalTverskyLoss(ConfusionLoss):
 
   The focal Tversky loss is computed as:
 
-  .. math::
+  $$
     L = \left ( 1 - \frac{\mathrm{TP} + \epsilon}{\mathrm{TP} + \alpha \mathrm{FP} + \beta \mathrm{FN} + \epsilon} \right ) ^ \gamma
+  $$
 
   This loss allows control over the relative importance of false positives and
   false negatives through the `alpha` and `beta` parameters, which may be useful
@@ -244,9 +245,9 @@ class FocalTverskyLoss(ConfusionLoss):
     epsilon: A `float`. A smoothing factor. Defaults to 1e-5.
 
   Notes:
-    [1] and [2] use inverted notations for the :math:`\alpha` and :math:`\beta`
+    [1] and [2] use inverted notations for the $\alpha$ and $\beta$
     parameters. Here we use the notation of [1]. Also note that [2] refers to
-    :math:`\gamma` as :math:`\frac{1}{\gamma}`.
+    $\gamma$ as $\frac{1}{\gamma}$.
 
   References:
     [1] Salehi, S. S. M., Erdogmus, D., & Gholipour, A. (2017, September).
@@ -301,8 +302,9 @@ class TverskyLoss(FocalTverskyLoss):
 
   The Tversky loss is computed as:
 
-  .. math::
+  $$
     L = \left ( 1 - \frac{\mathrm{TP} + \epsilon}{\mathrm{TP} + \alpha \mathrm{FP} + \beta \mathrm{FN} + \epsilon} \right )
+  $$
 
   Args:
     alpha: A `float`. Weight given to false positives. Defaults to 0.3.
@@ -339,8 +341,9 @@ class F1Loss(TverskyLoss):
 
   The F1 loss is computed as:
 
-  .. math::
+  $$
     L = \left ( 1 - \frac{\mathrm{TP} + \epsilon}{\mathrm{TP} + \frac{1}{2} \mathrm{FP} + \frac{1}{2} \mathrm{FN} + \epsilon} \right )
+  $$
 
   Args:
     epsilon: A `float`. A smoothing factor. Defaults to 1e-5.
@@ -373,8 +376,9 @@ class IoULoss(TverskyLoss):
 
   The IoU loss is computed as:
 
-  .. math::
+  $$
     L = \left ( 1 - \frac{\mathrm{TP} + \epsilon}{\mathrm{TP} + \mathrm{FP} + \mathrm{FN} + \epsilon} \right )
+  $$
 
   Args:
     epsilon: A `float`. A smoothing factor. Defaults to 1e-5.

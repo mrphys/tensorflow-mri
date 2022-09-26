@@ -1,4 +1,4 @@
-# Copyright 2022 University College London. All Rights Reserved.
+# Copyright 2022 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Convolutional layers."""
+"""Pooling layers."""
 
 import string
 
@@ -23,13 +23,12 @@ from tensorflow_mri.python.util import api_util
 
 EXTENSION_NOTE = string.Template("""
 
-  .. note::
+  ```{note}
     This layer can be used as a drop-in replacement for
-    `tf.keras.layers.${name}`_. However, this one also supports complex-valued
+    `tf.keras.layers.${name}`. However, this one also supports complex-valued
     pooling. Simply pass `dtype='complex64'` or `dtype='complex128'` to the
     layer constructor.
-
-  .. _tf.keras.layers.${name}: https://www.tensorflow.org/api_docs/python/tf/keras/layers/${name}
+  ```
 
 """)
 
@@ -53,7 +52,7 @@ def complex_pool(base):
   if issubclass(base, (tf.keras.layers.AveragePooling1D,
                        tf.keras.layers.AveragePooling2D,
                        tf.keras.layers.AveragePooling3D)):
-    def call(self, inputs):
+    def call(self, inputs):  # pylint: arguments-differ
       if tf.as_dtype(self.dtype).is_complex:
         return tf.dtypes.complex(
             base.call(self, tf.math.real(inputs)),
@@ -65,7 +64,7 @@ def complex_pool(base):
   elif issubclass(base, (tf.keras.layers.MaxPooling1D,
                          tf.keras.layers.MaxPooling2D,
                          tf.keras.layers.MaxPooling3D)):
-    def call(self, inputs):
+    def call(self, inputs):  # pylint: arguments-differ
       if tf.as_dtype(self.dtype).is_complex:
         # For complex numbers the max is computed according to the magnitude
         # or absolute value of the complex input. To do this we rely on

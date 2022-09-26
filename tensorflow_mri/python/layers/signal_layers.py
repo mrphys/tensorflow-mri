@@ -1,4 +1,4 @@
-# Copyright 2022 University College London. All Rights Reserved.
+# Copyright 2022 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ class DWT(tf.keras.layers.Layer):
     else:
       raise NotImplementedError('rank must be 1, 2, or 3')
 
-  def call(self, inputs):  # pylint: disable=missing-function-docstring
+  def call(self, inputs):  # pylint: disable=missing-function-docstring,arguments-differ
     # If not using dict format, convert input to dict.
     if self.inverse and not self.format_dict:
       if not isinstance(inputs, (list, tuple)):

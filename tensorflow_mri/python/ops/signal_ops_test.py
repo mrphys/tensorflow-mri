@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -58,6 +58,36 @@ class FilterTest(test_util.TestCase):
     expected = [0.7940861, 0.99457043, 0.9966006,
                 0.996817, 0.9963527, 0.7940861]
     result = signal_ops.atanfilt(x)
+    self.assertAllClose(expected, result)
+
+  def test_rect(self):
+    """Test rectangular function."""
+    x = [-3.1, -1.3, -0.2, 0.0, 0.4, 1.0, 3.1]
+    expected = [0.0, 0.0, 1.0, 1.0, 1.0, 0.5, 0.0]
+    result = signal_ops.rect(x, cutoff=1.0)
+    self.assertAllClose(expected, result)
+
+  def test_separable_rect(self):
+    """Test separable rectangular function."""
+    x = array_ops.meshgrid(
+        [-2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0],
+        [-2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0])
+    expected = [[0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  ],
+                [0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  ],
+                [0.  , 0.  , 0.  , 0.25, 0.5 , 0.25, 0.  , 0.  , 0.  ],
+                [0.  , 0.  , 0.  , 0.5 , 1.  , 0.5 , 0.  , 0.  , 0.  ],
+                [0.  , 0.  , 0.  , 0.5 , 1.  , 0.5 , 0.  , 0.  , 0.  ],
+                [0.  , 0.  , 0.  , 0.5 , 1.  , 0.5 , 0.  , 0.  , 0.  ],
+                [0.  , 0.  , 0.  , 0.25, 0.5 , 0.25, 0.  , 0.  , 0.  ],
+                [0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  ],
+                [0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  ]]
+
+    separable_rect = signal_ops.separable_window(signal_ops.rect)
+
+    result = separable_rect(x, (1.0, 0.5))
+    self.assertAllClose(expected, result)
+
+    result = separable_rect(x, cutoff=(1.0, 0.5))
     self.assertAllClose(expected, result)
 
 
@@ -142,6 +172,7 @@ class KSpaceFilterTest(test_util.TestCase):
     result = signal_ops.filter_kspace(
         kspace, trajectory=traj, filter_fn=filter_fn)
     self.assertAllClose(expected, result)
+
 
 if __name__ == '__main__':
   tf.test.main()

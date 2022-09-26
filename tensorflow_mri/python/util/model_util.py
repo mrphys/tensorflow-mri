@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -42,7 +42,13 @@ _ND_MODELS = {
     ('ConvBlock', 1): conv_blocks.ConvBlock1D,
     ('ConvBlock', 2): conv_blocks.ConvBlock2D,
     ('ConvBlock', 3): conv_blocks.ConvBlock3D,
+    ('ConvBlockLSTM', 1): conv_blocks.ConvBlockLSTM1D,
+    ('ConvBlockLSTM', 2): conv_blocks.ConvBlockLSTM2D,
+    ('ConvBlockLSTM', 3): conv_blocks.ConvBlockLSTM3D,
     ('UNet', 1): conv_endec.UNet1D,
     ('UNet', 2): conv_endec.UNet2D,
-    ('UNet', 3): conv_endec.UNet3D
+    ('UNet', 3): conv_endec.UNet3D,
+    ('UNetLSTM', 1): conv_endec.UNetLSTM1D,
+    ('UNetLSTM', 2): conv_endec.UNetLSTM2D,
+    ('UNetLSTM', 3): conv_endec.UNetLSTM3D
 }

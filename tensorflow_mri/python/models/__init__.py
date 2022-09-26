@@ -1,4 +1,4 @@
-# Copyright 2022 University College London. All Rights Reserved.
+# Copyright 2022 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,3 +16,4 @@
 
 from tensorflow_mri.python.models import conv_blocks
 from tensorflow_mri.python.models import conv_endec
+from tensorflow_mri.python.models import graph_like_network

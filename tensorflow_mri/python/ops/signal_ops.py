@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -90,7 +90,7 @@ def atanfilt(arg, cutoff=np.pi, beta=100.0, name=None):
     A `Tensor` of shape `arg.shape`.
 
   References:
-    .. [1] Pruessmann, K.P., Weiger, M., Börnert, P. and Boesiger, P. (2001),
+    1. Pruessmann, K.P., Weiger, M., Börnert, P. and Boesiger, P. (2001),
       Advances in sensitivity encoding with arbitrary k-space trajectories.
       Magn. Reson. Med., 46: 638-651. https://doi.org/10.1002/mrm.1241
   """
@@ -99,12 +99,79 @@ def atanfilt(arg, cutoff=np.pi, beta=100.0, name=None):
     return 0.5 + (1.0 / np.pi) * tf.math.atan(beta * (cutoff - arg) / cutoff)
 
 
+@api_util.export("signal.rect")
+def rect(arg, cutoff=np.pi, name=None):
+  r"""Returns the rectangular function.
+
+  The rectangular function is defined as:
+
+  $$
+    \operatorname{rect}(x) = \Pi(t) =
+      \left\{\begin{array}{rl}
+        0, & \text{if } |x| > \pi \\
+        \frac{1}{2}, & \text{if } |x| = \pi \\
+        1, & \text{if } |x| < \pi.
+      \end{array}\right.
+  $$
+
+  Args:
+    arg: The input `tf.Tensor`.
+    cutoff: A scalar `tf.Tensor` in the range `[0, pi]`.
+      The cutoff frequency of the filter.
+    name: Name to use for the scope.
+
+  Returns:
+    A `tf.Tensor` with the same shape and type as `arg`.
+  """
+  with tf.name_scope(name or 'rect'):
+    arg = tf.convert_to_tensor(arg)
+    one = tf.constant(1.0, dtype=arg.dtype)
+    zero = tf.constant(0.0, dtype=arg.dtype)
+    half = tf.constant(0.5, dtype=arg.dtype)
+    return tf.where(tf.math.abs(arg) == cutoff,
+                    half, tf.where(tf.math.abs(arg) < cutoff, one, zero))
+
+
+@api_util.export("signal.separable_window")
+def separable_window(func):
+  """Returns a function that computes a separable window.
+
+  This function creates a separable N-D filters as the outer product of 1D
+  filters along different dimensions.
+
+  Args:
+    func: A 1D window function. Must have signature `func(x, *args, **kwargs)`.
+
+  Returns:
+    A function that computes a separable window. Has signature
+    `func(x, *args, **kwargs)`, where `x` is a `tf.Tensor` of shape `[..., N]`
+    and each element of `args` and `kwargs is a `tf.Tensor` of shape `[N, ...]`,
+    which will be unpacked along the first dimension.
+  """
+  def wrapper(x, *args, **kwargs):
+    # Convert each input to a tensor.
+    args = tuple(tf.convert_to_tensor(arg) for arg in args)
+    kwargs = {k: tf.convert_to_tensor(v) for k, v in kwargs.items()}
+    def fn(accumulator, current):
+      x, args, kwargs = current
+      return accumulator * func(x, *args, **kwargs)
+    # Move last axis to front.
+    perm = tf.concat([[tf.rank(x) - 1], tf.range(0, tf.rank(x) - 1)], 0)
+    x = tf.transpose(x, perm)
+    # Initialize as 1.0.
+    initializer = tf.ones_like(x[0, ...])
+    return tf.foldl(fn, (x, args, kwargs), initializer=initializer)
+  return wrapper
+
+
 @api_util.export("signal.filter_kspace")
 def filter_kspace(kspace,
                   trajectory=None,
                   filter_fn='hamming',
                   filter_rank=None,
-                  filter_kwargs=None):
+                  filter_kwargs=None,
+                  separable=False,
+                  name=None):
   """Filter *k*-space.
 
   Multiplies *k*-space by a filtering function.
@@ -114,45 +181,73 @@ def filter_kspace(kspace,
     trajectory: A `Tensor` of shape `kspace.shape + [N]`, where `N` is the
       number of spatial dimensions. If `None`, `kspace` is assumed to be
       Cartesian.
-    filter_fn: A `str` (one of `'hamming'`, `'hann'` or `'atanfilt'`) or a
-      callable that accepts a coordinate array and returns corresponding filter
-      values.
+    filter_fn: A `str` (one of `'rect'`, `'hamming'`, `'hann'` or `'atanfilt'`)
+      or a callable that accepts a coordinates array and returns corresponding
+      filter values. The passed coordinates array will have shape `kspace.shape`
+      if `separable=False` and `[*kspace.shape, N]` if `separable=True`.
     filter_rank: An `int`. The rank of the filter. Only relevant if *k*-space is
       Cartesian. Defaults to `kspace.shape.rank`.
     filter_kwargs: A `dict`. Additional keyword arguments to pass to the
       filtering function.
+    separable: A `boolean`. If `True`, the input *k*-space will be filtered
+      using an N-D separable window instead of a circularly symmetric window.
+      If `filter_fn` has one of the default string values, the function is
+      automatically made separable. If `filter_fn` is a custom callable, it is
+      the responsibility of the user to ensure that the passed callable is
+      appropriate.
+    name: Name to use for the scope.
 
   Returns:
     A `Tensor` of shape `kspace.shape`. The filtered *k*-space.
   """
-  kspace = tf.convert_to_tensor(kspace)
-  if trajectory is not None:
-    kspace, trajectory = check_util.verify_compatible_trajectory(
-        kspace, trajectory)
+  with tf.name_scope(name or 'filter_kspace'):
+    kspace = tf.convert_to_tensor(kspace)
+    if trajectory is not None:
+      kspace, trajectory = check_util.verify_compatible_trajectory(
+          kspace, trajectory)
 
-  # Make a "trajectory" for Cartesian k-spaces.
-  is_cartesian = trajectory is None
-  if is_cartesian:
-    filter_rank = filter_rank or kspace.shape.rank
-    vecs = [tf.linspace(-np.pi, np.pi - (2.0 * np.pi / s), s)
-            for s in kspace.shape[-filter_rank:]]  # pylint: disable=invalid-unary-operand-type
-    trajectory = array_ops.meshgrid(*vecs)
+    # Make a "trajectory" for Cartesian k-spaces.
+    is_cartesian = trajectory is None
+    if is_cartesian:
+      filter_rank = filter_rank or kspace.shape.rank
+      vecs = tf.TensorArray(dtype=kspace.dtype.real_dtype,
+                            size=filter_rank,
+                            infer_shape=False,
+                            clear_after_read=False)
+      for i in range(-filter_rank, 0):
+        size = tf.shape(kspace)[i]
+        pi = tf.cast(np.pi, kspace.dtype.real_dtype)
+        low = -pi
+        high = pi - (2.0 * pi / tf.cast(size, kspace.dtype.real_dtype))
+        vecs = vecs.write(i + filter_rank, tf.linspace(low, high, size))
+      trajectory = array_ops.dynamic_meshgrid(vecs)
 
-  if not callable(filter_fn):
-    # filter_fn not a callable, so should be an enum value. Get the
-    # corresponding function.
-    filter_fn = check_util.validate_enum(
-        filter_fn, valid_values={'hamming', 'hann', 'atanfilt'},
-        name='filter_fn')
-    filter_fn = {
-        'hamming': hamming,
-        'hann': hann,
-        'atanfilt': atanfilt
-    }[filter_fn]
-  filter_kwargs = filter_kwargs or {}
+    # For non-separable filters, use the frequency magnitude (circularly
+    # symmetric filter).
+    if not separable:
+      trajectory = tf.norm(trajectory, axis=-1)
 
-  traj_norm = tf.norm(trajectory, axis=-1)
-  return kspace * tf.cast(filter_fn(traj_norm, **filter_kwargs), kspace.dtype)
+    if not callable(filter_fn):
+      # filter_fn not a callable, so should be an enum value. Get the
+      # corresponding function.
+      filter_fn = check_util.validate_enum(
+          filter_fn, valid_values={'rect', 'hamming', 'hann', 'atanfilt'},
+          name='filter_fn')
+      filter_fn = {
+          'rect': rect,
+          'hamming': hamming,
+          'hann': hann,
+          'atanfilt': atanfilt
+      }[filter_fn]
+
+      if separable:
+        # The above functions are 1D. If `separable` is `True`, make them N-D
+        # by wrapping them with `separable_window`.
+        filter_fn = separable_window(filter_fn)
+
+    filter_kwargs = filter_kwargs or {}  # Make sure it's a dict.
+    filter_values = filter_fn(trajectory, **filter_kwargs)
+    return kspace * tf.cast(filter_values, kspace.dtype)
 
 
 @api_util.export("signal.crop_kspace")

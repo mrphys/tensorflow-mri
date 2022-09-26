@@ -1,4 +1,4 @@
-# Copyright 2022 University College London. All Rights Reserved.
+# Copyright 2022 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,34 +39,35 @@ NUL = b'\x00'
 def parse_twix(contents):
   """Parses the contents of a TWIX RAID file (Siemens raw data).
 
-  .. warning::
+  ```{warning}
     This function does not support graph execution.
+  ```
 
   Example:
     >>> # Read bytes from file.
-    >>> contents = tf.io.read_file("/path/to/file.dat")
+    >>> contents = tf.io.read_file("/path/to/file.dat")  # doctest: +SKIP
     >>> # Parse the contents.
-    >>> twix = tfmri.io.parse_twix(contents)
+    >>> twix = tfmri.io.parse_twix(contents)  # doctest: +SKIP
     >>> # Access the first measurement.
-    >>> meas = twix.measurements[0]
+    >>> meas = twix.measurements[0]  # doctest: +SKIP
     >>> # Get the protocol...
-    >>> protocol = meas.protocol
+    >>> protocol = meas.protocol  # doctest: +SKIP
     >>> # You can index the protocol to access any of the protocol buffers,
     >>> # e.g., the measurement protocol.
-    >>> meas_prot = protocol['Meas']
+    >>> meas_prot = protocol['Meas']  # doctest: +SKIP
     >>> # Protocol buffers are nested structures accessible with "dot notation"
     >>> # or "bracket notation". The following are equivalent:
-    >>> base_res = meas_prot.MEAS.sKSpace.lBaseResolution.value
-    >>> base_res = meas_prot['MEAS']['sKSpace']['lBaseResolution'].value
+    >>> base_res = meas_prot.MEAS.sKSpace.lBaseResolution.value  # doctest: +SKIP
+    >>> base_res = meas_prot['MEAS']['sKSpace']['lBaseResolution'].value  # doctest: +SKIP
     >>> # The measurement object also contains the scan data.
-    >>> scans = meas.scans
+    >>> scans = meas.scans  # doctest: +SKIP
     >>> # Each scan has a header and the list of channels.
-    >>> scan_header = scans[0].header
-    >>> channels = scans[0].channels
+    >>> scan_header = scans[0].header  # doctest: +SKIP
+    >>> channels = scans[0].channels  # doctest: +SKIP
     >>> # Each channel also has its own header as well as the raw measurement
     >>> # data.
-    >>> channel_header = channels[0].header
-    >>> data = channels[0].data
+    >>> channel_header = channels[0].header  # doctest: +SKIP
+    >>> data = channels[0].data  # doctest: +SKIP
 
   Args:
     contents: A scalar `tf.Tensor` of type `string`. The encoded contents of a

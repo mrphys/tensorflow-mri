@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ class AddChannelDimension(tf.keras.layers.Layer):
   Args:
     **kwargs: Additional keyword arguments to be passed to base class.
   """
-  def call(self, inputs):
+  def call(self, inputs):  # pylint: arguments-differ
     """Runs forward pass on the input tensor."""
     return tf.expand_dims(inputs, -1)
 
@@ -43,7 +43,7 @@ class Cast(tf.keras.layers.Layer):
   Args:
     **kwargs: Additional keyword arguments to be passed to base class.
   """
-  def call(self, inputs):
+  def call(self, inputs):  # pylint: arguments-differ
     """Runs forward pass on the input tensor."""
     return tf.cast(inputs, self.dtype)
 
@@ -62,7 +62,7 @@ class ExpandDims(tf.keras.layers.Layer):
     super().__init__(**kwargs)
     self._axis = axis
 
-  def call(self, inputs):
+  def call(self, inputs):  # pylint: arguments-differ
     """Runs forward pass on the input tensor."""
     return tf.expand_dims(inputs, self._axis)
 
@@ -377,7 +377,7 @@ class RepeatTensor(tf.keras.layers.Layer):
     super().__init__(**kwargs)
     self._repeats = repeats
 
-  def call(self, inputs):
+  def call(self, inputs):  # pylint: arguments-differ
     """Runs forward pass on the input tensor."""
     return [inputs] * self._repeats
 
@@ -412,7 +412,7 @@ class ResizeWithCropOrPad(tf.keras.layers.Layer):
     self._shape_internal += [-1]
     self._padding_mode = padding_mode
 
-  def call(self, inputs):
+  def call(self, inputs):  # pylint: arguments-differ
     """Runs forward pass on the input tensor."""
     return array_ops.resize_with_crop_or_pad(inputs, self._shape_internal,
                                              padding_mode=self._padding_mode)
@@ -441,7 +441,7 @@ class ScaleByMinMax(tf.keras.layers.Layer):
     self._output_min = output_min
     self._output_max = output_max
 
-  def call(self, inputs):
+  def call(self, inputs):  # pylint: arguments-differ
     """Runs forward pass on the input tensor."""
     return math_ops.scale_by_min_max(inputs, self._output_min, self._output_max)
 
@@ -468,7 +468,7 @@ class Transpose(tf.keras.layers.Layer):
     self._perm = perm
     self._conjugate = conjugate
 
-  def call(self, inputs):
+  def call(self, inputs):  # pylint: arguments-differ
     """Runs forward pass on the input tensor."""
     return tf.transpose(inputs, self._perm, conjugate=self._conjugate)
 

@@ -1,4 +1,4 @@
-# Copyright 2022 University College London. All Rights Reserved.
+# Copyright 2022 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,19 +18,18 @@ import string
 
 import tensorflow as tf
 
-from tensorflow_mri.python.initializers import TFMRI_INITIALIZERS
+from tensorflow_mri.python import initializers
 from tensorflow_mri.python.util import api_util
 
 
 EXTENSION_NOTE = string.Template("""
 
-  .. note::
-    This layer can be used as a drop-in replacement for
-    `tf.keras.layers.${name}`_. However, this one also supports complex-valued
-    convolutions. Simply pass `dtype='complex64'` or `dtype='complex128'` to
-    the layer constructor.
-
-  .. _tf.keras.layers.${name}: https://www.tensorflow.org/api_docs/python/tf/keras/layers/${name}
+  ```{tip}
+  This layer can be used as a drop-in replacement for
+  `tf.keras.layers.${name}`, but unlike the core Keras layer, this one also
+  supports complex-valued convolutions. Simply pass `dtype='complex64'` or
+  `dtype='complex128'` to the layer constructor.
+  ```
 
 """)
 
@@ -64,18 +63,12 @@ def complex_conv(base):
         f'`tf.keras.layers.ConvND`, but got {base}.')
 
   def __init__(self, *args, **kwargs):  # pylint: disable=invalid-name
-    # If the requested initializer is one of those provided by TFMRI, prefer
-    # the TFMRI version.
-    kernel_initializer = kwargs.get('kernel_initializer', 'glorot_uniform')
-    if (isinstance(kernel_initializer, str) and
-        kernel_initializer in TFMRI_INITIALIZERS):
-      kwargs['kernel_initializer'] = TFMRI_INITIALIZERS[kernel_initializer]()
-
-    bias_initializer = kwargs.get('bias_initializer', 'zeros')
-    if (isinstance(bias_initializer, str) and
-        bias_initializer in TFMRI_INITIALIZERS):
-      kwargs['bias_initializer'] = TFMRI_INITIALIZERS[bias_initializer]()
-
+    # Make sure we parse the initializers here to use the TFMRI initializers
+    # which support complex numbers.
+    kwargs['kernel_initializer'] = initializers.get(
+        kwargs.get('kernel_initializer', 'glorot_uniform'))
+    kwargs['bias_initializer'] = initializers.get(
+        kwargs.get('bias_initializer', 'zeros'))
     return base.__init__(self, *args, **kwargs)
 
   def convolution_op(self, inputs, kernel):

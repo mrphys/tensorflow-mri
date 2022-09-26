@@ -5,6 +5,12 @@
 from tensorflow_mri.python.models.conv_blocks import ConvBlock1D as ConvBlock1D
 from tensorflow_mri.python.models.conv_blocks import ConvBlock2D as ConvBlock2D
 from tensorflow_mri.python.models.conv_blocks import ConvBlock3D as ConvBlock3D
+from tensorflow_mri.python.models.conv_blocks import ConvBlockLSTM1D as ConvBlockLSTM1D
+from tensorflow_mri.python.models.conv_blocks import ConvBlockLSTM2D as ConvBlockLSTM2D
+from tensorflow_mri.python.models.conv_blocks import ConvBlockLSTM3D as ConvBlockLSTM3D
 from tensorflow_mri.python.models.conv_endec import UNet1D as UNet1D
 from tensorflow_mri.python.models.conv_endec import UNet2D as UNet2D
 from tensorflow_mri.python.models.conv_endec import UNet3D as UNet3D
+from tensorflow_mri.python.models.conv_endec import UNetLSTM1D as UNetLSTM1D
+from tensorflow_mri.python.models.conv_endec import UNetLSTM2D as UNetLSTM2D
+from tensorflow_mri.python.models.conv_endec import UNetLSTM3D as UNetLSTM3D

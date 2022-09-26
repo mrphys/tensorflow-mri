@@ -1,4 +1,4 @@
-# Copyright 2022 University College London. All Rights Reserved.
+# Copyright 2022 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,10 +23,12 @@ _API_SYMBOLS = dict()
 _API_ATTR = '_api_names'
 
 _SUBMODULE_NAMES = [
+    'activations',
     'array',
     'callbacks',
     'coils',
     'convex',
+    'geometry',
     'image',
     'initializers',
     'io',
@@ -45,10 +47,12 @@ _SUBMODULE_NAMES = [
 ]
 
 _SUBMODULE_DOCSTRINGS = {
+    'activations': "Activation functions.",
     'array': "Array processing operations.",
     'callbacks': "Keras callbacks.",
     'coils': "Parallel imaging operations.",
     'convex': "Convex optimization operations.",
+    'geometry': "Geometric operations.",
     'image': "Image processing operations.",
     'initializers': "Keras initializers.",
     'io': "Input/output operations.",
@@ -60,7 +64,7 @@ _SUBMODULE_DOCSTRINGS = {
     'models': "Keras models.",
     'optimize': "Optimization operations.",
     'plot': "Plotting utilities.",
-    'recon': "Image reconstruction.",
+    'recon': "Signal reconstruction.",
     'sampling': "k-space sampling operations.",
     'signal': "Signal processing operations.",
     'summary': "Tensorboard summaries."

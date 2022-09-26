@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -57,6 +57,29 @@ class MeshgridTest(test_util.TestCase):
            [[3, 4], [3, 5]]]
 
     result = array_ops.meshgrid(vec1, vec2)
+    self.assertAllEqual(result, ref)
+
+
+class DynamicMeshgridTest(test_util.TestCase):
+  @test_util.run_in_graph_and_eager_modes
+  @parameterized.product(static=[False, True])
+  def test_dynamic_meshgrid_static(self, static):
+    vec1 = [1, 2, 3]
+    vec2 = [4, 5]
+
+    ref = [[[1, 4], [1, 5]],
+           [[2, 4], [2, 5]],
+           [[3, 4], [3, 5]]]
+
+    if static:
+      vecs = [vec1, vec2]
+    else:
+      vecs = tf.TensorArray(tf.int32, size=2, infer_shape=False,
+                            clear_after_read=False)
+      vecs = vecs.write(0, vec1)
+      vecs = vecs.write(1, vec2)
+
+    result = array_ops.dynamic_meshgrid(vecs)
     self.assertAllEqual(result, ref)
 
 

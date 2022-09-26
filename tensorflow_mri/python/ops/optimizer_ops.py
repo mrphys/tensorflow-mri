@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
+from tensorflow_mri.python.linalg import conjugate_gradient
 from tensorflow_mri.python.ops import convex_ops
-from tensorflow_mri.python.ops import linalg_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import linalg_ext
 from tensorflow_mri.python.util import prefer_static
@@ -191,11 +191,11 @@ def admm_minimize(function_f,
                   name=None):
   r"""Applies the ADMM algorithm to minimize a separable convex function.
 
-  Minimizes :math:`f(x) + g(z)`, subject to :math:`Ax + Bz = c`.
+  Minimizes $f(x) + g(z)$, subject to $Ax + Bz = c$.
 
-  If :math:`A`, :math:`B` and :math:`c` are not provided, the constraint
-  defaults to :math:`x - z = 0`, in which case the problem is equivalent to
-  minimizing :math:`f(x) + g(x)`.
+  If $A$, $B$ and $c$ are not provided, the constraint
+  defaults to $x - z = 0$, in which case the problem is equivalent to
+  minimizing $f(x) + g(x)$.
 
   Args:
     function_f: A `tfmri.convex.ConvexFunction` of shape `[..., n]` and real or
@@ -218,7 +218,7 @@ def admm_minimize(function_f,
       of iterations of the ADMM update.
     linearized: A `boolean`. If `True`, use linearized variant of the ADMM
       algorithm. Linearized ADMM solves problems of the form
-      :math:`f(x) + g(Ax)` and only requires evaluation of the proximal operator
+      $f(x) + g(Ax)$ and only requires evaluation of the proximal operator
       of `g(x)`. This is useful when the proximal operator of `g(Ax)` cannot be
       easily evaluated, but the proximal operator of `g(x)` can. Defaults to
       `False`.
@@ -255,7 +255,7 @@ def admm_minimize(function_f,
       during the search.
 
   References:
-    .. [1] Boyd, S., Parikh, N., & Chu, E. (2011). Distributed optimization and
+    1. Boyd, S., Parikh, N., & Chu, E. (2011). Distributed optimization and
       statistical learning via the alternating direction method of multipliers.
       Now Publishers Inc.
 
@@ -452,8 +452,8 @@ def _get_admm_update_fn(function, operator, prox_kwargs=None):
   r"""Returns a function for the ADMM update.
 
   The returned function evaluates the expression
-  :math:`{\mathop{\mathrm{argmin}}_x} \left ( f(x) + \frac{\rho}{2} \left\| Ax - v \right\|_2^2 \right )`
-  for a given input :math:`v` and penalty parameter :math:`\rho`.
+  ${\mathop{\mathrm{argmin}}_x} \left ( f(x) + \frac{\rho}{2} \left\| Ax - v \right\|_2^2 \right )$
+  for a given input $v$ and penalty parameter $\rho$.
 
   This function will raise an error if the above expression cannot be easily
   evaluated for the specified convex function and linear operator.
@@ -508,7 +508,7 @@ def _get_admm_update_fn(function, operator, prox_kwargs=None):
       rhs = (rho * tf.linalg.matvec(operator, v, adjoint_a=True) -
              function.linear_coefficient)
       # Solve the linear system using CG (see ref [1], section 4.3.4).
-      return linalg_ops.conjugate_gradient(ls_operator, rhs, **solver_kwargs).x
+      return conjugate_gradient.conjugate_gradient(ls_operator, rhs, **solver_kwargs).x
 
     return _update_fn
 

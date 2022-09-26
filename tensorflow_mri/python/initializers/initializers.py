@@ -1,4 +1,4 @@
-# Copyright 2022 University College London. All Rights Reserved.
+# Copyright 2022 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -48,13 +48,12 @@ _ALLOWED_INITIALIZER_KWARGS = [_PARTITION_SHAPE, _PARTITION_OFFSET]
 
 EXTENSION_NOTE = string.Template("""
 
-  .. note::
-    This initializer can be used as a drop-in replacement for
-    `tf.keras.initializers.${name}`_. However, this one also supports
-    initialization of complex-valued weights. Simply pass `dtype='complex64'`
-    or `dtype='complex128'` to its `__call__` method.
-
-  .. _tf.keras.initializers.${name}: https://www.tensorflow.org/api_docs/python/tf/keras/initializers/${name}
+  ```{note}
+  This initializer can be used as a drop-in replacement for
+  `tf.keras.initializers.${name}`. However, this one also supports
+  initialization of complex-valued weights. Simply pass `dtype='complex64'`
+  or `dtype='complex128'` to its `__call__` method.
+  ```
 
 """)
 

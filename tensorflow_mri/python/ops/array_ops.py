@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -76,9 +76,10 @@ def meshgrid(*args):
   fields over N-D grids, given one-dimensional coordinate arrays
   `x1, x2, ..., xn`.
 
-  .. note::
+  ```{note}
     Similar to `tf.meshgrid`, but uses matrix indexing and returns a stacked
     tensor (along axis -1) instead of a list of tensors.
+  ```
 
   Args:
     *args: `Tensors` with rank 1.
@@ -88,6 +89,67 @@ def meshgrid(*args):
     tensors in `args` and `Mi = tf.size(args[i])`.
   """
   return tf.stack(tf.meshgrid(*args, indexing='ij'), axis=-1)
+
+
+@api_util.export("array.meshgrid")
+def dynamic_meshgrid(vecs):
+  """Return coordinate matrices from coordinate vectors.
+
+  Make N-D coordinate arrays for vectorized evaluations of N-D scalar/vector
+  fields over N-D grids, given one-dimensional coordinate arrays
+  `x1, x2, ..., xn`.
+
+  ```{note}
+    Similar to `tf.meshgrid`, but uses matrix indexing, supports dynamic tensor
+    arrays and returns a stacked tensor (along axis -1) instead of a list of
+    tensors.
+  ```
+
+  Args:
+    vecs: A `tf.TensorArray` containing the coordinate vectors.
+
+  Returns:
+    A `Tensor` of shape `[M1, M2, ..., Mn, N]`, where `N` is the number of
+    tensors in `vecs` and `Mi = tf.size(args[i])`.
+  """
+  if not isinstance(vecs, tf.TensorArray):
+    # Fall back to static implementation.
+    return meshgrid(*vecs)
+
+  # Compute shape of the output grid.
+  output_shape = tf.TensorArray(
+      dtype=tf.int32, size=vecs.size(), element_shape=())
+
+  def _cond1(i, vecs, shape):  # pylint:disable=unused-argument
+    return i < vecs.size()
+  def _body1(i, vecs, shape):
+    vec = vecs.read(i)
+    shape = shape.write(i, tf.shape(vec)[0])
+    return i + 1, vecs, shape
+
+  _, _, output_shape = tf.while_loop(_cond1, _body1, [0, vecs, output_shape])
+  output_shape = output_shape.stack()
+
+  # Compute output grid.
+  output_grid = tf.TensorArray(dtype=vecs.dtype, size=vecs.size())
+
+  def _cond2(i, vecs, grid):  # pylint:disable=unused-argument
+    return i < vecs.size()
+  def _body2(i, vecs, grid):
+    vec = vecs.read(i)
+    vec_shape = tf.ones(shape=[vecs.size()], dtype=tf.int32)
+    vec_shape = tf.tensor_scatter_nd_update(vec_shape, [[i]], [-1])
+    vec = tf.reshape(vec, vec_shape)
+    grid = grid.write(i, tf.broadcast_to(vec, output_shape))
+    return i + 1, vecs, grid
+
+  _, _, output_grid = tf.while_loop(_cond2, _body2, [0, vecs, output_grid])
+  output_grid = output_grid.stack()
+
+  perm = tf.concat([tf.range(1, vecs.size() + 1), [0]], 0)
+  output_grid = tf.transpose(output_grid, perm)
+
+  return output_grid
 
 
 def ravel_multi_index(multi_indices, dims):
@@ -287,13 +349,15 @@ def update_tensor(tensor, slices, value):
 
   This operator performs slice assignment.
 
-  .. note::
+  ```{note}
     Equivalent to `tensor[slices] = value`.
+  ```
 
-  .. warning::
+  ```{warning}
     TensorFlow does not support slice assignment because tensors are immutable.
     This operator works around this limitation by creating a new tensor, which
     may have performance implications.
+  ```
 
   Args:
     tensor: A `tf.Tensor`.
@@ -328,9 +392,10 @@ def _with_index_update_helper(update_method, a, slice_spec, updates):  # pylint:
 def map_fn(fn, elems, batch_dims=1, **kwargs):
   """Transforms `elems` by applying `fn` to each element.
 
-  .. note::
+  ```{note}
     Similar to `tf.map_fn`, but it supports unstacking along multiple batch
     dimensions.
+  ```
 
   For the parameters, see `tf.map_fn`. The only difference is that there is an
   additional `batch_dims` keyword argument which allows specifying the number

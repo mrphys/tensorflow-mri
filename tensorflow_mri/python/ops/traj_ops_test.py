@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ from tensorflow_mri.python.util import io_util
 from tensorflow_mri.python.util import test_util
 
 
-class DensityGridTest():
+class DensityGridTest(test_util.TestCase):
   """Tests for `density_grid`."""
   @parameterized.product(transition_type=['linear', 'quadratic', 'hann'])
   def test_density(self, transition_type):  # pylint: disable=missing-function-docstring
@@ -46,6 +46,165 @@ class DensityGridTest():
                                     inner_cutoff=0.3, outer_cutoff=0.8,
                                     transition_type=transition_type)
     self.assertAllClose(expected[transition_type], density)
+
+
+class FrequencyGridTest(test_util.TestCase):
+  """Tests for `frequency_grid`."""
+  def test_frequency_grid_even(self):
+    """Tests `frequency_grid` with even number of points."""
+    result = traj_ops.frequency_grid([4])
+    expected = [[-1.0], [-0.5], [0], [0.5]]
+    self.assertDTypeEqual(result, np.float32)
+    self.assertAllClose(expected, result)
+
+  def test_frequency_grid_odd(self):
+    """Tests `frequency_grid` with odd number of points."""
+    result = traj_ops.frequency_grid([5])
+    expected = [[-1.0], [-0.5], [0], [0.5], [1.0]]
+    self.assertAllClose(expected, result)
+
+  def test_frequency_grid_max_val(self):
+    """Tests `frequency_grid` with a different max value."""
+    result = traj_ops.frequency_grid([4], max_val=2.0)
+    expected = [[-2.0], [-1.0], [0], [1.0]]
+    self.assertAllClose(expected, result)
+
+  def test_frequency_grid_2d(self):
+    """Tests 2-dimensional `frequency_grid`."""
+    result = traj_ops.frequency_grid([4, 8])
+    expected = [[[-1.  , -1.  ],
+                 [-1.  , -0.75],
+                 [-1.  , -0.5 ],
+                 [-1.  , -0.25],
+                 [-1.  ,  0.  ],
+                 [-1.  ,  0.25],
+                 [-1.  ,  0.5 ],
+                 [-1.  ,  0.75]],
+                [[-0.5 , -1.  ],
+                 [-0.5 , -0.75],
+                 [-0.5 , -0.5 ],
+                 [-0.5 , -0.25],
+                 [-0.5 ,  0.  ],
+                 [-0.5 ,  0.25],
+                 [-0.5 ,  0.5 ],
+                 [-0.5 ,  0.75]],
+                [[ 0.  , -1.  ],
+                 [ 0.  , -0.75],
+                 [ 0.  , -0.5 ],
+                 [ 0.  , -0.25],
+                 [ 0.  ,  0.  ],
+                 [ 0.  ,  0.25],
+                 [ 0.  ,  0.5 ],
+                 [ 0.  ,  0.75]],
+                [[ 0.5 , -1.  ],
+                 [ 0.5 , -0.75],
+                 [ 0.5 , -0.5 ],
+                 [ 0.5 , -0.25],
+                 [ 0.5 ,  0.  ],
+                 [ 0.5 ,  0.25],
+                 [ 0.5 ,  0.5 ],
+                 [ 0.5 ,  0.75]]]
+    self.assertAllClose(expected, result)
+
+
+class CenterMaskTest(test_util.TestCase):
+  """Tests for `center_mask`."""
+  def test_center_mask(self):
+    """Tests `center_mask`."""
+    result = traj_ops.center_mask([8], [4])
+    expected = [0, 0, 1, 1, 1, 1, 0, 0]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.center_mask([9], [5])
+    expected = [0, 0, 1, 1, 1, 1, 1, 0, 0]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.center_mask([8], [0.5])
+    expected = [0, 0, 1, 1, 1, 1, 0, 0]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.center_mask([9], [0.5])
+    expected = [0, 0, 1, 1, 1, 1, 1, 0, 0]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.center_mask([8], [5])
+    expected = [0, 0, 1, 1, 1, 1, 0, 0]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.center_mask([4, 8], [2, 4])
+    expected = [[0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 1, 1, 0, 0],
+                [0, 0, 1, 1, 1, 1, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0]]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.center_mask([4, 8], [1.0, 0.5])
+    expected = [[0, 0, 1, 1, 1, 1, 0, 0],
+                [0, 0, 1, 1, 1, 1, 0, 0],
+                [0, 0, 1, 1, 1, 1, 0, 0],
+                [0, 0, 1, 1, 1, 1, 0, 0]]
+    self.assertAllClose(expected, result)
+
+
+class AccelMaskTest(test_util.TestCase):
+  """Tests for `accel_mask`."""
+  def test_accel_mask(self):
+    """Tests `accel_mask`."""
+    result = traj_ops.accel_mask([16], [4], [0])
+    expected = [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.accel_mask([16], [4], [4])
+    expected = [1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.accel_mask([16], [2], [6])
+    expected = [1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.accel_mask([16], [2], [6])
+    expected = [1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.accel_mask([16], [4], [0], offset=1)
+    expected = [0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.accel_mask([4, 8], [2, 2], [0, 0])
+    expected = [[1, 0, 1, 0, 1, 0, 1, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 1, 0, 1, 0, 1, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0]]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.accel_mask([4, 8], [2, 2], [0, 0], offset=[1, 0])
+    expected = [[0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 1, 0, 1, 0, 1, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 1, 0, 1, 0, 1, 0]]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.accel_mask([4, 8], [2, 3], [0, 0], offset=[1, 0])
+    expected = [[0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 0, 1, 0, 0, 1, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 0, 1, 0, 0, 1, 0]]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.accel_mask([4, 8], [2, 2], [2, 2])
+    expected = [[1, 0, 1, 0, 1, 0, 1, 0],
+                [0, 0, 0, 1, 1, 0, 0, 0],
+                [1, 0, 1, 1, 1, 0, 1, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0]]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.accel_mask([16], [4], 0)
+    expected = [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]
+    self.assertAllClose(expected, result)
+
+    result = traj_ops.accel_mask([16], [4])
+    expected = [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]
+    self.assertAllClose(expected, result)
 
 
 class RadialTrajectoryTest(test_util.TestCase):

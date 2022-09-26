@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,10 @@
 # ==============================================================================
 "TFMRI Python code."
 
+from tensorflow_mri.python import activations
 from tensorflow_mri.python import callbacks
+from tensorflow_mri.python import coils
+from tensorflow_mri.python import geometry
 from tensorflow_mri.python import initializers
 from tensorflow_mri.python import io
 from tensorflow_mri.python import layers
@@ -22,5 +25,6 @@ from tensorflow_mri.python import losses
 from tensorflow_mri.python import metrics
 from tensorflow_mri.python import models
 from tensorflow_mri.python import ops
+from tensorflow_mri.python import recon
 from tensorflow_mri.python import summary
 from tensorflow_mri.python import util

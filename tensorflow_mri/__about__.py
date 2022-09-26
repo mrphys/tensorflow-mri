@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,10 +29,10 @@ __title__ = "tensorflow-mri"
 __summary__ = "A collection of TensorFlow add-ons for computational MRI."
 __uri__ = "https://github.com/mrphys/tensorflow-mri"
 
-__version__ = "0.21.0"
+__version__ = "0.22.0"
 
 __author__ = "Javier Montalt Tordera"
 __email__ = "javier.montalt@outlook.com"
 
 __license__ = "Apache 2.0"
-__copyright__ = "2021 University College London"
+__copyright__ = "2021 The TensorFlow MRI Authors"

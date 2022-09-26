@@ -1,4 +1,4 @@
-# Copyright 2022 University College London. All Rights Reserved.
+# Copyright 2022 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,6 +37,8 @@ import conf_helper
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 sys.path.insert(0, path.abspath('../..'))
+sys.path.insert(0, path.abspath('/opt/sphinx'))
+sys.path.insert(0, path.abspath('/opt/sphinx/extensions'))
 
 
 # -- Project information -----------------------------------------------------
@@ -61,12 +63,11 @@ version = '.'.join(map(str, (_version.major, _version.minor)))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-  'sphinx.ext.autodoc',
-  'sphinx.ext.napoleon',
-  'sphinx.ext.autosummary',
-  'sphinx.ext.linkcode',
-  'sphinx.ext.autosectionlabel',
   'myst_nb',
+  'myst_autodoc',
+  'myst_autosummary',
+  'myst_napoleon',
+  'sphinx.ext.linkcode',
   'sphinx_sitemap'
 ]
 
@@ -76,14 +77,13 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'templates']
 
 # Do not add full qualification to objects' signatures.
 add_module_names = False
 
-# For classes, list the documentation of both the class and the `__init__`
-# method.
-autoclass_content = 'both'
+# For classes, list the class documentation but not `__init__`.
+autoclass_content = 'class'
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -124,6 +124,7 @@ html_baseurl = 'https://mrphys.github.io/tensorflow-mri/'
 sitemap_url_scheme = '{link}'
 
 # For autosummary generation.
+autosummary_generate = True
 autosummary_filename_map = conf_helper.AutosummaryFilenameMap()
 
 # -- Options for MyST ----------------------------------------------------------
@@ -133,7 +134,9 @@ myst_enable_extensions = [
     "colon_fence",
     "deflist",
     "dollarmath",
+    "fieldlist",
     "html_image",
+    "substitution"
 ]
 
 # https://myst-nb.readthedocs.io/en/latest/authoring/basics.html
@@ -142,6 +145,11 @@ source_suffix = [
     '.md',
     '.ipynb'
 ]
+
+# https://myst-parser.readthedocs.io/en/latest/syntax/optional.html#substitutions-with-jinja2
+myst_substitutions = {
+    'release': release
+}
 
 # Do not execute notebooks.
 # https://myst-nb.readthedocs.io/en/latest/computation/execute.html
@@ -161,8 +169,9 @@ def linkcode_resolve(domain, info):
   Returns:
     The GitHub URL to the object, or `None` if not relevant.
   """
-  if info['fullname'] == 'nufft':
-    # Can't provide link for nufft, since it lives in external package.
+  custom_ops = {'nufft', 'spiral_waveform'}
+  if info['fullname'] in custom_ops:
+    # Can't provide link to source for custom ops.
     return None
 
   # Obtain fully-qualified name of object.
@@ -176,6 +185,10 @@ def linkcode_resolve(domain, info):
   # (type `types.FunctionType`).
   if not isinstance(obj, (type, types.FunctionType)):
     return None
+
+  # Check if object already defines its own link.
+  if hasattr(obj, '__linkcode__'):
+    return obj.__linkcode__
 
   # Get the file name of the current object.
   file = inspect.getsourcefile(obj)
@@ -243,86 +256,61 @@ COMMON_TYPES_LINKS = {
     'np.ndarray': 'https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html',
     'np.inf': 'https://numpy.org/doc/stable/reference/constants.html#numpy.inf',
     'np.nan': 'https://numpy.org/doc/stable/reference/constants.html#numpy.nan',
-    # TensorFlow types.
-    'tf.Tensor': 'https://www.tensorflow.org/api_docs/python/tf/Tensor',
-    'tf.TensorShape': 'https://www.tensorflow.org/api_docs/python/tf/TensorShape',
-    'tf.dtypes.DType': 'https://www.tensorflow.org/api_docs/python/tf/dtypes/DType'
 }
-
-TFMRI_OBJECTS_PATTERN = re.compile(r"``(?P<name>tfmri.[a-zA-Z0-9_.]+)``")
-
-COMMON_TYPES_PATTERNS = {
-    k: re.compile(rf"``{k}``")for k in COMMON_TYPES_LINKS}
-
-COMMON_TYPES_REPLACEMENTS = {
-    k: rf"`{k} <{v}>`_" for k, v in COMMON_TYPES_LINKS.items()}
-
-CODE_LETTER_PATTERN = re.compile(r"``(?P<code>\w+)``(?P<letter>[a-zA-Z])")
-CODE_LETTER_REPL = r"``\g<code>``\ \g<letter>"
-
-LINK_PATTERN = re.compile(r"``(?P<link_text>[\w\.]+)``_")
-LINK_REPL = r"`\g<link_text>`_"
 
 
 def process_docstring(app, what, name, obj, options, lines):  # pylint: disable=missing-param-doc,unused-argument
-  """Process autodoc docstrings."""
-  # Replace Note: and Warning: by RST equivalents.
-  rst_lines = []
-  admonition_lines = None
-  for line in lines:
-    if admonition_lines is None:
-      # We are not in an admonition right now. Check if this line will start
-      # one.
-      if (line.strip().startswith('Warning:') or
-          line.strip().startswith('Note:')):
-        # This line starts an admonition.
-        label_position = line.index(':')
-        admonition_type = line[:label_position].strip().lower()
-        admonition_content = line[label_position + 1:].strip()
-        leading_whitespace = ' ' * (len(line) - len(line.lstrip()))
-        extra_indentation = '  '
-        admonition_lines = [f"{leading_whitespace}.. {admonition_type}::"]
-        admonition_lines.append(
-            leading_whitespace + extra_indentation + admonition_content)
-      else:
-        # This line does not start an admonition. It's just a regular line.
-        # Add it to the new lines.
-        rst_lines.append(line)
-    else:
-      # Check if this is the end of the admonition.
-      if line.strip() == '':
-        # Line is empty, so the end of the admonition. Add admonition and
-        # finish.
-        rst_lines.extend(admonition_lines)
-        admonition_lines = None
-      else:
-        # This is an admonition line. Add to list of admonition lines.
-        admonition_lines.append(extra_indentation + line)
-  # If we reached the end and we are still in an admonition, add it.
-  if admonition_lines is not None:
-    rst_lines.extend(admonition_lines)
+  """Processes autodoc docstrings."""
+  # Regular expressions.
+  blankline_re = re.compile(r"^\s*$")
+  prompt_re = re.compile(r"^\s*>>>")
+  tf_symbol_re = re.compile(r"`(?P<symbol>tf\.[a-zA-Z0-9_.]+)`")
+  tfmri_symbol_re = re.compile(r"`(?P<symbol>tfmri\.[a-zA-Z0-9_.]+)`")
 
-  # Replace markdown literal markers (`) by ReST literal markers (``).
-  myst = '\n'.join(rst_lines)
-  text = myst.replace('`', '``')
-  text = text.replace(':math:``', ':math:`')
+  # Loop initialization. `insert_lines` keeps a list of lines to be inserted
+  # as well as their positions.
+  insert_lines = []
+  in_prompt = False
 
-  # Correct inline code followed by word characters.
-  text = CODE_LETTER_PATTERN.sub(CODE_LETTER_REPL, text)
-  # Add links to some common types.
-  for k in COMMON_TYPES_LINKS:
-    text = COMMON_TYPES_PATTERNS[k].sub(COMMON_TYPES_REPLACEMENTS[k], text)
-  # Add links to TFMRI objects.
-  for match in TFMRI_OBJECTS_PATTERN.finditer(text):
-    name = match.group('name')
-    url = get_doc_url(name)
-    pattern = rf"``{name}``"
-    repl = rf"`{name} <{url}>`_"
-    text = text.replace(pattern, repl)
+  # Iterate line by line.
+  for lineno, line in enumerate(lines):
 
-  # Correct double quotes.
-  text = LINK_PATTERN.sub(LINK_REPL, text)
-  lines[:] = text.splitlines()
+    # Check if we're in a prompt block.
+    if in_prompt:
+      # Check if end of prompt block.
+      if blankline_re.match(line):
+        in_prompt = False
+        insert_lines.append((lineno, "```"))
+        continue
+
+    # Check for >>> prompt, if found insert code block (unless already in
+    # prompt).
+    m = prompt_re.match(line)
+    if m and not in_prompt:
+      in_prompt = True
+      # We need to insert a new line. It's not safe to modify the list we're
+      # iterating over, so instead we store the line in `insert_lines` and we
+      # insert it after the loop.
+      insert_lines.append((lineno, "```python"))
+      continue
+
+    # Add links to TF symbols.
+    m = tf_symbol_re.search(line)
+    if m:
+      symbol = m.group('symbol')
+      link = f"https://www.tensorflow.org/api_docs/python/{symbol.replace('.', '/')}"
+      lines[lineno] = line.replace(f"`{symbol}`", f"[`{symbol}`]({link})")
+
+    # Add links to TFMRI symbols.
+    m = tfmri_symbol_re.search(line)
+    if m:
+      symbol = m.group('symbol')
+      link = f"https://mrphys.github.io/tensorflow-mri/api_docs/{symbol.replace('.', '/')}"
+      lines[lineno] = line.replace(f"`{symbol}`", f"[`{symbol}`]({link})")
+
+  # Now insert the lines (in reversed order so that line numbers stay valid).
+  for lineno, line in reversed(insert_lines):
+    lines.insert(lineno, line)
 
 
 def get_doc_url(name):

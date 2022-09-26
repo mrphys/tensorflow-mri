@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,11 +24,10 @@ import warnings
 import numpy as np
 import tensorflow as tf
 import tensorflow_nufft as tfft
-from tensorflow_graphics.geometry.transformation import rotation_matrix_2d # pylint: disable=wrong-import-order
-from tensorflow_graphics.geometry.transformation import rotation_matrix_3d # pylint: disable=wrong-import-order
 
+from tensorflow_mri.python.geometry import rotation_2d
+from tensorflow_mri.python.geometry import rotation_3d
 from tensorflow_mri.python.ops import array_ops
-from tensorflow_mri.python.ops import geom_ops
 from tensorflow_mri.python.ops import signal_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
@@ -67,8 +66,7 @@ def density_grid(shape,
   generate a boolean sampling mask.
 
   Args:
-    shape: A `tf.TensorShape` or a list of `ints`. The shape of the output
-      density grid.
+    shape: A 1D integer `tf.Tensor`. The shape of the output density grid.
     inner_density: A `float` between 0.0 and 1.0. The density of the inner
       region.
     outer_density: A `float` between 0.0 and 1.0. The density of the outer
@@ -85,13 +83,17 @@ def density_grid(shape,
     A tensor containing the density grid.
   """
   with tf.name_scope(name or 'density_grid'):
-    shape = tf.TensorShape(shape).as_list()
+    shape = tf.convert_to_tensor(shape, dtype=tf.int32)
+    inner_density = tf.convert_to_tensor(inner_density)
+    outer_density = tf.convert_to_tensor(outer_density)
+    inner_cutoff = tf.convert_to_tensor(inner_cutoff)
+    outer_cutoff = tf.convert_to_tensor(outer_cutoff)
     transition_type = check_util.validate_enum(
         transition_type, ['linear', 'quadratic', 'hann'],
         name='transition_type')
 
-    vecs = [tf.linspace(-1.0, 1.0 - 2.0 / n, n) for n in shape]
-    grid = array_ops.meshgrid(*vecs)
+    grid = frequency_grid(
+        shape, max_val=tf.constant(1.0, dtype=inner_density.dtype))
     radius = tf.norm(grid, axis=-1)
 
     scaled_radius = (outer_cutoff - radius) / (outer_cutoff - inner_cutoff)
@@ -107,6 +109,68 @@ def density_grid(shape,
     density = tf.where(radius > outer_cutoff, outer_density, density)
 
     return density
+
+
+@api_util.export("sampling.frequency_grid")
+def frequency_grid(shape, max_val=1.0):
+  """Returns a frequency grid.
+
+  Creates a grid of frequencies between `-max_val` and `max_val` of the
+  specified shape. For even shapes, the output grid is asymmetric
+  with the zero-frequency component at `n // 2 + 1`.
+
+  Args:
+    shape: A 1D integer `tf.Tensor`. The shape of the output frequency grid.
+    max_val: A `tf.Tensor`. The maximum frequency. Must be of floating point
+      dtype.
+
+  Returns:
+    A tensor of shape [*shape, tf.size(shape)] such that `tensor[..., i]`
+    contains the frequencies along axis `i`. Has the same dtype as `max_val`.
+  """
+  shape_static, shape = (
+      tensor_util.static_and_dynamic_shapes_from_shape(shape))
+  max_val = tf.convert_to_tensor(max_val)
+  dtype = max_val.dtype
+
+  # Prefer static.
+  if shape_static.is_fully_defined():
+    shape = shape_static.as_list()
+  rank_static = shape_static.rank
+  if rank_static is not None:
+    rank = rank_static
+  else:
+    rank = tf.size(shape)
+
+  def _make_vec(i):
+    """Returns the i-th coordinate vector."""
+    step = (2.0 * max_val) / tf.cast(shape[i], dtype)
+    low = -max_val
+    high = tf.cond(tf.math.equal(shape[i] % 2, 0),
+                   lambda: max_val - step,
+                   lambda: max_val)
+    vec = tf.linspace(low, high, shape[i])
+    # If length is 1, make its value 0 rather than `low`.
+    return tf.cond(tf.math.equal(shape[i], 1),
+                   lambda: tf.zeros_like(vec),
+                   lambda: vec)
+
+  if rank_static is not None:
+    # We can use a regular list.
+    vecs = [_make_vec(i) for i in range(rank_static)]
+  else:
+    # We need to use a dynamic tensor array.
+    vecs = tf.TensorArray(dtype=dtype,
+                          size=rank,
+                          infer_shape=False,
+                          clear_after_read=False)
+    def _cond(i, vecs):  # pylint: disable=unused-argument
+      return tf.less(i, rank)
+    def _body(i, vecs):
+      return i + 1, vecs.write(i, _make_vec(i))
+    _, vecs = tf.while_loop(_cond, _body, [0, vecs])
+
+  return array_ops.dynamic_meshgrid(vecs)
 
 
 @api_util.export("sampling.random_mask")
@@ -137,13 +201,206 @@ def random_sampling_mask(shape, density=1.0, seed=None, rng=None, name=None):
   with tf.name_scope(name or 'sampling_mask'):
     if seed is not None and rng is not None:
       raise ValueError("Cannot provide both `seed` and `rng`.")
+    density = tf.convert_to_tensor(density)
     counts = tf.ones(shape, dtype=density.dtype)
     if seed is not None:  # Use stateless RNG.
       mask = tf.random.stateless_binomial(shape, seed, counts, density)
     else:  # Use stateful RNG.
-      rng = rng or tf.random.get_global_generator()
-      mask = rng.binomial(shape, counts, density)
+      with tf.init_scope():
+        rng = rng or tf.random.get_global_generator().split(1)[0]
+      # As of TF 2.9, `binomial` does not have a GPU implementation.
+      # mask = rng.binomial(shape, counts, density)
+      # Therefore, we use a uniform distribution instead. If the generated
+      # value is less than the density, the point is sampled.
+      mask = tf.math.less(rng.uniform(shape, dtype=density.dtype), density)
     return tf.cast(mask, tf.bool)
+
+
+@api_util.export("sampling.center_mask")
+def center_mask(shape, center_size, name=None):
+  """Returns a central sampling mask.
+
+  This function returns a boolean tensor of zeros with a central region of ones.
+
+  ```{tip}
+    Use this function to extract the calibration region from a Cartesian
+    *k*-space.
+  ```
+
+  ```{tip}
+    In MRI, one of the spatial frequency dimensions (readout dimension) is
+    typically fully sampled. In this case, you might want to create a mask that
+    has one less dimension than the corresponding *k*-space (e.g., 1D mask for
+    2D images or 2D mask for 3D images).
+  ```
+
+  ```{note}
+    The central region is always evenly shaped for even mask dimensions and
+    oddly shaped for odd mask dimensions. This avoids phase artefacts when
+    using the resulting mask to sample the frequency domain.
+  ```
+
+  Example:
+
+    >>> mask = tfmri.sampling.center_mask([8], [4])
+    >>> mask.numpy()
+    array([False, False,  True,  True,  True,  True, False, False])
+
+  Args:
+    shape: A 1D integer `tf.Tensor`. The shape of the output mask.
+    center_size: A 1D `tf.Tensor` of integer or floating point dtype. The size
+      of the center region. If `center_size` has integer dtype, its i-th value
+      must be in the range `[0, shape[i]]` and will be interpreted as the number
+      of samples in the center region along axis `i`. If `center_size` has
+      floating point dtype, its i-th value must be in the range `[0, 1]` and
+      will be interpreted as the fraction of samples in the center region along
+      axis `i`.
+    name: A `str`. A name for this op.
+
+  Returns:
+    A boolean `tf.Tensor` containing the sampling mask.
+
+  Raises:
+    TypeError: If `center_size` is not of integer or floating point dtype.
+  """
+  with tf.name_scope(name or 'center_mask'):
+    shape = tf.convert_to_tensor(shape, dtype=tf.int32)
+    center_size = tf.convert_to_tensor(center_size)
+
+    if not center_size.dtype.is_integer and not center_size.dtype.is_floating:
+      raise TypeError(
+          "`center_size` must be of integer of floating point dtype.")
+
+    if center_size.dtype.is_floating:
+      # Input is floating point, interpret as fraction and convert to integer.
+      center_size = center_size * tf.cast(shape, center_size.dtype)
+      center_size = tf.cast(center_size + 0.5, tf.int32)
+
+    # Make sure that `center_size` is even for even shape and odd for odd shape.
+    center_size = (center_size // 2) * 2 + shape % 2
+    # Make sure that `center_size` is not bigger than the shape.
+    center_size = tf.math.minimum(center_size, shape)
+
+    # Create mask by first creating a central region of ones, and then padding
+    # with zeros to the specified shape.
+    mask = tf.ones(center_size, dtype=tf.bool)
+    paddings = tf.stack([(shape - center_size) // 2,
+                         (shape - center_size) // 2], axis=-1)
+    mask = tf.pad(mask, paddings, constant_values=False)
+    return mask
+
+
+@api_util.export("sampling.accel_mask")
+def accel_mask(shape,
+               acceleration,
+               center_size=0,
+               mask_type='equispaced',
+               offset=0,
+               rng=None,
+               name=None):
+  """Returns a standard accelerated sampling mask.
+
+  The returned sampling mask has two regions: a fully sampled central region
+  and a partially sampled peripheral region. The peripheral region may be
+  sampled uniformly or randomly.
+
+  ```{tip}
+    This type of mask describes the most commonly used sampling patterns in
+    Cartesian MRI.
+  ```
+
+  ```{tip}
+    In MRI, one of the spatial frequency dimensions (readout dimension) is
+    typically fully sampled. In this case, you might want to create a mask that
+    has one less dimension than the corresponding *k*-space (e.g., 1D mask for
+    2D images or 2D mask for 3D images).
+  ```
+
+  ```{note}
+    The central region is always evenly shaped for even mask dimensions and
+    oddly shaped for odd mask dimensions. This avoids phase artefacts when
+    using the resulting mask to sample the frequency domain.
+  ```
+
+  Example:
+
+    >>> mask = tfmri.sampling.accel_mask([8], [2], [2])
+    >>> mask.numpy()
+    array([ True, False,  True,  True,  True, False,  True, False])
+
+  Args:
+    shape: A 1D integer `tf.Tensor`. The shape of the output mask.
+    acceleration: A 1D integer `tf.Tensor`. The acceleration factor on the
+      peripheral region along each axis.
+    center_size: A 1D integer `tf.Tensor`. The size of the central region
+      along each axis. Defaults to 0.
+    mask_type: A `str`. The type of sampling to use on the peripheral region.
+      Must be one of `'equispaced'` or `'random'`. If `'equispaced'`, the
+      peripheral region is sampled uniformly. If `'random'`, the peripheral
+      region is sampled randomly with the expected acceleration value. Defaults
+      to `'equispaced'`.
+    offset: A 1D integer `tf.Tensor`. The offset of the first sample along
+      each axis. Only relevant when `mask_type` is `'equispaced'`. Can also
+      have the value `'random'`, in which case the offset is selected randomly.
+      Defaults to 0.
+    rng: A `tf.random.Generator`. The random number generator to use. If not
+      provided, the global random number generator will be used.
+    name: A `str`. A name for this op.
+
+  Returns:
+    A boolean `tf.Tensor` containing the sampling mask.
+
+  Raises:
+    ValueError: If `mask_type` is not one of `'equispaced'` or `'random'`.
+  """
+  with tf.name_scope(name or 'accel_mask'):
+    shape = tf.convert_to_tensor(shape, dtype=tf.int32)
+    acceleration = tf.convert_to_tensor(acceleration)
+    rank = tf.size(shape)
+
+    # If no RNG was passed, use the global RNG.
+    with tf.init_scope():
+      rng = rng or tf.random.get_global_generator().split(1)[0]
+
+    # Process `offset`.
+    if offset == 'random':
+      offset = tf.map_fn(lambda maxval: rng.uniform(
+                            [], minval=0, maxval=maxval, dtype=tf.int32),
+                         acceleration, dtype=tf.int32)
+    else:
+      offset = tf.convert_to_tensor(offset, dtype=tf.int32)
+      if offset.shape.rank == 0:
+        offset = tf.ones([rank], dtype=tf.int32) * offset
+
+    # Initialize mask.
+    mask = tf.ones(shape, dtype=tf.bool)
+    static_shape = mask.shape
+
+    def fn(accum, elems):
+      axis, mask = accum
+      size, accel, off = elems
+
+      if mask_type == 'equispaced':
+        mask_1d = tf.tile(tf.scatter_nd([[off]], [True], [accel]),
+                          multiples=[(size + accel - 1) // accel])[:size]
+
+      elif mask_type == 'random':
+        density = 1.0 / tf.cast(accel, tf.float32)
+        mask_1d = rng.uniform(shape=[size], dtype=tf.float32) < density
+
+      else:
+        raise ValueError(f"Unknown mask type: {mask_type}")
+
+      bcast_shape = tf.tensor_scatter_nd_update(
+          tf.ones([rank], dtype=tf.int32), [[axis]], [size])
+      mask_1d = tf.reshape(mask_1d, bcast_shape)
+      mask &= mask_1d
+      return axis + 1, tf.ensure_shape(mask, static_shape)
+
+    _, mask = tf.foldl(fn, (shape, acceleration, offset),
+                       initializer=(0, mask))
+
+    return tf.math.logical_or(mask, center_mask(shape, center_size))
 
 
 @api_util.export("sampling.radial_trajectory")
@@ -212,17 +469,17 @@ def radial_trajectory(base_resolution,
     radians/voxel, ie, values are in the range `[-pi, pi]`.
 
   References:
-    .. [1] Winkelmann, S., Schaeffter, T., Koehler, T., Eggers, H. and
-      Doessel, O. (2007), An optimal radial profile order based on the golden
-      ratio for time-resolved MRI. IEEE Transactions on Medical Imaging,
-      26(1): 68-76, https://doi.org/10.1109/TMI.2006.885337
-    .. [2] Wundrak, S., Paul, J., Ulrici, J., Hell, E., Geibel, M.-A.,
-      Bernhardt, P., Rottbauer, W. and Rasche, V. (2016), Golden ratio sparse
-      MRI using tiny golden angles. Magn. Reson. Med., 75: 2372-2378.
-      https://doi.org/10.1002/mrm.25831
-    .. [3] Wong, S.T.S. and Roos, M.S. (1994), A strategy for sampling on a
-      sphere applied to 3D selective RF pulse design. Magn. Reson. Med.,
-      32: 778-784. https://doi.org/10.1002/mrm.1910320614
+    1. Winkelmann, S., Schaeffter, T., Koehler, T., Eggers, H. and
+       Doessel, O. (2007), An optimal radial profile order based on the golden
+       ratio for time-resolved MRI. IEEE Transactions on Medical Imaging,
+       26(1): 68-76, https://doi.org/10.1109/TMI.2006.885337
+    2. Wundrak, S., Paul, J., Ulrici, J., Hell, E., Geibel, M.-A.,
+       Bernhardt, P., Rottbauer, W. and Rasche, V. (2016), Golden ratio sparse
+       MRI using tiny golden angles. Magn. Reson. Med., 75: 2372-2378.
+       https://doi.org/10.1002/mrm.25831
+    3. Wong, S.T.S. and Roos, M.S. (1994), A strategy for sampling on a
+       sphere applied to 3D selective RF pulse design. Magn. Reson. Med.,
+       32: 778-784. https://doi.org/10.1002/mrm.1910320614
   """
   return _kspace_trajectory('radial',
                             {'base_resolution': base_resolution,
@@ -310,7 +567,7 @@ def spiral_trajectory(base_resolution,
     radians/voxel, ie, values are in the range `[-pi, pi]`.
 
   References:
-    .. [1] Pipe, J.G. and Zwart, N.R. (2014), Spiral trajectory design: A
+    1. Pipe, J.G. and Zwart, N.R. (2014), Spiral trajectory design: A
       flexible numerical algorithm and base analytical equations. Magn. Reson.
       Med, 71: 278-285. https://doi.org/10.1002/mrm.24675
   """
@@ -466,8 +723,10 @@ def radial_density(base_resolution,
   if ordering not in orderings_2d:
     raise ValueError(f"Ordering `{ordering}` is not implemented.")
 
+  phases_ = phases if phases is not None else 1
+
   # Get angles.
-  angles = _trajectory_angles(views, phases or 1, ordering=ordering,
+  angles = _trajectory_angles(views, phases_, ordering=ordering,
                               angle_range=angle_range, tiny_number=tiny_number)
 
   # Compute weights.
@@ -579,10 +838,11 @@ def estimate_radial_density(points, readout_os=2.0):
 
   This function supports 2D and 3D ("koosh-ball") radial trajectories.
 
-  .. warning::
+  ```{warning}
     This function assumes that `points` represents a radial trajectory, but
-    cannot verify that. If used with trajectories other than radial, it will
+    will not verify that. If used with trajectories other than radial, it will
     not fail but the result will be invalid.
+  ```
 
   Args:
     points: A `Tensor`. Must be one of the following types: `float32`,
@@ -638,11 +898,12 @@ def radial_waveform(base_resolution, readout_os=2.0, rank=2):
   # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
 
   # Number of samples with oversampling.
-  samples = int(base_resolution * readout_os + 0.5)
+  samples = tf.cast(tf.cast(base_resolution, tf.float32) *
+                    tf.cast(readout_os, tf.float32) + 0.5, dtype=tf.int32)
 
   # Compute 1D spoke.
   waveform = tf.range(-samples // 2, samples // 2, dtype=tf.float32)
-  waveform /= samples
+  waveform /= tf.cast(samples, waveform.dtype)
 
   # Add y/z dimensions.
   waveform = tf.expand_dims(waveform, axis=1)
@@ -660,7 +921,13 @@ def radial_waveform(base_resolution, readout_os=2.0, rank=2):
 
 
 if sys_util.is_op_library_enabled():
-  spiral_waveform = _mri_ops.spiral_waveform
+  spiral_waveform = api_util.export("sampling.spiral_waveform")(
+      _mri_ops.spiral_waveform)
+  # Set the object's module to current module for correct API import.
+  spiral_waveform.__module__ = __name__
+else:
+  # Stub to prevent import errors when the op is not available.
+  spiral_waveform = None
 
 
 def _trajectory_angles(views,
@@ -683,6 +950,8 @@ def _trajectory_angles(views,
     raise ValueError(
         f"`tiny_number` must be an integer >= 2. Received: {tiny_number}")
 
+  phases_ = phases if phases is not None else 1
+
   # Constants.
   pi = math.pi
   pi2 = math.pi * 2.0
@@ -698,19 +967,19 @@ def _trajectory_angles(views,
 
   def _angles_2d(angle_delta, angle_max, interleave=False):
     # Compute azimuthal angles [0, 2 * pi] (full) or [0, pi] (half).
-    angles = tf.range(views * (phases or 1), dtype=tf.float32)
+    angles = tf.range(views * phases_, dtype=tf.float32)
     angles *= angle_delta
     angles %= angle_max
     if interleave:
-      angles = tf.transpose(tf.reshape(angles, (views, phases or 1)))
+      angles = tf.transpose(tf.reshape(angles, (views, phases_)))
     else:
-      angles = tf.reshape(angles, (phases or 1, views))
+      angles = tf.reshape(angles, (phases_, views))
     angles = tf.expand_dims(angles, -1)
     return angles
 
   # Get ordering.
   if ordering == 'linear':
-    angles = _angles_2d(default_max / (views * (phases or 1)), default_max,
+    angles = _angles_2d(default_max / (views * phases_), default_max,
                         interleave=True)
   elif ordering == 'golden':
     angles = _angles_2d(phi * default_max, default_max)
@@ -747,7 +1016,7 @@ def _trajectory_angles(views,
   elif ordering == 'tiny_half':
     angles = _angles_2d(phi_n * pi, default_max)
   elif ordering == 'sphere_archimedean':
-    projections = views * (phases or 1)
+    projections = views * phases_
     full_projections = 2 * projections if angle_range == 'half' else projections
     # Computation is sensitive to floating-point errors, so we use float64 to
     # ensure sufficient accuracy.
@@ -759,7 +1028,7 @@ def _trajectory_angles(views,
     az = tf.math.floormod(tf.math.cumsum(az), 2.0 * math.pi) # pylint: disable=no-value-for-parameter
     # Interleave the readouts.
     def _interleave(arg):
-      return tf.transpose(tf.reshape(arg, (views, phases or 1)))
+      return tf.transpose(tf.reshape(arg, (views, phases_)))
     pol = _interleave(pol)
     az = _interleave(az)
     angles = tf.stack([pol, az], axis=-1)
@@ -798,9 +1067,6 @@ def _rotate_waveform_2d(waveform, angles):
   # Prepare for broadcasting.
   angles = tf.expand_dims(angles, -2)
 
-  # Compute rotation matrix.
-  rot_matrix = rotation_matrix_2d.from_euler(angles)
-
   # Add leading singleton dimensions to `waveform` to match the batch shape of
   # `angles`. This prevents a broadcasting error later.
   waveform = tf.reshape(waveform,
@@ -808,7 +1074,7 @@ def _rotate_waveform_2d(waveform, angles):
                  tf.shape(waveform)], 0))
 
   # Apply rotation.
-  return rotation_matrix_2d.rotate(waveform, rot_matrix)
+  return rotation_2d.Rotation2D.from_euler(angles).rotate(waveform)
 
 
 def _rotate_waveform_3d(waveform, angles):
@@ -829,10 +1095,10 @@ def _rotate_waveform_3d(waveform, angles):
   angles = tf.expand_dims(angles, -2)
 
   # Compute rotation matrix.
-  rot_matrix = geom_ops.euler_to_rotation_matrix_3d(angles, order='ZYX')
+  rot_matrix = _rotation_matrix_3d_from_euler(angles, order='ZYX')
 
   # Apply rotation to trajectory.
-  waveform = rotation_matrix_3d.rotate(waveform, rot_matrix)
+  waveform = rotation_3d.rotate(waveform, rot_matrix)
 
   return waveform
 
@@ -886,13 +1152,13 @@ def estimate_density(points, grid_shape, method='jackson', max_iter=50):
     A `Tensor` of shape `[..., M]` containing the density of `points`.
 
   References:
-    .. [1] Jackson, J.I., Meyer, C.H., Nishimura, D.G. and Macovski, A. (1991),
-      Selection of a convolution function for Fourier inversion using gridding
-      (computerised tomography application). IEEE Transactions on Medical
-      Imaging, 10(3): 473-478. https://doi.org/10.1109/42.97598
-    .. [2] Pipe, J.G. and Menon, P. (1999), Sampling density compensation in
-      MRI: Rationale and an iterative numerical solution. Magn. Reson. Med.,
-      41: 179-186. https://doi.org/10.1002/(SICI)1522-2594(199901)41:1<179::AID-MRM25>3.0.CO;2-V
+    1. Jackson, J.I., Meyer, C.H., Nishimura, D.G. and Macovski, A. (1991),
+       Selection of a convolution function for Fourier inversion using gridding
+       (computerised tomography application). IEEE Transactions on Medical
+       Imaging, 10(3): 473-478. https://doi.org/10.1109/42.97598
+    2. Pipe, J.G. and Menon, P. (1999), Sampling density compensation in
+       MRI: Rationale and an iterative numerical solution. Magn. Reson. Med.,
+       41: 179-186. https://doi.org/10.1002/(SICI)1522-2594(199901)41:1<179::AID-MRM25>3.0.CO;2-V
   """
   method = check_util.validate_enum(
       method, {'jackson', 'pipe'}, name='method')
@@ -978,10 +1244,22 @@ def flatten_trajectory(trajectory):
   Returns:
     A reshaped `Tensor` with shape `[..., views * samples, ndim]`.
   """
+  # Compute static output shape.
   batch_shape = trajectory.shape[:-3]
   views, samples, rank = trajectory.shape[-3:]
-  new_shape = batch_shape + [views*samples, rank]
-  return tf.reshape(trajectory, new_shape)
+  if views is None or samples is None:
+    views_times_samples = None
+  else:
+    views_times_samples = views * samples
+  static_flat_shape = batch_shape + [views_times_samples, rank]
+
+  # Compute dynamic output shape.
+  shape = tf.shape(trajectory)
+  batch_shape = shape[:-3]
+  views, samples, rank = shape[-3], shape[-2], shape[-1]
+  flat_shape = tf.concat([batch_shape, [views * samples, rank]], 0)
+
+  return tf.ensure_shape(tf.reshape(trajectory, flat_shape), static_flat_shape)
 
 
 @api_util.export("sampling.flatten_density")
@@ -994,10 +1272,22 @@ def flatten_density(density):
   Returns:
     A reshaped `Tensor` with shape `[..., views * samples]`.
   """
+  # Compute static output shape.
   batch_shape = density.shape[:-2]
   views, samples = density.shape[-2:]
-  new_shape = batch_shape + [views*samples]
-  return tf.reshape(density, new_shape)
+  if views is None or samples is None:
+    views_times_samples = None
+  else:
+    views_times_samples = views * samples
+  static_flat_shape = batch_shape + [views_times_samples]
+
+  # Compute dynamic output shape.
+  shape = tf.shape(density)
+  batch_shape = shape[:-2]
+  views, samples = shape[-2], shape[-1]
+  flat_shape = tf.concat([batch_shape, [views * samples]], 0)
+
+  return tf.ensure_shape(tf.reshape(density, flat_shape), static_flat_shape)
 
 
 @api_util.export("sampling.expand_trajectory")
@@ -1038,3 +1328,132 @@ def _find_first_greater_than(x, y):
   x = x - y
   x = tf.where(x < 0, np.inf, x)
   return tf.math.argmin(x)
+
+
+def _rotation_matrix_3d_from_euler(angles, order='XYZ', name='rotation_3d'):
+  r"""Convert an Euler angle representation to a rotation matrix.
+
+  The resulting matrix is $$\mathbf{R} = \mathbf{R}_z\mathbf{R}_y\mathbf{R}_x$$.
+
+  ```{note}
+    In the following, A1 to An are optional batch dimensions.
+  ```
+
+  Args:
+    angles: A tensor of shape `[A1, ..., An, 3]`, where the last dimension
+      represents the three Euler angles. `[A1, ..., An, 0]` is the angle about
+      `x` in radians `[A1, ..., An, 1]` is the angle about `y` in radians and
+      `[A1, ..., An, 2]` is the angle about `z` in radians.
+    order: A `str`. The order in which the rotations are applied. Defaults to
+      `"XYZ"`.
+    name: A name for this op that defaults to "rotation_matrix_3d_from_euler".
+
+  Returns:
+    A tensor of shape `[A1, ..., An, 3, 3]`, where the last two dimensions
+    represent a 3d rotation matrix.
+
+  Raises:
+    ValueError: If the shape of `angles` is not supported.
+  """
+  with tf.name_scope(name):
+    angles = tf.convert_to_tensor(value=angles)
+
+    if angles.shape[-1] != 3:
+      raise ValueError(f"The last dimension of `angles` must have size 3, "
+                       f"but got shape: {angles.shape}")
+
+    sin_angles = tf.math.sin(angles)
+    cos_angles = tf.math.cos(angles)
+    return _build_matrix_from_sines_and_cosines(
+        sin_angles, cos_angles, order=order)
+
+
+def _build_matrix_from_sines_and_cosines(sin_angles, cos_angles, order='XYZ'):
+  """Builds a rotation matrix from sines and cosines of Euler angles.
+
+  ```{note}
+    In the following, A1 to An are optional batch dimensions.
+  ```
+
+  Args:
+    sin_angles: A tensor of shape `[A1, ..., An, 3]`, where the last dimension
+      represents the sine of the Euler angles.
+    cos_angles: A tensor of shape `[A1, ..., An, 3]`, where the last dimension
+      represents the cosine of the Euler angles.
+    order: A `str`. The order in which the rotations are applied. Defaults to
+      `"XYZ"`.
+
+  Returns:
+    A tensor of shape `[A1, ..., An, 3, 3]`, where the last two dimensions
+    represent a 3d rotation matrix.
+
+  Raises:
+    ValueError: If any of the input arguments has an invalid value.
+  """
+  sin_angles.shape.assert_is_compatible_with(cos_angles.shape)
+  output_shape = tf.concat((tf.shape(sin_angles)[:-1], (3, 3)), -1)
+
+  sx, sy, sz = tf.unstack(sin_angles, axis=-1)
+  cx, cy, cz = tf.unstack(cos_angles, axis=-1)
+  ones = tf.ones_like(sx)
+  zeros = tf.zeros_like(sx)
+  # rx
+  m00 = ones
+  m01 = zeros
+  m02 = zeros
+  m10 = zeros
+  m11 = cx
+  m12 = -sx
+  m20 = zeros
+  m21 = sx
+  m22 = cx
+  rx = tf.stack((m00, m01, m02,
+                 m10, m11, m12,
+                 m20, m21, m22),
+                axis=-1)
+  rx = tf.reshape(rx, output_shape)
+  # ry
+  m00 = cy
+  m01 = zeros
+  m02 = sy
+  m10 = zeros
+  m11 = ones
+  m12 = zeros
+  m20 = -sy
+  m21 = zeros
+  m22 = cy
+  ry = tf.stack((m00, m01, m02,
+                 m10, m11, m12,
+                 m20, m21, m22),
+                axis=-1)
+  ry = tf.reshape(ry, output_shape)
+  # rz
+  m00 = cz
+  m01 = -sz
+  m02 = zeros
+  m10 = sz
+  m11 = cz
+  m12 = zeros
+  m20 = zeros
+  m21 = zeros
+  m22 = ones
+  rz = tf.stack((m00, m01, m02,
+                 m10, m11, m12,
+                 m20, m21, m22),
+                axis=-1)
+  rz = tf.reshape(rz, output_shape)
+
+  matrix = tf.eye(output_shape[-2], output_shape[-1],
+                  batch_shape=output_shape[:-2])
+
+  for r in order.upper():
+    if r == 'X':
+      matrix = rx @ matrix
+    elif r == 'Y':
+      matrix = ry @ matrix
+    elif r == 'Z':
+      matrix = rz @ matrix
+    else:
+      raise ValueError(f"Invalid value for `order`: {order}")
+
+  return matrix

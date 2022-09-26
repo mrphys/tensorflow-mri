@@ -2,7 +2,8 @@
 # Do not edit.
 """Parallel imaging operations."""
 
-from tensorflow_mri.python.ops.coil_ops import estimate_coil_sensitivities as estimate_sensitivities
-from tensorflow_mri.python.ops.coil_ops import combine_coils as combine_coils
-from tensorflow_mri.python.ops.coil_ops import compress_coils as compress_coils
-from tensorflow_mri.python.ops.coil_ops import CoilCompressorSVD as CoilCompressorSVD
+from tensorflow_mri.python.coils.coil_combination import combine_coils as combine_coils
+from tensorflow_mri.python.coils.coil_compression import compress_coils as compress_coils
+from tensorflow_mri.python.coils.coil_compression import CoilCompressorSVD as CoilCompressorSVD
+from tensorflow_mri.python.coils.coil_sensitivities import estimate_sensitivities as estimate_sensitivities
+from tensorflow_mri.python.coils.coil_sensitivities import estimate_sensitivities_universal as estimate_sensitivities_universal

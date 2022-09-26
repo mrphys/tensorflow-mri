@@ -1,4 +1,4 @@
-FROM ghcr.io/mrphys/tensorflow-manylinux:1.12.0
+FROM ghcr.io/mrphys/tensorflow-manylinux:1.14.0
 
 # To enable plotting.
 RUN apt-get update && \
@@ -14,6 +14,15 @@ RUN for PYVER in ${PYVERSIONS}; do ${PYBIN}${PYVER} -m pip install ipykernel; do
 # Install TFMRI dependencies.
 COPY requirements.txt /tmp/requirements.txt
 RUN for PYVER in ${PYVERSIONS}; do ${PYBIN}${PYVER} -m pip install -r /tmp/requirements.txt; done
+
+# For `tf.keras.utils.plot_model`.
+RUN apt-get update && \
+    apt-get install -y graphviz && \
+    for PYVER in ${PYVERSIONS}; do ${PYBIN}${PYVER} -m pip install pydot; done
+
+# Reinstall Tensorboard.
+RUN for PYVER in ${PYVERSIONS}; do ${PYBIN}${PYVER} -m pip uninstall -y tensorboard tb-nightly; done && \
+    for PYVER in ${PYVERSIONS}; do ${PYBIN}${PYVER} -m pip install tensorboard; done
 
 # Create non-root user.
 ARG USERNAME=vscode

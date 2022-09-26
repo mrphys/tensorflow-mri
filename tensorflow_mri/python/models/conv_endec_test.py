@@ -1,4 +1,4 @@
-# Copyright 2021 University College London. All Rights Reserved.
+# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,6 +18,10 @@
 from absl.testing import parameterized
 import tensorflow as tf
 
+from tensorflow_mri.python.layers import convolutional
+from tensorflow_mri.python.layers import pooling
+from tensorflow_mri.python.layers import reshaping
+from tensorflow_mri.python.models import conv_blocks
 from tensorflow_mri.python.models import conv_endec
 from tensorflow_mri.python.util import test_util
 
@@ -35,7 +39,7 @@ class UNetTest(test_util.TestCase):
                          rank,
                          filters,
                          kernel_size,
-                         out_channels,
+                         output_filters,
                          use_deconv,
                          use_global_residual):
     """Test object creation."""
@@ -51,14 +55,14 @@ class UNetTest(test_util.TestCase):
         filters=filters,
         kernel_size=kernel_size,
         use_deconv=use_deconv,
-        out_channels=out_channels,
+        output_filters=output_filters,
         use_global_residual=use_global_residual)
 
     features = network(inputs)
-    if out_channels is None:
-      out_channels = filters[0]
+    if output_filters is None:
+      output_filters = filters[0]
 
-    self.assertAllEqual(features.shape, [1] + [128] * rank + [out_channels])
+    self.assertAllEqual(features.shape, [1] + [128] * rank + [output_filters])
 
 
   @test_util.run_all_execution_modes
@@ -84,6 +88,21 @@ class UNetTest(test_util.TestCase):
       if hasattr(layer, 'use_bias'):
         self.assertEqual(use_bias, layer.use_bias)
 
+  def test_complex_valued(self):
+    """Test complex-valued U-Net."""
+    inputs = tf.dtypes.complex(
+        tf.random.stateless_normal(shape=(2, 32, 32, 4), seed=[12, 34]),
+        tf.random.stateless_normal(shape=(2, 32, 32, 4), seed=[56, 78]))
+
+    block = conv_endec.UNet2D(
+        filters=[4, 8],
+        kernel_size=3,
+        activation='complex_relu',
+        dtype=tf.complex64)
+
+    result = block(inputs)
+    self.assertAllClose((2, 32, 32, 4), result.shape)
+    self.assertDTypeEqual(result, tf.complex64)
 
   def test_serialize_deserialize(self):
     """Test de/serialization."""
@@ -95,28 +114,209 @@ class UNetTest(test_util.TestCase):
         use_deconv=True,
         activation='tanh',
         use_bias=False,
-        kernel_initializer='ones',
-        bias_initializer='ones',
-        kernel_regularizer='l2',
-        bias_regularizer='l1',
+        kernel_initializer={'class_name': 'Ones', 'config': {}},
+        bias_initializer={'class_name': 'Ones', 'config': {}},
+        kernel_regularizer={'class_name': 'L2', 'config': {'l2': 1.0}},
+        bias_regularizer=None,
         use_batch_norm=True,
         use_sync_bn=True,
         bn_momentum=0.98,
         bn_epsilon=0.002,
-        out_channels=1,
-        out_kernel_size=1,
-        out_activation='relu',
+        output_filters=1,
+        output_kernel_size=1,
+        output_activation='relu',
         use_global_residual=True,
         use_dropout=True,
         dropout_rate=0.5,
         dropout_type='spatial',
-        use_tight_frame=True)
+        use_tight_frame=True,
+        use_instance_norm=False,
+        use_resize_and_concatenate=False)
 
     block = conv_endec.UNet2D(**config)
-    self.assertEqual(block.get_config(), config)
+    self.assertEqual(config, block.get_config())
 
     block2 = conv_endec.UNet2D.from_config(block.get_config())
     self.assertAllEqual(block.get_config(), block2.get_config())
+
+  def test_arch(self):
+    """Tests basic model arch."""
+    tf.keras.backend.clear_session()
+
+    model = conv_endec.UNet2D(filters=[8, 16], kernel_size=3)
+    inputs = tf.keras.Input(shape=(32, 32, 1), batch_size=1)
+    model = tf.keras.Model(inputs, model.call(inputs))
+
+    expected = [
+        # name, type, output_shape, params
+        ('input_1', 'InputLayer', [(1, 32, 32, 1)], 0),
+        ('conv_block2d', 'ConvBlock2D', (1, 32, 32, 8), 664),
+        ('max_pooling2d', 'MaxPooling2D', (1, 16, 16, 8), 0),
+        ('conv_block2d_1', 'ConvBlock2D', (1, 16, 16, 16), 3488),
+        ('up_sampling2d', 'UpSampling2D', (1, 32, 32, 16), 0),
+        ('conv2d_4', 'Conv2D', (1, 32, 32, 8), 1160),
+        ('concatenate', 'Concatenate', (1, 32, 32, 16), 0),
+        ('conv_block2d_2', 'ConvBlock2D', (1, 32, 32, 8), 1744)]
+
+    self.assertAllEqual(
+        [elem[0] for elem in expected],
+        [layer.name for layer in get_layers(model)])
+
+    self.assertAllEqual(
+        [elem[1] for elem in expected],
+        [layer.__class__.__name__ for layer in get_layers(model)])
+
+    self.assertAllEqual(
+        [elem[2] for elem in expected],
+        [layer.output_shape for layer in get_layers(model)])
+
+    self.assertAllEqual(
+        [elem[3] for elem in expected],
+        [layer.count_params() for layer in get_layers(model)])
+
+  def test_arch_with_deconv(self):
+    """Tests model arch with deconvolution."""
+    tf.keras.backend.clear_session()
+
+    model = conv_endec.UNet2D(filters=[8, 16], kernel_size=3, use_deconv=True)
+    inputs = tf.keras.Input(shape=(32, 32, 1), batch_size=1)
+    model = tf.keras.Model(inputs, model.call(inputs))
+
+    expected = [
+        # name, type, output_shape
+        ('input_1', 'InputLayer', [(1, 32, 32, 1)], 0),
+        ('conv_block2d', 'ConvBlock2D', (1, 32, 32, 8), 664),
+        ('max_pooling2d', 'MaxPooling2D', (1, 16, 16, 8), 0),
+        ('conv_block2d_1', 'ConvBlock2D', (1, 16, 16, 16), 3488),
+        ('conv2d_transpose', 'Conv2DTranspose', (1, 32, 32, 8), 1160),
+        ('concatenate', 'Concatenate', (1, 32, 32, 16), 0),
+        ('conv_block2d_2', 'ConvBlock2D', (1, 32, 32, 8), 1744)]
+
+    self.assertAllEqual(
+        [elem[0] for elem in expected],
+        [layer.name for layer in get_layers(model)])
+
+    self.assertAllEqual(
+        [elem[1] for elem in expected],
+        [layer.__class__.__name__ for layer in get_layers(model)])
+
+    self.assertAllEqual(
+        [elem[2] for elem in expected],
+        [layer.output_shape for layer in get_layers(model)])
+
+    self.assertAllEqual(
+        [elem[3] for elem in expected],
+        [layer.count_params() for layer in get_layers(model)])
+
+  def test_arch_with_out_block(self):
+    """Tests model arch with output block."""
+    tf.keras.backend.clear_session()
+
+    tf.random.set_seed(32)
+    model = conv_endec.UNet2D(filters=[8, 16], kernel_size=3, output_filters=2)
+    inputs = tf.keras.Input(shape=(32, 32, 1), batch_size=1)
+    model = tf.keras.Model(inputs, model.call(inputs))
+
+    expected = [
+        # name, type, output_shape, params
+        ('input_1', 'InputLayer', [(1, 32, 32, 1)], 0),
+        ('conv_block2d', 'ConvBlock2D', (1, 32, 32, 8), 664),
+        ('max_pooling2d', 'MaxPooling2D', (1, 16, 16, 8), 0),
+        ('conv_block2d_1', 'ConvBlock2D', (1, 16, 16, 16), 3488),
+        ('up_sampling2d', 'UpSampling2D', (1, 32, 32, 16), 0),
+        ('conv2d_4', 'Conv2D', (1, 32, 32, 8), 1160),
+        ('concatenate', 'Concatenate', (1, 32, 32, 16), 0),
+        ('conv_block2d_2', 'ConvBlock2D', (1, 32, 32, 8), 1744),
+        ('conv_block2d_3', 'ConvBlock2D', (1, 32, 32, 2), 146)]
+
+    self.assertAllEqual(
+        [elem[0] for elem in expected],
+        [layer.name for layer in get_layers(model)])
+
+    self.assertAllEqual(
+        [elem[1] for elem in expected],
+        [layer.__class__.__name__ for layer in get_layers(model)])
+
+    self.assertAllEqual(
+        [elem[2] for elem in expected],
+        [layer.output_shape for layer in get_layers(model)])
+
+    self.assertAllEqual(
+        [elem[3] for elem in expected],
+        [layer.count_params() for layer in get_layers(model)])
+
+    out_block = model.layers[-1]
+    self.assertLen(out_block.layers, 2)
+    self.assertIsInstance(out_block.layers[0], convolutional.Conv2D)
+    self.assertIsInstance(out_block.layers[1], tf.keras.layers.Activation)
+    self.assertEqual(tf.keras.activations.linear,
+                     out_block.layers[1].activation)
+
+    input_data = tf.random.stateless_normal((1, 32, 32, 1), [12, 34])
+    output_data = model.predict(input_data)
+
+    # New model with output activation.
+    tf.random.set_seed(32)
+    model = conv_endec.UNet2D(
+        filters=[8, 16], kernel_size=3, output_filters=2,
+        output_activation='sigmoid')
+    inputs = tf.keras.Input(shape=(32, 32, 1), batch_size=1)
+    model = tf.keras.Model(inputs, model.call(inputs))
+
+    self.assertAllClose(tf.keras.activations.sigmoid(output_data),
+                        model.predict(input_data))
+
+  def test_arch_lstm(self):
+    """Tests LSTM model arch."""
+    tf.keras.backend.clear_session()
+
+    model = conv_endec.UNetLSTM2D(filters=[8, 16], kernel_size=3)
+    inputs = tf.keras.Input(shape=(4, 32, 32, 1), batch_size=1)
+    model = tf.keras.Model(inputs, model.call(inputs))
+
+    expected = [
+        # name, type, output_shape, params
+        ('input_1', tf.keras.layers.InputLayer, [(1, 4, 32, 32, 1)], 0),
+        ('conv_block_lstm2d',
+         conv_blocks.ConvBlockLSTM2D, (1, 4, 32, 32, 8), 7264),
+        ('time_distributed',
+         tf.keras.layers.TimeDistributed, (1, 4, 16, 16, 8), 0),
+        ('conv_block_lstm2d_1',
+         conv_blocks.ConvBlockLSTM2D, (1, 4, 16, 16, 16), 32384),
+        ('time_distributed_1',
+         tf.keras.layers.TimeDistributed, (1, 4, 32, 32, 16), 0),
+        ('time_distributed_2',
+         tf.keras.layers.TimeDistributed, (1, 4, 32, 32, 8), 1160),
+        ('concatenate', tf.keras.layers.Concatenate, (1, 4, 32, 32, 16), 0),
+        ('conv_block_lstm2d_2',
+         conv_blocks.ConvBlockLSTM2D, (1, 4, 32, 32, 8), 11584)]
+
+    self._check_layers(expected, model.layers)
+
+    # Check that TimeDistributed wrappers wrap the right layers.
+    self.assertIsInstance(model.layers[2].layer, pooling.MaxPooling2D)
+    self.assertIsInstance(model.layers[4].layer, reshaping.UpSampling2D)
+    self.assertIsInstance(model.layers[5].layer, convolutional.Conv2D)
+
+  def _check_layers(self, expected, actual):
+    actual = [
+        (layer.name, type(layer), layer.output_shape, layer.count_params())
+        for layer in actual]
+    self.assertEqual(expected, actual)
+
+
+def get_layers(model, recursive=False):
+  """Gets all layers in a model (expanding nested models)."""
+  layers = []
+  for layer in model.layers:
+    if isinstance(layer, tf.keras.Model):
+      if recursive:
+        layers.extend(get_layers(layer, recursive=True))
+      else:
+        layers.append(layer)
+    else:
+      layers.append(layer)
+  return layers
 
 
 if __name__ == '__main__':
