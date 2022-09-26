@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for module `linear_operator_gram_matrix`."""
+"""Tests for module `linear_operator_gram_matrix_nd`."""
