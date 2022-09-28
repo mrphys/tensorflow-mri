@@ -8,27 +8,29 @@
 
     <title>Image reconstruction with CG-SENSE &#8212; TensorFlow MRI Documentation</title>
     
-  <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+    <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-
+  
     
-  <link rel="stylesheet"
-    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-  <link rel="preload" as="font" type="font/woff2" crossorigin
-    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-  <link rel="preload" as="font" type="font/woff2" crossorigin
-    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-
+    <link rel="stylesheet"
+      href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+      href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+      href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+  
+    
+      
+  
+    
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
     <link rel="stylesheet" href="../../../_static/styles/sphinx-book-theme.css?digest=5115cc725059bd94278eecd172e13a965bf8f5a9" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css" />
     <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono" />
     
-  <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-
+    <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+  
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
@@ -54,7 +56,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
 <!-- Checkboxes to toggle the left sidebar -->
 <input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
 <label class="overlay overlay-navbar" for="__navigation">
@@ -195,47 +197,47 @@
   <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/broadcast_dynamic_shapes/">
-     broadcast_dynamic_shapes
+     tensorflow_mri.broadcast_dynamic_shapes
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/broadcast_static_shapes/">
-     broadcast_static_shapes
+     tensorflow_mri.broadcast_static_shapes
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/cartesian_product/">
-     cartesian_product
+     tensorflow_mri.cartesian_product
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/central_crop/">
-     central_crop
+     tensorflow_mri.central_crop
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/meshgrid/">
-     meshgrid
+     tensorflow_mri.meshgrid
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/ravel_multi_index/">
-     ravel_multi_index
+     tensorflow_mri.ravel_multi_index
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/resize_with_crop_or_pad/">
-     resize_with_crop_or_pad
+     tensorflow_mri.resize_with_crop_or_pad
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/scale_by_min_max/">
-     scale_by_min_max
+     tensorflow_mri.scale_by_min_max
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/unravel_index/">
-     unravel_index
+     tensorflow_mri.unravel_index
     </a>
    </li>
   </ul>
@@ -252,7 +254,7 @@
   <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/array/update_tensor/">
-     update_tensor
+     tfmri.array.update_tensor
     </a>
    </li>
   </ul>
@@ -269,7 +271,7 @@
   <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/callbacks/TensorBoardImages/">
-     TensorBoardImages
+     tfmri.callbacks.TensorBoardImages
     </a>
    </li>
   </ul>
@@ -286,22 +288,22 @@
   <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/coils/CoilCompressorSVD/">
-     CoilCompressorSVD
+     tfmri.coils.CoilCompressorSVD
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/coils/combine_coils/">
-     combine_coils
+     tfmri.coils.combine_coils
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/coils/compress_coils/">
-     compress_coils
+     tfmri.coils.compress_coils
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/coils/estimate_sensitivities/">
-     estimate_sensitivities
+     tfmri.coils.estimate_sensitivities
     </a>
    </li>
   </ul>
@@ -318,82 +320,82 @@
   <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunction/">
-     ConvexFunction
+     tfmri.convex.ConvexFunction
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionAffineMappingComposition/">
-     ConvexFunctionAffineMappingComposition
+     tfmri.convex.ConvexFunctionAffineMappingComposition
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionIndicatorBall/">
-     ConvexFunctionIndicatorBall
+     tfmri.convex.ConvexFunctionIndicatorBall
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionIndicatorL1Ball/">
-     ConvexFunctionIndicatorL1Ball
+     tfmri.convex.ConvexFunctionIndicatorL1Ball
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionIndicatorL2Ball/">
-     ConvexFunctionIndicatorL2Ball
+     tfmri.convex.ConvexFunctionIndicatorL2Ball
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionL1Norm/">
-     ConvexFunctionL1Norm
+     tfmri.convex.ConvexFunctionL1Norm
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionL1Wavelet/">
-     ConvexFunctionL1Wavelet
+     tfmri.convex.ConvexFunctionL1Wavelet
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionL2Norm/">
-     ConvexFunctionL2Norm
+     tfmri.convex.ConvexFunctionL2Norm
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionL2NormSquared/">
-     ConvexFunctionL2NormSquared
+     tfmri.convex.ConvexFunctionL2NormSquared
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionLeastSquares/">
-     ConvexFunctionLeastSquares
+     tfmri.convex.ConvexFunctionLeastSquares
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionLinearOperatorComposition/">
-     ConvexFunctionLinearOperatorComposition
+     tfmri.convex.ConvexFunctionLinearOperatorComposition
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionNorm/">
-     ConvexFunctionNorm
+     tfmri.convex.ConvexFunctionNorm
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionQuadratic/">
-     ConvexFunctionQuadratic
+     tfmri.convex.ConvexFunctionQuadratic
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionTikhonov/">
-     ConvexFunctionTikhonov
+     tfmri.convex.ConvexFunctionTikhonov
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionTotalVariation/">
-     ConvexFunctionTotalVariation
+     tfmri.convex.ConvexFunctionTotalVariation
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/convex/admm_minimize/">
-     admm_minimize
+     tfmri.convex.admm_minimize
     </a>
    </li>
   </ul>
@@ -410,87 +412,87 @@
   <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/image/extract_glimpses/">
-     extract_glimpses
+     tfmri.image.extract_glimpses
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/image/gmsd/">
-     gmsd
+     tfmri.image.gmsd
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/image/gmsd2d/">
-     gmsd2d
+     tfmri.image.gmsd2d
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/image/gmsd3d/">
-     gmsd3d
+     tfmri.image.gmsd3d
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/image/gradient_magnitude/">
-     gradient_magnitude
+     tfmri.image.gradient_magnitude
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/image/image_gradients/">
-     image_gradients
+     tfmri.image.image_gradients
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/image/phantom/">
-     phantom
+     tfmri.image.phantom
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/image/psnr/">
-     psnr
+     tfmri.image.psnr
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/image/psnr2d/">
-     psnr2d
+     tfmri.image.psnr2d
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/image/psnr3d/">
-     psnr3d
+     tfmri.image.psnr3d
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/image/ssim/">
-     ssim
+     tfmri.image.ssim
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/image/ssim2d/">
-     ssim2d
+     tfmri.image.ssim2d
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/image/ssim2d_multiscale/">
-     ssim2d_multiscale
+     tfmri.image.ssim2d_multiscale
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/image/ssim3d/">
-     ssim3d
+     tfmri.image.ssim3d
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/image/ssim3d_multiscale/">
-     ssim3d_multiscale
+     tfmri.image.ssim3d_multiscale
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/image/ssim_multiscale/">
-     ssim_multiscale
+     tfmri.image.ssim_multiscale
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/image/total_variation/">
-     total_variation
+     tfmri.image.total_variation
     </a>
    </li>
   </ul>
@@ -507,37 +509,37 @@
   <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/initializers/GlorotNormal/">
-     GlorotNormal
+     tfmri.initializers.GlorotNormal
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/initializers/GlorotUniform/">
-     GlorotUniform
+     tfmri.initializers.GlorotUniform
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/initializers/HeNormal/">
-     HeNormal
+     tfmri.initializers.HeNormal
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/initializers/HeUniform/">
-     HeUniform
+     tfmri.initializers.HeUniform
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/initializers/LecunNormal/">
-     LecunNormal
+     tfmri.initializers.LecunNormal
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/initializers/LecunUniform/">
-     LecunUniform
+     tfmri.initializers.LecunUniform
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/initializers/VarianceScaling/">
-     VarianceScaling
+     tfmri.initializers.VarianceScaling
     </a>
    </li>
   </ul>
@@ -554,12 +556,12 @@
   <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/io/encode_gif/">
-     encode_gif
+     tfmri.io.encode_gif
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/io/parse_twix/">
-     parse_twix
+     tfmri.io.parse_twix
     </a>
    </li>
   </ul>
@@ -576,87 +578,87 @@
   <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/layers/AveragePooling1D/">
-     AveragePooling1D
+     tfmri.layers.AveragePooling1D
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/layers/AveragePooling2D/">
-     AveragePooling2D
+     tfmri.layers.AveragePooling2D
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/layers/AveragePooling3D/">
-     AveragePooling3D
+     tfmri.layers.AveragePooling3D
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/layers/Conv1D/">
-     Conv1D
+     tfmri.layers.Conv1D
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/layers/Conv2D/">
-     Conv2D
+     tfmri.layers.Conv2D
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/layers/Conv3D/">
-     Conv3D
+     tfmri.layers.Conv3D
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/layers/ConvBlock/">
-     ConvBlock
+     tfmri.layers.ConvBlock
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/layers/DWT1D/">
-     DWT1D
+     tfmri.layers.DWT1D
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/layers/DWT2D/">
-     DWT2D
+     tfmri.layers.DWT2D
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/layers/DWT3D/">
-     DWT3D
+     tfmri.layers.DWT3D
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/layers/IDWT1D/">
-     IDWT1D
+     tfmri.layers.IDWT1D
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/layers/IDWT2D/">
-     IDWT2D
+     tfmri.layers.IDWT2D
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/layers/IDWT3D/">
-     IDWT3D
+     tfmri.layers.IDWT3D
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/layers/MaxPooling1D/">
-     MaxPooling1D
+     tfmri.layers.MaxPooling1D
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/layers/MaxPooling2D/">
-     MaxPooling2D
+     tfmri.layers.MaxPooling2D
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/layers/MaxPooling3D/">
-     MaxPooling3D
+     tfmri.layers.MaxPooling3D
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/layers/UNet/">
-     UNet
+     tfmri.layers.UNet
     </a>
    </li>
   </ul>
@@ -673,72 +675,72 @@
   <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperator/">
-     LinearOperator
+     tfmri.linalg.LinearOperator
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorAddition/">
-     LinearOperatorAddition
+     tfmri.linalg.LinearOperatorAddition
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorAdjoint/">
-     LinearOperatorAdjoint
+     tfmri.linalg.LinearOperatorAdjoint
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorComposition/">
-     LinearOperatorComposition
+     tfmri.linalg.LinearOperatorComposition
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorDiag/">
-     LinearOperatorDiag
+     tfmri.linalg.LinearOperatorDiag
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorFiniteDifference/">
-     LinearOperatorFiniteDifference
+     tfmri.linalg.LinearOperatorFiniteDifference
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorGramMRI/">
-     LinearOperatorGramMRI
+     tfmri.linalg.LinearOperatorGramMRI
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorGramMatrix/">
-     LinearOperatorGramMatrix
+     tfmri.linalg.LinearOperatorGramMatrix
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorGramNUFFT/">
-     LinearOperatorGramNUFFT
+     tfmri.linalg.LinearOperatorGramNUFFT
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorMRI/">
-     LinearOperatorMRI
+     tfmri.linalg.LinearOperatorMRI
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorNUFFT/">
-     LinearOperatorNUFFT
+     tfmri.linalg.LinearOperatorNUFFT
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorScaledIdentity/">
-     LinearOperatorScaledIdentity
+     tfmri.linalg.LinearOperatorScaledIdentity
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorWavelet/">
-     LinearOperatorWavelet
+     tfmri.linalg.LinearOperatorWavelet
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/linalg/conjugate_gradient/">
-     conjugate_gradient
+     tfmri.linalg.conjugate_gradient
     </a>
    </li>
   </ul>
@@ -755,47 +757,47 @@
   <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/losses/ConfusionLoss/">
-     ConfusionLoss
+     tfmri.losses.ConfusionLoss
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/losses/F1Loss/">
-     F1Loss
+     tfmri.losses.F1Loss
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/losses/FocalTverskyLoss/">
-     FocalTverskyLoss
+     tfmri.losses.FocalTverskyLoss
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/losses/IoULoss/">
-     IoULoss
+     tfmri.losses.IoULoss
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/losses/SSIMLoss/">
-     SSIMLoss
+     tfmri.losses.SSIMLoss
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/losses/SSIMMultiscaleLoss/">
-     SSIMMultiscaleLoss
+     tfmri.losses.SSIMMultiscaleLoss
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/losses/TverskyLoss/">
-     TverskyLoss
+     tfmri.losses.TverskyLoss
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/losses/ssim_loss/">
-     ssim_loss
+     tfmri.losses.ssim_loss
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/losses/ssim_multiscale_loss/">
-     ssim_multiscale_loss
+     tfmri.losses.ssim_multiscale_loss
     </a>
    </li>
   </ul>
@@ -812,62 +814,62 @@
   <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/math/block_soft_threshold/">
-     block_soft_threshold
+     tfmri.math.block_soft_threshold
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/math/extract_from_complex/">
-     extract_from_complex
+     tfmri.math.extract_from_complex
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/math/indicator_ball/">
-     indicator_ball
+     tfmri.math.indicator_ball
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/math/indicator_box/">
-     indicator_box
+     tfmri.math.indicator_box
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/math/indicator_simplex/">
-     indicator_simplex
+     tfmri.math.indicator_simplex
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/math/make_val_and_grad_fn/">
-     make_val_and_grad_fn
+     tfmri.math.make_val_and_grad_fn
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/math/normalize_no_nan/">
-     normalize_no_nan
+     tfmri.math.normalize_no_nan
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/math/project_onto_ball/">
-     project_onto_ball
+     tfmri.math.project_onto_ball
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/math/project_onto_box/">
-     project_onto_box
+     tfmri.math.project_onto_box
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/math/project_onto_simplex/">
-     project_onto_simplex
+     tfmri.math.project_onto_simplex
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/math/shrinkage/">
-     shrinkage
+     tfmri.math.shrinkage
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/math/soft_threshold/">
-     soft_threshold
+     tfmri.math.soft_threshold
     </a>
    </li>
   </ul>
@@ -884,67 +886,67 @@
   <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/metrics/Accuracy/">
-     Accuracy
+     tfmri.metrics.Accuracy
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/metrics/ConfusionMetric/">
-     ConfusionMetric
+     tfmri.metrics.ConfusionMetric
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/metrics/F1Score/">
-     F1Score
+     tfmri.metrics.F1Score
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/metrics/FBetaScore/">
-     FBetaScore
+     tfmri.metrics.FBetaScore
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/metrics/IoU/">
-     IoU
+     tfmri.metrics.IoU
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/metrics/NegativePredictiveValue/">
-     NegativePredictiveValue
+     tfmri.metrics.NegativePredictiveValue
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/metrics/PSNR/">
-     PSNR
+     tfmri.metrics.PSNR
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/metrics/PositivePredictiveValue/">
-     PositivePredictiveValue
+     tfmri.metrics.PositivePredictiveValue
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/metrics/SSIM/">
-     SSIM
+     tfmri.metrics.SSIM
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/metrics/SSIMMultiscale/">
-     SSIMMultiscale
+     tfmri.metrics.SSIMMultiscale
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/metrics/TrueNegativeRate/">
-     TrueNegativeRate
+     tfmri.metrics.TrueNegativeRate
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/metrics/TruePositiveRate/">
-     TruePositiveRate
+     tfmri.metrics.TruePositiveRate
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/metrics/TverskyIndex/">
-     TverskyIndex
+     tfmri.metrics.TverskyIndex
     </a>
    </li>
   </ul>
@@ -961,32 +963,32 @@
   <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/models/ConvBlock1D/">
-     ConvBlock1D
+     tfmri.models.ConvBlock1D
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/models/ConvBlock2D/">
-     ConvBlock2D
+     tfmri.models.ConvBlock2D
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/models/ConvBlock3D/">
-     ConvBlock3D
+     tfmri.models.ConvBlock3D
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/models/UNet1D/">
-     UNet1D
+     tfmri.models.UNet1D
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/models/UNet2D/">
-     UNet2D
+     tfmri.models.UNet2D
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/models/UNet3D/">
-     UNet3D
+     tfmri.models.UNet3D
     </a>
    </li>
   </ul>
@@ -1003,12 +1005,12 @@
   <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/optimize/gradient_descent/">
-     gradient_descent
+     tfmri.optimize.gradient_descent
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/optimize/lbfgs_minimize/">
-     lbfgs_minimize
+     tfmri.optimize.lbfgs_minimize
     </a>
    </li>
   </ul>
@@ -1025,27 +1027,27 @@
   <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/plot/close/">
-     close
+     tfmri.plot.close
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/plot/image_sequence/">
-     image_sequence
+     tfmri.plot.image_sequence
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/plot/show/">
-     show
+     tfmri.plot.show
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/plot/tiled_image/">
-     tiled_image
+     tfmri.plot.tiled_image
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/plot/tiled_image_sequence/">
-     tiled_image_sequence
+     tfmri.plot.tiled_image_sequence
     </a>
    </li>
   </ul>
@@ -1062,27 +1064,27 @@
   <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/recon/adjoint/">
-     adjoint
+     tfmri.recon.adjoint
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/recon/grappa/">
-     grappa
+     tfmri.recon.grappa
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/recon/least_squares/">
-     least_squares
+     tfmri.recon.least_squares
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/recon/partial_fourier/">
-     partial_fourier
+     tfmri.recon.partial_fourier
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/recon/sense/">
-     sense
+     tfmri.recon.sense
     </a>
    </li>
   </ul>
@@ -1099,62 +1101,62 @@
   <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/sampling/density_grid/">
-     density_grid
+     tfmri.sampling.density_grid
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/sampling/estimate_density/">
-     estimate_density
+     tfmri.sampling.estimate_density
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/sampling/estimate_radial_density/">
-     estimate_radial_density
+     tfmri.sampling.estimate_radial_density
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/sampling/expand_density/">
-     expand_density
+     tfmri.sampling.expand_density
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/sampling/expand_trajectory/">
-     expand_trajectory
+     tfmri.sampling.expand_trajectory
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/sampling/flatten_density/">
-     flatten_density
+     tfmri.sampling.flatten_density
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/sampling/flatten_trajectory/">
-     flatten_trajectory
+     tfmri.sampling.flatten_trajectory
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/sampling/radial_density/">
-     radial_density
+     tfmri.sampling.radial_density
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/sampling/radial_trajectory/">
-     radial_trajectory
+     tfmri.sampling.radial_trajectory
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/sampling/radial_waveform/">
-     radial_waveform
+     tfmri.sampling.radial_waveform
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/sampling/random_mask/">
-     random_mask
+     tfmri.sampling.random_mask
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/sampling/spiral_trajectory/">
-     spiral_trajectory
+     tfmri.sampling.spiral_trajectory
     </a>
    </li>
   </ul>
@@ -1171,77 +1173,77 @@
   <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/signal/atanfilt/">
-     atanfilt
+     tfmri.signal.atanfilt
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/signal/crop_kspace/">
-     crop_kspace
+     tfmri.signal.crop_kspace
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/signal/dwt/">
-     dwt
+     tfmri.signal.dwt
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/signal/fft/">
-     fft
+     tfmri.signal.fft
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/signal/filter_kspace/">
-     filter_kspace
+     tfmri.signal.filter_kspace
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/signal/hamming/">
-     hamming
+     tfmri.signal.hamming
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/signal/hann/">
-     hann
+     tfmri.signal.hann
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/signal/idwt/">
-     idwt
+     tfmri.signal.idwt
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/signal/ifft/">
-     ifft
+     tfmri.signal.ifft
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/signal/max_wavelet_level/">
-     max_wavelet_level
+     tfmri.signal.max_wavelet_level
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/signal/nufft/">
-     nufft
+     tfmri.signal.nufft
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/signal/tensor_to_wavelet_coeffs/">
-     tensor_to_wavelet_coeffs
+     tfmri.signal.tensor_to_wavelet_coeffs
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/signal/wavedec/">
-     wavedec
+     tfmri.signal.wavedec
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/signal/wavelet_coeffs_to_tensor/">
-     wavelet_coeffs_to_tensor
+     tfmri.signal.wavelet_coeffs_to_tensor
     </a>
    </li>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/signal/waverec/">
-     waverec
+     tfmri.signal.waverec
     </a>
    </li>
   </ul>
@@ -1258,7 +1260,7 @@
   <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="../../../api_docs/tfmri/summary/gif/">
-     gif
+     tfmri.summary.gif
     </a>
    </li>
   </ul>
@@ -1589,13 +1591,13 @@ title="Print to PDF"
               <div>
                 
   <section class="tex2jax_ignore mathjax_ignore" id="image-reconstruction-with-cg-sense">
-<h1>Image reconstruction with CG-SENSE<a class="headerlink" href="#image-reconstruction-with-cg-sense" title="Permalink to this headline">#</a></h1>
+<h1>Image reconstruction with CG-SENSE<a class="headerlink" href="#image-reconstruction-with-cg-sense" title="Permalink to this headline">¶</a></h1>
 <p><a class="reference external" href="https://mrphys.github.io/tensorflow-mri/tutorials/recon/cg_sense"><img alt="View on website" src="https://img.shields.io/badge/-View%20on%20website-128091?labelColor=grey&amp;logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjYwIiBoZWlnaHQ9IjI1OSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgb3ZlcmZsb3c9ImhpZGRlbiI+PGRlZnM+PGNsaXBQYXRoIGlkPSJjbGlwMCI+PHJlY3QgeD0iMTI2NCIgeT0iMTIzOCIgd2lkdGg9IjI2MCIgaGVpZ2h0PSIyNTkiLz48L2NsaXBQYXRoPjxsaW5lYXJHcmFkaWVudCB4MT0iMTI2NCIgeTE9IjEzNjcuNSIgeDI9IjE1MjQiIHkyPSIxMzY3LjUiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIiBzcHJlYWRNZXRob2Q9InJlZmxlY3QiIGlkPSJmaWxsMSI+PHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjMTI4MDkxIi8+PHN0b3Agb2Zmc2V0PSIwLjAyMjcyNzMiIHN0b3AtY29sb3I9IiMxMjgxOTIiLz48c3RvcCBvZmZzZXQ9IjAuMDQ1NDU0NSIgc3RvcC1jb2xvcj0iIzEyODM5NCIvPjxzdG9wIG9mZnNldD0iMC4wNjgxODE4IiBzdG9wLWNvbG9yPSIjMTI4NDk2Ii8+PHN0b3Agb2Zmc2V0PSIwLjA5MDkwOTEiIHN0b3AtY29sb3I9IiMxMjg2OTgiLz48c3RvcCBvZmZzZXQ9IjAuMTEzNjM2IiBzdG9wLWNvbG9yPSIjMTM4ODlBIi8+PHN0b3Agb2Zmc2V0PSIwLjEzNjM2NCIgc3RvcC1jb2xvcj0iIzEzODk5QiIvPjxzdG9wIG9mZnNldD0iMC4xNTkwOTEiIHN0b3AtY29sb3I9IiMxMzhCOUQiLz48c3RvcCBvZmZzZXQ9IjAuMTgxODE4IiBzdG9wLWNvbG9yPSIjMTM4QzlGIi8+PHN0b3Agb2Zmc2V0PSIwLjIwNDU0NSIgc3RvcC1jb2xvcj0iIzE0OERBMCIvPjxzdG9wIG9mZnNldD0iMC4yMjcyNzMiIHN0b3AtY29sb3I9IiMxNDhGQTIiLz48c3RvcCBvZmZzZXQ9IjAuMjUiIHN0b3AtY29sb3I9IiMxNDkwQTMiLz48c3RvcCBvZmZzZXQ9IjAuMjcyNzI3IiBzdG9wLWNvbG9yPSIjMTQ5MUE1Ii8+PHN0b3Agb2Zmc2V0PSIwLjI5NTQ1NSIgc3RvcC1jb2xvcj0iIzE0OTNBNiIvPjxzdG9wIG9mZnNldD0iMC4zMTgxODIiIHN0b3AtY29sb3I9IiMxNTk0QTgiLz48c3RvcCBvZmZzZXQ9IjAuMzQwOTA5IiBzdG9wLWNvbG9yPSIjMTU5NUE5Ii8+PHN0b3Agb2Zmc2V0PSIwLjM2MzYzNiIgc3RvcC1jb2xvcj0iIzE1OTZBQSIvPjxzdG9wIG9mZnNldD0iMC4zODYzNjQiIHN0b3AtY29sb3I9IiMxNTk3QUIiLz48c3RvcCBvZmZzZXQ9IjAuNDA5MDkxIiBzdG9wLWNvbG9yPSIjMTU5OUFEIi8+PHN0b3Agb2Zmc2V0PSIwLjQzMTgxOCIgc3RvcC1jb2xvcj0iIzE1OUFBRSIvPjxzdG9wIG9mZnNldD0iMC40NTQ1NDUiIHN0b3AtY29sb3I9IiMxNjlCQUYiLz48c3RvcCBvZmZzZXQ9IjAuNDc3MjczIiBzdG9wLWNvbG9yPSIjMTY5Q0IwIi8+PHN0b3Agb2Zmc2V0PSIwLjUiIHN0b3AtY29sb3I9IiMxNjlEQjEiLz48c3RvcCBvZmZzZXQ9IjAuNTIyNzI3IiBzdG9wLWNvbG9yPSIjMTY5RUIyIi8+PHN0b3Agb2Zmc2V0PSIwLjU0NTQ1NSIgc3RvcC1jb2xvcj0iIzE2OUVCMyIvPjxzdG9wIG9mZnNldD0iMC41NjgxODIiIHN0b3AtY29sb3I9IiMxNjlGQjQiLz48c3RvcCBvZmZzZXQ9IjAuNTkwOTA5IiBzdG9wLWNvbG9yPSIjMTZBMEI1Ii8+PHN0b3Agb2Zmc2V0PSIwLjYxMzYzNiIgc3RvcC1jb2xvcj0iIzE2QTFCNiIvPjxzdG9wIG9mZnNldD0iMC42MzYzNjQiIHN0b3AtY29sb3I9IiMxN0ExQjciLz48c3RvcCBvZmZzZXQ9IjAuNjU5MDkxIiBzdG9wLWNvbG9yPSIjMTdBMkI4Ii8+PHN0b3Agb2Zmc2V0PSIwLjY4MTgxOCIgc3RvcC1jb2xvcj0iIzE3QTNCOCIvPjxzdG9wIG9mZnNldD0iMC43MDQ1NDUiIHN0b3AtY29sb3I9IiMxN0EzQjkiLz48c3RvcCBvZmZzZXQ9IjAuNzI3MjczIiBzdG9wLWNvbG9yPSIjMTdBNEJBIi8+PHN0b3Agb2Zmc2V0PSIwLjc1IiBzdG9wLWNvbG9yPSIjMTdBNUJBIi8+PHN0b3Agb2Zmc2V0PSIwLjc3MjcyNyIgc3RvcC1jb2xvcj0iIzE3QTVCQiIvPjxzdG9wIG9mZnNldD0iMC43OTU0NTUiIHN0b3AtY29sb3I9IiMxN0E1QkIiLz48c3RvcCBvZmZzZXQ9IjAuODE4MTgyIiBzdG9wLWNvbG9yPSIjMTdBNkJDIi8+PHN0b3Agb2Zmc2V0PSIwLjg0MDkwOSIgc3RvcC1jb2xvcj0iIzE3QTZCQyIvPjxzdG9wIG9mZnNldD0iMC44NjM2MzYiIHN0b3AtY29sb3I9IiMxN0E3QkMiLz48c3RvcCBvZmZzZXQ9IjAuODg2MzY0IiBzdG9wLWNvbG9yPSIjMTdBN0JEIi8+PHN0b3Agb2Zmc2V0PSIwLjkwOTA5MSIgc3RvcC1jb2xvcj0iIzE3QTdCRCIvPjxzdG9wIG9mZnNldD0iMC45MzE4MTgiIHN0b3AtY29sb3I9IiMxN0E3QkQiLz48c3RvcCBvZmZzZXQ9IjAuOTU0NTQ1IiBzdG9wLWNvbG9yPSIjMTdBN0JEIi8+PHN0b3Agb2Zmc2V0PSIwLjk3NzI3MyIgc3RvcC1jb2xvcj0iIzE3QTdCRCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzE4QThCRSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0xMjY0IC0xMjM4KSI+PHBhdGggZD0iTTEzOTQgMTMwMi43NUMxMzU4LjEgMTMwMi43NSAxMzI5IDEzMzEuNzQgMTMyOSAxMzY3LjUgMTMyOSAxNDAzLjI2IDEzNTguMSAxNDMyLjI1IDEzOTQgMTQzMi4yNSAxNDI5LjkgMTQzMi4yNSAxNDU5IDE0MDMuMjYgMTQ1OSAxMzY3LjUgMTQ1OSAxMzMxLjc0IDE0MjkuOSAxMzAyLjc1IDEzOTQgMTMwMi43NVpNMTM5NCAxMjg5LjhDMTQzNy4wOCAxMjg5LjggMTQ3MiAxMzI0LjU5IDE0NzIgMTM2Ny41IDE0NzIgMTQxMC40MSAxNDM3LjA4IDE0NDUuMiAxMzk0IDE0NDUuMiAxMzUwLjkyIDE0NDUuMiAxMzE2IDE0MTAuNDEgMTMxNiAxMzY3LjUgMTMxNiAxMzI0LjU5IDEzNTAuOTIgMTI4OS44IDEzOTQgMTI4OS44Wk0xMzk0IDEyNzYuODVDMTM0My43NCAxMjc2Ljg1IDEzMDMgMTMxNy40NCAxMzAzIDEzNjcuNSAxMzAzIDE0MTcuNTYgMTM0My43NCAxNDU4LjE1IDEzOTQgMTQ1OC4xNSAxNDQ0LjI2IDE0NTguMTUgMTQ4NSAxNDE3LjU2IDE0ODUgMTM2Ny41IDE0ODUgMTMxNy40NCAxNDQ0LjI2IDEyNzYuODUgMTM5NCAxMjc2Ljg1Wk0xMzk0IDEyMzhDMTQ2NS44IDEyMzggMTUyNCAxMjk1Ljk4IDE1MjQgMTM2Ny41IDE1MjQgMTQzOS4wMiAxNDY1LjggMTQ5NyAxMzk0IDE0OTcgMTMyMi4yIDE0OTcgMTI2NCAxNDM5LjAyIDEyNjQgMTM2Ny41IDEyNjQgMTI5NS45OCAxMzIyLjIgMTIzOCAxMzk0IDEyMzhaIiBmaWxsPSJ1cmwoI2ZpbGwxKSIgZmlsbC1ydWxlPSJldmVub2RkIi8+PC9nPjwvc3ZnPg==" /></a>
 <a class="reference external" href="https://colab.research.google.com/github/mrphys/tensorflow-mri/blob/master/tools/docs/tutorials/recon/cg_sense.ipynb"><img alt="Run in Colab" src="https://img.shields.io/badge/-Run%20in%20Colab-128091?labelColor=grey&amp;logo=googlecolab" /></a>
 <a class="reference external" href="https://github.com/mrphys/tensorflow-mri/blob/master/tools/docs/tutorials/recon/cg_sense.ipynb"><img alt="View on GitHub" src="https://img.shields.io/badge/-View%20on%20GitHub-128091?labelColor=grey&amp;logo=github" /></a>
 <a class="reference external" href="https://raw.githubusercontent.com/mrphys/tensorflow-mri/master/tools/docs/tutorials/recon/cg_sense.ipynb"><img alt="Download notebook" src="https://img.shields.io/badge/-Download%20notebook-128091?labelColor=grey&amp;logo=data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhLS0gQ3JlYXRlZCB3aXRoIElua3NjYXBlIChodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy8pIC0tPgoKPHN2ZwogICB2ZXJzaW9uPSIxLjEiCiAgIGlkPSJzdmc1NSIKICAgd2lkdGg9IjI0IgogICBoZWlnaHQ9IjI0IgogICB2aWV3Qm94PSIwIDAgMjQgMjQiCiAgIHNvZGlwb2RpOmRvY25hbWU9Imljb25zOC1kb3dubG9hZC05Ni5wbmciCiAgIGlua3NjYXBlOnZlcnNpb249IjEuMS4yICgxOjEuMSsyMDIyMDIwNTA5NDIrMGEwMGNmNTMzOSkiCiAgIHhtbG5zOmlua3NjYXBlPSJodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy9uYW1lc3BhY2VzL2lua3NjYXBlIgogICB4bWxuczpzb2RpcG9kaT0iaHR0cDovL3NvZGlwb2RpLnNvdXJjZWZvcmdlLm5ldC9EVEQvc29kaXBvZGktMC5kdGQiCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPGRlZnMKICAgICBpZD0iZGVmczU5Ij4KICAgIDxpbmtzY2FwZTpwYXRoLWVmZmVjdAogICAgICAgZWZmZWN0PSJmaWxsZXRfY2hhbWZlciIKICAgICAgIGlkPSJwYXRoLWVmZmVjdDM3NDAiCiAgICAgICBpc192aXNpYmxlPSJ0cnVlIgogICAgICAgbHBldmVyc2lvbj0iMSIKICAgICAgIHNhdGVsbGl0ZXNfcGFyYW09IkYsMCwwLDEsMCw0LDAsMSBAIEYsMCwwLDEsMCw0LDAsMSBAIEYsMCwwLDEsMCw0LDAsMSBAIEYsMCwwLDEsMCw0LDAsMSIKICAgICAgIHVuaXQ9InB4IgogICAgICAgbWV0aG9kPSJhdXRvIgogICAgICAgbW9kZT0iRiIKICAgICAgIHJhZGl1cz0iNCIKICAgICAgIGNoYW1mZXJfc3RlcHM9IjEiCiAgICAgICBmbGV4aWJsZT0iZmFsc2UiCiAgICAgICB1c2Vfa25vdF9kaXN0YW5jZT0idHJ1ZSIKICAgICAgIGFwcGx5X25vX3JhZGl1cz0idHJ1ZSIKICAgICAgIGFwcGx5X3dpdGhfcmFkaXVzPSJ0cnVlIgogICAgICAgb25seV9zZWxlY3RlZD0iZmFsc2UiCiAgICAgICBoaWRlX2tub3RzPSJmYWxzZSIgLz4KICAgIDxpbmtzY2FwZTpwYXRoLWVmZmVjdAogICAgICAgZWZmZWN0PSJmaWxsZXRfY2hhbWZlciIKICAgICAgIGlkPSJwYXRoLWVmZmVjdDM3MjAiCiAgICAgICBpc192aXNpYmxlPSJ0cnVlIgogICAgICAgbHBldmVyc2lvbj0iMSIKICAgICAgIHNhdGVsbGl0ZXNfcGFyYW09IkYsMCwwLDEsMCwxLDAsMSBAIEYsMCwwLDEsMCwxLDAsMSBAIEYsMCwwLDEsMCwxLDAsMSBAIEYsMCwwLDEsMCwxLDAsMSIKICAgICAgIHVuaXQ9InB4IgogICAgICAgbWV0aG9kPSJhdXRvIgogICAgICAgbW9kZT0iRiIKICAgICAgIHJhZGl1cz0iMSIKICAgICAgIGNoYW1mZXJfc3RlcHM9IjEiCiAgICAgICBmbGV4aWJsZT0iZmFsc2UiCiAgICAgICB1c2Vfa25vdF9kaXN0YW5jZT0idHJ1ZSIKICAgICAgIGFwcGx5X25vX3JhZGl1cz0idHJ1ZSIKICAgICAgIGFwcGx5X3dpdGhfcmFkaXVzPSJ0cnVlIgogICAgICAgb25seV9zZWxlY3RlZD0iZmFsc2UiCiAgICAgICBoaWRlX2tub3RzPSJmYWxzZSIgLz4KICAgIDxpbmtzY2FwZTpwYXRoLWVmZmVjdAogICAgICAgZWZmZWN0PSJmaWxsZXRfY2hhbWZlciIKICAgICAgIGlkPSJwYXRoLWVmZmVjdDM1MTciCiAgICAgICBpc192aXNpYmxlPSJ0cnVlIgogICAgICAgbHBldmVyc2lvbj0iMSIKICAgICAgIHNhdGVsbGl0ZXNfcGFyYW09IkYsMCwwLDEsMCwwLDAsMSBAIEYsMCwwLDEsMCwwLDAsMSBAIEYsMCwwLDEsMCwwLDAsMSBAIEYsMCwwLDEsMCwwLDAsMSIKICAgICAgIHVuaXQ9InB4IgogICAgICAgbWV0aG9kPSJhdXRvIgogICAgICAgbW9kZT0iRiIKICAgICAgIHJhZGl1cz0iNCIKICAgICAgIGNoYW1mZXJfc3RlcHM9IjEiCiAgICAgICBmbGV4aWJsZT0iZmFsc2UiCiAgICAgICB1c2Vfa25vdF9kaXN0YW5jZT0idHJ1ZSIKICAgICAgIGFwcGx5X25vX3JhZGl1cz0idHJ1ZSIKICAgICAgIGFwcGx5X3dpdGhfcmFkaXVzPSJ0cnVlIgogICAgICAgb25seV9zZWxlY3RlZD0iZmFsc2UiCiAgICAgICBoaWRlX2tub3RzPSJmYWxzZSIgLz4KICAgIDxpbmtzY2FwZTpwYXRoLWVmZmVjdAogICAgICAgZWZmZWN0PSJmaWxsZXRfY2hhbWZlciIKICAgICAgIGlkPSJwYXRoLWVmZmVjdDMzNjAiCiAgICAgICBpc192aXNpYmxlPSJ0cnVlIgogICAgICAgbHBldmVyc2lvbj0iMSIKICAgICAgIHNhdGVsbGl0ZXNfcGFyYW09IkYsMCwwLDEsMCwwLDAsMSBAIEYsMCwwLDEsMCwwLDAsMSBAIEYsMCwwLDEsMCwwLDAsMSBAIEYsMCwwLDEsMCwwLDAsMSIKICAgICAgIHVuaXQ9InB4IgogICAgICAgbWV0aG9kPSJhdXRvIgogICAgICAgbW9kZT0iRiIKICAgICAgIHJhZGl1cz0iNCIKICAgICAgIGNoYW1mZXJfc3RlcHM9IjEiCiAgICAgICBmbGV4aWJsZT0iZmFsc2UiCiAgICAgICB1c2Vfa25vdF9kaXN0YW5jZT0idHJ1ZSIKICAgICAgIGFwcGx5X25vX3JhZGl1cz0idHJ1ZSIKICAgICAgIGFwcGx5X3dpdGhfcmFkaXVzPSJ0cnVlIgogICAgICAgb25seV9zZWxlY3RlZD0iZmFsc2UiCiAgICAgICBoaWRlX2tub3RzPSJmYWxzZSIgLz4KICAgIDxpbmtzY2FwZTpwYXRoLWVmZmVjdAogICAgICAgZWZmZWN0PSJmaWxsZXRfY2hhbWZlciIKICAgICAgIGlkPSJwYXRoLWVmZmVjdDMzMTIiCiAgICAgICBpc192aXNpYmxlPSJ0cnVlIgogICAgICAgbHBldmVyc2lvbj0iMSIKICAgICAgIHNhdGVsbGl0ZXNfcGFyYW09IkYsMCwwLDEsMCwzLDAsMSBAIEYsMCwwLDEsMCwzLDAsMSBAIEYsMCwwLDEsMCwzLDAsMSIKICAgICAgIHVuaXQ9InB4IgogICAgICAgbWV0aG9kPSJhdXRvIgogICAgICAgbW9kZT0iRiIKICAgICAgIHJhZGl1cz0iNCIKICAgICAgIGNoYW1mZXJfc3RlcHM9IjEiCiAgICAgICBmbGV4aWJsZT0iZmFsc2UiCiAgICAgICB1c2Vfa25vdF9kaXN0YW5jZT0idHJ1ZSIKICAgICAgIGFwcGx5X25vX3JhZGl1cz0idHJ1ZSIKICAgICAgIGFwcGx5X3dpdGhfcmFkaXVzPSJ0cnVlIgogICAgICAgb25seV9zZWxlY3RlZD0iZmFsc2UiCiAgICAgICBoaWRlX2tub3RzPSJmYWxzZSIgLz4KICAgIDxpbmtzY2FwZTpwYXRoLWVmZmVjdAogICAgICAgZWZmZWN0PSJmaWxsZXRfY2hhbWZlciIKICAgICAgIGlkPSJwYXRoLWVmZmVjdDE5ODciCiAgICAgICBpc192aXNpYmxlPSJ0cnVlIgogICAgICAgbHBldmVyc2lvbj0iMSIKICAgICAgIHNhdGVsbGl0ZXNfcGFyYW09IkYsMCwwLDEsMCw0LDAsMSBAIEYsMCwwLDEsMCw0LDAsMSBAIEYsMCwwLDEsMCw0LDAsMSBAIEYsMCwwLDEsMCw0LDAsMSIKICAgICAgIHVuaXQ9InB4IgogICAgICAgbWV0aG9kPSJhdXRvIgogICAgICAgbW9kZT0iRiIKICAgICAgIHJhZGl1cz0iNCIKICAgICAgIGNoYW1mZXJfc3RlcHM9IjEiCiAgICAgICBmbGV4aWJsZT0iZmFsc2UiCiAgICAgICB1c2Vfa25vdF9kaXN0YW5jZT0idHJ1ZSIKICAgICAgIGFwcGx5X25vX3JhZGl1cz0idHJ1ZSIKICAgICAgIGFwcGx5X3dpdGhfcmFkaXVzPSJ0cnVlIgogICAgICAgb25seV9zZWxlY3RlZD0iZmFsc2UiCiAgICAgICBoaWRlX2tub3RzPSJmYWxzZSIgLz4KICAgIDxpbmtzY2FwZTpwYXRoLWVmZmVjdAogICAgICAgZWZmZWN0PSJmaWxsZXRfY2hhbWZlciIKICAgICAgIGlkPSJwYXRoLWVmZmVjdDkyOSIKICAgICAgIGlzX3Zpc2libGU9InRydWUiCiAgICAgICBscGV2ZXJzaW9uPSIxIgogICAgICAgc2F0ZWxsaXRlc19wYXJhbT0iRiwwLDAsMSwwLDQsMCwxIEAgRiwwLDAsMSwwLDQsMCwxIEAgRiwwLDAsMSwwLDQsMCwxIEAgRiwwLDAsMSwwLDQsMCwxIgogICAgICAgdW5pdD0icHgiCiAgICAgICBtZXRob2Q9ImF1dG8iCiAgICAgICBtb2RlPSJGIgogICAgICAgcmFkaXVzPSI0IgogICAgICAgY2hhbWZlcl9zdGVwcz0iMSIKICAgICAgIGZsZXhpYmxlPSJmYWxzZSIKICAgICAgIHVzZV9rbm90X2Rpc3RhbmNlPSJ0cnVlIgogICAgICAgYXBwbHlfbm9fcmFkaXVzPSJ0cnVlIgogICAgICAgYXBwbHlfd2l0aF9yYWRpdXM9InRydWUiCiAgICAgICBvbmx5X3NlbGVjdGVkPSJmYWxzZSIKICAgICAgIGhpZGVfa25vdHM9ImZhbHNlIiAvPgogICAgPGlua3NjYXBlOnBhdGgtZWZmZWN0CiAgICAgICBlZmZlY3Q9ImZpbGxldF9jaGFtZmVyIgogICAgICAgaWQ9InBhdGgtZWZmZWN0NTYwIgogICAgICAgaXNfdmlzaWJsZT0idHJ1ZSIKICAgICAgIGxwZXZlcnNpb249IjEiCiAgICAgICBzYXRlbGxpdGVzX3BhcmFtPSJGLDAsMCwxLDAsNCwwLDEgQCBGLDAsMCwxLDAsNC4xMzIzMjUyLDAsMSBAIEYsMCwwLDEsMCw0LDAsMSIKICAgICAgIHVuaXQ9InB4IgogICAgICAgbWV0aG9kPSJhdXRvIgogICAgICAgbW9kZT0iRiIKICAgICAgIHJhZGl1cz0iNCIKICAgICAgIGNoYW1mZXJfc3RlcHM9IjEiCiAgICAgICBmbGV4aWJsZT0iZmFsc2UiCiAgICAgICB1c2Vfa25vdF9kaXN0YW5jZT0idHJ1ZSIKICAgICAgIGFwcGx5X25vX3JhZGl1cz0idHJ1ZSIKICAgICAgIGFwcGx5X3dpdGhfcmFkaXVzPSJ0cnVlIgogICAgICAgb25seV9zZWxlY3RlZD0iZmFsc2UiCiAgICAgICBoaWRlX2tub3RzPSJmYWxzZSIgLz4KICAgIDxpbmtzY2FwZTpwYXRoLWVmZmVjdAogICAgICAgZWZmZWN0PSJmaWxsZXRfY2hhbWZlciIKICAgICAgIGlkPSJwYXRoLWVmZmVjdDI0OSIKICAgICAgIGlzX3Zpc2libGU9InRydWUiCiAgICAgICBscGV2ZXJzaW9uPSIxIgogICAgICAgc2F0ZWxsaXRlc19wYXJhbT0iRiwwLDAsMSwwLDMuNDY0MTAxNiwwLDEgQCBGLDAsMCwxLDAsMy40NjQxMDE2LDAsMSBAIEYsMCwwLDEsMCwzLjQ2NDEwMTYsMCwxIgogICAgICAgdW5pdD0icHgiCiAgICAgICBtZXRob2Q9ImF1dG8iCiAgICAgICBtb2RlPSJGIgogICAgICAgcmFkaXVzPSIyIgogICAgICAgY2hhbWZlcl9zdGVwcz0iMSIKICAgICAgIGZsZXhpYmxlPSJmYWxzZSIKICAgICAgIHVzZV9rbm90X2Rpc3RhbmNlPSJmYWxzZSIKICAgICAgIGFwcGx5X25vX3JhZGl1cz0idHJ1ZSIKICAgICAgIGFwcGx5X3dpdGhfcmFkaXVzPSJ0cnVlIgogICAgICAgb25seV9zZWxlY3RlZD0iZmFsc2UiCiAgICAgICBoaWRlX2tub3RzPSJmYWxzZSIgLz4KICA8L2RlZnM+CiAgPHNvZGlwb2RpOm5hbWVkdmlldwogICAgIGlkPSJuYW1lZHZpZXc1NyIKICAgICBwYWdlY29sb3I9IiNmZmZmZmYiCiAgICAgYm9yZGVyY29sb3I9IiM2NjY2NjYiCiAgICAgYm9yZGVyb3BhY2l0eT0iMS4wIgogICAgIGlua3NjYXBlOnBhZ2VzaGFkb3c9IjIiCiAgICAgaW5rc2NhcGU6cGFnZW9wYWNpdHk9IjAuMCIKICAgICBpbmtzY2FwZTpwYWdlY2hlY2tlcmJvYXJkPSIwIgogICAgIHNob3dncmlkPSJ0cnVlIgogICAgIGlua3NjYXBlOnNuYXAtZ2xvYmFsPSJmYWxzZSIKICAgICBpbmtzY2FwZTp6b29tPSIxNy4zNzUiCiAgICAgaW5rc2NhcGU6Y3g9Ii00LjQwMjg3NzciCiAgICAgaW5rc2NhcGU6Y3k9IjEwLjI0NDYwNCIKICAgICBpbmtzY2FwZTp3aW5kb3ctd2lkdGg9IjE5MjAiCiAgICAgaW5rc2NhcGU6d2luZG93LWhlaWdodD0iMTA0MyIKICAgICBpbmtzY2FwZTp3aW5kb3cteD0iMCIKICAgICBpbmtzY2FwZTp3aW5kb3cteT0iMCIKICAgICBpbmtzY2FwZTp3aW5kb3ctbWF4aW1pemVkPSIxIgogICAgIGlua3NjYXBlOmN1cnJlbnQtbGF5ZXI9ImxheWVyMSIKICAgICB3aWR0aD0iMjQwMDAwMHB4Ij4KICAgIDxpbmtzY2FwZTpncmlkCiAgICAgICB0eXBlPSJ4eWdyaWQiCiAgICAgICBpZD0iZ3JpZDgwNCIgLz4KICA8L3NvZGlwb2RpOm5hbWVkdmlldz4KICA8ZwogICAgIGlua3NjYXBlOmdyb3VwbW9kZT0ibGF5ZXIiCiAgICAgaWQ9ImxheWVyMSIKICAgICBpbmtzY2FwZTpsYWJlbD0iVmVjdG9ycyI+CiAgICA8cGF0aAogICAgICAgaWQ9InBhdGgyNzc5IgogICAgICAgc3R5bGU9ImZpbGw6I2ZmZmZmZjtzdHJva2Utd2lkdGg6MC4yOTA2NTUiCiAgICAgICBpbmtzY2FwZTp0cmFuc2Zvcm0tY2VudGVyLXg9IjAuMDMxODc5ODkyIgogICAgICAgaW5rc2NhcGU6dHJhbnNmb3JtLWNlbnRlci15PSIxLjAzMTg0OTQiCiAgICAgICBkPSJtIDExLDIgYSAxLDEgMCAwIDAgLTEsMSB2IDguMDEwMjU0IGwgLTQsLTAuMDA4OCBhIDAuMjk0NDkyNTMsMC4yOTQ0OTI1MiAwIDAgMCAtMC4yMDE2NjAzLDAuNTEwMjU0IGwgNS42MDU0NjkzLDUuMjI2NTYyIGEgMC44MTE4OTI0NSwwLjgxMTg5MjQ1IDAgMCAwIDEuMTAxNTYyLDAuMDA1NCBsIDUuNjkxNDA2LC01LjIwODAwNiBBIDAuMjkyMzA2NywwLjI5MjMwNjcgMCAwIDAgMTgsMTEuMDI3ODMyIGwgLTQsLTAuMDA4OCBWIDMgQSAxLDEgMCAwIDAgMTMsMiBaIiAvPgogICAgPHBhdGgKICAgICAgIGlkPSJyZWN0MTg4NyIKICAgICAgIHN0eWxlPSJmaWxsOiNmZmZmZmY7c3Ryb2tlLXdpZHRoOjAuMjUxNTc3IgogICAgICAgZD0ibSAzLDIwIGggMTggYSAxLDEgNDUgMCAxIDEsMSAxLDEgMTM1IDAgMSAtMSwxIEggMyBBIDEsMSA0NSAwIDEgMiwyMSAxLDEgMTM1IDAgMSAzLDIwIFoiIC8+CiAgPC9nPgo8L3N2Zz4K" /></a></p>
 <section id="set-up-tensorflow-mri">
-<h2>Set up TensorFlow MRI<a class="headerlink" href="#set-up-tensorflow-mri" title="Permalink to this headline">#</a></h2>
+<h2>Set up TensorFlow MRI<a class="headerlink" href="#set-up-tensorflow-mri" title="Permalink to this headline">¶</a></h2>
 <p>If you have not yet installed TensorFlow MRI in your environment, you may do so
 now using <code class="docutils literal notranslate"><span class="pre">pip</span></code>:</p>
 <div class="cell docutils container">
@@ -1647,7 +1649,7 @@ Note: you may need to restart the kernel to use updated packages.
 </div>
 </div>
 <section id="using-a-gpu">
-<h3>Using a GPU<a class="headerlink" href="#using-a-gpu" title="Permalink to this headline">#</a></h3>
+<h3>Using a GPU<a class="headerlink" href="#using-a-gpu" title="Permalink to this headline">¶</a></h3>
 <p>TensorFlow MRI supports CPU and GPU computation. If there is a GPU available in
 your environment and it is visible to TensorFlow, it will be used automatically.</p>
 <div class="admonition tip">
@@ -1665,7 +1667,7 @@ context manager.</p>
 </section>
 </section>
 <section id="prepare-the-data">
-<h2>Prepare the data<a class="headerlink" href="#prepare-the-data" title="Permalink to this headline">#</a></h2>
+<h2>Prepare the data<a class="headerlink" href="#prepare-the-data" title="Permalink to this headline">¶</a></h2>
 <p>We will be using an example brain dataset from the
 <a class="reference external" href="https://ismrm.github.io/rrsg/challenge_one/">ISMRM Reproducibility Challenge 1</a>.
 Let’s download it.</p>
@@ -1845,7 +1847,7 @@ trajectory shape: (49152, 2)
 acquired radial spokes extending to the edges of <em>k</em>-space (<span class="math notranslate nohighlight">\(\pi\)</span>).</p>
 </section>
 <section id="compute-density-compensation-weights">
-<h2>Compute density compensation weights<a class="headerlink" href="#compute-density-compensation-weights" title="Permalink to this headline">#</a></h2>
+<h2>Compute density compensation weights<a class="headerlink" href="#compute-density-compensation-weights" title="Permalink to this headline">¶</a></h2>
 <p>Non-Cartesian trajectories do not usually sample <em>k</em>-space uniformly. It’s
 obvious from the figure above that the center of <em>k</em>-space is much more densely
 sampled than its edges.</p>
@@ -1872,7 +1874,7 @@ module also contains other operators to compute trajectories and densities.</p>
 </div>
 </section>
 <section id="perform-zero-filled-reconstruction">
-<h2>Perform zero-filled reconstruction<a class="headerlink" href="#perform-zero-filled-reconstruction" title="Permalink to this headline">#</a></h2>
+<h2>Perform zero-filled reconstruction<a class="headerlink" href="#perform-zero-filled-reconstruction" title="Permalink to this headline">¶</a></h2>
 <p>We are now ready to perform a basic zero-filled reconstruction. The easiest
 way to do this with TensorFlow MRI is using the function
 <a class="reference external" href="https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/recon/adjoint"><code class="docutils literal notranslate"><span class="pre">tfmri.recon.adjoint</span></code></a>.</p>
@@ -1978,7 +1980,7 @@ module contains several utilities to operate with coil arrays.</p>
 </div>
 </section>
 <section id="compute-coil-sensitivity-maps">
-<h2>Compute coil sensitivity maps<a class="headerlink" href="#compute-coil-sensitivity-maps" title="Permalink to this headline">#</a></h2>
+<h2>Compute coil sensitivity maps<a class="headerlink" href="#compute-coil-sensitivity-maps" title="Permalink to this headline">¶</a></h2>
 <p>The zero-filled image has visible artefact because the <em>k</em>-space sampling rate
 is below the Nyquist rate. Information from multiple coils can be used more
 effectively to address this problem, by performing a SENSE reconstruction.</p>
@@ -2054,7 +2056,7 @@ Walsh’s method, one of the methods implemented in
 </div>
 </section>
 <section id="perform-cg-sense-reconstruction">
-<h2>Perform CG-SENSE reconstruction<a class="headerlink" href="#perform-cg-sense-reconstruction" title="Permalink to this headline">#</a></h2>
+<h2>Perform CG-SENSE reconstruction<a class="headerlink" href="#perform-cg-sense-reconstruction" title="Permalink to this headline">¶</a></h2>
 <p>We are finally ready to perform the SENSE reconstruction! We will be using
 another of the high-level interfaces in <code class="docutils literal notranslate"><span class="pre">tfmri.recon</span></code>. In this case, we will use
 <a class="reference external" href="https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/recon/least_squares"><code class="docutils literal notranslate"><span class="pre">tfmri.recon.least_squares</span></code></a>.
@@ -2095,7 +2097,7 @@ and solve the linear system using <a class="reference external" href="https://mr
 </div>
 </div>
 <section id="add-tikhonov-regularization">
-<h3>Add Tikhonov regularization<a class="headerlink" href="#add-tikhonov-regularization" title="Permalink to this headline">#</a></h3>
+<h3>Add Tikhonov regularization<a class="headerlink" href="#add-tikhonov-regularization" title="Permalink to this headline">¶</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">tfmri.recon.least_squares</span></code> supports regularization. Tikhonov regularization can help
 improve the conditioning of a linear system. In its simplest form, it simply
 favors solutions with a low L2 norm, which can help to reduce the amount of
@@ -2140,7 +2142,7 @@ module contains many more operators for convex optimization.</p>
 </section>
 </section>
 <section id="consolidate-previous-steps">
-<h2>Consolidate previous steps<a class="headerlink" href="#consolidate-previous-steps" title="Permalink to this headline">#</a></h2>
+<h2>Consolidate previous steps<a class="headerlink" href="#consolidate-previous-steps" title="Permalink to this headline">¶</a></h2>
 <p>Let’s put together our entire reconstruction pipeline in a single
 function:</p>
 <div class="cell docutils container">
@@ -2257,7 +2259,7 @@ Challenge 1.</p>
 </div>
 </section>
 <section id="conclusion">
-<h2>Conclusion<a class="headerlink" href="#conclusion" title="Permalink to this headline">#</a></h2>
+<h2>Conclusion<a class="headerlink" href="#conclusion" title="Permalink to this headline">¶</a></h2>
 <p>Congratulations! You performed a non-Cartesian CG-SENSE reconstruction using
 TensorFlow MRI. The code used in this notebook works for any dataset and
 trajectory. It also works for 3D imaging. Feel free to try with your own data!</p>
@@ -2266,7 +2268,7 @@ trajectory. It also works for 3D imaging. Feel free to try with your own data!</
 more examples of using TensorFlow MRI, check out the
 <a class="reference external" href="https://mrphys.github.io/tensorflow-mri/tutorials/">tutorials</a>.</p>
 <section id="let-us-know">
-<h3>Let us know!<a class="headerlink" href="#let-us-know" title="Permalink to this headline">#</a></h3>
+<h3>Let us know!<a class="headerlink" href="#let-us-know" title="Permalink to this headline">¶</a></h3>
 <p>Please tell us what you think about this tutorial and about TensorFlow MRI.
 We would like to hear what you liked and how we can improve. You will find us
 on <a class="reference external" href="https://github.com/mrphys/tensorflow-mri/issues/new">GitHub</a>.</p>
@@ -2335,9 +2337,8 @@ on <a class="reference external" href="https://github.com/mrphys/tensorflow-mri/
       </div>
     </div>
   
-  <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-
+    <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+  
 
   </body>
 </html>
