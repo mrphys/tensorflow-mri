@@ -22,13 +22,13 @@ TensorFlow MRI is a library of TensorFlow operators for computational MRI.
 The library has a Python interface and is mostly written in Python. However,
 computations are efficiently performed by the TensorFlow backend (implemented in
 C++/CUDA), which brings together the ease of use and fast prototyping of Python
-with the speed and efficiency of optimized lower-level implementations. 
+with the speed and efficiency of optimized lower-level implementations.
 
 Being an extension of TensorFlow, TensorFlow MRI integrates seamlessly in ML
 applications. No additional interfacing is needed to include a SENSE operator
 within a neural network, or to use a trained prior as part of an iterative
 reconstruction. Therefore, the gap between ML and non-ML components of image
-processing pipelines is eliminated. 
+processing pipelines is eliminated.
 
 Whether an application involves ML or not, TensorFlow MRI operators can take
 full advantage of the TensorFlow framework, with capabilities including
@@ -36,7 +36,7 @@ automatic differentiation, multi-device support (CPUs and GPUs), automatic
 device placement and copying of tensor data, and conversion to fast,
 serializable graphs.
 
-TensorFlow MRI contains operators for: 
+TensorFlow MRI contains operators for:
 
 * Multicoil arrays
   (`tfmri.coils <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/coils>`_):
@@ -82,7 +82,7 @@ TensorFlow MRI contains operators for:
 * Unconstrained optimization
   (`tfmri.optimize <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/optimize>`_):
   gradient descent, L-BFGS.
-* And more, e.g., supporting array manipulation and math tasks. 
+* And more, e.g., supporting array manipulation and math tasks.
 
 .. end-intro
 
@@ -111,6 +111,7 @@ versions of TensorFlow and TensorFlow MRI according to the table below.
 ======================  ========================  ============
 TensorFlow MRI Version  TensorFlow Compatibility  Release Date
 ======================  ========================  ============
+v0.22.0                 v2.10.x                   Sep 26, 2022
 v0.21.0                 v2.9.x                    Jul 24, 2022
 v0.20.0                 v2.9.x                    Jun 18, 2022
 v0.19.0                 v2.9.x                    Jun 1, 2022
@@ -141,7 +142,7 @@ Documentation
 -------------
 
 Visit the `docs <https://mrphys.github.io/tensorflow-mri/>`_ for guides,
-tutorials and the API reference. 
+tutorials and the API reference.
 
 Issues
 ------

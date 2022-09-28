@@ -218,7 +218,7 @@ class Conv1DTest(test_combinations.TestCase):
           'activation': 'exponential'
       }, (None, 5, 2)),
       ('regularizer', {
-          'kernel_regularizer': 'l2'
+          'kernel_regularizer': 'l1'
       }, (None, 5, 2))
   )
   def test_conv1d_complex(
@@ -258,7 +258,7 @@ class Conv1DTest(test_combinations.TestCase):
     actual_output = model.predict(input_data)
 
     # Now compile and train on a batch.
-    model.compile('adam', 'mse')
+    model.compile('adam', mse)
     model.train_on_batch(input_data, actual_output)
 
   def test_conv1d_complex_values(self):
@@ -462,7 +462,7 @@ class Conv2DTest(test_combinations.TestCase):
           'activation': 'exponential'
       }, (None, 5, 4, 2)),
       ('regularizer', {
-          'kernel_regularizer': 'l2'
+          'kernel_regularizer': 'l1'
       }, (None, 5, 4, 2))
   )
   def test_conv2d_complex(self,
@@ -516,7 +516,7 @@ class Conv2DTest(test_combinations.TestCase):
     actual_output = model.predict(input_data)
 
     # Now compile and train on a batch.
-    model.compile('adam', 'mse')
+    model.compile('adam', mse)
     model.train_on_batch(input_data, actual_output)
 
 
@@ -689,7 +689,7 @@ class Conv3DTest(test_combinations.TestCase):
           'activation': 'exponential'
       }, (None, 3, 5, 4, 2)),
       ('regularizer', {
-          'kernel_regularizer': 'l2'
+          'kernel_regularizer': 'l1'
       }, (None, 3, 5, 4, 2))
   )
   def test_conv3d_complex(self,
@@ -733,7 +733,7 @@ class Conv3DTest(test_combinations.TestCase):
     actual_output = model.predict(input_data)
 
     # Now compile and train on a batch.
-    model.compile('adam', 'mse')
+    model.compile('adam', mse)
     model.train_on_batch(input_data, actual_output)
 
 
@@ -850,6 +850,14 @@ class ConvSequentialTest(test_combinations.TestCase):
       x = layer(inputs)
       # Won't raise error here with None values in input shape (b/144282043).
       layer(x)
+
+
+# Default MSE loss fails because it returns a complex value.
+def mse(y_true, y_pred):
+  value = tf.keras.losses.mean_squared_error(y_true, y_pred)
+  if value.dtype.is_complex:
+    value = tf.math.real(value)
+  return value
 
 
 if __name__ == '__main__':
