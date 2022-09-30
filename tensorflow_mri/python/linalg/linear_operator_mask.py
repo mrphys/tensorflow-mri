@@ -37,14 +37,14 @@ class LinearOperatorMask(linear_operator_nd.LinearOperatorND):
 
   ```{rubric} Performance
   ```
-  - Matrix-vector multiplication is $O(n)$.
-  - Exact solve is not supported.
-  - Least-squares solve is $O(n)$.
+  - `matvec` is $O(n)$.
+  - `solve` is not supported.
+  - `lstsq` is $O(n)$.
 
   ```{rubric} Properties
   ```
-  - This operator is self-adjoint, i.e. $A^H = A$.
   - This operator is singular, i.e. $A^{-1}$ does not exist.
+  - This operator is self-adjoint, i.e. $A^H = A$.
   - This operator is not positive definite, i.e. $x^H A x <= 0$ for some $x$.
   - This operator is square, i.e. $A \in \mathbb{F}^{n \times n}$.
 

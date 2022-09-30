@@ -46,10 +46,27 @@ class LinearOperatorFFT(linear_operator_nd.LinearOperatorND):
   This operator only supports complex inputs. Specify the desired type using
   the `dtype` argument.
 
-  Example:
+  ```{rubric} Performance
+  ```
+  - `matvec` is $O(n \log{n})$.
+  - `solvevec` is $O(n \log{n})$.
+  - `lstsqvec` is equal to `solve`.
 
-  >>> # Create a 2-dimensional 128x128 DFT operator.
-  >>> linop = tfmri.linalg.LinearOperatorFFT(domain_shape=[128, 128])
+  ```{rubric} Matrix properties
+  ```
+  - This operator is non-singular, i.e. $A^{-1}$ exists.
+  - This operator is not self-adjoint, i.e. $A^H \neq A$.
+  - This operator is square, i.e. $A \in \mathbb{F}^{n \times n}$.
+
+  ```{rubric} Inversion
+  ```
+  The inverse of this operator is equal to its adjoint, i.e., $A^{-1} = A^H$.
+  The linear system $Ax = b$ can be efficiently solved using `solve` or
+  `solvevec`.
+
+  Example:
+    >>> # Create a 2-dimensional 128x128 DFT operator.
+    >>> linop = tfmri.linalg.LinearOperatorFFT(domain_shape=[128, 128])
 
   Args:
     domain_shape: A 1D integer `tf.Tensor`. The domain shape of the operator,

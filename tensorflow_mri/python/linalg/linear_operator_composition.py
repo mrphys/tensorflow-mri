@@ -17,7 +17,6 @@
 import tensorflow as tf
 
 from tensorflow_mri.python.linalg import linear_operator
-from tensorflow_mri.python.linalg import linear_operator_util
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import doc_util
 
