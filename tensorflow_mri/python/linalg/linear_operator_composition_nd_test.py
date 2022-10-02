@@ -20,6 +20,7 @@ import tensorflow as tf
 from tensorflow_mri.python.linalg import linear_operator_test
 from tensorflow_mri.python.linalg import linear_operator_addition
 from tensorflow_mri.python.linalg import linear_operator_coils
+from tensorflow_mri.python.linalg import linear_operator_nufft
 from tensorflow_mri.python.linalg import linear_operator_full_matrix
 from tensorflow_mri.python.linalg import linear_operator_test_util
 from tensorflow_mri.python.util import test_util
@@ -31,13 +32,6 @@ rng = np.random.RandomState(2022)
 class SquareLinearOperatorCompositionNDTest(
     linear_operator_test_util.SquareLinearOperatorDerivedClassTest):
   """Most tests done in the base class LinearOperatorDerivedClassTest."""
-
-  def test_coils(self):
-    maps = linear_operator_test_util.random_normal(
-        shape=(2, 4, 4), dtype=tf.complex64)
-    matrix = linear_operator_coils.coils_matrix(maps)
-    print(np.linalg.pinv(matrix) @ matrix)
-    # print(matrix)
 
   def tearDown(self):
     tf.config.experimental.enable_tensor_float_32_execution(self.tf32_keep_)

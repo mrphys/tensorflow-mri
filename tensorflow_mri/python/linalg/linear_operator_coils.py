@@ -61,37 +61,40 @@ class LinearOperatorCoils(linear_operator_nd.LinearOperatorND):
         name=name
     )
 
-    self._batch_dims = np.asarray(tf.get_static_value(batch_dims))
-    if (not self._batch_dims.ndim == 0 or
-        not np.issubdtype(self._batch_dims.dtype, np.integer)):
-      raise TypeError(
-          f"batch_dims must be an int, but got: {batch_dims}")
-    self._batch_dims = self._batch_dims.item()
-    if self._batch_dims < 0:
-      raise ValueError(
-          f"batch_dims must be non-negative, but got: {batch_dims}")
+    with tf.name_scope(name):
+      # Check batch_dims.
+      self._batch_dims = np.asarray(tf.get_static_value(batch_dims))
+      if (not self._batch_dims.ndim == 0 or
+          not np.issubdtype(self._batch_dims.dtype, np.integer)):
+        raise TypeError(
+            f"batch_dims must be an int, but got: {batch_dims}")
+      self._batch_dims = self._batch_dims.item()
+      if self._batch_dims < 0:
+        raise ValueError(
+            f"batch_dims must be non-negative, but got: {batch_dims}")
 
-    self._maps = tf.convert_to_tensor(maps, name="maps")
-    if self._maps.dtype not in (tf.complex64, tf.complex128):
-      raise TypeError(
-          f"maps must be complex, but got dtype: {str(self._maps.dtype)}")
-    if self._maps.shape.rank is None:
-      raise ValueError("maps must have known static rank")
-    self._ndim_static = self._maps.shape.rank - self._batch_dims - 1
-    if self._ndim_static < 1:
-      raise ValueError(
-          f"maps must be at least 2-D (excluding batch dimensions), "
-          f"but got shape: {self._maps.shape}")
-    self._coil_axis = -(self._ndim_static + 1)
+      # Check maps.
+      self._maps = tf.convert_to_tensor(maps, name="maps")
+      if self._maps.dtype not in (tf.complex64, tf.complex128):
+        raise TypeError(
+            f"maps must be complex, but got dtype: {str(self._maps.dtype)}")
+      if self._maps.shape.rank is None:
+        raise ValueError("maps must have known static rank")
+      self._ndim_static = self._maps.shape.rank - self._batch_dims - 1
+      if self._ndim_static < 1:
+        raise ValueError(
+            f"maps must be at least 2-D (excluding batch dimensions), "
+            f"but got shape: {self._maps.shape}")
+      self._coil_axis = -(self._ndim_static + 1)
 
-    super().__init__(
-        dtype=maps.dtype,
-        is_non_singular=is_non_singular,
-        is_self_adjoint=is_self_adjoint,
-        is_positive_definite=is_positive_definite,
-        is_square=is_square,
-        parameters=parameters,
-        name=name)
+      super().__init__(
+          dtype=maps.dtype,
+          is_non_singular=is_non_singular,
+          is_self_adjoint=is_self_adjoint,
+          is_positive_definite=is_positive_definite,
+          is_square=is_square,
+          parameters=parameters,
+          name=name)
 
   def _matvec_nd(self, x, adjoint=False):
     if adjoint:

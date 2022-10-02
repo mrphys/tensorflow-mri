@@ -84,6 +84,7 @@ random_normal = linear_operator_test_util.random_normal
 random_uniform = linear_operator_test_util.random_uniform
 random_positive_definite_matrix = (
     linear_operator_test_util.random_positive_definite_matrix)
+random_sign_uniform = linear_operator_test_util.random_sign_uniform
 
 
 class SquareLinearOperatorDerivedClassTest(

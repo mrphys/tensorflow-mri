@@ -1,3 +1,18 @@
+# Copyright 2016 The TensorFlow Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 # Copyright 2022 The TensorFlow MRI Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,9 +38,11 @@ split_arg_into_blocks = linear_operator_util.split_arg_into_blocks
 _reshape_for_efficiency = linear_operator_util._reshape_for_efficiency  # pylint: disable=protected-access
 
 
+## Matrix operators.
+
 def matrix_solve_ls_with_broadcast(matrix, rhs, adjoint=False, name=None):
   """Solve systems of linear equations."""
-  with tf.name_scope(name or "MatrixSolveWithBroadcast"):
+  with tf.name_scope(name or "MatrixSolveLSWithBroadcast"):
     matrix = tf.convert_to_tensor(matrix, name="matrix")
     rhs = tf.convert_to_tensor(rhs, name="rhs", dtype=matrix.dtype)
 
@@ -41,3 +58,46 @@ def matrix_solve_ls_with_broadcast(matrix, rhs, adjoint=False, name=None):
     solution = tf.linalg.lstsq(matrix, rhs, fast=False)
 
     return reshape_inv(solution)
+
+
+## Asserts.
+
+def assert_no_entries_with_modulus_zero(x, message=None, name=None):
+  """Returns `Op` that asserts Tensor `x` has no entries with modulus zero.
+
+  Args:
+    x: Numeric `Tensor`, real, integer, or complex.
+    message: A string message to prepend to failure message.
+    name: A name to give this `Op`.
+
+  Returns:
+    An `Op` that asserts `x` has no entries with modulus zero.
+  """
+  with tf.name_scope(name or "assert_no_entries_with_modulus_zero"):
+    x = tf.convert_to_tensor(x, name="x")
+    dtype = x.dtype.base_dtype
+    should_be_nonzero = tf.math.abs(x)
+    zero = tf.convert_to_tensor(0, dtype=dtype.real_dtype)
+    return tf.debugging.assert_less(zero, should_be_nonzero, message=message)
+
+
+def assert_zero_imag_part(x, message=None, name=None):
+  """Returns `Op` that asserts Tensor `x` has no non-zero imaginary parts.
+
+  Args:
+    x: Numeric `Tensor`, real, integer, or complex.
+    message: A string message to prepend to failure message.
+    name: A name to give this `Op`.
+
+  Returns:
+    An `Op` that asserts `x` has no entries with non-zero imaginary part.
+  """
+  with tf.name_scope(name or "assert_zero_imag_part"):
+    x = tf.convert_to_tensor(x, name="x")
+    dtype = x.dtype.base_dtype
+
+    if dtype.is_floating:
+      return tf.no_op()
+
+    zero = tf.convert_to_tensor(0, dtype=dtype.real_dtype)
+    return tf.debugging.assert_equal(zero, tf.math.imag(x), message=message)

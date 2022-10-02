@@ -38,8 +38,8 @@ class LinearOperatorMask(linear_operator_nd.LinearOperatorND):
   ```{rubric} Performance
   ```
   - `matvec` is $O(n)$.
-  - `solve` is not supported.
-  - `lstsq` is $O(n)$.
+  - `solvevec` is not supported.
+  - `lstsqvec` is $O(n)$.
 
   ```{rubric} Properties
   ```
