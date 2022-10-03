@@ -16,6 +16,7 @@
 
 from tensorflow_mri.python.linalg import add_registrations
 from tensorflow_mri.python.linalg import adjoint_registrations
+from tensorflow_mri.python.linalg import cholesky_registrations
 from tensorflow_mri.python.linalg import conjugate_gradient
 from tensorflow_mri.python.linalg import inverse_registrations
 from tensorflow_mri.python.linalg import linear_operator_addition
@@ -24,11 +25,13 @@ from tensorflow_mri.python.linalg import linear_operator_adjoint
 from tensorflow_mri.python.linalg import linear_operator_algebra
 from tensorflow_mri.python.linalg import linear_operator_composition
 from tensorflow_mri.python.linalg import linear_operator_diag
+from tensorflow_mri.python.linalg import linear_operator_diag_nd
 from tensorflow_mri.python.linalg import linear_operator_fft
 from tensorflow_mri.python.linalg import linear_operator_finite_difference
 from tensorflow_mri.python.linalg import linear_operator_full_matrix
 from tensorflow_mri.python.linalg import linear_operator_gram_matrix
 from tensorflow_mri.python.linalg import linear_operator_identity
+from tensorflow_mri.python.linalg import linear_operator_identity_nd
 from tensorflow_mri.python.linalg import linear_operator_inversion
 from tensorflow_mri.python.linalg import linear_operator_mri
 from tensorflow_mri.python.linalg import linear_operator_nufft

@@ -12,7 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""TFMRI operators."""
+"""Utilities for argument validation."""
 
-from tensorflow_mri.python.ops import control_flow_ops
-from tensorflow_mri.python.ops import wavelet_ops
+import tensorflow as tf
+
+
+def with_dependencies(dependencies, tensor, name=None):
+  """Produces the content of `tensor` only after `dependencies`.
+
+  Args:
+    dependencies: An iterable of operations to run before this op finishes.
+    tensor: A `tf.Tensor`.
+    name: An optional name for this operation.
+
+  Returns:
+    A `tf.Tensor` equal to `tensor`.
+  """
+  if tf.executing_eagerly():
+    return tensor
+  with tf.name_scope(name or "with_dependencies"):
+    with tf.control_dependencies(dependencies):
+      return tf.identity(tensor)

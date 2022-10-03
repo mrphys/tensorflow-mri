@@ -16,8 +16,7 @@
 
 import tensorflow as tf
 
-
-from tensorflow.python.ops.control_flow_ops import with_dependencies
+from tensorflow_mri.python.ops import control_flow_ops
 
 
 def cast_to_complex(tensor):
@@ -152,7 +151,7 @@ def static_and_dynamic_shapes_from_shape(shape,
     raise ValueError(
         f"{arg_name or 'shape'} must be a 1-D Tensor. Found: {shape}")
   if assert_proper_shape:
-    dynamic = with_dependencies([
+    dynamic = control_flow_ops.with_dependencies([
         tf.debugging.assert_rank(
             dynamic,
             1,

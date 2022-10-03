@@ -230,7 +230,7 @@ class LinearOperatorND(linear_operator.LinearOperator):
       input_shape.assert_is_compatible_with(rhs.shape[-input_shape.rank:])  # pylint: disable=invalid-unary-operand-type
       return self._solvevec_nd(rhs, adjoint=adjoint)
 
-  def _solvevec_nd(self, x, adjoint=False):
+  def _solvevec_nd(self, rhs, adjoint=False):
     # Subclasses may override this method.
     raise NotImplementedError("Method `_solvevec_nd` is not implemented.")
 
@@ -265,7 +265,7 @@ class LinearOperatorND(linear_operator.LinearOperator):
       input_shape.assert_is_compatible_with(rhs.shape[-input_shape.rank:])  # pylint: disable=invalid-unary-operand-type
       return self._lstsqvec_nd(rhs, adjoint=adjoint)
 
-  def _lstsqvec_nd(self, x, adjoint=False):
+  def _lstsqvec_nd(self, rhs, adjoint=False):
     # Subclasses may override this method.
     raise NotImplementedError("Method `_lstsqvec_nd` is not implemented.")
 

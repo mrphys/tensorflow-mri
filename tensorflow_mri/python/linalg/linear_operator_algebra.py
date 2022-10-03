@@ -20,6 +20,7 @@ from tensorflow.python.ops.linalg import linear_operator_algebra
 
 
 RegisterAdjoint = linear_operator_algebra.RegisterAdjoint
+RegisterCholesky = linear_operator_algebra.RegisterCholesky
 RegisterInverse = linear_operator_algebra.RegisterInverse
 RegisterMatmul = linear_operator_algebra.RegisterMatmul
 RegisterSolve = linear_operator_algebra.RegisterSolve

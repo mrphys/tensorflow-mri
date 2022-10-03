@@ -18,6 +18,7 @@ from tensorflow_mri.python.linalg import linear_operator_algebra
 from tensorflow_mri.python.linalg import linear_operator_coils
 from tensorflow_mri.python.linalg import linear_operator_diag_nd
 from tensorflow_mri.python.linalg import linear_operator_fft
+from tensorflow_mri.python.linalg import linear_operator_identity_nd
 from tensorflow_mri.python.linalg import linear_operator_mask
 from tensorflow_mri.python.linalg import linear_operator_nufft
 
@@ -29,6 +30,24 @@ def _inverse_coils(linop):
       f"{linop.name} is not invertible. If you wish to compute the "
       f"Moore-Penrose pseudo-inverse, use `linop.pseudo_inverse()` "
       f"instead.")
+
+
+@linear_operator_algebra.RegisterInverse(
+    linear_operator_identity_nd.LinearOperatorIdentityND)
+def _inverse_identity(linop):
+  return linop
+
+
+@linear_operator_algebra.RegisterInverse(
+    linear_operator_identity_nd.LinearOperatorScaledIdentityND)
+def _inverse_scaled_identity(linop):
+  return linear_operator_identity_nd.LinearOperatorScaledIdentityND(
+      domain_shape=linop.domain_shape_tensor(),
+      multiplier=1. / linop.multiplier,
+      is_non_singular=linop.is_non_singular,
+      is_self_adjoint=True,
+      is_positive_definite=linop.is_positive_definite,
+      is_square=True)
 
 
 @linear_operator_algebra.RegisterInverse(
