@@ -31,16 +31,9 @@
 import numpy as np
 import tensorflow as tf
 
-from tensorflow.python.framework import config
-from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import test_util
-from tensorflow.python.ops import array_ops
-from tensorflow.python.ops import linalg_ops
-from tensorflow.python.ops import random_ops
-from tensorflow.python.ops import variables as variables_module
-from tensorflow.python.ops.linalg import linear_operator_test_util
-
 from tensorflow_mri.python.linalg import linear_operator_identity_nd
+from tensorflow_mri.python.linalg import linear_operator_test_util
+from tensorflow_mri.python.util import test_util
 
 
 rng = np.random.RandomState(2016)
@@ -52,17 +45,17 @@ class LinearOperatorIdentityTest(
   """Most tests done in the base class LinearOperatorDerivedClassTest."""
 
   def tearDown(self):
-    config.enable_tensor_float_32_execution(self.tf32_keep_)
+    tf.config.experimental.enable_tensor_float_32_execution(self.tf32_keep_)
 
   def setUp(self):
-    self.tf32_keep_ = config.tensor_float_32_execution_enabled()
-    config.enable_tensor_float_32_execution(False)
+    self.tf32_keep_ = tf.config.experimental.tensor_float_32_execution_enabled()
+    tf.config.experimental.enable_tensor_float_32_execution(False)
 
   @staticmethod
   def dtypes_to_test():
     # TODO(langmore) Test tf.float16 once tf.linalg.solve works in
     # 16bit.
-    return [dtypes.float32, dtypes.float64, dtypes.complex64, dtypes.complex128]
+    return [tf.float32, tf.float64, tf.complex64, tf.complex128]
 
   @staticmethod
   def optional_tests():
@@ -86,7 +79,7 @@ class LinearOperatorIdentityTest(
 
     operator = linear_operator_identity_nd.LinearOperatorIdentityND(
         [num_rows], batch_shape=batch_shape, dtype=dtype)
-    mat = linalg_ops.eye(num_rows, batch_shape=batch_shape, dtype=dtype)
+    mat = tf.eye(num_rows, batch_shape=batch_shape, dtype=dtype)
 
     return operator, mat
 
@@ -113,7 +106,7 @@ class LinearOperatorIdentityTest(
     # not work with float16.
     with self.cached_session():
       operator = linear_operator_identity_nd.LinearOperatorIdentityND(
-          domain_shape=[2], dtype=dtypes.float16)
+          domain_shape=[2], dtype=tf.float16)
       x = rng.randn(2, 3).astype(np.float16)
       y = operator.matmul(x)
       self.assertAllClose(x, self.evaluate(y))
@@ -203,7 +196,7 @@ class LinearOperatorIdentityTest(
     # test shapes that tf.batch_matmul cannot handle.
     # In particular, tf.batch_matmul does not broadcast.
     with self.cached_session() as sess:
-      x = random_ops.random_normal(shape=(1, 2, 3, 4))
+      x = tf.random.normal(shape=(1, 2, 3, 4))
       operator = linear_operator_identity_nd.LinearOperatorIdentityND(
           domain_shape=[3], dtype=x.dtype)
 
@@ -261,7 +254,7 @@ class LinearOperatorIdentityTest(
       batch_shape = tf.compat.v1.placeholder_with_default((2, 1), shape=(2,))
 
       operator = linear_operator_identity_nd.LinearOperatorIdentityND(
-          domain_shape, batch_shape=batch_shape, dtype=dtypes.float64)
+          domain_shape, batch_shape=batch_shape, dtype=tf.float64)
 
       # Batch matrix of zeros with the broadcast shape of x and operator.
       zeros = tf.zeros(shape=(2, 2, 3, 4), dtype=x.dtype)
@@ -309,11 +302,11 @@ class LinearOperatorIdentityTest(
   def test_ref_type_shape_args_raises(self):
     with self.assertRaisesRegex(TypeError, "domain_shape.*reference"):
       linear_operator_identity_nd.LinearOperatorIdentityND(
-          domain_shape=variables_module.Variable([2]))
+          domain_shape=tf.Variable([2]))
 
     with self.assertRaisesRegex(TypeError, "batch_shape.*reference"):
       linear_operator_identity_nd.LinearOperatorIdentityND(
-          domain_shape=[2], batch_shape=variables_module.Variable([3]))
+          domain_shape=[2], batch_shape=tf.Variable([3]))
 
 
 @test_util.run_all_in_graph_and_eager_modes
@@ -322,17 +315,17 @@ class LinearOperatorScaledIdentityTest(
   """Most tests done in the base class LinearOperatorDerivedClassTest."""
 
   def tearDown(self):
-    config.enable_tensor_float_32_execution(self.tf32_keep_)
+    tf.config.experimental.enable_tensor_float_32_execution(self.tf32_keep_)
 
   def setUp(self):
-    self.tf32_keep_ = config.tensor_float_32_execution_enabled()
-    config.enable_tensor_float_32_execution(False)
+    self.tf32_keep_ = tf.config.experimental.tensor_float_32_execution_enabled()
+    tf.config.experimental.enable_tensor_float_32_execution(False)
 
   @staticmethod
   def dtypes_to_test():
     # TODO(langmore) Test tf.float16 once tf.linalg.solve works in
     # 16bit.
-    return [dtypes.float32, dtypes.float64, dtypes.complex64, dtypes.complex128]
+    return [tf.float32, tf.float64, tf.complex64, tf.complex128]
 
   @staticmethod
   def optional_tests():
@@ -374,9 +367,9 @@ class LinearOperatorScaledIdentityTest(
         is_self_adjoint=True if ensure_self_adjoint_and_pd else None,
         is_positive_definite=True if ensure_self_adjoint_and_pd else None)
 
-    multiplier_matrix = array_ops.expand_dims(
-        array_ops.expand_dims(multiplier, -1), -1)
-    matrix = multiplier_matrix * linalg_ops.eye(
+    multiplier_matrix = tf.expand_dims(
+        tf.expand_dims(multiplier, -1), -1)
+    matrix = multiplier_matrix * tf.eye(
         num_rows, batch_shape=batch_shape, dtype=dtype)
 
     return operator, matrix
@@ -499,7 +492,7 @@ class LinearOperatorScaledIdentityTest(
       # Given this x and LinearOperatorScaledIdentityND shape of (3, 3), the
       # broadcast shape of operator and 'x' is (1, 2, 3, 4), which is the same
       # shape as x.
-      x = random_ops.random_normal(shape=(1, 2, 3, 4))
+      x = tf.random.normal(shape=(1, 2, 3, 4))
 
       # operator is 2.2 * identity (with a batch shape).
       operator = linear_operator_identity_nd.LinearOperatorScaledIdentityND(
@@ -601,16 +594,16 @@ class LinearOperatorScaledIdentityTest(
   def test_ref_type_shape_args_raises(self):
     with self.assertRaisesRegex(TypeError, "domain_shape.*reference"):
       linear_operator_identity_nd.LinearOperatorScaledIdentityND(
-          domain_shape=variables_module.Variable([2]), multiplier=1.23)
+          domain_shape=tf.Variable([2]), multiplier=1.23)
 
   def test_tape_safe(self):
-    multiplier = variables_module.Variable(1.23)
+    multiplier = tf.Variable(1.23)
     operator = linear_operator_identity_nd.LinearOperatorScaledIdentityND(
         domain_shape=[2], multiplier=multiplier)
     self.check_tape_safe(operator)
 
   def test_convert_variables_to_tensors(self):
-    multiplier = variables_module.Variable(1.23)
+    multiplier = tf.Variable(1.23)
     operator = linear_operator_identity_nd.LinearOperatorScaledIdentityND(
         domain_shape=[2], multiplier=multiplier)
     with self.cached_session() as sess:
