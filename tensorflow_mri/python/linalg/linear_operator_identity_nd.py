@@ -94,128 +94,87 @@ class BaseLinearOperatorIdentityND(linear_operator_nd.LinearOperatorND):
 @api_util.export("linalg.LinearOperatorIdentityND")
 @linear_operator_nd.make_linear_operator_nd
 class LinearOperatorIdentityND(BaseLinearOperatorIdentityND):
-  """`LinearOperator` acting like a [batch] square identity matrix.
+  r"""Linear operator acting like a [batch] square identity matrix.
 
-  This operator acts like a [batch] identity matrix `A` with shape
-  `[B1,...,Bb, N, N]` for some `b >= 0`.  The first `b` indices index a
-  batch member.  For every batch index `(i1,...,ib)`, `A[i1,...,ib, : :]` is
-  an `N x N` matrix.  This matrix `A` is not materialized, but for
-  purposes of broadcasting this shape will be relevant.
+  This operator acts like a batch of identity matrices
+  $A = I \in \mathbb{F}^{n \times n}$, where $\mathbb{F}$ may be $\mathbb{R}$
+  or $\mathbb{C}$ and $n = n_0 \times n_1 \times \dots \times n_d$, where
+  $d$ is the number of dimensions in the domain.
 
-  `LinearOperatorIdentity` is initialized with `num_rows`, and optionally
-  `batch_shape`, and `dtype` arguments.  If `batch_shape` is `None`, this
-  operator efficiently passes through all arguments.  If `batch_shape` is
-  provided, broadcasting may occur, which will require making copies.
-
-  ```python
-  # Create a 2 x 2 identity matrix.
-  operator = LinearOperatorIdentity(num_rows=2, dtype=tf.float32)
-
-  operator.to_dense()
-  ==> [[1., 0.]
-       [0., 1.]]
-
-  operator.shape
-  ==> [2, 2]
-
-  operator.log_abs_determinant()
-  ==> 0.
-
-  x = ... Shape [2, 4] Tensor
-  operator.matmul(x)
-  ==> Shape [2, 4] Tensor, same as x.
-
-  y = tf.random.normal(shape=[3, 2, 4])
-  # Note that y.shape is compatible with operator.shape because operator.shape
-  # is broadcast to [3, 2, 2].
-  # This broadcast does NOT require copying data, since we can infer that y
-  # will be passed through without changing shape.  We are always able to infer
-  # this if the operator has no batch_shape.
-  x = operator.solve(y)
-  ==> Shape [3, 2, 4] Tensor, same as y.
-
-  # Create a 2-batch of 2x2 identity matrices
-  operator = LinearOperatorIdentity(num_rows=2, batch_shape=[2])
-  operator.to_dense()
-  ==> [[[1., 0.]
-        [0., 1.]],
-       [[1., 0.]
-        [0., 1.]]]
-
-  # Here, even though the operator has a batch shape, the input is the same as
-  # the output, so x can be passed through without a copy.  The operator is able
-  # to detect that no broadcast is necessary because both x and the operator
-  # have statically defined shape.
-  x = ... Shape [2, 2, 3]
-  operator.matmul(x)
-  ==> Shape [2, 2, 3] Tensor, same as x
-
-  # Here the operator and x have different batch_shape, and are broadcast.
-  # This requires a copy, since the output is different size than the input.
-  x = ... Shape [1, 2, 3]
-  operator.matmul(x)
-  ==> Shape [2, 2, 3] Tensor, equal to [x, x]
+  ```{note}
+  The matrix $A$ is not materialized.
   ```
 
-  ### Shape compatibility
-
-  This operator acts on [batch] matrix with compatible shape.
-  `x` is a batch matrix with compatible shape for `matmul` and `solve` if
-
-  ```
-  operator.shape = [B1,...,Bb] + [N, N],  with b >= 0
-  x.shape =   [C1,...,Cc] + [N, R],
-  and [C1,...,Cc] broadcasts with [B1,...,Bb] to [D1,...,Dd]
+  ```{seealso}
+  This operator is similar to `tfmri.linalg.LinearOperatorIdentity`, but
+  provides additional functionality to operate with multidimensional inputs.
   ```
 
-  ### Performance
+  ```{rubric} Initialization
+  This operator is initialized with a `domain_shape`, which specifies the
+  sizes for the domain dimensions. There may be multiple domain dimensions,
+  which does not affect the dense matrix representation of this operator but
+  may be convenient to operate with non-vectorized multidimensional inputs.
+  This operator may also have a `batch_shape`, which will be relevant for the
+  purposes of broadcasting. Use the `dtype` argument to specify this
+  operator's data type.
 
-  If `batch_shape` initialization arg is `None`:
+  ```{rubric} Performance
+  ```
+  - `matvec` is usually $O(1)$, but may be $O(n)$ if broadcasting is needed.
+  - `solvevec` is usually $O(1)$, but may be $O(n)$ if broadcasting is needed.
+  - `lstsqvec` is usually $O(1)$, but may be $O(n)$ if broadcasting is needed.
 
-  * `operator.matmul(x)` is `O(1)`
-  * `operator.solve(x)` is `O(1)`
-  * `operator.determinant()` is `O(1)`
+  ```{rubric} Properties
+  ```
+  - This operator is always *non-singular*.
+  - This operator is always *self-adjoint*.
+  - This operator is always *positive definite*.
+  - This operator is always *square*.
 
-  If `batch_shape` initialization arg is provided, and static checks cannot
-  rule out the need to broadcast:
+  ```{rubric} Inversion
+  ```
+  The inverse of this operator is equal to the operator itself ($A{-1} = A$).
 
-  * `operator.matmul(x)` is `O(D1*...*Dd*N*R)`
-  * `operator.solve(x)` is `O(D1*...*Dd*N*R)`
-  * `operator.determinant()` is `O(B1*...*Bb)`
-
-  #### Matrix property hints
-
-  This `LinearOperator` is initialized with boolean flags of the form `is_X`,
-  for `X = non_singular, self_adjoint, positive_definite, square`.
-  These have the following meaning:
-
-  * If `is_X == True`, callers should expect the operator to have the
-    property `X`.  This is a promise that should be fulfilled, but is *not* a
-    runtime assert.  For example, finite floating point precision may result
-    in these promises being violated.
-  * If `is_X == False`, callers should expect the operator to not have `X`.
-  * If `is_X == None` (the default), callers should have no expectation either
-    way.
+  Example:
+    >>> # Create a 2-D identity operator.
+    >>> operator = tfmri.linalg.LinearOperatorIdentityND([2, 2])
+    >>> operator.to_dense()
+    [[1., 0., 0., 0.],
+     [0., 1., 0., 0.]
+     [0., 0., 1., 0.],
+     [0., 0., 1., 0.]]
+    >>> operator.shape
+    (4, 4)
+    >>> x = tf.reshape(tf.range(4.), (2, 2))
+    >>> rhs = operator.matvec_nd(x)
+    [[1., 2.],
+     [3., 4.]]
+    >>> operator.solvevec_nd(rhs)
+    [[1., 2.],
+     [3., 4.]]
 
   Args:
-    num_rows:  Scalar non-negative integer `Tensor`.  Number of rows in the
-      corresponding identity matrix.
-    batch_shape:  Optional `1-D` integer `Tensor`.  The shape of the leading
-      dimensions.  If `None`, this operator has no leading dimensions.
-    dtype:  Data type of the matrix that this operator represents.
-    is_non_singular:  Expect that this operator is non-singular.
-    is_self_adjoint:  Expect that this operator is equal to its hermitian
-      transpose.
-    is_positive_definite:  Expect that this operator is positive definite,
-      meaning the quadratic form `x^H A x` has positive real part for all
-      nonzero `x`.  Note that we do not require the operator to be
-      self-adjoint to be positive-definite.  See:
-      https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices
-    is_square:  Expect that this operator acts like square [batch] matrices.
-    assert_proper_shapes:  Python `bool`.  If `False`, only perform static
-      checks that initialization and method arguments have proper shape.
-      If `True`, and static checks are inconclusive, add asserts to the graph.
-    name: A name for this `LinearOperator`.
+    domain_shape: A 1-D non-negative integer `tf.Tensor`. The domain shape
+      of this operator.
+    batch_shape: A 1-D non-negative integer `tf.Tensor`. The leading batch
+      shape of this operator. If `None`, this operator has no
+      batch dimensions.
+    dtype: A `tf.dtypes.DType`. The data type of the matrix that this operator
+      represents.
+    is_non_singular: A boolean, or `None`. Whether this operator is expected
+      to be non-singular. Defaults to `True`.
+    is_self_adjoint: A boolean, or `None`. Whether this operator is expected
+      to be equal to its Hermitian transpose. If `dtype` is real, this is
+      equivalent to being symmetric. Defaults to `True`.
+    is_positive_definite: A boolean, or `None`. Whether this operator is
+      expected to be positive definite, meaning the quadratic form $x^H A x$
+      has positive real part for all nonzero $x$. Note that an operator [does
+      not need to be self-adjoint to be positive definite](https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices)
+      Defaults to `True`.
+    is_square: A boolean, or `None`. Expect that this operator acts like a
+      square matrix (or a batch of square matrices). Defaults to `True`.
+    name: An optional `str`. The name of this operator.
   """
   def __init__(self,
                domain_shape,
@@ -418,106 +377,89 @@ class LinearOperatorIdentityND(BaseLinearOperatorIdentityND):
 @api_util.export("linalg.LinearOperatorScaledIdentityND")
 @linear_operator_nd.make_linear_operator_nd
 class LinearOperatorScaledIdentityND(BaseLinearOperatorIdentityND):
-  """`LinearOperator` acting like a scaled [batch] identity matrix `A = c I`.
+  r"""Linear operator acting like a scaled [batch] identity matrix.
 
-  This operator acts like a scaled [batch] identity matrix `A` with shape
-  `[B1,...,Bb, N, N]` for some `b >= 0`.  The first `b` indices index a
-  batch member.  For every batch index `(i1,...,ib)`, `A[i1,...,ib, : :]` is
-  a scaled version of the `N x N` identity matrix.
+  This operator acts like a batch of scaled identity matrices
+  $A = \lambda I \in \mathbb{F}^{n \times n}$, where $\lambda$ is a scaling
+  constant, $\mathbb{F}$ may be $\mathbb{R}$ or $\mathbb{C}$ and
+  $n = n_0 \times n_1 \times \dots \times n_d$, where
+  $d$ is the number of dimensions in the domain.
 
-  `LinearOperatorIdentity` is initialized with `num_rows`, and a `multiplier`
-  (a `Tensor`) of shape `[B1,...,Bb]`.  `N` is set to `num_rows`, and the
-  `multiplier` determines the scale for each batch member.
-
-  ```python
-  # Create a 2 x 2 scaled identity matrix.
-  operator = LinearOperatorIdentity(num_rows=2, multiplier=3.)
-
-  operator.to_dense()
-  ==> [[3., 0.]
-       [0., 3.]]
-
-  operator.shape
-  ==> [2, 2]
-
-  operator.log_abs_determinant()
-  ==> 2 * Log[3]
-
-  x = ... Shape [2, 4] Tensor
-  operator.matmul(x)
-  ==> 3 * x
-
-  y = tf.random.normal(shape=[3, 2, 4])
-  # Note that y.shape is compatible with operator.shape because operator.shape
-  # is broadcast to [3, 2, 2].
-  x = operator.solve(y)
-  ==> 3 * x
-
-  # Create a 2-batch of 2x2 identity matrices
-  operator = LinearOperatorIdentity(num_rows=2, multiplier=5.)
-  operator.to_dense()
-  ==> [[[5., 0.]
-        [0., 5.]],
-       [[5., 0.]
-        [0., 5.]]]
-
-  x = ... Shape [2, 2, 3]
-  operator.matmul(x)
-  ==> 5 * x
-
-  # Here the operator and x have different batch_shape, and are broadcast.
-  x = ... Shape [1, 2, 3]
-  operator.matmul(x)
-  ==> 5 * x
+  ```{note}
+  The matrix $A$ is not materialized.
   ```
 
-  ### Shape compatibility
-
-  This operator acts on [batch] matrix with compatible shape.
-  `x` is a batch matrix with compatible shape for `matmul` and `solve` if
-
-  ```
-  operator.shape = [B1,...,Bb] + [N, N],  with b >= 0
-  x.shape =   [C1,...,Cc] + [N, R],
-  and [C1,...,Cc] broadcasts with [B1,...,Bb] to [D1,...,Dd]
+  ```{seealso}
+  This operator is similar to `tfmri.linalg.LinearOperatorScaledIdentityND`,
+  but provides additional functionality to operate with multidimensional
+  inputs.
   ```
 
-  ### Performance
+  ```{rubric} Initialization
+  This operator is initialized with a `domain_shape`, which specifies the
+  sizes for the domain dimensions, and a `multiplier`, which specifies the
+  scaling constant $\lambda$. `domain_shape` may have multiple dimensions,
+  which does not affect the dense matrix representation of this operator but
+  may be convenient to operate with non-vectorized multidimensional inputs.
+  This operator has the same data type as `multiplier`.
 
-  * `operator.matmul(x)` is `O(D1*...*Dd*N*R)`
-  * `operator.solve(x)` is `O(D1*...*Dd*N*R)`
-  * `operator.determinant()` is `O(D1*...*Dd)`
+  ```{rubric} Performance
+  ```
+  - `matvec` is $O(n)$.
+  - `solvevec` is $O(n)$.
+  - `lstsqvec` is $O(n)$.
 
-  #### Matrix property hints
+  ```{rubric} Properties
+  ```
+  - This operator is *non-singular* iff multiplier is non-zero.
+  - This operator is *self-adjoint* iff multiplier is real or has zero
+    imaginary part.
+  - This operator is *positive definite* iff multiplier has positive real part.
+  - This operator is always *square*.
 
-  This `LinearOperator` is initialized with boolean flags of the form `is_X`,
-  for `X = non_singular, self_adjoint, positive_definite, square`.
-  These have the following meaning
-  * If `is_X == True`, callers should expect the operator to have the
-    property `X`.  This is a promise that should be fulfilled, but is *not* a
-    runtime assert.  For example, finite floating point precision may result
-    in these promises being violated.
-  * If `is_X == False`, callers should expect the operator to not have `X`.
-  * If `is_X == None` (the default), callers should have no expectation either
-    way.
+  ```{rubric} Inversion
+  ```
+  If this operator is non-singular, its inverse $A^{-1}$ is also a scaled
+  identity operator with reciprocal multiplier.
+
+  Example:
+    >>> # Create a 2-D identity operator.
+    >>> operator = tfmri.linalg.LinearOperatorIdentityND([2, 2])
+    >>> operator.to_dense()
+    [[1., 0., 0., 0.],
+     [0., 1., 0., 0.]
+     [0., 0., 1., 0.],
+     [0., 0., 1., 0.]]
+    >>> operator.shape
+    (4, 4)
+    >>> x = tf.reshape(tf.range(4.), (2, 2))
+    >>> rhs = operator.matvec_nd(x)
+    [[1., 2.],
+     [3., 4.]]
+    >>> operator.solvevec_nd(rhs)
+    [[1., 2.],
+     [3., 4.]]
 
   Args:
-    num_rows:  Scalar non-negative integer `Tensor`.  Number of rows in the
-      corresponding identity matrix.
-    multiplier:  `Tensor` of shape `[B1,...,Bb]`, or `[]` (a scalar).
-    is_non_singular:  Expect that this operator is non-singular.
-    is_self_adjoint:  Expect that this operator is equal to its hermitian
-      transpose.
-    is_positive_definite:  Expect that this operator is positive definite,
-      meaning the quadratic form `x^H A x` has positive real part for all
-      nonzero `x`.  Note that we do not require the operator to be
-      self-adjoint to be positive-definite.  See:
-      https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices
-    is_square:  Expect that this operator acts like square [batch] matrices.
-    assert_proper_shapes:  Python `bool`.  If `False`, only perform static
-      checks that initialization and method arguments have proper shape.
-      If `True`, and static checks are inconclusive, add asserts to the graph.
-    name: A name for this `LinearOperator`
+    domain_shape: A 1-D non-negative integer `tf.Tensor`. The domain shape
+      of this operator.
+    multiplier: A real or complex `tf.Tensor` of any shape specifying the
+      scaling constant for the identity matrix.
+    dtype: A `tf.dtypes.DType`. The data type of the matrix that this operator
+      represents.
+    is_non_singular: A boolean, or `None`. Whether this operator is expected
+      to be non-singular. Defaults to `None`.
+    is_self_adjoint: A boolean, or `None`. Whether this operator is expected
+      to be equal to its Hermitian transpose. If `dtype` is real, this is
+      equivalent to being symmetric. Defaults to `None`.
+    is_positive_definite: A boolean, or `None`. Whether this operator is
+      expected to be positive definite, meaning the quadratic form $x^H A x$
+      has positive real part for all nonzero $x$. Note that an operator [does
+      not need to be self-adjoint to be positive definite](https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices)
+      Defaults to `None`.
+    is_square: A boolean, or `None`. Expect that this operator acts like a
+      square matrix (or a batch of square matrices). Defaults to `True`.
+    name: An optional `str`. The name of this operator.
   """
   def __init__(self,
                domain_shape,

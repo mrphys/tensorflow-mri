@@ -27,20 +27,54 @@ from tensorflow_mri.python.util import types_util
 class LinearOperatorDiagND(linear_operator_nd.LinearOperatorND):
   r"""Linear operator acting like a [batch] square diagonal matrix.
 
-  This operator acts like a batch of matrices $A \in \mathbb{F}^{n \times n}$,
-  where $\mathbb{F}$ may be $\mathbb{R}$ or $\mathbb{C}$ and
-  $n = n_0 \times n_1 \times \dots \times n_d$, where $d$ is the
-  number of dimensions in the domain.
+  This operator acts like a batch of diagonal matrices
+  $A \in \mathbb{F}^{n \times n}$, where $\mathbb{F}$ may be $\mathbb{R}$
+  or $\mathbb{C}$ and $n = n_0 \times n_1 \times \dots \times n_d$, where
+  $d$ is the number of dimensions in the domain.
+
+  ```{note}
+  The matrix $A$ is not materialized.
+  ```
 
   ```{seealso}
   This operator is similar to `tfmri.linalg.LinearOperatorDiag`, but provides
   additional functionality to operate with multidimensional inputs.
   ```
 
+  ```{rubric} Initialization
+  ```
+  This operator is initialized with an array of diagonal elements `diag`.
+  `diag` may have multiple domain dimensions, which does not affect the dense
+  matrix representation of this operator but may be convenient to operate with
+  non-vectorized multidimensional inputs. If `diag` has any leading dimensions
+  which should be interpreted as batch dimensions, specify how many using the
+  `batch_dims` argument. This operator has the same data type as `diag`.
+
+  ```{rubric} Performance
+  ```
+  - `matvec` is $O(n)$.
+  - `solvevec` is $O(n)$.
+  - `lstsqvec` is $O(n)$.
+
+  ```{rubric} Properties
+  ```
+  - This operator is *non-singular* iff all its diagonal entries are non-zero.
+  - This operator is *self-adjoint* iff all its diagonal entries are real or
+    have zero imaginary part.
+  - This operator is *positive definite* iff all its diagonal entries are
+    positive or have positive real part.
+  - This operator is always *square*.
+
+  ```{rubric} Inversion
+  ```
+  If this operator is non-singular, its inverse $A{-1}$ is also a diagonal
+  operator whose diagonal entries are the reciprocal of the diagonal entries
+  of this operator.
+
   Example:
     >>> # Create a 2-D diagonal linear operator.
     >>> diag = [[1., -1.], [2., 3.]]
-    >>> operator = LinearOperatorDiagND(diag)
+    >>> operator = tfmri.linalg.LinearOperatorDiagND(diag)
     >>> operator.to_dense()
     [[ 1.,  0.,  0.,  0.],
      [ 0., -1.,  0.,  0.],
@@ -56,31 +90,10 @@ class LinearOperatorDiagND(linear_operator_nd.LinearOperatorND):
     [[ 1.,  1.],
      [ 1.,  1.]]
 
-  ```{rubric} Performance
-  ```
-  - `matvec` is $O(n)$.
-  - `solvevec` is $O(n)$.
-  - `lstsqvec` is $O(n)$.
-
-  ```{rubric} Properties
-  ```
-  - This operator is non-singular if all its diagonal entries are non-zero.
-  - This operator is self-adjoint if all its diagonal entries are real or
-    have zero imaginary part.
-  - This operator is positive definite if all its diagonal entries are
-    positive or have positive real part.
-  - This operator is always square.
-
-  ```{rubric} Inversion
-  ```
-  If this operator is non-singular, its inverse is also a diagonal operator
-  whose diagonal entries are the reciprocal of the diagonal entries of this
-  operator.
-
   Args:
     diag: A real or complex `tf.Tensor` of shape `[..., *domain_shape]`.
       The diagonal of the operator.
-    batch_dims: An `int`, the number of batch dimensions in `maps`.
+    batch_dims: An `int`, the number of leading batch dimensions in `diag`.
     is_non_singular: A boolean, or `None`. Whether this operator is expected
       to be non-singular. Defaults to `None`.
     is_self_adjoint: A boolean, or `None`. Whether this operator is expected
