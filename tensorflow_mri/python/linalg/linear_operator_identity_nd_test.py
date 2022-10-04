@@ -40,7 +40,7 @@ rng = np.random.RandomState(2016)
 
 
 @test_util.run_all_in_graph_and_eager_modes
-class LinearOperatorIdentityTest(
+class LinearOperatorIdentityNDTest(
     linear_operator_test_util.SquareLinearOperatorDerivedClassTest):
   """Most tests done in the base class LinearOperatorDerivedClassTest."""
 
@@ -310,7 +310,7 @@ class LinearOperatorIdentityTest(
 
 
 @test_util.run_all_in_graph_and_eager_modes
-class LinearOperatorScaledIdentityTest(
+class LinearOperatorScaledIdentityNDTest(
     linear_operator_test_util.SquareLinearOperatorDerivedClassTest):
   """Most tests done in the base class LinearOperatorDerivedClassTest."""
 
@@ -611,8 +611,8 @@ class LinearOperatorScaledIdentityTest(
       self.check_convert_variables_to_tensors(operator)
 
 
-linear_operator_test_util.add_tests(LinearOperatorIdentityTest)
-linear_operator_test_util.add_tests(LinearOperatorScaledIdentityTest)
+linear_operator_test_util.add_tests(LinearOperatorIdentityNDTest)
+linear_operator_test_util.add_tests(LinearOperatorScaledIdentityNDTest)
 
 
 if __name__ == "__main__":
