@@ -19,11 +19,20 @@ import tensorflow as tf
 from tensorflow.python.ops.linalg import linear_operator_algebra
 
 
+adjoint = linear_operator_algebra.adjoint
+cholesky = linear_operator_algebra.cholesky
+inverse = linear_operator_algebra.inverse
+matmul = linear_operator_algebra.matmul
+solve = linear_operator_algebra.solve
+
+
 RegisterAdjoint = linear_operator_algebra.RegisterAdjoint
 RegisterCholesky = linear_operator_algebra.RegisterCholesky
 RegisterInverse = linear_operator_algebra.RegisterInverse
 RegisterMatmul = linear_operator_algebra.RegisterMatmul
 RegisterSolve = linear_operator_algebra.RegisterSolve
+
+
 _registered_function = linear_operator_algebra._registered_function  # pylint: disable=protected-access
 
 

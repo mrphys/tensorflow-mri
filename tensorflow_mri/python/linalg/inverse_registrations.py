@@ -34,13 +34,13 @@ def _inverse_coils(linop):
 
 @linear_operator_algebra.RegisterInverse(
     linear_operator_identity_nd.LinearOperatorIdentityND)
-def _inverse_identity(linop):
+def _inverse_identity_nd(linop):
   return linop
 
 
 @linear_operator_algebra.RegisterInverse(
     linear_operator_identity_nd.LinearOperatorScaledIdentityND)
-def _inverse_scaled_identity(linop):
+def _inverse_scaled_identity_nd(linop):
   return linear_operator_identity_nd.LinearOperatorScaledIdentityND(
       domain_shape=linop.domain_shape_tensor(),
       multiplier=1. / linop.multiplier,

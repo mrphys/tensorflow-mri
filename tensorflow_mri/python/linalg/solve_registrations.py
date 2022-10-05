@@ -19,6 +19,7 @@ from tensorflow_mri.python.linalg import linear_operator_composition
 from tensorflow_mri.python.linalg import linear_operator_diag_nd
 from tensorflow_mri.python.linalg import linear_operator_identity_nd
 from tensorflow_mri.python.linalg import linear_operator_nd
+from tensorflow_mri.python.linalg import linear_operator_util
 
 
 # IdentityND
@@ -58,51 +59,75 @@ def _solve_linear_operator_scaled_identity_nd(linop_a, linop_b):
 
 # DiagND
 
-# @linear_operator_algebra.RegisterSolve(
-#     linear_operator_diag.LinearOperatorDiag,
-#     linear_operator_diag.LinearOperatorDiag)
-# def _solve_linear_operator_diag(linop_a, linop_b):
-#   return linear_operator_diag.LinearOperatorDiag(
-#       diag=linop_b.diag / linop_a.diag,
-#       is_non_singular=registrations_util.combined_non_singular_hint(
-#           linop_a, linop_b),
-#       is_self_adjoint=registrations_util.combined_commuting_self_adjoint_hint(
-#           linop_a, linop_b),
-#       is_positive_definite=(
-#           registrations_util.combined_commuting_positive_definite_hint(
-#               linop_a, linop_b)),
-#       is_square=True)
+@linear_operator_algebra.RegisterSolve(
+    linear_operator_diag_nd.LinearOperatorDiagND,
+    linear_operator_diag_nd.LinearOperatorDiagND)
+def _solve_linear_operator_diag_nd(linop_a, linop_b):
+  batch_dims_a, batch_dims_b = (
+      linop_a.batch_shape.rank, linop_b.batch_shape.rank)
+  diag_a, diag_b = linear_operator_util.prepare_inner_dims_for_broadcasting(
+      linop_a.diag,
+      linop_b.diag,
+      batch_dims_a=batch_dims_a,
+      batch_dims_b=batch_dims_b)
+  return linear_operator_diag_nd.LinearOperatorDiagND(
+      diag=diag_b / diag_a,
+      batch_dims=max(batch_dims_a, batch_dims_b),
+      is_non_singular=linear_operator_composition.combined_non_singular_hint(
+          linop_a, linop_b),
+      is_self_adjoint=linear_operator_composition.combined_self_adjoint_hint(
+          linop_a, linop_b, commuting=True),
+      is_positive_definite=(
+          linear_operator_composition.combined_positive_definite_hint(
+              linop_a, linop_b, commuting=True)),
+      is_square=True)
 
 
-# @linear_operator_algebra.RegisterSolve(
-#     linear_operator_diag.LinearOperatorDiag,
-#     linear_operator_identity_nd.LinearOperatorScaledIdentity)
-# def _solve_linear_operator_diag_scaled_identity_right(
-#     linop_diag, linop_scaled_identity):
-#   return linear_operator_diag.LinearOperatorDiag(
-#       diag=linop_scaled_identity.multiplier / linop_diag.diag,
-#       is_non_singular=registrations_util.combined_non_singular_hint(
-#           linop_diag, linop_scaled_identity),
-#       is_self_adjoint=registrations_util.combined_commuting_self_adjoint_hint(
-#           linop_diag, linop_scaled_identity),
-#       is_positive_definite=(
-#           registrations_util.combined_commuting_positive_definite_hint(
-#               linop_diag, linop_scaled_identity)),
-#       is_square=True)
+@linear_operator_algebra.RegisterSolve(
+    linear_operator_diag_nd.LinearOperatorDiagND,
+    linear_operator_identity_nd.LinearOperatorScaledIdentityND)
+def _solve_linear_operator_diag_scaled_identity_nd_right(
+    linop_diag, linop_scaled_identity):
+  batch_dims_a, batch_dims_b = (
+      linop_diag.batch_shape.rank, linop_scaled_identity.batch_shape.rank)
+  diag_a, diag_b = linear_operator_util.prepare_inner_dims_for_broadcasting(
+      linop_diag.diag,
+      linop_scaled_identity.multiplier,
+      batch_dims_a=batch_dims_a,
+      batch_dims_b=batch_dims_b)
+  return linear_operator_diag_nd.LinearOperatorDiagND(
+      diag=diag_b / diag_a,
+      batch_dims=max(batch_dims_a, batch_dims_b),
+      is_non_singular=linear_operator_composition.combined_non_singular_hint(
+          linop_diag, linop_scaled_identity),
+      is_self_adjoint=linear_operator_composition.combined_self_adjoint_hint(
+          linop_diag, linop_scaled_identity, commuting=True),
+      is_positive_definite=(
+          linear_operator_composition.combined_positive_definite_hint(
+              linop_diag, linop_scaled_identity, commuting=True)),
+      is_square=True)
 
 
-# @linear_operator_algebra.RegisterSolve(
-#     linear_operator_identity_nd.LinearOperatorScaledIdentity,
-#     linear_operator_diag.LinearOperatorDiag)
-# def _solve_linear_operator_diag_scaled_identity_left(
-#     linop_scaled_identity, linop_diag):
-#   return linear_operator_diag.LinearOperatorDiag(
-#       diag=linop_diag.diag / linop_scaled_identity.multiplier,
-#       is_non_singular=registrations_util.combined_non_singular_hint(
-#           linop_diag, linop_scaled_identity),
-#       is_self_adjoint=registrations_util.combined_commuting_self_adjoint_hint(
-#           linop_diag, linop_scaled_identity),
-#       is_positive_definite=(
-#           registrations_util.combined_commuting_positive_definite_hint(
-#               linop_diag, linop_scaled_identity)),
-#       is_square=True)
+@linear_operator_algebra.RegisterSolve(
+    linear_operator_identity_nd.LinearOperatorScaledIdentityND,
+    linear_operator_diag_nd.LinearOperatorDiagND)
+def _solve_linear_operator_diag_scaled_identity_nd_left(
+    linop_scaled_identity, linop_diag):
+  batch_dims_a, batch_dims_b = (
+      linop_scaled_identity.batch_shape.rank, linop_diag.batch_shape.rank)
+  diag_a, diag_b = linear_operator_util.prepare_inner_dims_for_broadcasting(
+      linop_scaled_identity.multiplier,
+      linop_diag.diag,
+      batch_dims_a=batch_dims_a,
+      batch_dims_b=batch_dims_b)
+  return linear_operator_diag_nd.LinearOperatorDiagND(
+      diag=diag_b / diag_a,
+      batch_dims=max(batch_dims_a, batch_dims_b),
+      is_non_singular=linear_operator_composition.combined_non_singular_hint(
+          linop_diag, linop_scaled_identity),
+      is_self_adjoint=linear_operator_composition.combined_self_adjoint_hint(
+          linop_diag, linop_scaled_identity, commuting=True),
+      is_positive_definite=(
+          linear_operator_composition.combined_positive_definite_hint(
+              linop_diag, linop_scaled_identity, commuting=True)),
+      is_square=True)

@@ -20,6 +20,7 @@ import string
 import tensorflow as tf
 
 from tensorflow_mri.python.linalg import linear_operator
+from tensorflow_mri.python.linalg import linear_operator_algebra
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import tensor_util
 
@@ -65,6 +66,29 @@ def update_docstring(op_cls):
 class LinearOperatorND(linear_operator.LinearOperator):
   """Base class defining a [batch of] N-D linear operator(s)."""
   # Overrides of existing methods.
+  def matmul(self, x, adjoint=False, adjoint_arg=False, name="matmul"):
+    # We define a special implementation for when `x` is a `LinearOperatorND`.
+    if isinstance(x, LinearOperatorND):
+      left_operator = self.adjoint() if adjoint else self
+      right_operator = x.adjoint() if adjoint_arg else x
+
+      tensor_util.assert_broadcast_compatible(
+          left_operator.domain_shape,
+          right_operator.range_shape,
+          message=(
+            f"N-D operators are incompatible: "
+            f"the domain shape {left_operator.domain_shape} "
+            f"of left operator {left_operator.name} is not broadcast-"
+            f"compatible with the range shape {right_operator.shape} "
+            f"of right operator {right_operator.name}"))
+
+      with self._name_scope(name):  # pylint: disable=not-callable
+        return linear_operator_algebra.matmul(left_operator, right_operator)
+
+    # If `x` is not a `LinearOperatorND`, we use the original implementation.
+    return super().matmul(
+        x, adjoint=adjoint, adjoint_arg=adjoint_arg, name=name)
+
   def _matmul(self, x, adjoint=False, adjoint_arg=False):
     """Default implementation of `_matmul` for N-D operator."""
     # Default implementation of `matmul` for N-D operator. Basically we
@@ -94,6 +118,38 @@ class LinearOperatorND(linear_operator.LinearOperator):
     x = (self.flatten_domain_shape(x) if adjoint else \
          self.flatten_range_shape(x))
     return x
+
+  def solve(self, rhs, adjoint=False, adjoint_arg=False, name="solve"):
+    if self.is_non_singular is False:
+      raise NotImplementedError(
+          "Exact solve not implemented for an operator that is expected to "
+          "be singular.")
+    if self.is_square is False:
+      raise NotImplementedError(
+          "Exact solve not implemented for an operator that is expected to "
+          "not be square.")
+
+    # We define a special implementation for when `rhs` is a `LinearOperatorND`.
+    if isinstance(rhs, LinearOperatorND):
+      left_operator = self.adjoint() if adjoint else self
+      right_operator = rhs.adjoint() if adjoint_arg else rhs
+
+      tensor_util.assert_broadcast_compatible(
+          left_operator.domain_shape,
+          right_operator.range_shape,
+          message=(
+            f"N-D operators are incompatible: "
+            f"the domain shape {left_operator.domain_shape} "
+            f"of left operator {left_operator.name} is not broadcast-"
+            f"compatible with the range shape {right_operator.shape} "
+            f"of right operator {right_operator.name}"))
+
+      with self._name_scope(name):  # pylint: disable=not-callable
+        return linear_operator_algebra.solve(left_operator, right_operator)
+
+    # If `x` is not a `LinearOperatorND`, we use the original implementation.
+    return super().solve(
+        rhs, adjoint=adjoint, adjoint_arg=adjoint_arg, name=name)
 
   def _solve(self, rhs, adjoint=False, adjoint_arg=False):
     """Default implementation of `_solve` for N-D operator."""

@@ -14,6 +14,7 @@
 # ==============================================================================
 """Utilities for tensors."""
 
+import numpy as np
 import tensorflow as tf
 
 from tensorflow_mri.python.ops import control_flow_ops
@@ -177,3 +178,46 @@ def static_and_dynamic_shapes_from_shape(shape,
   static = tf.TensorShape(static)
 
   return static, dynamic
+
+
+def get_static_value_from_scalar_integer(tensor):
+  """Returns the constant value of a scalar integer tensor.
+
+  Args:
+    tensor: A scalar integer `tf.Tensor`.
+
+  Returns:
+    An `int` representing the constant value of `tensor`, or `None` if the
+    constant value could not be calculated.
+
+  Raises:
+    ValueError: If `tensor` is not a scalar integer.
+  """
+  value = tf.get_static_value(tensor)
+  if value is None:
+    # Could not get static value.
+    return None
+  if isinstance(value, int):
+    # Value is a Python int, so return.
+    return value
+  elif isinstance(value, np.integer):
+    # Value is a scalar NumPy integer, so convert to int and return.
+    return value.item()
+  elif (isinstance(value, np.ndarray) and
+        np.issubdtype(value.dtype, np.integer) and
+        value.ndim == 0):
+    # Value is a 0-D NumPy array of integer dtype.
+    return value.item()
+  raise ValueError(
+      f"tensor must be a scalar integer, but got: {tensor}")
+
+
+def assert_broadcast_compatible(shape_a, shape_b, message=None):
+  """Raises exception if input shapes are not compatible for broadcasting."""
+  if message is None:
+    message = (f"shapes {str(shape_a)} and {str(shape_b)} "
+               f"are not broadcast-compatible")
+  try:
+    tf.broadcast_static_shape(shape_a, shape_b)
+  except ValueError:
+    raise ValueError(message)

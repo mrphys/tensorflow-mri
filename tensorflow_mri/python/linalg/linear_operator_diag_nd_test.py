@@ -32,13 +32,10 @@
 import tensorflow as tf
 
 from tensorflow.python.framework import test_util
-from tensorflow.python.ops.linalg import linalg as linalg_lib
-from tensorflow.python.platform import test
 
 from tensorflow_mri.python.linalg import linear_operator_diag_nd
+from tensorflow_mri.python.linalg import linear_operator_identity_nd
 from tensorflow_mri.python.linalg import linear_operator_test_util
-
-linalg = linalg_lib
 
 
 @test_util.run_all_in_graph_and_eager_modes
@@ -57,8 +54,8 @@ class LinearOperatorDiagNDTest(
   def optional_tests():
     """List of optional test names to run."""
     return [
-        # "operator_matmul_with_same_type",
-        # "operator_solve_with_same_type",
+        "operator_matmul_with_same_type",
+        "operator_solve_with_same_type"
     ]
 
   def operator_and_matrix(
@@ -168,7 +165,7 @@ class LinearOperatorDiagNDTest(
     with self.cached_session() as sess:
       x = tf.random.normal(shape=(2, 2, 3, 4))
 
-      # This LinearOperatorDiag will be broadcast to (2, 2, 3, 3) during solve
+      # This LinearOperatorDiagND will be broadcast to (2, 2, 3, 3) during solve
       # and matmul with 'x' as the argument.
       diag = tf.random.uniform(shape=(2, 1, 3))
       operator = linear_operator_diag_nd.LinearOperatorDiagND(
@@ -191,62 +188,284 @@ class LinearOperatorDiagNDTest(
       self.assertAllClose(*self.evaluate([operator_solve, mat_solve]))
 
   def test_diag_matmul(self):
-    operator1 = linalg_lib.LinearOperatorDiag([2., 3.])
-    operator2 = linalg_lib.LinearOperatorDiag([1., 2.])
-    operator3 = linalg_lib.LinearOperatorScaledIdentity(
-        num_rows=2, multiplier=3.)
+    operator1 = linear_operator_diag_nd.LinearOperatorDiagND([2., 3.])
+    operator2 = linear_operator_diag_nd.LinearOperatorDiagND([1., 2.])
+    operator3 = linear_operator_identity_nd.LinearOperatorScaledIdentityND(
+        domain_shape=[2], multiplier=3.)
     operator_matmul = operator1.matmul(operator2)
     self.assertTrue(isinstance(
         operator_matmul,
-        linalg_lib.LinearOperatorDiag))
+        linear_operator_diag_nd.LinearOperatorDiagND))
     self.assertAllClose([2., 6.], self.evaluate(operator_matmul.diag))
 
     operator_matmul = operator2.matmul(operator1)
     self.assertTrue(isinstance(
         operator_matmul,
-        linalg_lib.LinearOperatorDiag))
+        linear_operator_diag_nd.LinearOperatorDiagND))
     self.assertAllClose([2., 6.], self.evaluate(operator_matmul.diag))
 
     operator_matmul = operator1.matmul(operator3)
     self.assertTrue(isinstance(
         operator_matmul,
-        linalg_lib.LinearOperatorDiag))
+        linear_operator_diag_nd.LinearOperatorDiagND))
     self.assertAllClose([6., 9.], self.evaluate(operator_matmul.diag))
 
     operator_matmul = operator3.matmul(operator1)
     self.assertTrue(isinstance(
         operator_matmul,
-        linalg_lib.LinearOperatorDiag))
+        linear_operator_diag_nd.LinearOperatorDiagND))
     self.assertAllClose([6., 9.], self.evaluate(operator_matmul.diag))
 
+  def test_diag_matmul_nd(self):
+    operator1 = linear_operator_diag_nd.LinearOperatorDiagND(
+        [[1., 2.], [3., 4.]])
+    operator2 = linear_operator_diag_nd.LinearOperatorDiagND(
+        [1., 2.])
+    operator3 = linear_operator_diag_nd.LinearOperatorDiagND(
+        [[1., 2.], [3., 4.]], batch_dims=1)
+    operator4 = linear_operator_identity_nd.LinearOperatorScaledIdentityND(
+        domain_shape=[2], multiplier=2.)
+    operator5 = linear_operator_identity_nd.LinearOperatorScaledIdentityND(
+        domain_shape=[2], multiplier=[1., 2., 3.])
+    operator6 = linear_operator_identity_nd.LinearOperatorScaledIdentityND(
+        domain_shape=[2, 3], multiplier=-1.)
+
+    operator_matmul = operator1.matmul(operator1)
+    self.assertIsInstance(
+        operator_matmul,
+        linear_operator_diag_nd.LinearOperatorDiagND)
+    self.assertAllClose(
+        [[1., 4.], [9., 16.]], self.evaluate(operator_matmul.diag))
+    self.assertAllEqual([], operator_matmul.batch_shape)
+
+    operator_matmul = operator1.matmul(operator2)
+    self.assertIsInstance(
+        operator_matmul,
+        linear_operator_diag_nd.LinearOperatorDiagND)
+    self.assertAllClose(
+        [[1., 4.], [3., 8.]], self.evaluate(operator_matmul.diag))
+    self.assertAllEqual([], operator_matmul.batch_shape)
+
+    operator_matmul = operator2.matmul(operator1)
+    self.assertIsInstance(
+        operator_matmul,
+        linear_operator_diag_nd.LinearOperatorDiagND)
+    self.assertAllClose(
+        [[1., 4.], [3., 8.]], self.evaluate(operator_matmul.diag))
+    self.assertAllEqual([], operator_matmul.batch_shape)
+
+    operator_matmul = operator2.matmul(operator3)
+    self.assertIsInstance(
+        operator_matmul,
+        linear_operator_diag_nd.LinearOperatorDiagND)
+    self.assertAllClose(
+        [[1., 4.], [3., 8.]], self.evaluate(operator_matmul.diag))
+    self.assertAllEqual([2], operator_matmul.batch_shape)
+
+    operator_matmul = operator1.matmul(operator3)
+    self.assertIsInstance(
+        operator_matmul,
+        linear_operator_diag_nd.LinearOperatorDiagND)
+    self.assertAllClose(
+        [[[1., 4.], [3., 8.]], [[3., 8.], [9., 16.]]],
+        self.evaluate(operator_matmul.diag))
+    self.assertAllEqual([2], operator_matmul.batch_shape)
+
+    operator_matmul = operator1.matmul(operator4)
+    self.assertTrue(isinstance(
+        operator_matmul,
+        linear_operator_diag_nd.LinearOperatorDiagND))
+    self.assertAllClose(
+        [[2., 4.], [6., 8.]], self.evaluate(operator_matmul.diag))
+    self.assertAllEqual([2, 2], operator_matmul.domain_shape)
+    self.assertAllEqual([], operator_matmul.batch_shape)
+
+    operator_matmul = operator4.matmul(operator1)
+    self.assertTrue(isinstance(
+        operator_matmul,
+        linear_operator_diag_nd.LinearOperatorDiagND))
+    self.assertAllClose(
+        [[2., 4.], [6., 8.]], self.evaluate(operator_matmul.diag))
+    self.assertAllEqual([2, 2], operator_matmul.domain_shape)
+    self.assertAllEqual([], operator_matmul.batch_shape)
+
+    operator_matmul = operator2.matmul(operator5)
+    self.assertTrue(isinstance(
+        operator_matmul,
+        linear_operator_diag_nd.LinearOperatorDiagND))
+    self.assertAllClose(
+        [[1., 2.], [2., 4.], [3., 6.]], self.evaluate(operator_matmul.diag))
+    self.assertAllEqual([2], operator_matmul.domain_shape)
+    self.assertAllEqual([3], operator_matmul.batch_shape)
+
+    operator_matmul = operator5.matmul(operator2)
+    self.assertTrue(isinstance(
+        operator_matmul,
+        linear_operator_diag_nd.LinearOperatorDiagND))
+    self.assertAllClose(
+        [[1., 2.], [2., 4.], [3., 6.]], self.evaluate(operator_matmul.diag))
+    self.assertAllEqual([2], operator_matmul.domain_shape)
+    self.assertAllEqual([3], operator_matmul.batch_shape)
+
+    operator_matmul = operator1.matmul(operator5)
+    self.assertTrue(isinstance(
+        operator_matmul,
+        linear_operator_diag_nd.LinearOperatorDiagND))
+    self.assertAllClose(
+        [[[1., 2.], [3., 4.]], [[2., 4.], [6., 8.]], [[3., 6.], [9., 12.]]],
+        self.evaluate(operator_matmul.diag))
+    self.assertAllEqual([2, 2], operator_matmul.domain_shape)
+    self.assertAllEqual([3], operator_matmul.batch_shape)
+
+    operator_matmul = operator5.matmul(operator1)
+    self.assertTrue(isinstance(
+        operator_matmul,
+        linear_operator_diag_nd.LinearOperatorDiagND))
+    self.assertAllClose(
+        [[[1., 2.], [3., 4.]], [[2., 4.], [6., 8.]], [[3., 6.], [9., 12.]]],
+        self.evaluate(operator_matmul.diag))
+    self.assertAllEqual([2, 2], operator_matmul.domain_shape)
+    self.assertAllEqual([3], operator_matmul.batch_shape)
+
+    with self.assertRaisesRegex(ValueError, "not broadcast-compatible"):
+      operator_matmul = operator1.matmul(operator6)
+
+    with self.assertRaisesRegex(ValueError, "not broadcast-compatible"):
+      operator_matmul = operator6.matmul(operator1)
+
   def test_diag_solve(self):
-    operator1 = linalg_lib.LinearOperatorDiag([2., 3.], is_non_singular=True)
-    operator2 = linalg_lib.LinearOperatorDiag([1., 2.], is_non_singular=True)
-    operator3 = linalg_lib.LinearOperatorScaledIdentity(
-        num_rows=2, multiplier=3., is_non_singular=True)
+    operator1 = linear_operator_diag_nd.LinearOperatorDiagND(
+        [2., 3.], is_non_singular=True)
+    operator2 = linear_operator_diag_nd.LinearOperatorDiagND(
+        [1., 2.], is_non_singular=True)
+    operator3 = linear_operator_identity_nd.LinearOperatorScaledIdentityND(
+        domain_shape=[2], multiplier=3., is_non_singular=True)
     operator_solve = operator1.solve(operator2)
     self.assertTrue(isinstance(
         operator_solve,
-        linalg_lib.LinearOperatorDiag))
+        linear_operator_diag_nd.LinearOperatorDiagND))
     self.assertAllClose([0.5, 2 / 3.], self.evaluate(operator_solve.diag))
 
     operator_solve = operator2.solve(operator1)
     self.assertTrue(isinstance(
         operator_solve,
-        linalg_lib.LinearOperatorDiag))
+        linear_operator_diag_nd.LinearOperatorDiagND))
     self.assertAllClose([2., 3 / 2.], self.evaluate(operator_solve.diag))
 
     operator_solve = operator1.solve(operator3)
     self.assertTrue(isinstance(
         operator_solve,
-        linalg_lib.LinearOperatorDiag))
+        linear_operator_diag_nd.LinearOperatorDiagND))
     self.assertAllClose([3 / 2., 1.], self.evaluate(operator_solve.diag))
 
     operator_solve = operator3.solve(operator1)
     self.assertTrue(isinstance(
         operator_solve,
-        linalg_lib.LinearOperatorDiag))
+        linear_operator_diag_nd.LinearOperatorDiagND))
     self.assertAllClose([2 / 3., 1.], self.evaluate(operator_solve.diag))
+
+  def test_diag_solve_nd(self):
+    operator1 = linear_operator_diag_nd.LinearOperatorDiagND(
+        [[1., 2.], [3., 4.]])
+    operator2 = linear_operator_diag_nd.LinearOperatorDiagND(
+        [1., 2.])
+    operator3 = linear_operator_diag_nd.LinearOperatorDiagND(
+        [[1., 2.], [3., 4.]], batch_dims=1)
+    operator4 = linear_operator_identity_nd.LinearOperatorScaledIdentityND(
+        domain_shape=[2], multiplier=2.)
+    operator5 = linear_operator_identity_nd.LinearOperatorScaledIdentityND(
+        domain_shape=[2], multiplier=[1., 2., 3.])
+    operator6 = linear_operator_identity_nd.LinearOperatorScaledIdentityND(
+        domain_shape=[2, 3], multiplier=-1.)
+
+    operator_solve = operator1.solve(operator1)
+    self.assertIsInstance(
+        operator_solve,
+        linear_operator_diag_nd.LinearOperatorDiagND)
+    self.assertAllClose(
+        [[1., 1.], [1., 1.]], self.evaluate(operator_solve.diag))
+    self.assertAllEqual([], operator_solve.batch_shape)
+
+    operator_solve = operator1.solve(operator2)
+    self.assertIsInstance(
+        operator_solve,
+        linear_operator_diag_nd.LinearOperatorDiagND)
+    self.assertAllClose(
+        [[1., 1.], [1 / 3, 1 / 2]], self.evaluate(operator_solve.diag))
+    self.assertAllEqual([], operator_solve.batch_shape)
+
+    operator_solve = operator2.solve(operator1)
+    self.assertIsInstance(
+        operator_solve,
+        linear_operator_diag_nd.LinearOperatorDiagND)
+    self.assertAllClose(
+        [[1., 1.], [3., 2.]], self.evaluate(operator_solve.diag))
+    self.assertAllEqual([], operator_solve.batch_shape)
+
+    operator_solve = operator2.solve(operator3)
+    self.assertIsInstance(
+        operator_solve,
+        linear_operator_diag_nd.LinearOperatorDiagND)
+    self.assertAllClose(
+        [[1., 1.], [3., 2.]], self.evaluate(operator_solve.diag))
+    self.assertAllEqual([2], operator_solve.batch_shape)
+
+    operator_solve = operator1.solve(operator3)
+    self.assertIsInstance(
+        operator_solve,
+        linear_operator_diag_nd.LinearOperatorDiagND)
+    self.assertAllClose(
+        [[[1., 1.], [1 / 3, 0.5]], [[3., 2.], [1., 1.]]],
+        self.evaluate(operator_solve.diag))
+    self.assertAllEqual([2], operator_solve.batch_shape)
+
+    operator_solve = operator1.solve(operator4)
+    self.assertTrue(isinstance(
+        operator_solve,
+        linear_operator_diag_nd.LinearOperatorDiagND))
+    self.assertAllClose(
+        [[2., 1.], [2 / 3, 0.5]], self.evaluate(operator_solve.diag))
+    self.assertAllEqual([2, 2], operator_solve.domain_shape)
+    self.assertAllEqual([], operator_solve.batch_shape)
+
+    operator_solve = operator4.solve(operator1)
+    self.assertTrue(isinstance(
+        operator_solve,
+        linear_operator_diag_nd.LinearOperatorDiagND))
+    self.assertAllClose(
+        [[0.5, 1.], [3 / 2, 4 / 2]], self.evaluate(operator_solve.diag))
+    self.assertAllEqual([2, 2], operator_solve.domain_shape)
+    self.assertAllEqual([], operator_solve.batch_shape)
+
+    operator_solve = operator1.solve(operator5)
+    self.assertTrue(isinstance(
+        operator_solve,
+        linear_operator_diag_nd.LinearOperatorDiagND))
+    self.assertAllClose(
+        [[[1., 0.5], [1 / 3, 0.25]],
+         [[2., 1.], [2 / 3, 0.5]],
+         [[3., 3 / 2], [1., 0.75]]],
+        self.evaluate(operator_solve.diag))
+    self.assertAllEqual([2, 2], operator_solve.domain_shape)
+    self.assertAllEqual([3], operator_solve.batch_shape)
+
+    operator_solve = operator5.solve(operator1)
+    self.assertTrue(isinstance(
+        operator_solve,
+        linear_operator_diag_nd.LinearOperatorDiagND))
+    self.assertAllClose(
+        [[[1., 2.], [3., 4.]],
+         [[0.5, 1.], [3 / 2, 2.]],
+         [[1 / 3, 2 / 3], [1., 4 / 3]]],
+        self.evaluate(operator_solve.diag))
+    self.assertAllEqual([2, 2], operator_solve.domain_shape)
+    self.assertAllEqual([3], operator_solve.batch_shape)
+
+    with self.assertRaisesRegex(ValueError, "not broadcast-compatible"):
+      operator_solve = operator1.solve(operator6)
+
+    with self.assertRaisesRegex(ValueError, "not broadcast-compatible"):
+      operator_solve = operator6.solve(operator1)
 
   def test_diag_adjoint_type(self):
     diag = [1., 3., 5., 8.]
@@ -255,19 +474,21 @@ class LinearOperatorDiagNDTest(
     self.assertIsInstance(
         operator.adjoint(), linear_operator_diag_nd.LinearOperatorDiagND)
 
-  # def test_diag_cholesky_type(self):
-  #   diag = [1., 3., 5., 8.]
-  #   operator = linear_operator_diag_nd.LinearOperatorDiagND(
-  #       diag,
-  #       is_positive_definite=True,
-  #       is_self_adjoint=True,
-  #   )
-  #   self.assertIsInstance(operator.cholesky(), linear_operator_diag_nd.LinearOperatorDiagND)
+  def test_diag_cholesky_type(self):
+    diag = [1., 3., 5., 8.]
+    operator = linear_operator_diag_nd.LinearOperatorDiagND(
+        diag,
+        is_positive_definite=True,
+        is_self_adjoint=True,
+    )
+    self.assertIsInstance(operator.cholesky(), linear_operator_diag_nd.LinearOperatorDiagND)
 
   def test_diag_inverse_type(self):
     diag = [1., 3., 5., 8.]
-    operator = linear_operator_diag_nd.LinearOperatorDiagND(diag, is_non_singular=True)
-    self.assertIsInstance(operator.inverse(), linear_operator_diag_nd.LinearOperatorDiagND)
+    operator = linear_operator_diag_nd.LinearOperatorDiagND(
+        diag, is_non_singular=True)
+    self.assertIsInstance(operator.inverse(),
+                          linear_operator_diag_nd.LinearOperatorDiagND)
 
   def test_tape_safe(self):
     diag = tf.Variable([[2.]])
