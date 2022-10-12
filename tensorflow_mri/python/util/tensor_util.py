@@ -162,7 +162,7 @@ def static_and_dynamic_shapes_from_shape(shape,
             message=f"{arg_name or 'shape'} must be non-negative"),
     ], dynamic)
 
-  static = tf.get_static_value(shape, partial=True)
+  static = tf.get_static_value(dynamic, partial=True)
   if (static is None and
       isinstance(shape, tf.Tensor) and
       shape.shape.is_fully_defined()):

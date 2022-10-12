@@ -537,81 +537,178 @@ class LinearOperatorND(linear_operator.LinearOperator):
     return tf.ensure_shape(x, output_shape)
 
 
-def convert_to_nd_operator(linop, range_shape, domain_shape):
-  """Converts a `LinearOperator` to a `LinearOperatorND`.
+@api_util.export("linalg.LinearOperatorMakeND")
+@make_linear_operator_nd
+class LinearOperatorMakeND(LinearOperatorND):
+  """Adds multidimensional support to a linear operator.
 
-  Adds N-D shape information to a `LinearOperator` and support for all
-  `LinearOperatorND` methods.
+  Adds multidimensional shape information to a `LinearOperator` and support
+  for all `LinearOperatorND`-specific functionality, such as `matvec_nd`,
+  `solvevec_nd`, `domain_shape` and `range_shape`.
+
+  If the input operator acts like matrix $A$, then this operator also acts
+  like matrix $A$. The functionality of the underlying operator is preserved,
+  with this operator having a superset of its functionality.
+
+  ```{rubric} Initialization
+  ```
+  This operator is initialized with a non-ND linear operator (`operator`) and
+  range/domain shape information (`range_shape` and `domain_shape`)
 
   Args:
-    linop: A `LinearOperator`.
+    operator: A `tfmri.linalg.LinearOperator`. If `operator` is an instance of
+      `LinearOperatorND`, then `operator` is returned unchanged.
     range_shape: A `tf.Tensor` representing the range shape of the operator.
-      Must be compatible with the range dimension of `linop`.
+      Must be compatible with the range dimension of `operator`.
     domain_shape: A `tf.Tensor` representing the domain shape of the operator.
-      Must be compatible with the domain dimension of `linop`.
-
-  Returns:
-    A `LinearOperatorND` with equal action to that of `linop`.
+      Must be compatible with the domain dimension of `operator`.
+    is_non_singular: A boolean, or `None`. Whether this operator is expected
+      to be non-singular. Defaults to `None`.
+    is_self_adjoint: A boolean, or `None`. Whether this operator is expected
+      to be equal to its Hermitian transpose. If `dtype` is real, this is
+      equivalent to being symmetric. Defaults to `None`.
+    is_positive_definite: A boolean, or `None`. Whether this operator is
+      expected to be positive definite, meaning the quadratic form $x^H A x$
+      has positive real part for all nonzero $x$. Note that an operator [does
+      not need to be self-adjoint to be positive definite](https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices)
+      Defaults to `None`.
+    is_square: A boolean, or `None`. Expect that this operator acts like a
+      square matrix (or a batch of square matrices). Defaults to `None`.
+    name: An optional `str`. The name of this operator.
   """
-  if isinstance(linop, LinearOperatorND):
-    raise TypeError("linop is already a LinearOperatorND.")
-  if not isinstance(linop, linear_operator.LinearOperator):
-    raise TypeError("linop must be a LinearOperator.")
+  def __new__(cls, operator, *args, **kwargs):
+    # If the input operator is already an ND operator, return it.
+    if isinstance(operator, LinearOperatorND):
+      return operator
+    return super().__new__(cls)
 
-  cls = linop.__class__
-  bases = cls.__bases__
-  if linear_operator.LinearOperator not in bases:
-    raise TypeError(
-        f"LinearOperator is not a direct base class of linop. Note that "
-        f"`convert_to_nd_operator` does not currently support "
-        f"nested inheritance (i.e., it will not work for a subclass of a "
-        f"subclass of LinearOperator). Found bases: {bases}")
+  def __init__(self,
+               operator,
+               range_shape,
+               domain_shape,
+               is_non_singular=None,
+               is_self_adjoint=None,
+               is_positive_definite=None,
+               is_square=None,
+               name=None):
+    parameters = dict(
+        operator=operator,
+        range_shape=range_shape,
+        domain_shape=domain_shape,
+        is_non_singular=is_non_singular,
+        is_self_adjoint=is_self_adjoint,
+        is_positive_definite=is_positive_definite,
+        is_square=is_square,
+        name=name)
 
-  # Replace the LinearOperator base class with LinearOperatorND.
-  bases = tuple(base if base is not linear_operator.LinearOperator
-                else LinearOperatorND for base in bases)
+    if isinstance(operator, LinearOperatorND):
+      raise TypeError("operator is already a LinearOperatorND.")
+    if not isinstance(operator, linear_operator.LinearOperator):
+      raise TypeError(f"operator must be a LinearOperator, but got: {operator}")
+    self._operator = operator
 
-  # Process the domain and range shapes and check that they are compatible.
-  domain_shape_static, domain_shape_dynamic = (
-      tensor_util.static_and_dynamic_shapes_from_shape(domain_shape))
-  range_shape_static, range_shape_dynamic = (
-      tensor_util.static_and_dynamic_shapes_from_shape(range_shape))
-  batch_shape_static, batch_shape_dynamic = (
-      linop.batch_shape, linop.batch_shape_tensor())
+    if (is_non_singular is not None and
+        operator.is_non_singular is not None and
+        is_non_singular != operator.is_non_singular):
+      raise ValueError("is_non_singular must match operator.is_non_singular.")
+    if is_non_singular is None:
+      is_non_singular = operator.is_non_singular
 
-  if (domain_shape_static.num_elements() is not None and
-      linop.domain_dimension is not None and
-      domain_shape_static.num_elements() != linop.domain_dimension):
-    raise ValueError(
-        f"domain_shape must have the same number of elements as "
-        f"linop.domain_dimension. Found {domain_shape_static.num_elements()} "
-        f"and {linop.domain_dimension}, respectively.")
+    if (is_self_adjoint is not None and
+        operator.is_self_adjoint is not None and
+        is_self_adjoint != operator.is_self_adjoint):
+      raise ValueError("is_self_adjoint must match operator.is_self_adjoint.")
+    if is_self_adjoint is None:
+      is_self_adjoint = operator.is_self_adjoint
 
-  if (range_shape_static.num_elements() is not None and
-      linop.range_dimension is not None and
-      range_shape_static.num_elements() != linop.range_dimension):
-    raise ValueError(
-        f"range_shape must have the same number of elements as "
-        f"linop.range_dimension. Found {range_shape_static.num_elements()} "
-        f"and {linop.range_dimension}, respectively.")
+    if (is_positive_definite is not None and
+        operator.is_positive_definite is not None and
+        is_positive_definite != operator.is_positive_definite):
+      raise ValueError(
+          "is_positive_definite must match operator.is_positive_definite.")
+    if is_positive_definite is None:
+      is_positive_definite = operator.is_positive_definite
+
+    if (is_square is not None and
+        operator.is_square is not None and
+        is_square != operator.is_square):
+      raise ValueError("is_square must match operator.is_square.")
+    if is_square is None:
+      is_square = operator.is_square
+
+    # Process the domain and range shapes and check that they are compatible.
+    self._domain_shape_static, self._domain_shape_dynamic = (
+        tensor_util.static_and_dynamic_shapes_from_shape(domain_shape))
+    self._range_shape_static, self._range_shape_dynamic = (
+        tensor_util.static_and_dynamic_shapes_from_shape(range_shape))
+
+    if (self._domain_shape_static.num_elements() is not None and
+        operator.domain_dimension is not None and
+        self._domain_shape_static.num_elements() != operator.domain_dimension):
+      raise ValueError(
+          f"domain_shape must have the same number of elements as "
+          f"operator.domain_dimension. "
+          f"Found {self._domain_shape_static.num_elements()} "
+          f"and {operator.domain_dimension}, respectively.")
+
+    if (self._range_shape_static.num_elements() is not None and
+        operator.range_dimension is not None and
+        self._range_shape_static.num_elements() != operator.range_dimension):
+      raise ValueError(
+          f"range_shape must have the same number of elements as "
+          f"operator.range_dimension. "
+          f"Found {self._range_shape_static.num_elements()} "
+          f"and {operator.range_dimension}, respectively.")
+
+    # Initialization.
+    if name is None:
+      name = operator.name + "ND"
+
+    with tf.name_scope(name):
+      super().__init__(
+          dtype=operator.dtype,
+          is_non_singular=is_non_singular,
+          is_self_adjoint=is_self_adjoint,
+          is_positive_definite=is_positive_definite,
+          is_square=is_square,
+          parameters=parameters,
+          name=name)
 
   def _domain_shape(self):
-    return domain_shape_static
+    return self._domain_shape_static
 
   def _domain_shape_tensor(self):
-    return domain_shape_dynamic
+    return self._domain_shape_dynamic
 
   def _range_shape(self):
-    return range_shape_static
+    return self._range_shape_static
 
   def _range_shape_tensor(self):
-    return range_shape_dynamic
+    return self._range_shape_dynamic
 
   def _batch_shape(self):
-    return batch_shape_static
+    return self.operator.batch_shape
 
   def _batch_shape_tensor(self):
-    return batch_shape_dynamic
+    return self.operator.batch_shape_tensor()
+
+  def _matmul(self, x, adjoint=False, adjoint_arg=False):
+    return self.operator.matmul(x, adjoint=adjoint, adjoint_arg=adjoint_arg)
+
+  def _matvec(self, x, adjoint=False):
+    return self.operator.matvec(x, adjoint=adjoint)
+
+  def _solve(self, rhs, adjoint=False, adjoint_arg=False):
+    return self.operator.solve(rhs, adjoint=adjoint, adjoint_arg=adjoint_arg)
+
+  def _solvevec(self, rhs, adjoint=False):
+    return self.operator.solvevec(rhs, adjoint=adjoint)
+
+  def _lstsq(self, rhs, adjoint=False, adjoint_arg=False):
+    return self.operator.lstsq(rhs, adjoint=adjoint, adjoint_arg=adjoint_arg)
+
+  def _lstsqvec(self, rhs, adjoint=False):
+    return self.oeprator.lstsqvec(rhs, adjoint=adjoint)
 
   def _matvec_nd(self, x, adjoint=False):
     x = (self.flatten_range_shape(x) if adjoint else \
@@ -629,22 +726,59 @@ def convert_to_nd_operator(linop, range_shape, domain_shape):
          self.expand_domain_dimension(x))
     return x
 
-  new_cls = type(cls.__name__ + "ND", bases, {
-      '_domain_shape': _domain_shape,
-      '_domain_shape_tensor': _domain_shape_tensor,
-      '_range_shape': _range_shape,
-      '_range_shape_tensor': _range_shape_tensor,
-      '_batch_shape': _batch_shape,
-      '_batch_shape_tensor': _batch_shape_tensor,
-      '_matmul': linop._matmul,
-      '_matvec': linop._matvec,
-      '_solve': linop._solve,
-      '_solvevec': linop._solvevec,
-      '_lstsq': linop._lstsq,
-      '_lstsqvec': linop._lstsqvec,
-      '_matvec_nd': _matvec_nd,
-      '_solvevec_nd': _solvevec_nd})
+  def _lstsqvec_nd(self, x, adjoint=False):
+    x = (self.flatten_domain_shape(x) if adjoint else \
+         self.flatten_range_shape(x))
+    x = self._lstsqvec(x, adjoint=adjoint)
+    x = (self.expand_range_dimension(x) if adjoint else
+         self.expand_domain_dimension(x))
+    return x
 
-  linop.__class__ = new_cls
+  def _add_to_tensor(self, x):
+    return self.operator.add_to_tensor(x)
 
-  return linop
+  def _assert_non_singular(self):
+    return self.operator.assert_non_singular()
+
+  def _assert_self_adjoint(self):
+    return self.operator.assert_self_adjoint()
+
+  def _assert_positive_definite(self):
+    return self.operator.assert_positive_definite()
+
+  def _cond(self):
+    return self.operator.cond()
+
+  def _determinant(self):
+    return self.operator.determinant()
+
+  def _diag_part(self):
+    return self.operator.diag_part()
+
+  def _eigvals(self):
+    return self.operator.eigvals()
+
+  def _log_abs_determinant(self):
+    return self.operator.log_abs_determinant()
+
+  def _trace(self):
+    return self.operator.trace()
+
+  def _to_dense(self):
+    return self.operator.to_dense()
+
+  @property
+  def operator(self):
+    return self._operator
+
+  @property
+  def _composite_tensor_fields(self):
+    return ("operator", "range_shape", "domain_shape")
+
+  @property
+  def _composite_tensor_prefer_static_fields(self):
+    return ("range_shape", "domain_shape")
+
+  @property
+  def _experimental_parameter_ndims_to_matrix_ndims(self):
+    return {"operator": 0}

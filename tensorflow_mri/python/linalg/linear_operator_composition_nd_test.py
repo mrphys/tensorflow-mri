@@ -24,10 +24,19 @@ from tensorflow.python.ops.linalg import linalg as linalg_lib
 
 from tensorflow_mri.python.linalg import linear_operator_composition_nd
 from tensorflow_mri.python.linalg import linear_operator_diag_nd
+from tensorflow_mri.python.linalg import linear_operator_nd
 from tensorflow_mri.python.linalg import linear_operator_test_util
 
 
 CompositionND = linear_operator_composition_nd.LinearOperatorCompositionND
+def FullMatrixND(matrix, *args, **kwargs):
+  linop = tf.linalg.LinearOperatorFullMatrix(matrix, *args, **kwargs)
+  return linear_operator_nd.LinearOperatorMakeND(
+      linop,
+      range_shape=[linop.range_dimension_tensor()],
+      domain_shape=[linop.domain_dimension_tensor()])
+
+
 # linalg = linalg_lib
 rng = np.random.RandomState(0)
 
@@ -35,6 +44,15 @@ rng = np.random.RandomState(0)
 class SquareLinearOperatorCompositionTest(
     linear_operator_test_util.SquareLinearOperatorDerivedClassTest):
   """Most tests done in the base class LinearOperatorDerivedClassTest."""
+  @staticmethod
+  def operator_shapes_infos():
+    shapes_info = linear_operator_test_util.OperatorShapesInfo
+    # non-batch operators (n, n) and batch operators.
+    return [
+        shapes_info((1, 1)),
+        shapes_info((1, 3, 3)),
+        shapes_info((3, 4, 4)),
+        shapes_info((2, 1, 4, 4))]
 
   def tearDown(self):
     tf.config.experimental.enable_tensor_float_32_execution(self.tf32_keep_)
@@ -80,7 +98,7 @@ class SquareLinearOperatorCompositionTest(
               matrix, shape=None) for matrix in matrices]
 
     operator = CompositionND(
-        [tf.linalg.LinearOperatorFullMatrix(l) for l in lin_op_matrices],
+        [FullMatrixND(l) for l in lin_op_matrices],
         is_positive_definite=True if ensure_self_adjoint_and_pd else None,
         is_self_adjoint=True if ensure_self_adjoint_and_pd else None,
         is_square=True)
@@ -97,7 +115,7 @@ class SquareLinearOperatorCompositionTest(
     # The matrix values do not effect auto-setting of the flags.
     matrix = [[1., 0.], [1., 1.]]
     operator = CompositionND(
-        [linalg.LinearOperatorFullMatrix(matrix)],
+        [FullMatrixND(matrix)],
         is_positive_definite=True,
         is_non_singular=True,
         is_self_adjoint=False)
@@ -109,8 +127,8 @@ class SquareLinearOperatorCompositionTest(
     # Matrix with two positive eigenvalues, 11 and 8.
     # The matrix values do not effect auto-setting of the flags.
     matrix = [[11., 0.], [1., 8.]]
-    operator_1 = linalg.LinearOperatorFullMatrix(matrix, is_non_singular=True)
-    operator_2 = linalg.LinearOperatorFullMatrix(matrix, is_non_singular=True)
+    operator_1 = FullMatrixND(matrix, is_non_singular=True)
+    operator_2 = FullMatrixND(matrix, is_non_singular=True)
 
     operator = CompositionND(
         [operator_1, operator_2],
@@ -119,14 +137,14 @@ class SquareLinearOperatorCompositionTest(
     self.assertFalse(operator.is_positive_definite)
     self.assertTrue(operator.is_non_singular)
 
-    with self.assertRaisesRegex(ValueError, "always non-singular"):
+    with self.assertRaisesRegex(ValueError, "Inconsistent non-singular hint"):
       CompositionND(
           [operator_1, operator_2], is_non_singular=False)
 
   def test_name(self):
     matrix = [[11., 0.], [1., 8.]]
-    operator_1 = linalg.LinearOperatorFullMatrix(matrix, name="left")
-    operator_2 = linalg.LinearOperatorFullMatrix(matrix, name="right")
+    operator_1 = FullMatrixND(matrix, name="left")
+    operator_2 = FullMatrixND(matrix, name="right")
 
     operator = CompositionND([operator_1, operator_2])
 
@@ -134,8 +152,8 @@ class SquareLinearOperatorCompositionTest(
 
   def test_different_dtypes_raises(self):
     operators = [
-        linalg.LinearOperatorFullMatrix(rng.rand(2, 3, 3)),
-        linalg.LinearOperatorFullMatrix(rng.rand(2, 3, 3).astype(np.float32))
+        FullMatrixND(rng.rand(2, 3, 3)),
+        FullMatrixND(rng.rand(2, 3, 3).astype(np.float32))
     ]
     with self.assertRaisesRegex(TypeError, "same dtype"):
       CompositionND(operators)
@@ -218,7 +236,7 @@ class NonSquareLinearOperatorCompositionTest(
               matrix, shape=None) for matrix in matrices]
 
     operator = CompositionND(
-        [linalg.LinearOperatorFullMatrix(l) for l in lin_op_matrices])
+        [FullMatrixND(l) for l in lin_op_matrices])
 
     matmul_order_list = list(reversed(matrices))
     mat = matmul_order_list[0]
@@ -230,8 +248,8 @@ class NonSquareLinearOperatorCompositionTest(
   @test_util.run_deprecated_v1
   def test_static_shapes(self):
     operators = [
-        linalg.LinearOperatorFullMatrix(rng.rand(2, 3, 4)),
-        linalg.LinearOperatorFullMatrix(rng.rand(2, 4, 5))
+        FullMatrixND(rng.rand(2, 3, 4)),
+        FullMatrixND(rng.rand(2, 4, 5))
     ]
     operator = CompositionND(operators)
     self.assertAllEqual((2, 3, 5), operator.shape)
@@ -239,8 +257,8 @@ class NonSquareLinearOperatorCompositionTest(
   @test_util.run_deprecated_v1
   def test_shape_tensors_when_statically_available(self):
     operators = [
-        linalg.LinearOperatorFullMatrix(rng.rand(2, 3, 4)),
-        linalg.LinearOperatorFullMatrix(rng.rand(2, 4, 5))
+        FullMatrixND(rng.rand(2, 3, 4)),
+        FullMatrixND(rng.rand(2, 4, 5))
     ]
     operator = CompositionND(operators)
     with self.cached_session():
@@ -255,8 +273,8 @@ class NonSquareLinearOperatorCompositionTest(
     feed_dict = {mat_ph_1: mat_1, mat_ph_2: mat_2}
 
     operators = [
-        linalg.LinearOperatorFullMatrix(mat_ph_1),
-        linalg.LinearOperatorFullMatrix(mat_ph_2)
+        FullMatrixND(mat_ph_1),
+        FullMatrixND(mat_ph_2)
     ]
     operator = CompositionND(operators)
     with self.cached_session():
@@ -265,7 +283,7 @@ class NonSquareLinearOperatorCompositionTest(
 
 
 linear_operator_test_util.add_tests(SquareLinearOperatorCompositionTest)
-linear_operator_test_util.add_tests(NonSquareLinearOperatorCompositionTest)
+# linear_operator_test_util.add_tests(NonSquareLinearOperatorCompositionTest)
 
 
 if __name__ == "__main__":

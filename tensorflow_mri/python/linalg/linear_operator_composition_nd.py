@@ -101,17 +101,17 @@ class LinearOperatorCompositionND(linear_operator_nd.LinearOperatorND):
     operators: A `list` of `tfmri.linalg.LinearOperatorND` objects, each with
       the same dtype and conformable shapes.
     is_non_singular: A boolean, or `None`. Whether this operator is expected
-      to be non-singular. Defaults to `True`.
+      to be non-singular. Defaults to `None`.
     is_self_adjoint: A boolean, or `None`. Whether this operator is expected
       to be equal to its Hermitian transpose. If `dtype` is real, this is
-      equivalent to being symmetric. Defaults to `False`.
+      equivalent to being symmetric. Defaults to `None`.
     is_positive_definite: A boolean, or `None`. Whether this operator is
       expected to be positive definite, meaning the quadratic form $x^H A x$
       has positive real part for all nonzero $x$. Note that an operator [does
       not need to be self-adjoint to be positive definite](https://en.wikipedia.org/wiki/Positive-definite_matrix#Extension_for_non-symmetric_matrices)
       Defaults to `None`.
     is_square: A boolean, or `None`. Expect that this operator acts like a
-      square matrix (or a batch of square matrices). Defaults to `True`.
+      square matrix (or a batch of square matrices). Defaults to `None`.
     name: An optional `str`. The name of this operator.
   """
   def __init__(self,
@@ -224,7 +224,7 @@ class LinearOperatorCompositionND(linear_operator_nd.LinearOperatorND):
     return self.operators[-1].domain_shape_tensor()
 
   def _range_shape_tensor(self):
-    return self.oeprators[0].range_shape_tensor()
+    return self.operators[0].range_shape_tensor()
 
   def _batch_shape_tensor(self):
     return self._batch_shape_dynamic
@@ -256,6 +256,18 @@ class LinearOperatorCompositionND(linear_operator_nd.LinearOperatorND):
     for operator in solve_order_list[1:]:
       solution = operator.solvevec_nd(solution, adjoint=adjoint)
     return solution
+
+  def _determinant(self):
+    result = self.operators[0].determinant()
+    for operator in self.operators[1:]:
+      result *= operator.determinant()
+    return result
+
+  def _log_abs_determinant(self):
+    result = self.operators[0].log_abs_determinant()
+    for operator in self.operators[1:]:
+      result += operator.log_abs_determinant()
+    return result
 
   @property
   def _composite_tensor_fields(self):
