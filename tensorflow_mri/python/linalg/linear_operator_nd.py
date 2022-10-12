@@ -535,3 +535,116 @@ class LinearOperatorND(linear_operator.LinearOperator):
 
     x = tf.reshape(x, output_shape_tensor)
     return tf.ensure_shape(x, output_shape)
+
+
+def convert_to_nd_operator(linop, range_shape, domain_shape):
+  """Converts a `LinearOperator` to a `LinearOperatorND`.
+
+  Adds N-D shape information to a `LinearOperator` and support for all
+  `LinearOperatorND` methods.
+
+  Args:
+    linop: A `LinearOperator`.
+    range_shape: A `tf.Tensor` representing the range shape of the operator.
+      Must be compatible with the range dimension of `linop`.
+    domain_shape: A `tf.Tensor` representing the domain shape of the operator.
+      Must be compatible with the domain dimension of `linop`.
+
+  Returns:
+    A `LinearOperatorND` with equal action to that of `linop`.
+  """
+  if isinstance(linop, LinearOperatorND):
+    raise TypeError("linop is already a LinearOperatorND.")
+  if not isinstance(linop, linear_operator.LinearOperator):
+    raise TypeError("linop must be a LinearOperator.")
+
+  cls = linop.__class__
+  bases = cls.__bases__
+  if linear_operator.LinearOperator not in bases:
+    raise TypeError(
+        f"LinearOperator is not a direct base class of linop. Note that "
+        f"`convert_to_nd_operator` does not currently support "
+        f"nested inheritance (i.e., it will not work for a subclass of a "
+        f"subclass of LinearOperator). Found bases: {bases}")
+
+  # Replace the LinearOperator base class with LinearOperatorND.
+  bases = tuple(base if base is not linear_operator.LinearOperator
+                else LinearOperatorND for base in bases)
+
+  # Process the domain and range shapes and check that they are compatible.
+  domain_shape_static, domain_shape_dynamic = (
+      tensor_util.static_and_dynamic_shapes_from_shape(domain_shape))
+  range_shape_static, range_shape_dynamic = (
+      tensor_util.static_and_dynamic_shapes_from_shape(range_shape))
+  batch_shape_static, batch_shape_dynamic = (
+      linop.batch_shape, linop.batch_shape_tensor())
+
+  if (domain_shape_static.num_elements() is not None and
+      linop.domain_dimension is not None and
+      domain_shape_static.num_elements() != linop.domain_dimension):
+    raise ValueError(
+        f"domain_shape must have the same number of elements as "
+        f"linop.domain_dimension. Found {domain_shape_static.num_elements()} "
+        f"and {linop.domain_dimension}, respectively.")
+
+  if (range_shape_static.num_elements() is not None and
+      linop.range_dimension is not None and
+      range_shape_static.num_elements() != linop.range_dimension):
+    raise ValueError(
+        f"range_shape must have the same number of elements as "
+        f"linop.range_dimension. Found {range_shape_static.num_elements()} "
+        f"and {linop.range_dimension}, respectively.")
+
+  def _domain_shape(self):
+    return domain_shape_static
+
+  def _domain_shape_tensor(self):
+    return domain_shape_dynamic
+
+  def _range_shape(self):
+    return range_shape_static
+
+  def _range_shape_tensor(self):
+    return range_shape_dynamic
+
+  def _batch_shape(self):
+    return batch_shape_static
+
+  def _batch_shape_tensor(self):
+    return batch_shape_dynamic
+
+  def _matvec_nd(self, x, adjoint=False):
+    x = (self.flatten_range_shape(x) if adjoint else \
+         self.flatten_domain_shape(x))
+    x = self._matvec(x, adjoint=adjoint)
+    x = (self.expand_domain_dimension(x) if adjoint else
+         self.expand_range_dimension(x))
+    return x
+
+  def _solvevec_nd(self, x, adjoint=False):
+    x = (self.flatten_domain_shape(x) if adjoint else \
+         self.flatten_range_shape(x))
+    x = self._solvevec(x, adjoint=adjoint)
+    x = (self.expand_range_dimension(x) if adjoint else
+         self.expand_domain_dimension(x))
+    return x
+
+  new_cls = type(cls.__name__ + "ND", bases, {
+      '_domain_shape': _domain_shape,
+      '_domain_shape_tensor': _domain_shape_tensor,
+      '_range_shape': _range_shape,
+      '_range_shape_tensor': _range_shape_tensor,
+      '_batch_shape': _batch_shape,
+      '_batch_shape_tensor': _batch_shape_tensor,
+      '_matmul': linop._matmul,
+      '_matvec': linop._matvec,
+      '_solve': linop._solve,
+      '_solvevec': linop._solvevec,
+      '_lstsq': linop._lstsq,
+      '_lstsqvec': linop._lstsqvec,
+      '_matvec_nd': _matvec_nd,
+      '_solvevec_nd': _solvevec_nd})
+
+  linop.__class__ = new_cls
+
+  return linop

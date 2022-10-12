@@ -1,4 +1,4 @@
-# Copyright 2021 The TensorFlow MRI Authors. All Rights Reserved.
+# Copyright 2016 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,24 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for module `linear_operator_composition_nd`."""
 
 import numpy as np
 import tensorflow as tf
 
-from tensorflow_mri.python.linalg import linear_operator_test
-from tensorflow_mri.python.linalg import linear_operator_addition
-from tensorflow_mri.python.linalg import linear_operator_coils
-from tensorflow_mri.python.linalg import linear_operator_nufft
-from tensorflow_mri.python.linalg import linear_operator_full_matrix
+from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import test_util
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import math_ops
+from tensorflow.python.ops.linalg import linalg as linalg_lib
+
+from tensorflow_mri.python.linalg import linear_operator_composition_nd
+from tensorflow_mri.python.linalg import linear_operator_diag_nd
 from tensorflow_mri.python.linalg import linear_operator_test_util
-from tensorflow_mri.python.util import test_util
 
 
-rng = np.random.RandomState(2022)
+CompositionND = linear_operator_composition_nd.LinearOperatorCompositionND
+# linalg = linalg_lib
+rng = np.random.RandomState(0)
 
 
-class SquareLinearOperatorCompositionNDTest(
+class SquareLinearOperatorCompositionTest(
     linear_operator_test_util.SquareLinearOperatorDerivedClassTest):
   """Most tests done in the base class LinearOperatorDerivedClassTest."""
 
@@ -39,6 +42,16 @@ class SquareLinearOperatorCompositionNDTest(
   def setUp(self):
     self.tf32_keep_ = tf.config.experimental.tensor_float_32_execution_enabled()
     tf.config.experimental.enable_tensor_float_32_execution(False)
+    # Increase from 1e-6 to 1e-4 and 2e-4.
+    self._atol[dtypes.float32] = 2e-4
+    self._atol[dtypes.complex64] = 1e-4
+    self._rtol[dtypes.float32] = 2e-4
+    self._rtol[dtypes.complex64] = 1e-4
+
+  @staticmethod
+  def skip_these_tests():
+    # Cholesky not implemented.
+    return ["cholesky"]
 
   def operator_and_matrix(self, build_info, dtype, use_placeholder,
                           ensure_self_adjoint_and_pd=False):
@@ -63,12 +76,11 @@ class SquareLinearOperatorCompositionNDTest(
 
     if use_placeholder:
       lin_op_matrices = [
-          tf.compat.v1.placeholder_with_default(
+          array_ops.placeholder_with_default(
               matrix, shape=None) for matrix in matrices]
 
-    operator = linear_operator_addition.LinearOperatorAddition(
-        [linear_operator_full_matrix.LinearOperatorFullMatrix(l)
-         for l in lin_op_matrices],
+    operator = CompositionND(
+        [tf.linalg.LinearOperatorFullMatrix(l) for l in lin_op_matrices],
         is_positive_definite=True if ensure_self_adjoint_and_pd else None,
         is_self_adjoint=True if ensure_self_adjoint_and_pd else None,
         is_square=True)
@@ -76,206 +88,185 @@ class SquareLinearOperatorCompositionNDTest(
     matmul_order_list = list(reversed(matrices))
     mat = matmul_order_list[0]
     for other_mat in matmul_order_list[1:]:
-      mat = tf.math.add(other_mat, mat)
+      mat = math_ops.matmul(other_mat, mat)
 
     return operator, mat
 
-#   @test_util.run_deprecated_v1
-#   def test_is_x_flags(self):
-#     expected = {
-#         'is_non_singular': {
-#             (True, True): None,
-#             (True, False): None,
-#             (True, None): None,
-#             (False, False): None,
-#             (False, None): None,
-#             (None, None): None
-#         },
-#         'is_self_adjoint': {
-#             (True, True): True,
-#             (True, False): False,
-#             (True, None): None,
-#             (False, False): None,
-#             (False, None): None,
-#             (None, None): None
-#         },
-#         'is_positive_definite': {
-#             (True, True): True,
-#             (True, False): None,
-#             (True, None): None,
-#             (False, False): None,
-#             (False, None): None,
-#             (None, None): None
-#         },
-#         'is_square': {
-#             (True, True): True,
-#             # (True, False): None,
-#             (True, None): True,
-#             (False, False): False,
-#             (False, None): False,
-#             (None, None): None
-#         }
-#     }
-#     for name, combinations in expected.items():
-#       for (flag1, flag2), value in combinations.items():
-#         with self.subTest(name=name, flag1=flag1, flag2=flag2):
-#           matrix = tf.compat.v1.placeholder(tf.float32)
-#           operator1 = linear_operator_full_matrix.LinearOperatorFullMatrix(
-#               matrix, **{name: flag1})
-#           operator2 = linear_operator_full_matrix.LinearOperatorFullMatrix(
-#               matrix, **{name: flag2})
-#           operator = linear_operator_addition.LinearOperatorAddition(
-#               [operator1, operator2])
+  def test_is_x_flags(self):
+    # Matrix with two positive eigenvalues, 1, and 1.
+    # The matrix values do not effect auto-setting of the flags.
+    matrix = [[1., 0.], [1., 1.]]
+    operator = CompositionND(
+        [linalg.LinearOperatorFullMatrix(matrix)],
+        is_positive_definite=True,
+        is_non_singular=True,
+        is_self_adjoint=False)
+    self.assertTrue(operator.is_positive_definite)
+    self.assertTrue(operator.is_non_singular)
+    self.assertFalse(operator.is_self_adjoint)
 
-#           self.assertIs(getattr(operator, name), value)
+  def test_is_non_singular_auto_set(self):
+    # Matrix with two positive eigenvalues, 11 and 8.
+    # The matrix values do not effect auto-setting of the flags.
+    matrix = [[11., 0.], [1., 8.]]
+    operator_1 = linalg.LinearOperatorFullMatrix(matrix, is_non_singular=True)
+    operator_2 = linalg.LinearOperatorFullMatrix(matrix, is_non_singular=True)
 
-#   def test_name(self):
-#     matrix = [[11., 0.], [1., 8.]]
-#     operator_1 = linear_operator_full_matrix.LinearOperatorFullMatrix(
-#         matrix, name="left")
-#     operator_2 = linear_operator_full_matrix.LinearOperatorFullMatrix(
-#         matrix, name="right")
+    operator = CompositionND(
+        [operator_1, operator_2],
+        is_positive_definite=False,  # No reason it HAS to be False...
+        is_non_singular=None)
+    self.assertFalse(operator.is_positive_definite)
+    self.assertTrue(operator.is_non_singular)
 
-#     operator = linear_operator_addition.LinearOperatorAddition(
-#         [operator_1, operator_2])
+    with self.assertRaisesRegex(ValueError, "always non-singular"):
+      CompositionND(
+          [operator_1, operator_2], is_non_singular=False)
 
-#     self.assertEqual("left_p_right", operator.name)
+  def test_name(self):
+    matrix = [[11., 0.], [1., 8.]]
+    operator_1 = linalg.LinearOperatorFullMatrix(matrix, name="left")
+    operator_2 = linalg.LinearOperatorFullMatrix(matrix, name="right")
 
-#   def test_different_dtypes_raises(self):
-#     operators = [
-#         linear_operator_full_matrix.LinearOperatorFullMatrix(
-#             rng.rand(2, 3, 3)),
-#         linear_operator_full_matrix.LinearOperatorFullMatrix(
-#             rng.rand(2, 3, 3).astype(np.float32))
-#     ]
-#     with self.assertRaisesRegex(TypeError, "same dtype"):
-#       linear_operator_addition.LinearOperatorAddition(operators)
+    operator = CompositionND([operator_1, operator_2])
 
-#   def test_empty_operators_raises(self):
-#     with self.assertRaisesRegex(ValueError, "non-empty"):
-#       linear_operator_addition.LinearOperatorAddition([])
+    self.assertEqual("left_o_right", operator.name)
 
-#   def test_registration(self):
-#     matrix = [[11., 0.], [1., 8.]]
-#     operator_1 = linear_operator_test.LinearOperatorMatmulSolve(matrix)
-#     operator_2 = linear_operator_test.LinearOperatorMatmulSolve(matrix)
-#     operator = operator_1 + operator_2
-#     self.assertIsInstance(
-#         operator, linear_operator_addition.LinearOperatorAddition)
+  def test_different_dtypes_raises(self):
+    operators = [
+        linalg.LinearOperatorFullMatrix(rng.rand(2, 3, 3)),
+        linalg.LinearOperatorFullMatrix(rng.rand(2, 3, 3).astype(np.float32))
+    ]
+    with self.assertRaisesRegex(TypeError, "same dtype"):
+      CompositionND(operators)
+
+  def test_empty_operators_raises(self):
+    with self.assertRaisesRegex(ValueError, "non-empty"):
+      CompositionND([])
 
 
-# class NonSquareLinearOperatorAdditionTest(
-#     linear_operator_test_util.NonSquareLinearOperatorDerivedClassTest):
-#   """Most tests done in the base class LinearOperatorDerivedClassTest."""
+class NonSquareLinearOperatorCompositionTest(
+    linear_operator_test_util.NonSquareLinearOperatorDerivedClassTest):
+  """Most tests done in the base class LinearOperatorDerivedClassTest."""
 
-#   def tearDown(self):
-#     tf.config.experimental.enable_tensor_float_32_execution(self.tf32_keep_)
+  def tearDown(self):
+    tf.config.experimental.enable_tensor_float_32_execution(self.tf32_keep_)
 
-#   def setUp(self):
-#     self.tf32_keep_ = tf.config.experimental.tensor_float_32_execution_enabled()
-#     tf.config.experimental.enable_tensor_float_32_execution(False)
+  def setUp(self):
+    self.tf32_keep_ = tf.config.experimental.tensor_float_32_execution_enabled()
+    tf.config.experimental.enable_tensor_float_32_execution(False)
+    # Increase from 1e-6 to 1e-4
+    self._atol[dtypes.float32] = 1e-4
+    self._atol[dtypes.complex64] = 1e-4
+    self._rtol[dtypes.float32] = 1e-4
+    self._rtol[dtypes.complex64] = 1e-4
 
-#   def operator_and_matrix(
-#       self, build_info, dtype, use_placeholder,
-#       ensure_self_adjoint_and_pd=False):
-#     del ensure_self_adjoint_and_pd
-#     shape = list(build_info.shape)
+  @staticmethod
+  def skip_these_tests():
+    # Testing the condition number fails when using XLA with cuBLASLt
+    # A slight numerical difference between different matmul algorithms
+    # leads to large precision issues
+    return linear_operator_test_util.NonSquareLinearOperatorDerivedClassTest.skip_these_tests(
+    ) + ["cond"]
 
-#     # Ensure that the matrices are well-conditioned by generating
-#     # random matrices whose singular values are close to 1.
-#     # The reason to do this is because cond(AB) <= cond(A) * cond(B).
-#     # By ensuring that each factor has condition number close to 1, we ensure
-#     # that the condition number of the product isn't too far away from 1.
-#     def generate_well_conditioned(shape, dtype):
-#       m, n = shape[-2], shape[-1]
-#       min_dim = min(m, n)
-#       # Generate singular values that are close to 1.
-#       d = linear_operator_test_util.random_normal(
-#           shape[:-2] + [min_dim],
-#           mean=1.,
-#           stddev=0.1,
-#           dtype=dtype)
-#       zeros = tf.compat.v1.zeros(shape=shape[:-2] + [m, n], dtype=dtype)
-#       d = tf.linalg.set_diag(zeros, d)
-#       u, _ = tf.linalg.qr(linear_operator_test_util.random_normal(
-#           shape[:-2] + [m, m], dtype=dtype))
+  def operator_and_matrix(
+      self, build_info, dtype, use_placeholder,
+      ensure_self_adjoint_and_pd=False):
+    del ensure_self_adjoint_and_pd
+    shape = list(build_info.shape)
 
-#       v, _ = tf.linalg.qr(linear_operator_test_util.random_normal(
-#           shape[:-2] + [n, n], dtype=dtype))
-#       return tf.matmul(u, tf.matmul(d, v))
+    # Create 2 matrices/operators, A1, A2, which becomes A = A1 A2.
+    # Use inner dimension of 2.
+    k = 2
+    batch_shape = shape[:-2]
+    shape_1 = batch_shape + [shape[-2], k]
+    shape_2 = batch_shape + [k, shape[-1]]
 
-#     matrices = [
-#         generate_well_conditioned(shape, dtype=dtype),
-#         generate_well_conditioned(shape, dtype=dtype),
-#     ]
+    # Ensure that the matrices are well-conditioned by generating
+    # random matrices whose singular values are close to 1.
+    # The reason to do this is because cond(AB) <= cond(A) * cond(B).
+    # By ensuring that each factor has condition number close to 1, we ensure
+    # that the condition number of the product isn't too far away from 1.
+    def generate_well_conditioned(shape, dtype):
+      m, n = shape[-2], shape[-1]
+      min_dim = min(m, n)
+      # Generate singular values that are close to 1.
+      d = linear_operator_test_util.random_normal(
+          shape[:-2] + [min_dim],
+          mean=1.,
+          stddev=0.1,
+          dtype=dtype)
+      zeros = array_ops.zeros(shape=shape[:-2] + [m, n], dtype=dtype)
+      d = linalg_lib.set_diag(zeros, d)
+      u, _ = linalg_lib.qr(linear_operator_test_util.random_normal(
+          shape[:-2] + [m, m], dtype=dtype))
 
-#     lin_op_matrices = matrices
+      v, _ = linalg_lib.qr(linear_operator_test_util.random_normal(
+          shape[:-2] + [n, n], dtype=dtype))
+      return math_ops.matmul(u, math_ops.matmul(d, v))
 
-#     if use_placeholder:
-#       lin_op_matrices = [
-#           tf.compat.v1.placeholder_with_default(
-#               matrix, shape=None) for matrix in matrices]
+    matrices = [
+        generate_well_conditioned(shape_1, dtype=dtype),
+        generate_well_conditioned(shape_2, dtype=dtype),
+    ]
 
-#     operator = linear_operator_addition.LinearOperatorAddition(
-#         [linear_operator_full_matrix.LinearOperatorFullMatrix(l)
-#          for l in lin_op_matrices])
+    lin_op_matrices = matrices
 
-#     matmul_order_list = list(reversed(matrices))
-#     mat = matmul_order_list[0]
-#     for other_mat in matmul_order_list[1:]:
-#       mat = tf.math.add(other_mat, mat)
+    if use_placeholder:
+      lin_op_matrices = [
+          array_ops.placeholder_with_default(
+              matrix, shape=None) for matrix in matrices]
 
-#     return operator, mat
+    operator = CompositionND(
+        [linalg.LinearOperatorFullMatrix(l) for l in lin_op_matrices])
 
-#   @test_util.run_deprecated_v1
-#   def test_different_shapes_raises_static(self):
-#     operators = [
-#         linear_operator_full_matrix.LinearOperatorFullMatrix(rng.rand(2, 4, 5)),
-#         linear_operator_full_matrix.LinearOperatorFullMatrix(rng.rand(2, 3, 4))
-#     ]
-#     with self.assertRaisesRegex(ValueError, "same shape"):
-#       linear_operator_addition.LinearOperatorAddition(operators)
+    matmul_order_list = list(reversed(matrices))
+    mat = matmul_order_list[0]
+    for other_mat in matmul_order_list[1:]:
+      mat = math_ops.matmul(other_mat, mat)
 
-#   @test_util.run_deprecated_v1
-#   def test_static_shapes(self):
-#     operators = [
-#         linear_operator_full_matrix.LinearOperatorFullMatrix(rng.rand(2, 3, 4)),
-#         linear_operator_full_matrix.LinearOperatorFullMatrix(rng.rand(2, 3, 4))
-#     ]
-#     operator = linear_operator_addition.LinearOperatorAddition(operators)
-#     self.assertAllEqual((2, 3, 4), operator.shape)
+    return operator, mat
 
-#   @test_util.run_deprecated_v1
-#   def test_shape_tensors_when_statically_available(self):
-#     operators = [
-#         linear_operator_full_matrix.LinearOperatorFullMatrix(rng.rand(2, 3, 4)),
-#         linear_operator_full_matrix.LinearOperatorFullMatrix(rng.rand(2, 3, 4))
-#     ]
-#     operator = linear_operator_addition.LinearOperatorAddition(operators)
-#     with self.cached_session():
-#       self.assertAllEqual((2, 3, 4), operator.shape_tensor())
+  @test_util.run_deprecated_v1
+  def test_static_shapes(self):
+    operators = [
+        linalg.LinearOperatorFullMatrix(rng.rand(2, 3, 4)),
+        linalg.LinearOperatorFullMatrix(rng.rand(2, 4, 5))
+    ]
+    operator = CompositionND(operators)
+    self.assertAllEqual((2, 3, 5), operator.shape)
 
-#   @test_util.run_deprecated_v1
-#   def test_shape_tensors_when_only_dynamically_available(self):
-#     mat_1 = rng.rand(1, 2, 3, 4)
-#     mat_2 = rng.rand(1, 2, 3, 4)
-#     mat_ph_1 = tf.compat.v1.placeholder(tf.float64)
-#     mat_ph_2 = tf.compat.v1.placeholder(tf.float64)
-#     feed_dict = {mat_ph_1: mat_1, mat_ph_2: mat_2}
+  @test_util.run_deprecated_v1
+  def test_shape_tensors_when_statically_available(self):
+    operators = [
+        linalg.LinearOperatorFullMatrix(rng.rand(2, 3, 4)),
+        linalg.LinearOperatorFullMatrix(rng.rand(2, 4, 5))
+    ]
+    operator = CompositionND(operators)
+    with self.cached_session():
+      self.assertAllEqual((2, 3, 5), operator.shape_tensor())
 
-#     operators = [
-#         linear_operator_full_matrix.LinearOperatorFullMatrix(mat_ph_1),
-#         linear_operator_full_matrix.LinearOperatorFullMatrix(mat_ph_2)
-#     ]
-#     operator = linear_operator_addition.LinearOperatorAddition(operators)
-#     with self.cached_session():
-#       self.assertAllEqual(
-#           (1, 2, 3, 4), operator.shape_tensor().eval(feed_dict=feed_dict))
+  @test_util.run_deprecated_v1
+  def test_shape_tensors_when_only_dynamically_available(self):
+    mat_1 = rng.rand(1, 2, 3, 4)
+    mat_2 = rng.rand(1, 2, 4, 5)
+    mat_ph_1 = array_ops.placeholder(dtypes.float64)
+    mat_ph_2 = array_ops.placeholder(dtypes.float64)
+    feed_dict = {mat_ph_1: mat_1, mat_ph_2: mat_2}
 
-
-# linear_operator_test_util.add_tests(SquareLinearOperatorAdditionTest)
-# linear_operator_test_util.add_tests(NonSquareLinearOperatorAdditionTest)
+    operators = [
+        linalg.LinearOperatorFullMatrix(mat_ph_1),
+        linalg.LinearOperatorFullMatrix(mat_ph_2)
+    ]
+    operator = CompositionND(operators)
+    with self.cached_session():
+      self.assertAllEqual(
+          (1, 2, 3, 5), operator.shape_tensor().eval(feed_dict=feed_dict))
 
 
-# if __name__ == "__main__":
-#   tf.test.main()
+linear_operator_test_util.add_tests(SquareLinearOperatorCompositionTest)
+linear_operator_test_util.add_tests(NonSquareLinearOperatorCompositionTest)
+
+
+if __name__ == "__main__":
+  tf.test.main()

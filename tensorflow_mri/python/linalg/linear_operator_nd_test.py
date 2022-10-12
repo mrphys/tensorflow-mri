@@ -15,133 +15,186 @@
 """Tests for module `linear_operator`."""
 # pylint: disable=missing-class-docstring,missing-function-docstring
 
+import functools
+
 import tensorflow as tf
 
 from tensorflow_mri.python.linalg import linear_operator
+from tensorflow_mri.python.linalg import linear_operator_nd
 from tensorflow_mri.python.util import test_util
 
 
-class LinearOperatorAppendColumn(linear_operator.LinearOperatorMixin,  # pylint: disable=abstract-method
-                                 tf.linalg.LinearOperator):
-  """Linear operator which appends a column of zeros to the input.
-
-  Used in tests below.
-  """
-  def __init__(self, domain_shape):
-    parameters = {
-      'domain_shape': domain_shape}
-    range_shape = tf.TensorShape(domain_shape).as_list()
-    range_shape[-1] += 1
-    self._domain_shape_value = tf.TensorShape(domain_shape)
-    self._range_shape_value = tf.TensorShape(range_shape)
-    super().__init__(tf.dtypes.float32, parameters=parameters)
-
-  def _transform(self, x, adjoint=False):
-    if adjoint:
-      # Remove last column.
-      return x[..., :-1]
-    # Add a column of zeros.
-    return tf.pad(x, [[0, 0]] * (x.shape.rank - 1) + [[0, 1]])  # pylint: disable=no-value-for-parameter
-
-  def _domain_shape(self):
-    return self._domain_shape_value
-
-  def _range_shape(self):
-    return self._range_shape_value
+FullMatrix = tf.linalg.LinearOperatorFullMatrix
 
 
-class LinearOperatorMixin(test_util.TestCase):
-  """Tests for `LinearOperatorMixin`."""
-  @classmethod
-  def setUpClass(cls):
-    # Test shapes.
-    cls.domain_shape = [2, 2]
-    cls.range_shape = [2, 3]
-    cls.domain_shape_tensor = tf.convert_to_tensor(cls.domain_shape)
-    cls.range_shape_tensor = tf.convert_to_tensor(cls.range_shape)
-    # Test linear operator.
-    cls.linop = LinearOperatorAppendColumn(cls.domain_shape)
-    # Test inputs/outputs.
-    cls.x = tf.constant([[1., 2.], [3., 4.]])
-    cls.y = tf.constant([[1., 2., 0.], [3., 4., 0.]])
-    cls.x_vec = tf.reshape(cls.x, [-1])
-    cls.y_vec = tf.reshape(cls.y, [-1])
-    cls.x_col = tf.reshape(cls.x, [-1, 1])
-    cls.y_col = tf.reshape(cls.y, [-1, 1])
+class ConvertToLinearOperatorND(test_util.TestCase):
+  """Tests for `convert_to_nd_operator`."""
+  domain_shape = (3, 2)
+  range_shape = (2, 3)
+  batch_shape = (2, 1)
+
+  def operators(self,
+                range_shape=range_shape,
+                domain_shape=domain_shape,
+                batch_shape=batch_shape):
+    range_dimension = functools.reduce(lambda x, y: x * y, range_shape)
+    domain_dimension = functools.reduce(lambda x, y: x * y, domain_shape)
+
+    matrix = tf.random.uniform(
+        batch_shape + (range_dimension, domain_dimension))
+
+    linop = FullMatrix(matrix)
+    linop_nd = linear_operator_nd.convert_to_nd_operator(
+        FullMatrix(matrix), range_shape, domain_shape)
+
+    return linop, linop_nd
+
+  def random_input(self, domain_shape=domain_shape, batch_shape=batch_shape):
+    x_nd = tf.random.normal(batch_shape + domain_shape)
+    x = tf.reshape(x_nd, batch_shape + (-1,))
+    return x, x_nd
+
+  def random_rhs(self, range_shape=range_shape, batch_shape=batch_shape):
+    rhs_nd = tf.random.normal(batch_shape + range_shape)
+    rhs = tf.reshape(rhs_nd, batch_shape + (-1,))
+    return rhs, rhs_nd
+
+  def test_is_nd_operator(self):
+    _, linop_nd = self.operators()
+    self.assertIsInstance(
+        linop_nd, linear_operator_nd.LinearOperatorND)
+
+  def test_bases(self):
+    linop, linop_nd = self.operators()
+    # self.assertEqual(
+    #     linop.__class__.__bases__, (linear_operator.LinearOperator,))
+    self.assertEqual(
+        linop_nd.__class__.__bases__, (linear_operator_nd.LinearOperatorND,))
 
   def test_static_shapes(self):
-    """Test static shapes."""
-    self.assertAllClose(self.linop.domain_shape, self.domain_shape)
-    self.assertAllClose(self.linop.range_shape, self.range_shape)
+    linop, linop_nd = self.operators()
+    self.assertIsInstance(linop_nd.domain_shape, tf.TensorShape)
+    self.assertIsInstance(linop_nd.range_shape, tf.TensorShape)
+    self.assertIsInstance(linop_nd.batch_shape, tf.TensorShape)
+    self.assertIsInstance(linop_nd.shape, tf.TensorShape)
+    self.assertEqual(self.domain_shape, linop_nd.domain_shape)
+    self.assertEqual(self.range_shape, linop_nd.range_shape)
+    self.assertEqual(self.batch_shape, linop_nd.batch_shape)
+    self.assertEqual(linop.shape, linop_nd.shape)
 
   def test_dynamic_shapes(self):
-    """Test dynamic shapes."""
-    self.assertAllClose(self.linop.domain_shape_tensor(),
-                        self.domain_shape_tensor)
-    self.assertAllClose(self.linop.range_shape_tensor(),
-                        self.range_shape_tensor)
+    linop, linop_nd = self.operators()
+    self.assertIsInstance(linop_nd.domain_shape_tensor(), tf.Tensor)
+    self.assertIsInstance(linop_nd.range_shape_tensor(), tf.Tensor)
+    self.assertIsInstance(linop_nd.batch_shape_tensor(), tf.Tensor)
+    self.assertIsInstance(linop_nd.shape_tensor(), tf.Tensor)
+    self.assertAllEqual(self.domain_shape, self.evaluate(
+        linop_nd.domain_shape_tensor()))
+    self.assertAllEqual(self.range_shape, self.evaluate(
+        linop_nd.range_shape_tensor()))
+    self.assertAllEqual(self.batch_shape, self.evaluate(
+        linop_nd.batch_shape_tensor()))
+    self.assertAllEqual(self.evaluate(linop.shape_tensor()),
+                        self.evaluate(linop_nd.shape_tensor()))
 
-  def test_transform(self):
-    """Test `transform` method."""
-    self.assertAllClose(self.linop.transform(self.x), self.y)
-    self.assertAllClose(self.linop.transform(self.y, adjoint=True), self.x)
+  def test_incompatible_domain_shape_raises(self):
+    linop, _ = self.operators()
+    with self.assertRaisesRegex(
+        ValueError, "domain_shape must have the same number of elements"):
+      linear_operator_nd.convert_to_nd_operator(
+          linop, self.range_shape, (5, 3))
+
+  def test_incompatible_range_shape_raises(self):
+    linop, _ = self.operators()
+    with self.assertRaisesRegex(
+        ValueError, "range_shape must have the same number of elements"):
+      linear_operator_nd.convert_to_nd_operator(
+          linop, (5, 3), self.domain_shape)
 
   def test_matvec(self):
-    """Test `matvec` method."""
-    self.assertAllClose(self.linop.matvec(self.x_vec), self.y_vec)
-    self.assertAllClose(self.linop.matvec(self.y_vec, adjoint=True), self.x_vec)
+    linop, linop_nd = self.operators()
+    x, _ = self.random_input()
+    rhs, _ = self.random_rhs()
+    self.assertAllClose(linop.matvec(x),
+                        linop_nd.matvec(x))
+    self.assertAllClose(linop.matvec(rhs, adjoint=True),
+                        linop_nd.matvec(rhs, adjoint=True))
 
   def test_matmul(self):
-    """Test `matmul` method."""
-    self.assertAllClose(self.linop.matmul(self.x_col), self.y_col)
-    self.assertAllClose(self.linop.matmul(self.y_col, adjoint=True), self.x_col)
-
-  def test_linalg_functions(self):
-    """Test `tf.linalg` functions."""
+    linop, linop_nd = self.operators()
+    x, _ = self.random_input()
+    rhs, _ = self.random_rhs()
     self.assertAllClose(
-        tf.linalg.matvec(self.linop, self.x_vec), self.y_vec)
+        linop.matmul(x[..., tf.newaxis]),
+        linop_nd.matmul(x[..., tf.newaxis]))
     self.assertAllClose(
-        tf.linalg.matvec(self.linop, self.y_vec, adjoint_a=True), self.x_vec)
+        linop.matmul(x[..., tf.newaxis, :], adjoint_arg=True),
+        linop_nd.matmul(x[..., tf.newaxis, :], adjoint_arg=True))
+    self.assertAllClose(
+        linop.matmul(rhs[..., tf.newaxis], adjoint=True),
+        linop_nd.matmul(rhs[..., tf.newaxis], adjoint=True))
+    self.assertAllClose(
+        linop.matmul(rhs[..., tf.newaxis, :], adjoint=True, adjoint_arg=True,),
+        linop_nd.matmul(rhs[..., tf.newaxis, :], adjoint=True, adjoint_arg=True))
+
+  def test_solvevec(self):
+    linop, linop_nd = self.operators()
+    x, _ = self.random_input()
+    rhs, _ = self.random_rhs()
+    self.assertAllClose(linop.solvevec(rhs),
+                        linop_nd.solvevec(rhs))
+    self.assertAllClose(linop.solvevec(x, adjoint=True),
+                        linop_nd.solvevec(x, adjoint=True))
+
+  def test_solve(self):
+    linop, linop_nd = self.operators()
+    x, _ = self.random_input()
+    rhs, _ = self.random_rhs()
+    self.assertAllClose(
+        linop.solve(rhs[..., tf.newaxis]),
+        linop_nd.solve(rhs[..., tf.newaxis]))
+    self.assertAllClose(
+        linop.solve(rhs[..., tf.newaxis, :], adjoint_arg=True),
+        linop_nd.solve(rhs[..., tf.newaxis, :], adjoint_arg=True))
+    self.assertAllClose(
+        linop.solve(x[..., tf.newaxis], adjoint=True),
+        linop_nd.solve(x[..., tf.newaxis], adjoint=True))
+    self.assertAllClose(
+        linop.solve(x[..., tf.newaxis, :], adjoint=True, adjoint_arg=True,),
+        linop_nd.solve(x[..., tf.newaxis, :], adjoint=True, adjoint_arg=True))
+
+  def test_matvec_nd(self):
+    range_shape, domain_shape, batch_shape = (
+        self.range_shape, self.domain_shape, self.batch_shape)
+    batch_shape = self.batch_shape
+    linop, linop_nd = self.operators()
+    x, x_nd = self.random_input()
+    rhs, rhs_nd = self.random_rhs()
 
     self.assertAllClose(
-        tf.linalg.matmul(self.linop, self.x_col), self.y_col)
+        tf.reshape(linop.matvec(x), batch_shape + range_shape),
+        linop_nd.matvec_nd(x_nd))
+
     self.assertAllClose(
-        tf.linalg.matmul(self.linop, self.y_col, adjoint_a=True), self.x_col)
+        tf.reshape(linop.matvec(rhs, adjoint=True), batch_shape + domain_shape),
+        linop_nd.matvec_nd(rhs_nd, adjoint=True))
 
-  def test_matmul_operator(self):
-    """Test `__matmul__` operator."""
-    self.assertAllClose(self.linop @ self.x_col, self.y_col)
+  def test_solvevec_nd(self):
+    range_shape, domain_shape, batch_shape = (
+        self.range_shape, self.domain_shape, self.batch_shape)
+    batch_shape = self.batch_shape
+    linop, linop_nd = self.operators()
+    x, x_nd = self.random_input()
+    rhs, rhs_nd = self.random_rhs()
 
-  def test_adjoint(self):
-    """Test `adjoint` method."""
-    self.assertIsInstance(self.linop.adjoint(),
-                          linear_operator.LinearOperatorMixin)
-    self.assertAllClose(self.linop.adjoint() @ self.y_col, self.x_col)
-    self.assertAllClose(self.linop.adjoint().domain_shape, self.range_shape)
-    self.assertAllClose(self.linop.adjoint().range_shape, self.domain_shape)
-    self.assertAllClose(self.linop.adjoint().domain_shape_tensor(),
-                        self.range_shape_tensor)
-    self.assertAllClose(self.linop.adjoint().range_shape_tensor(),
-                        self.domain_shape_tensor)
+    self.assertAllClose(
+        tf.reshape(linop.solvevec(rhs), batch_shape + domain_shape),
+        linop_nd.solvevec_nd(rhs_nd))
 
-  def test_adjoint_property(self):
-    """Test `H` property."""
-    self.assertIsInstance(self.linop.H, linear_operator.LinearOperatorMixin)
-    self.assertAllClose(self.linop.H @ self.y_col, self.x_col)
-    self.assertAllClose(self.linop.H.domain_shape, self.range_shape)
-    self.assertAllClose(self.linop.H.range_shape, self.domain_shape)
-    self.assertAllClose(self.linop.H.domain_shape_tensor(),
-                        self.range_shape_tensor)
-    self.assertAllClose(self.linop.H.range_shape_tensor(),
-                        self.domain_shape_tensor)
+    self.assertAllClose(
+        tf.reshape(linop.solvevec(x, adjoint=True), batch_shape + range_shape),
+        linop_nd.solvevec_nd(x_nd, adjoint=True))
 
-  def test_unsupported_matmul(self):
-    """Test `matmul` method with a non-column input."""
-    message = "does not support matrix multiplication"
-    invalid_x = tf.random.normal([4, 4])
-    with self.assertRaisesRegex(ValueError, message):
-      self.linop.matmul(invalid_x)
-    with self.assertRaisesRegex(ValueError, message):
-      tf.linalg.matmul(self.linop, invalid_x)
-    with self.assertRaisesRegex(ValueError, message):
-      self.linop @ invalid_x  # pylint: disable=pointless-statement
+
+if __name__ == "__main__":
+  tf.test.main()

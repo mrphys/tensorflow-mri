@@ -17,6 +17,7 @@
 import tensorflow as tf
 
 from tensorflow_mri.python.linalg import linear_operator
+from tensorflow_mri.python.linalg import linear_operator_composition
 from tensorflow_mri.python.linalg import linear_operator_nd
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import doc_util
@@ -25,17 +26,11 @@ from tensorflow_mri.python.util import doc_util
 @api_util.export("linalg.LinearOperatorCompositionND")
 @linear_operator_nd.make_linear_operator_nd
 class LinearOperatorCompositionND(linear_operator_nd.LinearOperatorND):
-  r"""Composes one or more N-dimensional `LinearOperator`s.
+  r"""Composes one or more linear operators.
 
-  This operator composes one or more linear operators `[op1,...,opJ]`,
-  building a new `LinearOperator` with action defined by:
-
-  ```
-  op_composed(x) := op1(op2(...(opJ(x)...))
-  ```
-
-  If `opj` acts like [batch] matrix `Aj`, then `op_composed` acts like the
-  [batch] matrix formed with the multiplication `A1 A2...AJ`.
+  This operator composes one or more linear operators representing matrices
+  $A_1, A_2, \dots, A_J$, building a new linear operator $A$ which acts as the
+  matrix product $A := A_1 A_2 \dots A_J$.
 
   If `opj` has shape `batch_shape_j + [M_j, N_j]`, then we must have
   `N_j = M_{j+1}`, in which case the composed operator has shape equal to
@@ -140,6 +135,10 @@ class LinearOperatorCompositionND(linear_operator_nd.LinearOperatorND):
     if not operators:
       raise ValueError(
           f"Expected a non-empty list of operators. Found: {operators}")
+    # for operator in operators:
+    #   if not isinstance(operator, linear_operator_nd.LinearOperatorND):
+    #     raise TypeError(
+    #         f"Expected a list of LinearOperatorND objects. Found: {operators}")
     self._operators = operators
 
     # Validate dtype.
@@ -177,20 +176,20 @@ class LinearOperatorCompositionND(linear_operator_nd.LinearOperatorND):
     self._batch_shape_dynamic = batch_shape_dynamic
 
     # Infer operator hints.
-    is_non_singular = check_hint(
-        combined_non_singular_hint(*operators),
+    is_non_singular = linear_operator_composition.check_hint(
+        linear_operator_composition.combined_non_singular_hint(*operators),
         is_non_singular,
         "non-singular")
-    is_self_adjoint = check_hint(
-        combined_self_adjoint_hint(*operators),
+    is_self_adjoint = linear_operator_composition.check_hint(
+        linear_operator_composition.combined_self_adjoint_hint(*operators),
         is_self_adjoint,
         "self-adjoint")
-    is_positive_definite = check_hint(
-        combined_positive_definite_hint(*operators),
+    is_positive_definite = linear_operator_composition.check_hint(
+        linear_operator_composition.combined_positive_definite_hint(*operators),
         is_positive_definite,
         "positive-definite")
-    is_square = check_hint(
-        combined_square_hint(*operators),
+    is_square = linear_operator_composition.check_hint(
+        linear_operator_composition.combined_square_hint(*operators),
         is_square,
         "square")
 
