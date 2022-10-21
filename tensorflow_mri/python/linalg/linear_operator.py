@@ -183,13 +183,16 @@ class LinearOperatorMixin(tf.linalg.LinearOperator):
     # unpacked by `tf.map_fn`. Typically subclasses should not need to override
     # this method.
     batch_shape = tf.broadcast_static_shape(x.shape[:-2], self.batch_shape)
+    output_dim = self.domain_dimension if adjoint else self.range_dimension
+    if adjoint_arg and x.dtype.is_complex:
+      x = tf.math.conj(x)
     x = tf.einsum('...ij->i...j' if adjoint_arg else '...ij->j...i', x)
-    x = tf.map_fn(functools.partial(self.matvec, adjoint=adjoint), x,
+    y = tf.map_fn(functools.partial(self.matvec, adjoint=adjoint), x,
                   fn_output_signature=tf.TensorSpec(
-                      shape=batch_shape + [self.range_dimension],
+                      shape=batch_shape + [output_dim],
                       dtype=x.dtype))
-    x = tf.einsum('i...j->...ij' if adjoint_arg else 'j...i->...ij', x)
-    return x
+    y = tf.einsum('i...j->...ji' if adjoint_arg else 'j...i->...ij', y)
+    return y
 
   @abc.abstractmethod
   def _domain_shape(self):
