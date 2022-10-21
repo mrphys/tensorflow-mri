@@ -179,7 +179,7 @@ class NonSquareLinearOperatorCompositionTest(
     # A slight numerical difference between different matmul algorithms
     # leads to large precision issues
     return linear_operator_test_util.NonSquareLinearOperatorDerivedClassTest.skip_these_tests(
-    ) + ["cond"]
+        ) + ["cond", "lstsq", "lstsq_with_broadcast"]
 
   def operator_and_matrix(
       self, build_info, dtype, use_placeholder,
@@ -277,7 +277,7 @@ class NonSquareLinearOperatorCompositionTest(
 
 
 linear_operator_test_util.add_tests(SquareLinearOperatorCompositionTest)
-# linear_operator_test_util.add_tests(NonSquareLinearOperatorCompositionTest)
+linear_operator_test_util.add_tests(NonSquareLinearOperatorCompositionTest)
 
 
 if __name__ == "__main__":
