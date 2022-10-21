@@ -16,16 +16,10 @@
 import numpy as np
 import tensorflow as tf
 
-from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import test_util
-from tensorflow.python.ops import array_ops
-from tensorflow.python.ops import math_ops
-from tensorflow.python.ops.linalg import linalg as linalg_lib
-
 from tensorflow_mri.python.linalg import linear_operator_composition_nd
-from tensorflow_mri.python.linalg import linear_operator_diag_nd
 from tensorflow_mri.python.linalg import linear_operator_nd
 from tensorflow_mri.python.linalg import linear_operator_test_util
+from tensorflow_mri.python.util import test_util
 
 
 CompositionND = linear_operator_composition_nd.LinearOperatorCompositionND
@@ -34,10 +28,10 @@ def FullMatrixND(matrix, *args, **kwargs):
   return linear_operator_nd.LinearOperatorMakeND(
       linop,
       range_shape=[linop.range_dimension_tensor()],
-      domain_shape=[linop.domain_dimension_tensor()])
+      domain_shape=[linop.domain_dimension_tensor()],
+      name=kwargs.get('name', None))
 
 
-# linalg = linalg_lib
 rng = np.random.RandomState(0)
 
 
@@ -61,15 +55,15 @@ class SquareLinearOperatorCompositionTest(
     self.tf32_keep_ = tf.config.experimental.tensor_float_32_execution_enabled()
     tf.config.experimental.enable_tensor_float_32_execution(False)
     # Increase from 1e-6 to 1e-4 and 2e-4.
-    self._atol[dtypes.float32] = 2e-4
-    self._atol[dtypes.complex64] = 1e-4
-    self._rtol[dtypes.float32] = 2e-4
-    self._rtol[dtypes.complex64] = 1e-4
+    self._atol[tf.float32] = 2e-4
+    self._atol[tf.complex64] = 1e-4
+    self._rtol[tf.float32] = 2e-4
+    self._rtol[tf.complex64] = 1e-4
 
   @staticmethod
   def skip_these_tests():
     # Cholesky not implemented.
-    return ["cholesky"]
+    return ["cholesky", "lstsq", "lstsq_with_broadcast"]
 
   def operator_and_matrix(self, build_info, dtype, use_placeholder,
                           ensure_self_adjoint_and_pd=False):
@@ -94,7 +88,7 @@ class SquareLinearOperatorCompositionTest(
 
     if use_placeholder:
       lin_op_matrices = [
-          array_ops.placeholder_with_default(
+          tf.compat.v1.placeholder_with_default(
               matrix, shape=None) for matrix in matrices]
 
     operator = CompositionND(
@@ -106,7 +100,7 @@ class SquareLinearOperatorCompositionTest(
     matmul_order_list = list(reversed(matrices))
     mat = matmul_order_list[0]
     for other_mat in matmul_order_list[1:]:
-      mat = math_ops.matmul(other_mat, mat)
+      mat = tf.matmul(other_mat, mat)
 
     return operator, mat
 
@@ -174,10 +168,10 @@ class NonSquareLinearOperatorCompositionTest(
     self.tf32_keep_ = tf.config.experimental.tensor_float_32_execution_enabled()
     tf.config.experimental.enable_tensor_float_32_execution(False)
     # Increase from 1e-6 to 1e-4
-    self._atol[dtypes.float32] = 1e-4
-    self._atol[dtypes.complex64] = 1e-4
-    self._rtol[dtypes.float32] = 1e-4
-    self._rtol[dtypes.complex64] = 1e-4
+    self._atol[tf.float32] = 1e-4
+    self._atol[tf.complex64] = 1e-4
+    self._rtol[tf.float32] = 1e-4
+    self._rtol[tf.complex64] = 1e-4
 
   @staticmethod
   def skip_these_tests():
@@ -214,14 +208,14 @@ class NonSquareLinearOperatorCompositionTest(
           mean=1.,
           stddev=0.1,
           dtype=dtype)
-      zeros = array_ops.zeros(shape=shape[:-2] + [m, n], dtype=dtype)
-      d = linalg_lib.set_diag(zeros, d)
-      u, _ = linalg_lib.qr(linear_operator_test_util.random_normal(
+      zeros = tf.zeros(shape=shape[:-2] + [m, n], dtype=dtype)
+      d = tf.linalg.set_diag(zeros, d)
+      u, _ = tf.linalg.qr(linear_operator_test_util.random_normal(
           shape[:-2] + [m, m], dtype=dtype))
 
-      v, _ = linalg_lib.qr(linear_operator_test_util.random_normal(
+      v, _ = tf.linalg.qr(linear_operator_test_util.random_normal(
           shape[:-2] + [n, n], dtype=dtype))
-      return math_ops.matmul(u, math_ops.matmul(d, v))
+      return tf.matmul(u, tf.matmul(d, v))
 
     matrices = [
         generate_well_conditioned(shape_1, dtype=dtype),
@@ -232,7 +226,7 @@ class NonSquareLinearOperatorCompositionTest(
 
     if use_placeholder:
       lin_op_matrices = [
-          array_ops.placeholder_with_default(
+          tf.compat.v1.placeholder_with_default(
               matrix, shape=None) for matrix in matrices]
 
     operator = CompositionND(
@@ -241,7 +235,7 @@ class NonSquareLinearOperatorCompositionTest(
     matmul_order_list = list(reversed(matrices))
     mat = matmul_order_list[0]
     for other_mat in matmul_order_list[1:]:
-      mat = math_ops.matmul(other_mat, mat)
+      mat = tf.matmul(other_mat, mat)
 
     return operator, mat
 
@@ -268,8 +262,8 @@ class NonSquareLinearOperatorCompositionTest(
   def test_shape_tensors_when_only_dynamically_available(self):
     mat_1 = rng.rand(1, 2, 3, 4)
     mat_2 = rng.rand(1, 2, 4, 5)
-    mat_ph_1 = array_ops.placeholder(dtypes.float64)
-    mat_ph_2 = array_ops.placeholder(dtypes.float64)
+    mat_ph_1 = tf.compat.v1.placeholder(tf.float64)
+    mat_ph_2 = tf.compat.v1.placeholder(tf.float64)
     feed_dict = {mat_ph_1: mat_1, mat_ph_2: mat_2}
 
     operators = [

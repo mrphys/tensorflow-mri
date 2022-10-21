@@ -12,15 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Composition of N-Dlinear operators."""
+"""Composition of N-D linear operators."""
 
 import tensorflow as tf
 
-from tensorflow_mri.python.linalg import linear_operator
 from tensorflow_mri.python.linalg import linear_operator_composition
 from tensorflow_mri.python.linalg import linear_operator_nd
 from tensorflow_mri.python.util import api_util
-from tensorflow_mri.python.util import doc_util
 
 
 @api_util.export("linalg.LinearOperatorCompositionND")

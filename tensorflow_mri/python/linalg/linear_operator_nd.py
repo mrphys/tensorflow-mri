@@ -584,17 +584,31 @@ class LinearOperatorMakeND(LinearOperatorND):
 
   def __init__(self,
                operator,
-               range_shape,
-               domain_shape,
+               range_shape=None,
+               domain_shape=None,
                is_non_singular=None,
                is_self_adjoint=None,
                is_positive_definite=None,
                is_square=None,
-               name=None):
+               name=None,
+               **kwargs):
+    # The arguments `range_shape_` and `domain_shape_` (with trailing
+    # underscores) are used when reconstructing the operator from its
+    # components.
+    if range_shape is None:
+      if 'range_shape_' not in kwargs:
+        raise ValueError("Argument `range_shape` must be specified.")
+      range_shape = kwargs['range_shape_']
+
+    if domain_shape is None:
+      if 'domain_shape_' not in kwargs:
+        raise ValueError("Argument `domain_shape` must be specified.")
+      domain_shape = kwargs['domain_shape_']
+
     parameters = dict(
         operator=operator,
-        range_shape=range_shape,
-        domain_shape=domain_shape,
+        range_shape_=range_shape,
+        domain_shape_=domain_shape,
         is_non_singular=is_non_singular,
         is_self_adjoint=is_self_adjoint,
         is_positive_definite=is_positive_definite,
@@ -773,11 +787,12 @@ class LinearOperatorMakeND(LinearOperatorND):
 
   @property
   def _composite_tensor_fields(self):
-    return ("operator", "range_shape", "domain_shape")
+    # We use `domain_shape_` and `range_shape_` for conversion to/from composite tensor.
+    return ("operator", "range_shape_", "domain_shape_")
 
   @property
   def _composite_tensor_prefer_static_fields(self):
-    return ("range_shape", "domain_shape")
+    return ("range_shape_", "domain_shape_")
 
   @property
   def _experimental_parameter_ndims_to_matrix_ndims(self):
