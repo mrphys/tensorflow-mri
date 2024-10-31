@@ -1,4 +1,4 @@
-Image reconstruction
+Image Reconstruction
 ====================
 
 .. toctree::

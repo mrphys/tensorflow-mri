@@ -29,8 +29,8 @@ TensorFlow MRI |release|
    :hidden:
 
    Tutorials <tutorials>
-   Image reconstruction <tutorials/recon>
-
+   Image Reconstruction <tutorials/recon>
+   Image Segmentation <tutorials/segmentation>
 
 .. toctree::
    :caption: API Documentation
