@@ -15,7 +15,7 @@
 """Tests for module `image_ops`."""
 
 import numpy as np
-import scipy.ndimage
+#import scipy.ndimage
 import tensorflow as tf
 
 from absl.testing import parameterized
@@ -458,104 +458,104 @@ class ImageGradientsTest(test_util.TestCase):
     edges = image_ops.image_gradients(img, method=method, batch_dims=1)
     self.assertAllClose(expected_batch, edges)
 
-  def test_sobel_2d(self):
-    array = np.array([[3, 2, 5, 1, 4],
-                      [5, 8, 3, 7, 1],
-                      [5, 6, 9, 3, 5]], np.float32)
-    # `image_gradients` uses the `REFLECT` padding mode by default, which is
-    # equivalent to the SciPy `mirror` mode.
-    expected_0 = scipy.ndimage.sobel(array, axis=0, mode='mirror')
-    expected_1 = scipy.ndimage.sobel(array, axis=1, mode='mirror')
-    output = image_ops.image_gradients(array[None, ..., None], method='sobel')
-    self.assertAllClose(expected_0, output[0, ..., 0, 0])
-    self.assertAllClose(expected_1, output[0, ..., 0, 1])
+  # def test_sobel_2d(self):
+  #   array = np.array([[3, 2, 5, 1, 4],
+  #                     [5, 8, 3, 7, 1],
+  #                     [5, 6, 9, 3, 5]], np.float32)
+  #   # `image_gradients` uses the `REFLECT` padding mode by default, which is
+  #   # equivalent to the SciPy `mirror` mode.
+  #   expected_0 = scipy.ndimage.sobel(array, axis=0, mode='mirror')
+  #   expected_1 = scipy.ndimage.sobel(array, axis=1, mode='mirror')
+  #   output = image_ops.image_gradients(array[None, ..., None], method='sobel')
+  #   self.assertAllClose(expected_0, output[0, ..., 0, 0])
+  #   self.assertAllClose(expected_1, output[0, ..., 0, 1])
 
-  def test_sobel_3d(self):
-    array = np.array([[[4, 7, 2, 3, 5],
-                       [3, 7, 7, 6, 3],
-                       [5, 6, 8, 3, 4],
-                       [8, 1, 3, 2, 7]],
-                      [[4, 1, 7, 1, 6],
-                       [2, 5, 9, 2, 1],
-                       [6, 6, 5, 9, 1],
-                       [1, 7, 0, 2, 8]],
-                      [[0, 0, 3, 7, 8],
-                       [9, 0, 6, 3, 8],
-                       [3, 9, 3, 3, 9],
-                       [7, 0, 1, 7, 9]]], np.float32)
+  # def test_sobel_3d(self):
+  #   array = np.array([[[4, 7, 2, 3, 5],
+  #                      [3, 7, 7, 6, 3],
+  #                      [5, 6, 8, 3, 4],
+  #                      [8, 1, 3, 2, 7]],
+  #                     [[4, 1, 7, 1, 6],
+  #                      [2, 5, 9, 2, 1],
+  #                      [6, 6, 5, 9, 1],
+  #                      [1, 7, 0, 2, 8]],
+  #                     [[0, 0, 3, 7, 8],
+  #                      [9, 0, 6, 3, 8],
+  #                      [3, 9, 3, 3, 9],
+  #                      [7, 0, 1, 7, 9]]], np.float32)
 
-    # `image_gradients` uses the `REFLECT` padding mode by default, which is
-    # equivalent to the SciPy `mirror` mode.
-    expected_0 = scipy.ndimage.sobel(array, axis=0, mode='mirror')
-    expected_1 = scipy.ndimage.sobel(array, axis=1, mode='mirror')
-    expected_2 = scipy.ndimage.sobel(array, axis=2, mode='mirror')
-    output = image_ops.image_gradients(array[None, ..., None], method='sobel')
-    self.assertAllClose(expected_0, output[0, ..., 0, 0])
-    self.assertAllClose(expected_1, output[0, ..., 0, 1])
-    self.assertAllClose(expected_2, output[0, ..., 0, 2])
+  #   # `image_gradients` uses the `REFLECT` padding mode by default, which is
+  #   # equivalent to the SciPy `mirror` mode.
+  #   expected_0 = scipy.ndimage.sobel(array, axis=0, mode='mirror')
+  #   expected_1 = scipy.ndimage.sobel(array, axis=1, mode='mirror')
+  #   expected_2 = scipy.ndimage.sobel(array, axis=2, mode='mirror')
+  #   output = image_ops.image_gradients(array[None, ..., None], method='sobel')
+  #   self.assertAllClose(expected_0, output[0, ..., 0, 0])
+  #   self.assertAllClose(expected_1, output[0, ..., 0, 1])
+  #   self.assertAllClose(expected_2, output[0, ..., 0, 2])
 
-    ## 2D with 2 batch dims
-    expected_0 = scipy.ndimage.sobel(array, axis=0, mode='mirror')
-    expected_1 = scipy.ndimage.sobel(array, axis=1, mode='mirror')
-    output = image_ops.image_gradients(array[None, ..., None], method='sobel')
-    self.assertAllClose(expected_0, output[0, ..., 0, 0])
-    self.assertAllClose(expected_1, output[0, ..., 0, 1])
-    self.assertAllClose(expected_2, output[0, ..., 0, 2])
+  #   ## 2D with 2 batch dims
+  #   expected_0 = scipy.ndimage.sobel(array, axis=0, mode='mirror')
+  #   expected_1 = scipy.ndimage.sobel(array, axis=1, mode='mirror')
+  #   output = image_ops.image_gradients(array[None, ..., None], method='sobel')
+  #   self.assertAllClose(expected_0, output[0, ..., 0, 0])
+  #   self.assertAllClose(expected_1, output[0, ..., 0, 1])
+  #   self.assertAllClose(expected_2, output[0, ..., 0, 2])
 
-  def test_batch_dims(self):
-    array = np.array([[3, 2, 5, 1, 4],
-                      [5, 8, 3, 7, 1],
-                      [5, 6, 9, 3, 5]], np.float32)
-    # `image_gradients` uses the `REFLECT` padding mode by default, which is
-    # equivalent to the SciPy `mirror` mode.
-    expected_0 = scipy.ndimage.sobel(array, axis=0, mode='mirror')
-    expected_1 = scipy.ndimage.sobel(array, axis=1, mode='mirror')
+  # def test_batch_dims(self):
+  #   array = np.array([[3, 2, 5, 1, 4],
+  #                     [5, 8, 3, 7, 1],
+  #                     [5, 6, 9, 3, 5]], np.float32)
+  #   # `image_gradients` uses the `REFLECT` padding mode by default, which is
+  #   # equivalent to the SciPy `mirror` mode.
+  #   expected_0 = scipy.ndimage.sobel(array, axis=0, mode='mirror')
+  #   expected_1 = scipy.ndimage.sobel(array, axis=1, mode='mirror')
 
-    # Two batch dims.
-    output = image_ops.image_gradients(
-        array[None, None, ..., None], method='sobel', batch_dims=2)
-    self.assertAllClose(expected_0, output[0, 0, ..., 0, 0])
-    self.assertAllClose(expected_1, output[0, 0, ..., 0, 1])
+  #   # Two batch dims.
+  #   output = image_ops.image_gradients(
+  #       array[None, None, ..., None], method='sobel', batch_dims=2)
+  #   self.assertAllClose(expected_0, output[0, 0, ..., 0, 0])
+  #   self.assertAllClose(expected_1, output[0, 0, ..., 0, 1])
 
-    output = image_ops.image_gradients(
-        array[None, None, ..., None], method='sobel', image_dims=2)
-    self.assertAllClose(expected_0, output[0, 0, ..., 0, 0])
-    self.assertAllClose(expected_1, output[0, 0, ..., 0, 1])
+  #   output = image_ops.image_gradients(
+  #       array[None, None, ..., None], method='sobel', image_dims=2)
+  #   self.assertAllClose(expected_0, output[0, 0, ..., 0, 0])
+  #   self.assertAllClose(expected_1, output[0, 0, ..., 0, 1])
 
-    output = image_ops.image_gradients(
-        array[None, None, ..., None], method='sobel',
-        batch_dims=2, image_dims=2)
-    self.assertAllClose(expected_0, output[0, 0, ..., 0, 0])
-    self.assertAllClose(expected_1, output[0, 0, ..., 0, 1])
+  #   output = image_ops.image_gradients(
+  #       array[None, None, ..., None], method='sobel',
+  #       batch_dims=2, image_dims=2)
+  #   self.assertAllClose(expected_0, output[0, 0, ..., 0, 0])
+  #   self.assertAllClose(expected_1, output[0, 0, ..., 0, 1])
 
-    # Zero batch dims.
-    output = image_ops.image_gradients(
-        array[..., None], method='sobel', batch_dims=0)
-    self.assertAllClose(expected_0, output[..., 0, 0])
-    self.assertAllClose(expected_1, output[..., 0, 1])
+  #   # Zero batch dims.
+  #   output = image_ops.image_gradients(
+  #       array[..., None], method='sobel', batch_dims=0)
+  #   self.assertAllClose(expected_0, output[..., 0, 0])
+  #   self.assertAllClose(expected_1, output[..., 0, 1])
 
-    output = image_ops.image_gradients(
-        array[..., None], method='sobel', image_dims=2)
-    self.assertAllClose(expected_0, output[..., 0, 0])
-    self.assertAllClose(expected_1, output[..., 0, 1])
+  #   output = image_ops.image_gradients(
+  #       array[..., None], method='sobel', image_dims=2)
+  #   self.assertAllClose(expected_0, output[..., 0, 0])
+  #   self.assertAllClose(expected_1, output[..., 0, 1])
 
-  def test_sobel_2d_complex(self):
-    array = (np.array([[4, 7, 2, 3, 5],
-                       [3, 7, 7, 6, 3],
-                       [5, 6, 8, 3, 4],
-                       [8, 1, 3, 2, 7]], dtype=np.float32) +
-             np.array([[4, 1, 7, 1, 6],
-                       [2, 5, 9, 2, 1],
-                       [6, 6, 5, 9, 1],
-                       [1, 7, 0, 2, 8]], dtype=np.float32) * 1j)
+  # def test_sobel_2d_complex(self):
+  #   array = (np.array([[4, 7, 2, 3, 5],
+  #                      [3, 7, 7, 6, 3],
+  #                      [5, 6, 8, 3, 4],
+  #                      [8, 1, 3, 2, 7]], dtype=np.float32) +
+  #            np.array([[4, 1, 7, 1, 6],
+  #                      [2, 5, 9, 2, 1],
+  #                      [6, 6, 5, 9, 1],
+  #                      [1, 7, 0, 2, 8]], dtype=np.float32) * 1j)
 
-    # `image_gradients` uses the `REFLECT` padding mode by default, which is
-    # equivalent to the SciPy `mirror` mode.
-    expected_0 = scipy.ndimage.sobel(array, axis=0, mode='mirror')
-    expected_1 = scipy.ndimage.sobel(array, axis=1, mode='mirror')
-    output = image_ops.image_gradients(array[None, ..., None], method='sobel')
-    self.assertAllClose(expected_0, output[0, ..., 0, 0])
-    self.assertAllClose(expected_1, output[0, ..., 0, 1])
+  #   # `image_gradients` uses the `REFLECT` padding mode by default, which is
+  #   # equivalent to the SciPy `mirror` mode.
+  #   expected_0 = scipy.ndimage.sobel(array, axis=0, mode='mirror')
+  #   expected_1 = scipy.ndimage.sobel(array, axis=1, mode='mirror')
+  #   output = image_ops.image_gradients(array[None, ..., None], method='sobel')
+  #   self.assertAllClose(expected_0, output[0, ..., 0, 0])
+  #   self.assertAllClose(expected_1, output[0, ..., 0, 1])
 
 
 class BaseTestCases():

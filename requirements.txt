@@ -1,10 +1,10 @@
-h5py
 ismrmrd
 matplotlib<=3.5.3
 numpy==1.22.1
+h5py
 plotly
 PyWavelets
-scipy<1.4.0
+#scipy<1.4.0
 tensorboard
 tensorflow>=2.10.0,<2.11.0
 tensorflow-graphics
