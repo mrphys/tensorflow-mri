@@ -5,7 +5,7 @@ RUN apt-get update && \
     apt-get install -y libcairo2-dev libgirepository1.0-dev libgtk-3-dev
 
 ARG PYBIN=/usr/local/bin/python
-ARG PYVERSIONS="3.7 3.8 3.9 3.10"
+ARG PYVERSIONS="3.8 3.9 3.10"
 RUN for PYVER in ${PYVERSIONS}; do ${PYBIN}${PYVER} -m pip install pycairo PyGObject; done
 
 # For Jupyter notebooks.
