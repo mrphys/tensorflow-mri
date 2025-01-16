@@ -1,7 +1,7 @@
 h5py
 ismrmrd
 matplotlib<=3.4.3
-numpy==1.23.0
+numpy
 plotly
 PyWavelets
 scipy<1.4.0
