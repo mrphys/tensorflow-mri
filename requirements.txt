@@ -1,6 +1,6 @@
 h5py
 ismrmrd
-matplotlib
+matplotlib<=3.4.3
 numpy
 plotly
 PyWavelets
