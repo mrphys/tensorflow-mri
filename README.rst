@@ -1,8 +1,5 @@
-.. image:: https://raw.githubusercontent.com/mrphys/tensorflow-mri/v0.6.0/tools/assets/tfmr_logo.svg?sanitize=true
-  :align: center
-  :alt: TFMRI logo
-
-|
+TensorFlow MRI
+==============
 
 |pypi| |build| |docs| |doi|
 
