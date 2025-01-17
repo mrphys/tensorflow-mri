@@ -78,6 +78,7 @@ jobs:
           repository-url: https://test.pypi.org/legacy/
           packages-dir: artifacts/
           skip-existing: true
+          verbose: true
 
 
   release:
