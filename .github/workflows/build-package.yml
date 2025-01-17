@@ -73,7 +73,7 @@ jobs:
 
       - name: Check README
         run: |
-          pip install -U twine
+          pip install -U twine Pillow
           twine check artifacts/*
 
       - name: Publish to Test PyPI
