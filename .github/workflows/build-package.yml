@@ -75,9 +75,9 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
-          packages_dir: artifacts/
-          skip_existing: true
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: artifacts/
+          skip-existing: true
 
 
   release:
@@ -136,4 +136,4 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
-          packages_dir: artifacts/
+          packages-dir: artifacts/
