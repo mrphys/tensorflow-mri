@@ -71,6 +71,11 @@ jobs:
           name: docs
           path: ./tools/docs/_build/dirhtml
 
+      - name: Check README
+        run: |
+          pip install -U twine
+          twine check artifacts/*
+
       - name: Publish to Test PyPI
         uses: pypa/gh-action-pypi-publish@release/v1.7
         with:
