@@ -1,0 +1,2949 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Set up TensorFlow MRi &#8212; TensorFlow MRI Documentation</title>
+    
+    <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  
+    
+    <link rel="stylesheet"
+      href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+      href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+      href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+  
+    
+      
+  
+    
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" href="../../../_static/styles/sphinx-book-theme.css?digest=5115cc725059bd94278eecd172e13a965bf8f5a9" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono" />
+    
+    <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+  
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../../_static/togglebutton.js"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?digest=9c920249402e914e316237a7dbc6769907cce411"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
+    <link rel="canonical" href="https://mrphys.github.io/tensorflow-mri/tutorials/segment/2d_segmentation.html" />
+    <link rel="shortcut icon" href="../../../_static/tfmri_icon.svg"/>
+    <link rel="index" title="Index" href="../../../genindex/" />
+    <link rel="search" title="Search" href="../../../search/" />
+    <link rel="next" title="Image reconstruction" href="../../recon/" />
+    <link rel="prev" title="Image reconstruction" href="../" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+<!-- Checkboxes to toggle the left sidebar -->
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
+<label class="overlay overlay-navbar" for="__navigation">
+    <div class="visually-hidden">Toggle navigation sidebar</div>
+</label>
+<!-- Checkboxes to toggle the in-page toc -->
+<input type="checkbox" class="sidebar-toggle" name="__page-toc" id="__page-toc" aria-label="Toggle in-page Table of Contents">
+<label class="overlay overlay-pagetoc" for="__page-toc">
+    <div class="visually-hidden">Toggle in-page Table of Contents</div>
+</label>
+<!-- Headers at the top -->
+<div class="announcement header-item noprint"></div>
+<div class="header header-item noprint"></div>
+
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<!-- Sidebar -->
+<div class="bd-sidebar noprint" id="site-navigation">
+    <div class="bd-sidebar__content">
+        <div class="bd-sidebar__top"><div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="../../../">
+      
+        <!-- `logo` is deprecated in Sphinx 4.0, so remove this when we stop supporting 3 -->
+        
+      
+      
+      <img src="../../../_static/tfmri_logo.svg" class="logo" alt="logo">
+      
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="../../../search/" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <p class="caption" role="heading">
+ <span class="caption-text">
+  Guide
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../guide/">
+   Guide
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../guide/install/">
+   Installation
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../guide/nufft/">
+   Non-uniform FFT
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../guide/linalg/">
+   Linear algebra
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../guide/optim/">
+   Optimization
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../guide/recon/">
+   MRI reconstruction
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../guide/contribute/">
+   Contributing
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../guide/faq/">
+   FAQ
+  </a>
+ </li>
+</ul>
+<p class="caption" role="heading">
+ <span class="caption-text">
+  Tutorials
+ </span>
+</p>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../">
+   Tutorials
+  </a>
+ </li>
+ <li class="toctree-l1 current active has-children">
+  <a class="reference internal" href="../">
+   Segmentation
+  </a>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul class="current">
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
+     Set up TensorFlow MRi
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../recon/">
+   Image reconstruction
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+  <label for="toctree-checkbox-2">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../recon/partialFourier/">
+     PARTIAL-FOURIER (2D+t Cartesian k-space)
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../recon/cartesianGRAPPA/">
+     CARTESIAN GRAPPA (2D+t Cartesian k-space)
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../recon/cartesianSENSE/">
+     CARTESIAN SENSE (2D+t Cartesian k-space)
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../recon/nufftTutorial/">
+     Gridding and Non-uniform fast Fourier transform (NUFFT)
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../recon/ProcessingRFHdata/">
+     PRE-PROCESSING TRIGGERED CINE DATASET (with GRAPPA and PF)
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../recon/cg_sense/">
+     Image reconstruction with CG-SENSE
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../recon/radial_CS/">
+     Image reconstruction with Compressed Sensing (2D and 2D+time)
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<p class="caption" role="heading">
+ <span class="caption-text">
+  API Documentation
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../../api_docs/">
+   API documentation
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../api_docs/tfmri/">
+   tfmri
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+  <label for="toctree-checkbox-3">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/broadcast_dynamic_shapes/">
+     tensorflow_mri.broadcast_dynamic_shapes
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/broadcast_static_shapes/">
+     tensorflow_mri.broadcast_static_shapes
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/cartesian_product/">
+     tensorflow_mri.cartesian_product
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/central_crop/">
+     tensorflow_mri.central_crop
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/meshgrid/">
+     tensorflow_mri.meshgrid
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/ravel_multi_index/">
+     tensorflow_mri.ravel_multi_index
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/resize_with_crop_or_pad/">
+     tensorflow_mri.resize_with_crop_or_pad
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/scale_by_min_max/">
+     tensorflow_mri.scale_by_min_max
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/unravel_index/">
+     tensorflow_mri.unravel_index
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../api_docs/tfmri/array/">
+   tfmri.array
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+  <label for="toctree-checkbox-4">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/array/update_tensor/">
+     tfmri.array.update_tensor
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../api_docs/tfmri/callbacks/">
+   tfmri.callbacks
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+  <label for="toctree-checkbox-5">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/callbacks/TensorBoardImages/">
+     tfmri.callbacks.TensorBoardImages
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../api_docs/tfmri/coils/">
+   tfmri.coils
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+  <label for="toctree-checkbox-6">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/coils/CoilCompressorSVD/">
+     tfmri.coils.CoilCompressorSVD
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/coils/combine_coils/">
+     tfmri.coils.combine_coils
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/coils/compress_coils/">
+     tfmri.coils.compress_coils
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/coils/estimate_sensitivities/">
+     tfmri.coils.estimate_sensitivities
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../api_docs/tfmri/convex/">
+   tfmri.convex
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+  <label for="toctree-checkbox-7">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunction/">
+     tfmri.convex.ConvexFunction
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionAffineMappingComposition/">
+     tfmri.convex.ConvexFunctionAffineMappingComposition
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionIndicatorBall/">
+     tfmri.convex.ConvexFunctionIndicatorBall
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionIndicatorL1Ball/">
+     tfmri.convex.ConvexFunctionIndicatorL1Ball
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionIndicatorL2Ball/">
+     tfmri.convex.ConvexFunctionIndicatorL2Ball
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionL1Norm/">
+     tfmri.convex.ConvexFunctionL1Norm
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionL1Wavelet/">
+     tfmri.convex.ConvexFunctionL1Wavelet
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionL2Norm/">
+     tfmri.convex.ConvexFunctionL2Norm
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionL2NormSquared/">
+     tfmri.convex.ConvexFunctionL2NormSquared
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionLeastSquares/">
+     tfmri.convex.ConvexFunctionLeastSquares
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionLinearOperatorComposition/">
+     tfmri.convex.ConvexFunctionLinearOperatorComposition
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionNorm/">
+     tfmri.convex.ConvexFunctionNorm
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionQuadratic/">
+     tfmri.convex.ConvexFunctionQuadratic
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionTikhonov/">
+     tfmri.convex.ConvexFunctionTikhonov
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/convex/ConvexFunctionTotalVariation/">
+     tfmri.convex.ConvexFunctionTotalVariation
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/convex/admm_minimize/">
+     tfmri.convex.admm_minimize
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../api_docs/tfmri/image/">
+   tfmri.image
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+  <label for="toctree-checkbox-8">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/image/extract_glimpses/">
+     tfmri.image.extract_glimpses
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/image/gmsd/">
+     tfmri.image.gmsd
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/image/gmsd2d/">
+     tfmri.image.gmsd2d
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/image/gmsd3d/">
+     tfmri.image.gmsd3d
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/image/gradient_magnitude/">
+     tfmri.image.gradient_magnitude
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/image/image_gradients/">
+     tfmri.image.image_gradients
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/image/phantom/">
+     tfmri.image.phantom
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/image/psnr/">
+     tfmri.image.psnr
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/image/psnr2d/">
+     tfmri.image.psnr2d
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/image/psnr3d/">
+     tfmri.image.psnr3d
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/image/ssim/">
+     tfmri.image.ssim
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/image/ssim2d/">
+     tfmri.image.ssim2d
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/image/ssim2d_multiscale/">
+     tfmri.image.ssim2d_multiscale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/image/ssim3d/">
+     tfmri.image.ssim3d
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/image/ssim3d_multiscale/">
+     tfmri.image.ssim3d_multiscale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/image/ssim_multiscale/">
+     tfmri.image.ssim_multiscale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/image/total_variation/">
+     tfmri.image.total_variation
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../api_docs/tfmri/initializers/">
+   tfmri.initializers
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+  <label for="toctree-checkbox-9">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/initializers/GlorotNormal/">
+     tfmri.initializers.GlorotNormal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/initializers/GlorotUniform/">
+     tfmri.initializers.GlorotUniform
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/initializers/HeNormal/">
+     tfmri.initializers.HeNormal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/initializers/HeUniform/">
+     tfmri.initializers.HeUniform
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/initializers/LecunNormal/">
+     tfmri.initializers.LecunNormal
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/initializers/LecunUniform/">
+     tfmri.initializers.LecunUniform
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/initializers/VarianceScaling/">
+     tfmri.initializers.VarianceScaling
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../api_docs/tfmri/io/">
+   tfmri.io
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+  <label for="toctree-checkbox-10">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/io/encode_gif/">
+     tfmri.io.encode_gif
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/io/parse_twix/">
+     tfmri.io.parse_twix
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../api_docs/tfmri/layers/">
+   tfmri.layers
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/>
+  <label for="toctree-checkbox-11">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/layers/AveragePooling1D/">
+     tfmri.layers.AveragePooling1D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/layers/AveragePooling2D/">
+     tfmri.layers.AveragePooling2D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/layers/AveragePooling3D/">
+     tfmri.layers.AveragePooling3D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/layers/Conv1D/">
+     tfmri.layers.Conv1D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/layers/Conv2D/">
+     tfmri.layers.Conv2D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/layers/Conv3D/">
+     tfmri.layers.Conv3D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/layers/ConvBlock/">
+     tfmri.layers.ConvBlock
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/layers/DWT1D/">
+     tfmri.layers.DWT1D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/layers/DWT2D/">
+     tfmri.layers.DWT2D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/layers/DWT3D/">
+     tfmri.layers.DWT3D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/layers/IDWT1D/">
+     tfmri.layers.IDWT1D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/layers/IDWT2D/">
+     tfmri.layers.IDWT2D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/layers/IDWT3D/">
+     tfmri.layers.IDWT3D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/layers/MaxPooling1D/">
+     tfmri.layers.MaxPooling1D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/layers/MaxPooling2D/">
+     tfmri.layers.MaxPooling2D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/layers/MaxPooling3D/">
+     tfmri.layers.MaxPooling3D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/layers/UNet/">
+     tfmri.layers.UNet
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../api_docs/tfmri/linalg/">
+   tfmri.linalg
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" type="checkbox"/>
+  <label for="toctree-checkbox-12">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperator/">
+     tfmri.linalg.LinearOperator
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorAddition/">
+     tfmri.linalg.LinearOperatorAddition
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorAdjoint/">
+     tfmri.linalg.LinearOperatorAdjoint
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorComposition/">
+     tfmri.linalg.LinearOperatorComposition
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorDiag/">
+     tfmri.linalg.LinearOperatorDiag
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorFiniteDifference/">
+     tfmri.linalg.LinearOperatorFiniteDifference
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorGramMRI/">
+     tfmri.linalg.LinearOperatorGramMRI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorGramMatrix/">
+     tfmri.linalg.LinearOperatorGramMatrix
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorGramNUFFT/">
+     tfmri.linalg.LinearOperatorGramNUFFT
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorMRI/">
+     tfmri.linalg.LinearOperatorMRI
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorNUFFT/">
+     tfmri.linalg.LinearOperatorNUFFT
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorScaledIdentity/">
+     tfmri.linalg.LinearOperatorScaledIdentity
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/linalg/LinearOperatorWavelet/">
+     tfmri.linalg.LinearOperatorWavelet
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/linalg/conjugate_gradient/">
+     tfmri.linalg.conjugate_gradient
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../api_docs/tfmri/losses/">
+   tfmri.losses
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" type="checkbox"/>
+  <label for="toctree-checkbox-13">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/losses/ConfusionLoss/">
+     tfmri.losses.ConfusionLoss
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/losses/F1Loss/">
+     tfmri.losses.F1Loss
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/losses/FocalTverskyLoss/">
+     tfmri.losses.FocalTverskyLoss
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/losses/IoULoss/">
+     tfmri.losses.IoULoss
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/losses/SSIMLoss/">
+     tfmri.losses.SSIMLoss
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/losses/SSIMMultiscaleLoss/">
+     tfmri.losses.SSIMMultiscaleLoss
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/losses/TverskyLoss/">
+     tfmri.losses.TverskyLoss
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/losses/ssim_loss/">
+     tfmri.losses.ssim_loss
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/losses/ssim_multiscale_loss/">
+     tfmri.losses.ssim_multiscale_loss
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../api_docs/tfmri/math/">
+   tfmri.math
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" type="checkbox"/>
+  <label for="toctree-checkbox-14">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/math/block_soft_threshold/">
+     tfmri.math.block_soft_threshold
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/math/extract_from_complex/">
+     tfmri.math.extract_from_complex
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/math/indicator_ball/">
+     tfmri.math.indicator_ball
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/math/indicator_box/">
+     tfmri.math.indicator_box
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/math/indicator_simplex/">
+     tfmri.math.indicator_simplex
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/math/make_val_and_grad_fn/">
+     tfmri.math.make_val_and_grad_fn
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/math/normalize_no_nan/">
+     tfmri.math.normalize_no_nan
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/math/project_onto_ball/">
+     tfmri.math.project_onto_ball
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/math/project_onto_box/">
+     tfmri.math.project_onto_box
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/math/project_onto_simplex/">
+     tfmri.math.project_onto_simplex
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/math/shrinkage/">
+     tfmri.math.shrinkage
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/math/soft_threshold/">
+     tfmri.math.soft_threshold
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../api_docs/tfmri/metrics/">
+   tfmri.metrics
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" type="checkbox"/>
+  <label for="toctree-checkbox-15">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/metrics/Accuracy/">
+     tfmri.metrics.Accuracy
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/metrics/ConfusionMetric/">
+     tfmri.metrics.ConfusionMetric
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/metrics/F1Score/">
+     tfmri.metrics.F1Score
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/metrics/FBetaScore/">
+     tfmri.metrics.FBetaScore
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/metrics/IoU/">
+     tfmri.metrics.IoU
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/metrics/NegativePredictiveValue/">
+     tfmri.metrics.NegativePredictiveValue
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/metrics/PSNR/">
+     tfmri.metrics.PSNR
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/metrics/PositivePredictiveValue/">
+     tfmri.metrics.PositivePredictiveValue
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/metrics/SSIM/">
+     tfmri.metrics.SSIM
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/metrics/SSIMMultiscale/">
+     tfmri.metrics.SSIMMultiscale
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/metrics/TrueNegativeRate/">
+     tfmri.metrics.TrueNegativeRate
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/metrics/TruePositiveRate/">
+     tfmri.metrics.TruePositiveRate
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/metrics/TverskyIndex/">
+     tfmri.metrics.TverskyIndex
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../api_docs/tfmri/models/">
+   tfmri.models
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" type="checkbox"/>
+  <label for="toctree-checkbox-16">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/models/ConvBlock1D/">
+     tfmri.models.ConvBlock1D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/models/ConvBlock2D/">
+     tfmri.models.ConvBlock2D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/models/ConvBlock3D/">
+     tfmri.models.ConvBlock3D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/models/UNet1D/">
+     tfmri.models.UNet1D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/models/UNet2D/">
+     tfmri.models.UNet2D
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/models/UNet3D/">
+     tfmri.models.UNet3D
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../api_docs/tfmri/optimize/">
+   tfmri.optimize
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" type="checkbox"/>
+  <label for="toctree-checkbox-17">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/optimize/gradient_descent/">
+     tfmri.optimize.gradient_descent
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/optimize/lbfgs_minimize/">
+     tfmri.optimize.lbfgs_minimize
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../api_docs/tfmri/plot/">
+   tfmri.plot
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" type="checkbox"/>
+  <label for="toctree-checkbox-18">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/plot/close/">
+     tfmri.plot.close
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/plot/image_sequence/">
+     tfmri.plot.image_sequence
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/plot/show/">
+     tfmri.plot.show
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/plot/tiled_image/">
+     tfmri.plot.tiled_image
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/plot/tiled_image_sequence/">
+     tfmri.plot.tiled_image_sequence
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../api_docs/tfmri/recon/">
+   tfmri.recon
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" type="checkbox"/>
+  <label for="toctree-checkbox-19">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/recon/adjoint/">
+     tfmri.recon.adjoint
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/recon/grappa/">
+     tfmri.recon.grappa
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/recon/least_squares/">
+     tfmri.recon.least_squares
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/recon/partial_fourier/">
+     tfmri.recon.partial_fourier
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/recon/sense/">
+     tfmri.recon.sense
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../api_docs/tfmri/sampling/">
+   tfmri.sampling
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" type="checkbox"/>
+  <label for="toctree-checkbox-20">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/sampling/density_grid/">
+     tfmri.sampling.density_grid
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/sampling/estimate_density/">
+     tfmri.sampling.estimate_density
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/sampling/estimate_radial_density/">
+     tfmri.sampling.estimate_radial_density
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/sampling/expand_density/">
+     tfmri.sampling.expand_density
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/sampling/expand_trajectory/">
+     tfmri.sampling.expand_trajectory
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/sampling/flatten_density/">
+     tfmri.sampling.flatten_density
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/sampling/flatten_trajectory/">
+     tfmri.sampling.flatten_trajectory
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/sampling/radial_density/">
+     tfmri.sampling.radial_density
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/sampling/radial_trajectory/">
+     tfmri.sampling.radial_trajectory
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/sampling/radial_waveform/">
+     tfmri.sampling.radial_waveform
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/sampling/random_mask/">
+     tfmri.sampling.random_mask
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/sampling/spiral_trajectory/">
+     tfmri.sampling.spiral_trajectory
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../api_docs/tfmri/signal/">
+   tfmri.signal
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-21" name="toctree-checkbox-21" type="checkbox"/>
+  <label for="toctree-checkbox-21">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/signal/atanfilt/">
+     tfmri.signal.atanfilt
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/signal/crop_kspace/">
+     tfmri.signal.crop_kspace
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/signal/dwt/">
+     tfmri.signal.dwt
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/signal/fft/">
+     tfmri.signal.fft
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/signal/filter_kspace/">
+     tfmri.signal.filter_kspace
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/signal/hamming/">
+     tfmri.signal.hamming
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/signal/hann/">
+     tfmri.signal.hann
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/signal/idwt/">
+     tfmri.signal.idwt
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/signal/ifft/">
+     tfmri.signal.ifft
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/signal/max_wavelet_level/">
+     tfmri.signal.max_wavelet_level
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/signal/nufft/">
+     tfmri.signal.nufft
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/signal/tensor_to_wavelet_coeffs/">
+     tfmri.signal.tensor_to_wavelet_coeffs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/signal/wavedec/">
+     tfmri.signal.wavedec
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/signal/wavelet_coeffs_to_tensor/">
+     tfmri.signal.wavelet_coeffs_to_tensor
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/signal/waverec/">
+     tfmri.signal.waverec
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../../api_docs/tfmri/summary/">
+   tfmri.summary
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-22" name="toctree-checkbox-22" type="checkbox"/>
+  <label for="toctree-checkbox-22">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../../api_docs/tfmri/summary/gif/">
+     tfmri.summary.gif
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+    </div>
+</nav></div>
+        <div class="bd-sidebar__bottom">
+             <!-- To handle the deprecated key -->
+            
+            <div class="navbar_extra_footer">
+            Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+            </div>
+            
+        </div>
+    </div>
+    <div id="rtd-footer-container"></div>
+</div>
+
+
+          
+
+
+          
+<!-- A tiny helper pixel to detect if we've scrolled -->
+<div class="sbt-scroll-pixel-helper"></div>
+<!-- Main content -->
+<div class="col py-0 content-container">
+    
+    <div class="header-article row sticky-top noprint">
+        
+
+
+
+<div class="col py-1 d-flex header-article-main">
+    <div class="header-article__left">
+        
+        <label for="__navigation"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="right"
+title="Toggle navigation"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-bars"></i>
+  </span>
+
+</label>
+
+        
+    </div>
+    <div class="header-article__right">
+<div class="menu-dropdown menu-dropdown-launch-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Launch interactive content">
+      <i class="fas fa-rocket"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="https://colab.research.google.com/github/mrphys/tensorflow-mri/blob/master/tools/docs/tutorials/segment/2d_segmentation.ipynb"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Launch on Colab"
+>
+  
+
+<span class="headerbtn__icon-container">
+  
+    <img src="../../../_static/images/logo_colab.png">
+  </span>
+<span class="headerbtn__text-container">Colab</span>
+</a>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+
+<button onclick="toggleFullScreen()"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="bottom"
+title="Fullscreen mode"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+<a href="https://github.com/mrphys/tensorflow-mri"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="bottom"
+title="Source repository"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+<div class="menu-dropdown menu-dropdown-download-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Download this page">
+      <i class="fas fa-download"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="../../../_sources/tutorials/segment/2d_segmentation.ipynb.txt"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Download source file"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="headerbtn__text-container">.ipynb</span>
+</a>
+
+      </li>
+      
+      <li>
+        
+<button onclick="printPdf(this)"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="left"
+title="Print to PDF"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="headerbtn__text-container">.pdf</span>
+</button>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+<label for="__page-toc"
+  class="headerbtn headerbtn-page-toc"
+  
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-list"></i>
+  </span>
+
+</label>
+
+    </div>
+</div>
+
+<!-- Table of contents -->
+<div class="col-md-3 bd-toc show noprint">
+    <div class="tocsection onthispage pt-5 pb-3">
+        <i class="fas fa-list"></i> Contents
+    </div>
+    <nav id="bd-toc-nav" aria-label="Page">
+        <ul class="visible nav section-nav flex-column">
+ <li class="toc-h1 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#">
+   Set up TensorFlow MRi
+  </a>
+  <ul class="visible nav section-nav flex-column">
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#using-a-gpu">
+     Using a GPU
+    </a>
+   </li>
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#prepare-the-data">
+     Prepare the Data
+    </a>
+   </li>
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#building-our-model">
+     Building Our Model
+    </a>
+   </li>
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#results">
+     Results
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h1 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#conclusion">
+   Conclusion
+  </a>
+  <ul class="visible nav section-nav flex-column">
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#let-us-know">
+     Let us know!
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+    </nav>
+</div>
+    </div>
+    <div class="article row">
+        <div class="col pl-md-3 pl-lg-5 content-container">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>Set up TensorFlow MRi</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                        <div>
+                            <h2> Contents </h2>
+                        </div>
+                        <nav aria-label="Page">
+                            <ul class="visible nav section-nav flex-column">
+ <li class="toc-h1 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#">
+   Set up TensorFlow MRi
+  </a>
+  <ul class="visible nav section-nav flex-column">
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#using-a-gpu">
+     Using a GPU
+    </a>
+   </li>
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#prepare-the-data">
+     Prepare the Data
+    </a>
+   </li>
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#building-our-model">
+     Building Our Model
+    </a>
+   </li>
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#results">
+     Results
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h1 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#conclusion">
+   Conclusion
+  </a>
+  <ul class="visible nav section-nav flex-column">
+   <li class="toc-h2 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#let-us-know">
+     Let us know!
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            <main id="main-content" role="main">
+                
+              <div>
+                
+  <p>In this example we will take 2D images from a cardiac Left Ventricle short axis stack.
+These images have been segmented by an expert to give us our ground truth labels.
+The data is from the open-source Sunnybrook Cardiac Data set.</p>
+<p>We will read in the data pairs, train a 2D UNet to perform segmentation and then test the resulting network</p>
+<section class="tex2jax_ignore mathjax_ignore" id="set-up-tensorflow-mri">
+<h1>Set up TensorFlow MRi<a class="headerlink" href="#set-up-tensorflow-mri" title="Permalink to this headline">¶</a></h1>
+<p>If you have not yet installed TensorFlow MRI in your environment you may need to do so now
+using <code class="docutils literal notranslate"><span class="pre">pip</span></code></p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">pip</span> install --quiet tensorflow-mri
+<span class="c1"># Upgrade Matplotlib. Versions older than 3.5.x may cause an error below.</span>
+<span class="o">%</span><span class="k">pip</span> install --quiet --upgrade matplotlib
+
+<span class="o">%</span><span class="k">pip</span> install pydicom
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Yellow">WARNING: You are using pip version 20.2.4; however, version 24.3.1 is available.</span>
+<span class=" -Color -Color-Yellow">You should consider upgrading via the &#39;/usr/local/bin/python -m pip install --upgrade pip&#39; command.</span>
+Note: you may need to restart the kernel to use updated packages.
+<span class=" -Color -Color-Yellow">WARNING: You are using pip version 20.2.4; however, version 24.3.1 is available.</span>
+<span class=" -Color -Color-Yellow">You should consider upgrading via the &#39;/usr/local/bin/python -m pip install --upgrade pip&#39; command.</span>
+Note: you may need to restart the kernel to use updated packages.
+Defaulting to user installation because normal site-packages is not writeable
+Requirement already satisfied: pydicom in /usr/local/lib/python3.8/dist-packages (2.4.4)
+<span class=" -Color -Color-Yellow">WARNING: You are using pip version 20.2.4; however, version 24.3.1 is available.</span>
+<span class=" -Color -Color-Yellow">You should consider upgrading via the &#39;/usr/local/bin/python -m pip install --upgrade pip&#39; command.</span>
+Note: you may need to restart the kernel to use updated packages.
+</pre></div>
+</div>
+</div>
+</div>
+<p>Now, import all necessary python libraries.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pydicom</span> <span class="k">as</span> <span class="nn">dicom</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib.image</span> <span class="k">as</span> <span class="nn">mpimg</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">glob</span> <span class="kn">import</span> <span class="n">glob</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">random</span> <span class="k">as</span> <span class="nn">rng</span>
+
+<span class="kn">import</span> <span class="nn">tensorflow_mri</span> <span class="k">as</span> <span class="nn">tfmri</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2025-01-17 23:08:36.707715: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F AVX512_VNNI FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-01-17 23:08:36.803401: I tensorflow/core/util/util.cc:169] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-01-17 23:08:36.828296: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+</pre></div>
+</div>
+</div>
+</div>
+<section id="using-a-gpu">
+<h2>Using a GPU<a class="headerlink" href="#using-a-gpu" title="Permalink to this headline">¶</a></h2>
+<p>TensorFlow MRI supports CPU and GPU computation. If there is a GPU available in your environment and it is visible to TensorFlow, it will be used automatically.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>In Google Colab, you can enable GPU computation by clicking on
+<strong>Runtime &gt; Change runtime type</strong> and selecting <strong>GPU</strong> under
+<strong>Hardware accelerator</strong>.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>You can control whether CPU or GPU is used for a particular operation via
+the <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/device"><code class="docutils literal notranslate"><span class="pre">tf.device</span></code></a>
+context manager.</p>
+</div>
+</section>
+<section id="prepare-the-data">
+<h2>Prepare the Data<a class="headerlink" href="#prepare-the-data" title="Permalink to this headline">¶</a></h2>
+<p>First, we need to extract our data and store our image and mask pairs in lists, so that pairs have the same index. Our path names may differ
+so ensure you the given paths with the path where your data is stored. Depending on your data set, you may need different functions to read
+your images and masks. In this case, the images are stored as dicoms and the masks as pngs.</p>
+<p>In this example, we will be using a heart data set from Sunnybrook Cardiac Data, which you can download from https://www.cardiacatlas.org/sunnybrook-cardiac-data/
+This is Cardiac Left Ventricle Segmentation from Cine-MRI Images dataset</p>
+<p>This same data set in a easier formate can be downloaded using Matlab, by copying the following code.</p>
+<p><code class="docutils literal notranslate"><span class="pre">zipFile</span> <span class="pre">=</span> <span class="pre">matlab.internal.examples.downloadSupportFile(&quot;medical&quot;,&quot;CardiacMRI.zip&quot;);</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">filepath</span> <span class="pre">=</span> <span class="pre">fileparts(zipFile);</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">unzip(zipFile,filepath)</span></code></p>
+<p>We use the data in this format in the following example.</p>
+<p>The matlab subset of SunnyBrook data set contains of 45 cine short-axis stacks and their corresponding ground truth label images (LV blood pool segmented as peak systole and peak diastole). The MRI images were acquired from multiple patients with various cardiac pathologies. The ground truth label images were manually drawn by experts [ Radau, Perry, Yingli Lu, Kim Connelly, Gideon Paul, Alexander J Dick, and Graham A Wright. “Evaluation Framework for Algorithms Segmenting Short Axis Cardiac MRI.” The MIDAS Journal, July 9, 2009. https://doi.org/10.54294/g80ruo. ]</p>
+<p>As each cine stack consists of ~10 slices, and there are 2 time points segmented per stack (systole and diastole), this results in 805 dicom images of size 256x256, which each have a corresponding mask (stored as a png) which contains two classes: 0 (“Background”) and 1 (“Left Ventricle”)</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pathlib</span>
+<span class="kn">import</span> <span class="nn">gdown</span>
+
+<span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://drive.google.com/uc?id=1y176qfBc_0-_kFetYsWpWrBf8vXpHb4Y&#39;</span>
+<span class="n">output</span> <span class="o">=</span> <span class="s1">&#39;/tools/docs/tutorials/segment/CardiacMRI.zip&#39;</span>
+<span class="n">gdown</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">quiet</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">zipfile</span>
+<span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="s2">&quot;/tools/docs/tutorials/segment/exampleRawDataCine.hdf5.zip&quot;</span><span class="p">,</span><span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">zip_ref</span><span class="p">:</span>
+    <span class="n">zip_ref</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="s2">&quot;/tools/docs/tutorials/segment/&quot;</span><span class="p">)</span>
+
+<span class="n">input_file</span> <span class="o">=</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;/tools/docs/tutorials/segment/exampleRawDataCine.hdf5&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Create empty lists to store the image and mask data</span>
+<span class="n">images</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">masks</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1"># This path will need updating for your system</span>
+<span class="n">path_for_data</span> <span class="o">=</span> <span class="s1">&#39;/workspaces/Tutorials/2Dsegmentation_DONE/data/images/**/*.dcm&#39;</span>
+
+<span class="c1">#Obtain all image and mask data, may need to check the image and mask pathnames to see how they differ</span>
+<span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">glob</span><span class="p">(</span><span class="n">path_for_data</span><span class="p">)</span>  <span class="p">:</span>     <span class="c1"># This will select all files ending with dcm - these should be your images</span>
+    
+    <span class="c1">#Now we must find the matching mask data</span>
+    <span class="c1"># The dcm data is stored like this: </span>
+    <span class="c1">#   SC-HF-I-08_rawdcm_009.dcm </span>
+    <span class="c1"># and the corresponding mask will have name: </span>
+    <span class="c1">#   SC-HF-I-08gtmask0009.png </span>
+
+    <span class="n">mask_filename</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;images&quot;</span><span class="p">,</span><span class="s2">&quot;labels&quot;</span><span class="p">)</span>                <span class="c1">#Replacing the different words in pathnames</span>
+    <span class="n">mask_filename_mask</span> <span class="o">=</span> <span class="n">mask_filename</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_rawdcm_&quot;</span><span class="p">,</span><span class="s2">&quot;gtmask0&quot;</span><span class="p">)</span>
+    <span class="n">mask_filename_png</span> <span class="o">=</span> <span class="n">mask_filename_mask</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;dcm&quot;</span><span class="p">,</span><span class="s2">&quot;png&quot;</span><span class="p">)</span>        <span class="c1">#replacing file type </span>
+    <span class="n">mask_exists</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">mask_filename_png</span><span class="p">)</span>                    <span class="c1">#Checking that this path exists</span>
+   
+    <span class="c1">#If this path exists, we append the images and masks lists so that corresponding images and paths have the same index</span>
+   
+    <span class="k">if</span> <span class="n">mask_exists</span><span class="p">:</span>                                                   
+        <span class="n">image</span> <span class="o">=</span> <span class="n">dicom</span><span class="o">.</span><span class="n">dcmread</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span><span class="o">.</span><span class="n">pixel_array</span>
+        <span class="n">images</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">mpimg</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="n">mask_filename_png</span><span class="p">)</span>
+        <span class="n">masks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Next, we will check if we have assigned the correct pairs of images and masks by plotting them on top of each other. Image cmap convention is ‘gray’ in MRI, and masks cmap is often ‘viridis’. Alpha determines how in focus the mask is (range 0-1, 0.2 is a good choice)</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#testing blended images and masks</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>               
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">masks</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;viridis&#39;</span><span class="p">,</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>  
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Image With Mask&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Text(0.5, 1.0, &#39;Image With Mask&#39;)
+</pre></div>
+</div>
+<img alt="../../../_images/30fcd5c500f931e8d5f4c2812e997c0d494bb67ac33d419f28c06be9ef7a1faf.png" src="../../../_images/30fcd5c500f931e8d5f4c2812e997c0d494bb67ac33d419f28c06be9ef7a1faf.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#converting to numpy arrays as they are easier to work with</span>
+<span class="n">masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">masks</span><span class="p">)</span>
+<span class="n">images</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+
+<span class="c1"># You should check the shape of the data sets.</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The shape of the masks is: </span><span class="si">{</span><span class="n">masks</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The shape of the images is: </span><span class="si">{</span><span class="n">images</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+
+<span class="c1">#The shape of the masks is: (805, 256, 256)</span>
+<span class="c1">#The shape of the images is: (805, 256, 256)</span>
+<span class="c1"># This means that there are 805 data pairs, of images of size 256x256</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>The shape of the masks is: (805, 256, 256)
+The shape of the images is: (805, 256, 256)
+</pre></div>
+</div>
+</div>
+</div>
+<p>From this we can see we have 805 images and masks, with image size 256x256, as we expect.</p>
+<p>Next, we need to normalize the image data to so that each data point lies between 0-1.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">normalize_images</span><span class="p">(</span><span class="n">images</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Normalisation function</span>
+<span class="sd">    Input: </span>
+<span class="sd">           - images, array of image data</span>
+<span class="sd">    Output: </span>
+<span class="sd">           - normalised array of image data&quot;&quot;&quot;</span>
+    
+    <span class="k">return</span> <span class="p">(</span><span class="n">images</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">images</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">images</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">images</span><span class="p">))</span>
+
+<span class="c1">#Creating new normalised array</span>
+<span class="n">images</span> <span class="o">=</span> <span class="n">normalize_images</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We can quickly check that the normalized images array will still give us the MRI Images.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Testing normalised images</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.image.AxesImage at 0x7fb3289010d0&gt;
+</pre></div>
+</div>
+<img alt="../../../_images/155835ed80d8fe03f0dcc833e8bd94f4517e634ee19f0cf15571c824986d5786.png" src="../../../_images/155835ed80d8fe03f0dcc833e8bd94f4517e634ee19f0cf15571c824986d5786.png" />
+</div>
+</div>
+<p>For a 2D Unet model, we need our mask data to be seperated in two classes, in this case background and bloodpool. All data points equal to 0 we can keep as zero, and all non zero points we will make equal to 1.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#simplifying masks</span>
+<span class="k">def</span> <span class="nf">simplify_mask</span><span class="p">(</span><span class="n">masks</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This function take an inputed array of masks and keeps leaves all zero data points as zero </span>
+<span class="sd">    and converts all non-zero data points equal to one. Zero data point are equivalent to the background</span>
+<span class="sd">    and those equal to one represent the bloodpool</span>
+<span class="sd">    </span>
+<span class="sd">    Input: masks, array containing mask data</span>
+<span class="sd">     </span>
+<span class="sd">    Output: simp_masks, array containing the simplified masks&quot;&quot;&quot;</span>
+
+    <span class="n">simp_masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">masks</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">simp_masks</span><span class="p">[</span><span class="n">masks</span> <span class="o">==</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>        <span class="c1">#background</span>
+    <span class="n">simp_masks</span><span class="p">[</span><span class="n">masks</span> <span class="o">!=</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>        <span class="c1">#bloodpool</span>
+    
+    <span class="k">return</span> <span class="n">simp_masks</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We can now apply this function to our <code class="docutils literal notranslate"><span class="pre">masks</span></code> array, and do a quick check of the minimum and maximum values (which should be 0 and 1 respectively), and plot one of the simplified masks.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Simplifying all masks</span>
+<span class="n">masks</span> <span class="o">=</span> <span class="n">simplify_mask</span><span class="p">(</span><span class="n">masks</span><span class="p">)</span>
+
+<span class="c1">#Test</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(min, max): (</span><span class="si">{</span><span class="n">masks</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">masks</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">masks</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;viridis&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(min, max): (0.0, 1.0)
+</pre></div>
+</div>
+<img alt="../../../_images/3013755586b39de4d1885a3d4b968930dae8a4b85dd497b21e9cd821adce77b7.png" src="../../../_images/3013755586b39de4d1885a3d4b968930dae8a4b85dd497b21e9cd821adce77b7.png" />
+</div>
+</div>
+<p>Next, we need to seperate our data into training, testing and validation data. We will use the ratio of 80%, 10%, 10% respectively, although this is some what arbitrary. Ideally you should use as much of the data as possible for training, while keeping enough for testing and validation.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#seperating into training, testing and validation data</span>
+
+<span class="c1">#           train, test, val</span>
+<span class="n">data_split</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">]</span>
+<span class="c1">#Finding the number of images/masks in category</span>
+
+<span class="n">n_train</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data_split</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">masks</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>                         <span class="c1">#80%</span>
+<span class="n">n_test</span> <span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">data_split</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">masks</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>                           <span class="c1">#10%</span>
+<span class="n">n_val</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data_split</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">masks</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">)</span>                           <span class="c1">#10% </span>
+
+<span class="c1">#Note: rounded we will have 81 test data and 80 val (not exactly 10%) </span>
+
+<span class="c1">#seperating the data into categories</span>
+
+<span class="n">train_images</span> <span class="o">=</span> <span class="n">images</span><span class="p">[:</span><span class="n">n_train</span><span class="p">]</span>
+<span class="n">train_masks</span> <span class="o">=</span> <span class="n">masks</span><span class="p">[:</span><span class="n">n_train</span><span class="p">]</span>
+
+<span class="n">test_images</span> <span class="o">=</span> <span class="n">images</span><span class="p">[</span><span class="n">n_train</span><span class="p">:</span><span class="n">n_train</span><span class="o">+</span><span class="n">n_test</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">test_masks</span> <span class="o">=</span> <span class="n">masks</span><span class="p">[</span><span class="n">n_train</span><span class="p">:</span><span class="n">n_train</span><span class="o">+</span><span class="n">n_test</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="n">val_images</span> <span class="o">=</span> <span class="n">images</span><span class="p">[</span><span class="n">n_train</span><span class="o">+</span><span class="n">n_test</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span>
+<span class="n">val_masks</span> <span class="o">=</span> <span class="n">masks</span><span class="p">[</span><span class="n">n_train</span><span class="o">+</span><span class="n">n_test</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We need to add a “channel dimension” to have our data in the correct format for tensorflow. We can do this by using the <code class="docutils literal notranslate"><span class="pre">np.expand_dims()</span></code> function. Set axis = 3</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">train_images</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">train_images</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">test_images</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">test_images</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">val_images</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">val_images</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="n">train_masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">train_masks</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">test_masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">test_masks</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">val_masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">val_masks</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Checking shape of data </span>
+<span class="nb">print</span><span class="p">(</span><span class="n">train_images</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">test_images</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">val_images</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+<span class="c1">#Checking shape of masks</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">train_masks</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">test_masks</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">val_masks</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(644, 256, 256, 1)
+(81, 256, 256, 1)
+(80, 256, 256, 1)
+(644, 256, 256, 1)
+(81, 256, 256, 1)
+(80, 256, 256, 1)
+</pre></div>
+</div>
+</div>
+</div>
+<p>We now need to set our parameters for the model</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">IM_height</span> <span class="o">=</span> <span class="n">images</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>     <span class="c1">#Extracting the image height</span>
+<span class="n">IM_length</span> <span class="o">=</span> <span class="n">images</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>     <span class="c1">#Extracting the image length</span>
+<span class="n">channels</span> <span class="o">=</span> <span class="mi">1</span>                    <span class="c1">#Only need 1 input channel so set to 1</span>
+<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">16</span>                 <span class="c1">#Arbitrary choice, you can try setting to different values to optimize the model</span>
+<span class="n">epochs</span> <span class="o">=</span> <span class="mi">100</span>                     <span class="c1">#The larger the number of epochs the better, however increases execution time</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We now need to convert our data into tensorflow (tf) datasets, and then seperate them into batches.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">train_dataset</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="o">.</span><span class="n">from_tensor_slices</span><span class="p">((</span><span class="n">train_images</span><span class="p">,</span> <span class="n">train_masks</span><span class="p">))</span>
+<span class="n">train_dataset</span> <span class="o">=</span> <span class="n">train_dataset</span><span class="o">.</span><span class="n">batch</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
+
+<span class="n">val_dataset</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="o">.</span><span class="n">from_tensor_slices</span><span class="p">((</span><span class="n">val_images</span><span class="p">,</span> <span class="n">val_masks</span><span class="p">))</span>
+<span class="n">val_dataset</span> <span class="o">=</span> <span class="n">val_dataset</span><span class="o">.</span><span class="n">batch</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
+
+<span class="n">test_dataset</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="o">.</span><span class="n">from_tensor_slices</span><span class="p">((</span><span class="n">test_images</span><span class="p">))</span>
+<span class="n">test_dataset</span> <span class="o">=</span> <span class="n">test_dataset</span><span class="o">.</span><span class="n">batch</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2025-01-17 23:08:46.835956: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F AVX512_VNNI FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-01-17 23:08:47.316374: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1616] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 22173 MB memory:  -&gt; device: 0, name: NVIDIA GeForce RTX 3090, pci bus id: 0000:b3:00.0, compute capability: 8.6
+</pre></div>
+</div>
+</div>
+</div>
+<p>The next cell is optional, however if you would like to save you model so that it can be used at a later date it is quite useful.
+The code below will allow the model automatically save the best model. While the model is being build, it will only save itself if the validation loss has decreased compared to the model at any previous epoch.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#First create a pathname of where to save the model</span>
+<span class="n">checkpointpath</span> <span class="o">=</span> <span class="s2">&quot;/workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt&quot;</span>
+<span class="n">checkpoint_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">checkpointpath</span><span class="p">)</span>
+
+<span class="c1">#</span>
+<span class="n">cp_callback</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">ModelCheckpoint</span><span class="p">(</span><span class="n">filepath</span><span class="o">=</span><span class="n">checkpointpath</span><span class="p">,</span> <span class="n">save_best_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="building-our-model">
+<h2>Building Our Model<a class="headerlink" href="#building-our-model" title="Permalink to this headline">¶</a></h2>
+<p>Now we are ready to make our model. TensorFlow MRI has a premade 2D Unet model function which can be called from
+<code class="docutils literal notranslate"><span class="pre">tfmri.models.Unet2D()</span></code>. Details of this model and its unputs can be found on the TensorFlow MRI website.
+The basic parameters we need to define are:</p>
+<p><code class="docutils literal notranslate"><span class="pre">filters=</span></code> - should take a list of 3 values, normally each value should be double the last eg. <code class="docutils literal notranslate"><span class="pre">[32,64,128]</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">kernel_size=</span></code> - define the dimensions of the kernel as a list, if you only input 1 value then it will assume dimensions are the same size</p>
+<p><code class="docutils literal notranslate"><span class="pre">out_channels=</span></code> - should keep the same as the number of input channels, in this case =1</p>
+<p><code class="docutils literal notranslate"><span class="pre">out_activation=</span></code> - set this = <code class="docutils literal notranslate"><span class="pre">&quot;sigmoid&quot;</span></code></p>
+<p>We then need to compile our model. The basic parameters we need to define are:</p>
+<p><code class="docutils literal notranslate"><span class="pre">optimizer=</span></code> - normally set our optimizer = <code class="docutils literal notranslate"><span class="pre">&quot;adam&quot;</span></code>, more options available on <a class="reference external" href="https://mrphys.github.io/tensorflow-mri/">GitHub</a></p>
+<p><code class="docutils literal notranslate"><span class="pre">loss=</span></code> - many options which you can read about on <a class="reference external" href="https://mrphys.github.io/tensorflow-mri/">GitHub</a>, however we will use <code class="docutils literal notranslate"><span class="pre">&quot;binary_crossentropy&quot;</span></code>. You can test and
+compare some of the other loss types.</p>
+<p><code class="docutils literal notranslate"><span class="pre">metrics=</span></code> - we will use <code class="docutils literal notranslate"><span class="pre">tfmri.metrics.Accuracy()</span></code></p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">tfmri</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">UNet2D</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span> <span class="p">[</span><span class="mi">32</span><span class="p">,</span><span class="mi">64</span><span class="p">,</span><span class="mi">128</span><span class="p">],</span> <span class="n">kernel_size</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">out_channels</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">out_activation</span> <span class="o">=</span> <span class="s2">&quot;sigmoid&quot;</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span> <span class="o">=</span> <span class="s1">&#39;adam&#39;</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s2">&quot;binary_crossentropy&quot;</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="n">tfmri</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">Accuracy</span><span class="p">())</span>
+<span class="c1">#Accurracy estimates how often predictions match labels </span>
+
+<span class="c1">#Other segmentation losses in tfmi include:</span>
+<span class="c1">#   tfmri.losses.ConfusionLoss</span>
+<span class="c1">#   tfmri.losses.F1Loss (aka Dice loss)</span>
+<span class="c1">#   tfmri.losses.FocalTverskyLoss</span>
+<span class="c1">#   tfmri.losses.IoULoss (aka Jaccard loss)</span>
+<span class="c1"># (https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/losses/)</span>
+
+<span class="c1">#Other segmetnation metrics  in tfmi include:</span>
+<span class="c1">#   tfmri.metrics.ConfusionMetric</span>
+<span class="c1">#   tfmri.metrics.F1Score (aka Dice score)</span>
+<span class="c1">#   tfmri.metrics.FBetaScore (This is the weighted harmonic mean of precision and recall)</span>
+<span class="c1">#   tfmri.metrics.TverskyIndex</span>
+<span class="c1">#   tfmri.metrics.IoU (aka Jaccard index)</span>
+<span class="c1"># (https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/metrics/)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Now we will build our model to our data using the <code class="docutils literal notranslate"><span class="pre">fit()</span></code> function.
+input:</p>
+<p><code class="docutils literal notranslate"><span class="pre">training_data=</span></code> - we use our <code class="docutils literal notranslate"><span class="pre">train_dataset</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">validation_data=</span></code> - we use our <code class="docutils literal notranslate"><span class="pre">val_dataset</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">batch_size=</span></code> - we use our <code class="docutils literal notranslate"><span class="pre">batch_size</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">verbose=</span></code> - we set = 1</p>
+<p><code class="docutils literal notranslate"><span class="pre">epochs=</span></code> - we use our <code class="docutils literal notranslate"><span class="pre">epochs</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">callbacks=</span></code> - this is what saves our model, we set to our variable <code class="docutils literal notranslate"><span class="pre">cp_callback</span></code></p>
+<p>Building our model will take some time  so you may want to test that it is working by first using a small number of epochs (even just 1)</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_dataset</span><span class="p">,</span>
+                    <span class="n">validation_data</span><span class="o">=</span><span class="n">val_dataset</span><span class="p">,</span>
+                    <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+                    <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="n">epochs</span><span class="o">=</span><span class="n">epochs</span><span class="p">,</span>
+                    <span class="n">callbacks</span><span class="o">=</span><span class="p">[</span><span class="n">cp_callback</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 1/100
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2025-01-17 23:08:50.009773: I tensorflow/stream_executor/cuda/cuda_dnn.cc:384] Loaded cuDNN version 8100
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - ETA: 0s - loss: 0.1629 - acc: 0.9813
+Epoch 1: val_loss improved from inf to 0.09235, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 11s 145ms/step - loss: 0.1629 - acc: 0.9813 - val_loss: 0.0924 - val_acc: 0.9837
+Epoch 2/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0687 - acc: 0.9836
+Epoch 2: val_loss improved from 0.09235 to 0.07003, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 116ms/step - loss: 0.0688 - acc: 0.9836 - val_loss: 0.0700 - val_acc: 0.9837
+Epoch 3/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0629 - acc: 0.9836
+Epoch 3: val_loss did not improve from 0.07003
+41/41 [==============================] - 3s 78ms/step - loss: 0.0631 - acc: 0.9836 - val_loss: 0.0781 - val_acc: 0.9837
+Epoch 4/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0618 - acc: 0.9836
+Epoch 4: val_loss improved from 0.07003 to 0.06825, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 116ms/step - loss: 0.0619 - acc: 0.9836 - val_loss: 0.0683 - val_acc: 0.9837
+Epoch 5/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0593 - acc: 0.9836
+Epoch 5: val_loss improved from 0.06825 to 0.06565, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 122ms/step - loss: 0.0594 - acc: 0.9836 - val_loss: 0.0657 - val_acc: 0.9837
+Epoch 6/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0581 - acc: 0.9836
+Epoch 6: val_loss improved from 0.06565 to 0.05933, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 115ms/step - loss: 0.0582 - acc: 0.9836 - val_loss: 0.0593 - val_acc: 0.9837
+Epoch 7/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0559 - acc: 0.9836
+Epoch 7: val_loss improved from 0.05933 to 0.05912, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 121ms/step - loss: 0.0560 - acc: 0.9836 - val_loss: 0.0591 - val_acc: 0.9837
+Epoch 8/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0543 - acc: 0.9836
+Epoch 8: val_loss improved from 0.05912 to 0.05866, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 116ms/step - loss: 0.0544 - acc: 0.9836 - val_loss: 0.0587 - val_acc: 0.9837
+Epoch 9/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0533 - acc: 0.9836
+Epoch 9: val_loss improved from 0.05866 to 0.05606, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 122ms/step - loss: 0.0534 - acc: 0.9836 - val_loss: 0.0561 - val_acc: 0.9837
+Epoch 10/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0513 - acc: 0.9836
+Epoch 10: val_loss improved from 0.05606 to 0.05285, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 122ms/step - loss: 0.0514 - acc: 0.9836 - val_loss: 0.0529 - val_acc: 0.9837
+Epoch 11/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0496 - acc: 0.9836
+Epoch 11: val_loss did not improve from 0.05285
+41/41 [==============================] - 3s 79ms/step - loss: 0.0497 - acc: 0.9836 - val_loss: 0.0549 - val_acc: 0.9837
+Epoch 12/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0492 - acc: 0.9836
+Epoch 12: val_loss did not improve from 0.05285
+41/41 [==============================] - 3s 79ms/step - loss: 0.0494 - acc: 0.9836 - val_loss: 0.0601 - val_acc: 0.9837
+Epoch 13/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0477 - acc: 0.9836
+Epoch 13: val_loss improved from 0.05285 to 0.04611, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 116ms/step - loss: 0.0478 - acc: 0.9836 - val_loss: 0.0461 - val_acc: 0.9837
+Epoch 14/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0413 - acc: 0.9836
+Epoch 14: val_loss improved from 0.04611 to 0.04307, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 123ms/step - loss: 0.0414 - acc: 0.9836 - val_loss: 0.0431 - val_acc: 0.9846
+Epoch 15/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0389 - acc: 0.9857
+Epoch 15: val_loss improved from 0.04307 to 0.03771, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 117ms/step - loss: 0.0391 - acc: 0.9856 - val_loss: 0.0377 - val_acc: 0.9882
+Epoch 16/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0347 - acc: 0.9874
+Epoch 16: val_loss improved from 0.03771 to 0.03747, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 116ms/step - loss: 0.0348 - acc: 0.9874 - val_loss: 0.0375 - val_acc: 0.9890
+Epoch 17/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0320 - acc: 0.9882
+Epoch 17: val_loss improved from 0.03747 to 0.03494, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 124ms/step - loss: 0.0322 - acc: 0.9881 - val_loss: 0.0349 - val_acc: 0.9885
+Epoch 18/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0295 - acc: 0.9891
+Epoch 18: val_loss improved from 0.03494 to 0.03083, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 116ms/step - loss: 0.0297 - acc: 0.9890 - val_loss: 0.0308 - val_acc: 0.9899
+Epoch 19/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0284 - acc: 0.9894
+Epoch 19: val_loss did not improve from 0.03083
+41/41 [==============================] - 3s 79ms/step - loss: 0.0286 - acc: 0.9893 - val_loss: 0.0374 - val_acc: 0.9875
+Epoch 20/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0261 - acc: 0.9906
+Epoch 20: val_loss did not improve from 0.03083
+41/41 [==============================] - 3s 79ms/step - loss: 0.0262 - acc: 0.9906 - val_loss: 0.0336 - val_acc: 0.9881
+Epoch 21/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0241 - acc: 0.9911
+Epoch 21: val_loss improved from 0.03083 to 0.02764, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 122ms/step - loss: 0.0243 - acc: 0.9910 - val_loss: 0.0276 - val_acc: 0.9901
+Epoch 22/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0227 - acc: 0.9917
+Epoch 22: val_loss improved from 0.02764 to 0.02748, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 121ms/step - loss: 0.0228 - acc: 0.9916 - val_loss: 0.0275 - val_acc: 0.9903
+Epoch 23/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0208 - acc: 0.9924
+Epoch 23: val_loss did not improve from 0.02748
+41/41 [==============================] - 3s 79ms/step - loss: 0.0209 - acc: 0.9924 - val_loss: 0.0277 - val_acc: 0.9898
+Epoch 24/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0190 - acc: 0.9932
+Epoch 24: val_loss improved from 0.02748 to 0.02481, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 117ms/step - loss: 0.0191 - acc: 0.9931 - val_loss: 0.0248 - val_acc: 0.9909
+Epoch 25/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0189 - acc: 0.9932
+Epoch 25: val_loss improved from 0.02481 to 0.02388, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 117ms/step - loss: 0.0190 - acc: 0.9932 - val_loss: 0.0239 - val_acc: 0.9911
+Epoch 26/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0186 - acc: 0.9931
+Epoch 26: val_loss improved from 0.02388 to 0.02326, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 123ms/step - loss: 0.0186 - acc: 0.9930 - val_loss: 0.0233 - val_acc: 0.9919
+Epoch 27/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0206 - acc: 0.9927
+Epoch 27: val_loss improved from 0.02326 to 0.02211, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 121ms/step - loss: 0.0207 - acc: 0.9926 - val_loss: 0.0221 - val_acc: 0.9920
+Epoch 28/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0193 - acc: 0.9932
+Epoch 28: val_loss improved from 0.02211 to 0.01808, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 117ms/step - loss: 0.0193 - acc: 0.9932 - val_loss: 0.0181 - val_acc: 0.9936
+Epoch 29/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0140 - acc: 0.9949
+Epoch 29: val_loss improved from 0.01808 to 0.01688, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 118ms/step - loss: 0.0141 - acc: 0.9949 - val_loss: 0.0169 - val_acc: 0.9940
+Epoch 30/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0165 - acc: 0.9941
+Epoch 30: val_loss improved from 0.01688 to 0.01678, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 127ms/step - loss: 0.0165 - acc: 0.9941 - val_loss: 0.0168 - val_acc: 0.9940
+Epoch 31/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0145 - acc: 0.9947
+Epoch 31: val_loss improved from 0.01678 to 0.01523, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 124ms/step - loss: 0.0146 - acc: 0.9947 - val_loss: 0.0152 - val_acc: 0.9946
+Epoch 32/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0163 - acc: 0.9942
+Epoch 32: val_loss did not improve from 0.01523
+41/41 [==============================] - 3s 79ms/step - loss: 0.0163 - acc: 0.9941 - val_loss: 0.0165 - val_acc: 0.9940
+Epoch 33/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0159 - acc: 0.9941
+Epoch 33: val_loss did not improve from 0.01523
+41/41 [==============================] - 3s 79ms/step - loss: 0.0160 - acc: 0.9941 - val_loss: 0.0181 - val_acc: 0.9936
+Epoch 34/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0134 - acc: 0.9950
+Epoch 34: val_loss did not improve from 0.01523
+41/41 [==============================] - 3s 79ms/step - loss: 0.0134 - acc: 0.9950 - val_loss: 0.0167 - val_acc: 0.9941
+Epoch 35/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0128 - acc: 0.9952
+Epoch 35: val_loss did not improve from 0.01523
+41/41 [==============================] - 3s 79ms/step - loss: 0.0129 - acc: 0.9952 - val_loss: 0.0171 - val_acc: 0.9941
+Epoch 36/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0135 - acc: 0.9949
+Epoch 36: val_loss did not improve from 0.01523
+41/41 [==============================] - 3s 79ms/step - loss: 0.0136 - acc: 0.9949 - val_loss: 0.0180 - val_acc: 0.9940
+Epoch 37/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0133 - acc: 0.9951
+Epoch 37: val_loss did not improve from 0.01523
+41/41 [==============================] - 3s 79ms/step - loss: 0.0134 - acc: 0.9951 - val_loss: 0.0168 - val_acc: 0.9946
+Epoch 38/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0113 - acc: 0.9958
+Epoch 38: val_loss did not improve from 0.01523
+41/41 [==============================] - 3s 79ms/step - loss: 0.0113 - acc: 0.9957 - val_loss: 0.0156 - val_acc: 0.9947
+Epoch 39/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0097 - acc: 0.9963
+Epoch 39: val_loss did not improve from 0.01523
+41/41 [==============================] - 3s 79ms/step - loss: 0.0097 - acc: 0.9963 - val_loss: 0.0160 - val_acc: 0.9949
+Epoch 40/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0092 - acc: 0.9965
+Epoch 40: val_loss improved from 0.01523 to 0.01414, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 117ms/step - loss: 0.0092 - acc: 0.9965 - val_loss: 0.0141 - val_acc: 0.9954
+Epoch 41/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0079 - acc: 0.9969
+Epoch 41: val_loss improved from 0.01414 to 0.01313, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 123ms/step - loss: 0.0079 - acc: 0.9969 - val_loss: 0.0131 - val_acc: 0.9956
+Epoch 42/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0073 - acc: 0.9972
+Epoch 42: val_loss improved from 0.01313 to 0.01215, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 117ms/step - loss: 0.0073 - acc: 0.9972 - val_loss: 0.0121 - val_acc: 0.9959
+Epoch 43/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0067 - acc: 0.9974
+Epoch 43: val_loss improved from 0.01215 to 0.01170, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 116ms/step - loss: 0.0066 - acc: 0.9974 - val_loss: 0.0117 - val_acc: 0.9961
+Epoch 44/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0061 - acc: 0.9976
+Epoch 44: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 79ms/step - loss: 0.0061 - acc: 0.9976 - val_loss: 0.0132 - val_acc: 0.9956
+Epoch 45/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0058 - acc: 0.9977
+Epoch 45: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 79ms/step - loss: 0.0057 - acc: 0.9977 - val_loss: 0.0135 - val_acc: 0.9955
+Epoch 46/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0059 - acc: 0.9976
+Epoch 46: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 79ms/step - loss: 0.0059 - acc: 0.9976 - val_loss: 0.0157 - val_acc: 0.9953
+Epoch 47/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0055 - acc: 0.9978
+Epoch 47: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 79ms/step - loss: 0.0055 - acc: 0.9978 - val_loss: 0.0166 - val_acc: 0.9954
+Epoch 48/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0055 - acc: 0.9978
+Epoch 48: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 79ms/step - loss: 0.0055 - acc: 0.9978 - val_loss: 0.0149 - val_acc: 0.9957
+Epoch 49/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0055 - acc: 0.9978
+Epoch 49: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 79ms/step - loss: 0.0055 - acc: 0.9978 - val_loss: 0.0147 - val_acc: 0.9957
+Epoch 50/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0048 - acc: 0.9980
+Epoch 50: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 79ms/step - loss: 0.0048 - acc: 0.9980 - val_loss: 0.0126 - val_acc: 0.9961
+Epoch 51/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0045 - acc: 0.9982
+Epoch 51: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 79ms/step - loss: 0.0045 - acc: 0.9982 - val_loss: 0.0133 - val_acc: 0.9961
+Epoch 52/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0042 - acc: 0.9983
+Epoch 52: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 79ms/step - loss: 0.0042 - acc: 0.9983 - val_loss: 0.0142 - val_acc: 0.9960
+Epoch 53/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0041 - acc: 0.9983
+Epoch 53: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 79ms/step - loss: 0.0041 - acc: 0.9983 - val_loss: 0.0161 - val_acc: 0.9958
+Epoch 54/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0041 - acc: 0.9983
+Epoch 54: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 79ms/step - loss: 0.0041 - acc: 0.9983 - val_loss: 0.0171 - val_acc: 0.9957
+Epoch 55/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0041 - acc: 0.9983
+Epoch 55: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 79ms/step - loss: 0.0040 - acc: 0.9983 - val_loss: 0.0181 - val_acc: 0.9956
+Epoch 56/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0041 - acc: 0.9983
+Epoch 56: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 79ms/step - loss: 0.0041 - acc: 0.9983 - val_loss: 0.0169 - val_acc: 0.9957
+Epoch 57/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0041 - acc: 0.9983
+Epoch 57: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 79ms/step - loss: 0.0041 - acc: 0.9983 - val_loss: 0.0147 - val_acc: 0.9959
+Epoch 58/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0037 - acc: 0.9985
+Epoch 58: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 79ms/step - loss: 0.0037 - acc: 0.9985 - val_loss: 0.0147 - val_acc: 0.9958
+Epoch 59/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0037 - acc: 0.9985
+Epoch 59: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 80ms/step - loss: 0.0037 - acc: 0.9985 - val_loss: 0.0128 - val_acc: 0.9960
+Epoch 60/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0044 - acc: 0.9982
+Epoch 60: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 80ms/step - loss: 0.0044 - acc: 0.9982 - val_loss: 0.0135 - val_acc: 0.9958
+Epoch 61/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0054 - acc: 0.9979
+Epoch 61: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 80ms/step - loss: 0.0054 - acc: 0.9979 - val_loss: 0.0134 - val_acc: 0.9956
+Epoch 62/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0050 - acc: 0.9980
+Epoch 62: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 79ms/step - loss: 0.0050 - acc: 0.9980 - val_loss: 0.0129 - val_acc: 0.9959
+Epoch 63/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0059 - acc: 0.9976
+Epoch 63: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 80ms/step - loss: 0.0059 - acc: 0.9976 - val_loss: 0.0144 - val_acc: 0.9954
+Epoch 64/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0063 - acc: 0.9976
+Epoch 64: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 80ms/step - loss: 0.0063 - acc: 0.9975 - val_loss: 0.0156 - val_acc: 0.9948
+Epoch 65/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0069 - acc: 0.9973
+Epoch 65: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 80ms/step - loss: 0.0069 - acc: 0.9973 - val_loss: 0.0136 - val_acc: 0.9961
+Epoch 66/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0089 - acc: 0.9966
+Epoch 66: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 79ms/step - loss: 0.0089 - acc: 0.9966 - val_loss: 0.0124 - val_acc: 0.9959
+Epoch 67/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0054 - acc: 0.9978
+Epoch 67: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 80ms/step - loss: 0.0054 - acc: 0.9978 - val_loss: 0.0166 - val_acc: 0.9955
+Epoch 68/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0051 - acc: 0.9980
+Epoch 68: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 79ms/step - loss: 0.0051 - acc: 0.9979 - val_loss: 0.0179 - val_acc: 0.9951
+Epoch 69/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0050 - acc: 0.9980
+Epoch 69: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 80ms/step - loss: 0.0050 - acc: 0.9980 - val_loss: 0.0122 - val_acc: 0.9962
+Epoch 70/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0038 - acc: 0.9984
+Epoch 70: val_loss did not improve from 0.01170
+41/41 [==============================] - 3s 80ms/step - loss: 0.0038 - acc: 0.9984 - val_loss: 0.0132 - val_acc: 0.9963
+Epoch 71/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0033 - acc: 0.9986
+Epoch 71: val_loss improved from 0.01170 to 0.01161, saving model to /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:absl:Found untraced functions such as _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op, _jit_compiled_convolution_op while saving (showing 5 of 11). These functions will not be directly callable after loading.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:tensorflow:Assets written to: /workspaces/Tutorials/2Dsegmentation_DONE/models/unet_segmentation/model.ckpt/assets
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>41/41 [==============================] - 5s 124ms/step - loss: 0.0033 - acc: 0.9986 - val_loss: 0.0116 - val_acc: 0.9964
+Epoch 72/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0032 - acc: 0.9986
+Epoch 72: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 79ms/step - loss: 0.0032 - acc: 0.9987 - val_loss: 0.0122 - val_acc: 0.9964
+Epoch 73/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0031 - acc: 0.9987
+Epoch 73: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 79ms/step - loss: 0.0031 - acc: 0.9987 - val_loss: 0.0130 - val_acc: 0.9963
+Epoch 74/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0030 - acc: 0.9987
+Epoch 74: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 79ms/step - loss: 0.0030 - acc: 0.9987 - val_loss: 0.0127 - val_acc: 0.9964
+Epoch 75/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0029 - acc: 0.9988
+Epoch 75: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 80ms/step - loss: 0.0029 - acc: 0.9988 - val_loss: 0.0131 - val_acc: 0.9964
+Epoch 76/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0029 - acc: 0.9988
+Epoch 76: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 80ms/step - loss: 0.0029 - acc: 0.9988 - val_loss: 0.0130 - val_acc: 0.9964
+Epoch 77/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0028 - acc: 0.9988
+Epoch 77: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 79ms/step - loss: 0.0028 - acc: 0.9988 - val_loss: 0.0136 - val_acc: 0.9962
+Epoch 78/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0028 - acc: 0.9988
+Epoch 78: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 79ms/step - loss: 0.0028 - acc: 0.9988 - val_loss: 0.0136 - val_acc: 0.9965
+Epoch 79/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0027 - acc: 0.9988
+Epoch 79: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 79ms/step - loss: 0.0027 - acc: 0.9988 - val_loss: 0.0151 - val_acc: 0.9964
+Epoch 80/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0027 - acc: 0.9988
+Epoch 80: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 80ms/step - loss: 0.0027 - acc: 0.9988 - val_loss: 0.0142 - val_acc: 0.9963
+Epoch 81/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0027 - acc: 0.9988
+Epoch 81: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 80ms/step - loss: 0.0027 - acc: 0.9988 - val_loss: 0.0142 - val_acc: 0.9962
+Epoch 82/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0027 - acc: 0.9988
+Epoch 82: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 80ms/step - loss: 0.0027 - acc: 0.9988 - val_loss: 0.0155 - val_acc: 0.9963
+Epoch 83/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0026 - acc: 0.9989
+Epoch 83: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 80ms/step - loss: 0.0026 - acc: 0.9989 - val_loss: 0.0168 - val_acc: 0.9964
+Epoch 84/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0028 - acc: 0.9988
+Epoch 84: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 79ms/step - loss: 0.0027 - acc: 0.9988 - val_loss: 0.0172 - val_acc: 0.9962
+Epoch 85/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0028 - acc: 0.9988
+Epoch 85: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 79ms/step - loss: 0.0028 - acc: 0.9988 - val_loss: 0.0166 - val_acc: 0.9960
+Epoch 86/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0027 - acc: 0.9988
+Epoch 86: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 79ms/step - loss: 0.0027 - acc: 0.9989 - val_loss: 0.0150 - val_acc: 0.9964
+Epoch 87/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0026 - acc: 0.9989
+Epoch 87: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 79ms/step - loss: 0.0026 - acc: 0.9989 - val_loss: 0.0157 - val_acc: 0.9965
+Epoch 88/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0025 - acc: 0.9989
+Epoch 88: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 79ms/step - loss: 0.0025 - acc: 0.9989 - val_loss: 0.0177 - val_acc: 0.9965
+Epoch 89/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0025 - acc: 0.9989
+Epoch 89: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 79ms/step - loss: 0.0025 - acc: 0.9989 - val_loss: 0.0198 - val_acc: 0.9964
+Epoch 90/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0025 - acc: 0.9989
+Epoch 90: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 79ms/step - loss: 0.0025 - acc: 0.9989 - val_loss: 0.0221 - val_acc: 0.9961
+Epoch 91/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0024 - acc: 0.9990
+Epoch 91: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 79ms/step - loss: 0.0024 - acc: 0.9990 - val_loss: 0.0195 - val_acc: 0.9964
+Epoch 92/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0024 - acc: 0.9990
+Epoch 92: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 79ms/step - loss: 0.0024 - acc: 0.9990 - val_loss: 0.0201 - val_acc: 0.9964
+Epoch 93/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0023 - acc: 0.9990
+Epoch 93: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 79ms/step - loss: 0.0023 - acc: 0.9990 - val_loss: 0.0196 - val_acc: 0.9965
+Epoch 94/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0023 - acc: 0.9990
+Epoch 94: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 80ms/step - loss: 0.0023 - acc: 0.9990 - val_loss: 0.0206 - val_acc: 0.9963
+Epoch 95/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0024 - acc: 0.9990
+Epoch 95: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 80ms/step - loss: 0.0024 - acc: 0.9990 - val_loss: 0.0188 - val_acc: 0.9964
+Epoch 96/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0024 - acc: 0.9990
+Epoch 96: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 79ms/step - loss: 0.0024 - acc: 0.9990 - val_loss: 0.0184 - val_acc: 0.9965
+Epoch 97/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0023 - acc: 0.9990
+Epoch 97: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 79ms/step - loss: 0.0023 - acc: 0.9990 - val_loss: 0.0192 - val_acc: 0.9966
+Epoch 98/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0023 - acc: 0.9990
+Epoch 98: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 79ms/step - loss: 0.0023 - acc: 0.9990 - val_loss: 0.0209 - val_acc: 0.9963
+Epoch 99/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0023 - acc: 0.9990
+Epoch 99: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 79ms/step - loss: 0.0023 - acc: 0.9990 - val_loss: 0.0183 - val_acc: 0.9963
+Epoch 100/100
+40/41 [============================&gt;.] - ETA: 0s - loss: 0.0023 - acc: 0.9990
+Epoch 100: val_loss did not improve from 0.01161
+41/41 [==============================] - 3s 79ms/step - loss: 0.0023 - acc: 0.9990 - val_loss: 0.0170 - val_acc: 0.9964
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="results">
+<h2>Results<a class="headerlink" href="#results" title="Permalink to this headline">¶</a></h2>
+<p>Our model should now be build, we can extract the loss and accuracy data and plot to see how they very accross epochs.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Exctracting data from our model</span>
+<span class="n">loss</span> <span class="o">=</span> <span class="n">history</span><span class="o">.</span><span class="n">history</span><span class="p">[</span><span class="s1">&#39;loss&#39;</span><span class="p">]</span>
+<span class="n">accuracy</span> <span class="o">=</span> <span class="n">history</span><span class="o">.</span><span class="n">history</span><span class="p">[</span><span class="s1">&#39;acc&#39;</span><span class="p">]</span>
+<span class="n">epochs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">loss_range</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
+<span class="n">val_loss</span> <span class="o">=</span> <span class="n">history</span><span class="o">.</span><span class="n">history</span><span class="p">[</span><span class="s1">&#39;val_loss&#39;</span><span class="p">]</span>
+
+<span class="c1">#Creating figures and plotting our losses and accuracy against epochs.</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="mi">15</span><span class="p">))</span>
+<span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">epochs</span><span class="p">,</span><span class="n">loss</span><span class="p">,</span><span class="s1">&#39;b&#39;</span><span class="p">,</span><span class="n">label</span><span class="o">=</span> <span class="s1">&#39;Loss&#39;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">epochs</span><span class="p">,</span><span class="n">val_loss</span><span class="p">,</span><span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;Validation Loss&#39;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Cross Entropy Loss&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="s1">&#39;16&#39;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Epochs&#39;</span><span class="p">,</span> <span class="n">fontsize</span> <span class="o">=</span> <span class="s1">&#39;14&#39;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Loss&#39;</span><span class="p">,</span> <span class="n">fontsize</span> <span class="o">=</span> <span class="s1">&#39;14&#39;</span><span class="p">)</span>
+
+<span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">epochs</span><span class="p">,</span><span class="n">accuracy</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Accuracy&#39;</span><span class="p">,</span> <span class="n">fontsize</span> <span class="o">=</span> <span class="s1">&#39;16&#39;</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Epochs&#39;</span><span class="p">,</span> <span class="n">fontsize</span> <span class="o">=</span> <span class="s1">&#39;14&#39;</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Accuracy&#39;</span><span class="p">,</span> <span class="n">fontsize</span> <span class="o">=</span> <span class="s1">&#39;14&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Text(0, 0.5, &#39;Accuracy&#39;)
+</pre></div>
+</div>
+<img alt="../../../_images/72b56b54f82f2e37f03b42dc807f1e20f87c2f657165c4d9807ce7ededafd359.png" src="../../../_images/72b56b54f82f2e37f03b42dc807f1e20f87c2f657165c4d9807ce7ededafd359.png" />
+</div>
+</div>
+<p>We can see that the losses decrease accross the epochs, and the accuracy increases.</p>
+<p>Now we can apply our model to the <code class="docutils literal notranslate"><span class="pre">test_dataset</span></code> to inspect if the model is actual able to predict the masks of our test images.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Predict the masks of our test images</span>
+<span class="n">out_ims</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">test_dataset</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>6/6 [==============================] - 0s 55ms/step
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Plotting a random image and its generated mask</span>
+<span class="n">i</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">test_images</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>               <span class="c1">#picks a random integer as our image/mask index</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">test_images</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">cmap</span> <span class="o">=</span> <span class="s1">&#39;gray&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">out_ims</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">cmap</span> <span class="o">=</span> <span class="s1">&#39;viridis&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Image and ML Generated Mask&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Text(0.5, 1.0, &#39;Image and ML Generated Mask&#39;)
+</pre></div>
+</div>
+<img alt="../../../_images/044ab782832e3b12a42e075103f8df1b593676ebf15f114eedd7115b30dc2af8.png" src="../../../_images/044ab782832e3b12a42e075103f8df1b593676ebf15f114eedd7115b30dc2af8.png" />
+</div>
+</div>
+<p>We can now plot the ground truth test image and mask (the image with its premade mask) next to the image and generated mask to compare.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Once again choosing a random test image and mask</span>
+<span class="n">i</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">test_images</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="n">figcompare</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="mi">12</span><span class="p">))</span>
+<span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">,</span> <span class="n">ax3</span><span class="p">,</span> <span class="n">ax4</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+
+<span class="n">ax1</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">test_images</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">test_masks</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Ground Truth Image and Mask&quot;</span><span class="p">)</span>
+
+<span class="n">ax2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">test_images</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">out_ims</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Test Image and Generated Mask&quot;</span><span class="p">)</span>
+
+<span class="n">ax3</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">test_masks</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+<span class="n">ax3</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Test Mask&#39;</span><span class="p">)</span>
+
+<span class="n">ax4</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">out_ims</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+<span class="n">ax4</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Generated Mask&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Text(0.5, 1.0, &#39;Generated Mask&#39;)
+</pre></div>
+</div>
+<img alt="../../../_images/563b521143b08bc4b865bcd471f9ff7895df2820d6f17ebef58bbb4d6cdba519.png" src="../../../_images/563b521143b08bc4b865bcd471f9ff7895df2820d6f17ebef58bbb4d6cdba519.png" />
+</div>
+</div>
+</section>
+</section>
+<section class="tex2jax_ignore mathjax_ignore" id="conclusion">
+<h1>Conclusion<a class="headerlink" href="#conclusion" title="Permalink to this headline">¶</a></h1>
+<p>Congratulations! You’ve performed image segmentation using TensorFlow Mri. The code in this notebook will work with any 2D dataset, so feel free to use your own. You can also continue to test this model using different parameters, which can be found on <a class="reference external" href="https://github.com/mrphys/tensorflow-mri/issues/new">GitHub</a>.</p>
+<section id="let-us-know">
+<h2>Let us know!<a class="headerlink" href="#let-us-know" title="Permalink to this headline">¶</a></h2>
+<p>Please tell us what you think about this tutorial and about TensorFlow MRI.
+We would like to hear what you liked and how we can improve. You will find us
+on <a class="reference external" href="https://mrphys.github.io/tensorflow-mri/">GitHub</a>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Copyright 2022 University College London. All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     https://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+
+
+              </div>
+              
+            </main>
+            <footer class="footer-article noprint">
+                
+    <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+    <a class='left-prev' id="prev-link" href="../" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">Image reconstruction</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="../../recon/" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Image reconstruction</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+            </footer>
+        </div>
+    </div>
+    <div class="footer-content row">
+        <footer class="col footer"><p>
+  
+    By Javier Montalt Tordera<br/>
+  
+      &copy; Copyright 2021 University College London.<br/>
+</p>
+        </footer>
+    </div>
+    
+</div>
+
+
+      </div>
+    </div>
+  
+    <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+  
+
+  </body>
+</html>

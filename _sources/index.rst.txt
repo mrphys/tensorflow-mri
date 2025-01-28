@@ -29,6 +29,7 @@ TensorFlow MRI |release|
    :hidden:
 
    Tutorials <tutorials>
+   Segmentation <tutorials/segment>
    Image reconstruction <tutorials/recon>
 
 
