@@ -47,7 +47,7 @@ jobs:
 
       - name: Run test suite
         run: |
-          # make test PY_VERSION=${{ matrix.py_version }}
+          make test PY_VERSION=${{ matrix.py_version }}
 
       - name: Build wheel
         run: |
