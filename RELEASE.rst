@@ -1,4 +1,4 @@
-Release 0.22.0
+Release 0.23.0
 ==============
 
 This release bumps the supported TF version to v2.10.x. No other new
