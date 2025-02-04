@@ -330,6 +330,61 @@ class SSIMMultiscale(MeanMetricWrapperIQA):
                      multichannel=multichannel,
                      complex_part=complex_part)
 
+# We register this object with the Keras serialization framework under a
+# different name, in order to avoid clashing with the loss of the same name.
+@api_util.export("metrics.MeanAbsGrad",
+                 "metrics.MeanAbsoluteGradientErrorMetric")
+@tf.keras.utils.register_keras_serializable(
+    package='MRI', name='MeanAbsoluteGradientErrorMetric')
+class MeanAbsoluteGradientError(MeanMetricWrapperIQA):
+
+  def __init__(self,
+               method='sobel',
+               norm=False,
+               batch_dims=None,
+               image_dims=None,
+               multichannel=True,
+               complex_part=None,
+               name='mage',
+               dtype=None):
+    super().__init__(image_ops.mean_absolute_gradient_error,
+                     method=method,
+                     norm=norm,
+                     batch_dims=batch_dims,
+                     image_dims=image_dims,
+                     multichannel=multichannel,
+                     complex_part=complex_part,
+                     name=name,
+                     dtype=dtype)
+
+
+# We register this object with the Keras serialization framework under a
+# different name, in order to avoid clashing with the loss of the same name.
+@api_util.export("metrics.MeanSqGrad",
+                 "metrics.MeanSquaredGradientErrorMetric")
+@tf.keras.utils.register_keras_serializable(
+    package='MRI', name='MeanSquaredGradientErrorMetric')
+class MeanSquaredGradientError(MeanMetricWrapperIQA):
+
+  def __init__(self,
+               method='sobel',
+               norm=False,
+               batch_dims=None,
+               image_dims=None,
+               multichannel=True,
+               complex_part=None,
+               name='msge',
+               dtype=None):
+    super().__init__(image_ops.mean_squared_gradient_error,
+                     method=method,
+                     norm=norm,
+                     batch_dims=batch_dims,
+                     image_dims=image_dims,
+                     multichannel=multichannel,
+                     complex_part=complex_part,
+                     name=name,
+                     dtype=dtype)
+
 
 # For backward compatibility.
 @tf.keras.utils.register_keras_serializable(package="MRI")
