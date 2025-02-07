@@ -149,17 +149,16 @@ Here is a video tutorial demonstrating how TensorFlow MRI can be use (including 
 
 [![Watch the video](tools/assets/thumb.png)](https://vimeo.com/1054518675/e19c8abad3)
 
----
 
 Issues
-------
+-------------
 
 If you use this package and something does not work as you expected, please
 `file an issue <https://github.com/mrphys/tensorflow-mri/issues/new>`_
 describing your problem. We're here to help!
 
 Credits
--------
+-------------
 
 If you like this software, star the repository! |stars|
 
