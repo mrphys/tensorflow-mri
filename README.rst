@@ -147,7 +147,8 @@ Video Tutorial
 
 Here is a video tutorial demonstrating how TensorFlow MRI can be use (including a specific example problem for creating fully sampled k-space data from undersampled raw data with partial-fourier, as well as creating coil-combined 'ground truth' images from this, and paired undersampled radial multi-coild complex data, which is used to train a 3D Unet. I also show how to do a CS recosntruction of the same raw-data)
 
-[![Watch the video]]( https://vimeo.com/1054518675/e19c8abad3?ts=0&share=copy )
+[![Watch the video](https://player.vimeo.com/video/1054518675?h=e19c8abad3&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479)](https://vimeo.com/1054518675/e19c8abad3) 
+
 
 ---
 
