@@ -142,7 +142,7 @@ Visit the `docs <https://mrphys.github.io/tensorflow-mri/>`_ for guides,
 tutorials and the API reference.
 
 Video Tutorial
----------------
+---------------------
 
 
 Here is a video tutorial demonstrating how TensorFlow MRI can be use (including a specific example problem for creating fully sampled k-space data from undersampled raw data with partial-fourier, as well as creating coil-combined 'ground truth' images from this, and paired undersampled radial multi-coild complex data, which is used to train a 3D Unet. I also show how to do a CS recosntruction of the same raw-data)
