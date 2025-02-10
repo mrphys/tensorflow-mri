@@ -31,6 +31,7 @@ from tensorflow_mri.python.ops import geom_ops
 from tensorflow_mri.python.util import api_util
 from tensorflow_mri.python.util import check_util
 from tensorflow_mri.python.util import deprecation
+from tensorflow_mri.python.losses import iqa_losses
 
 
 @api_util.export("image.psnr")
@@ -1024,6 +1025,85 @@ def _gradient_operators(method, norm=False, rank=2, dtype=tf.float32):
       operator_1d = tf.reshape(operator_1d, operator_shape)
       kernels[d] *= operator_1d
   return tf.stack(kernels, axis=0)
+
+@tf.keras.utils.register_keras_serializable(package="MRI")
+class MeanAbsoluteGradientError(iqa_losses.LossFunctionWrapperIQA):
+  def __init__(self,
+               method='sobel',
+               norm=False,
+               batch_dims=None,
+               image_dims=None,
+               multichannel=True,
+               complex_part=None,
+               reduction=tf.keras.losses.Reduction.AUTO,
+               name='mean_absolute_gradient_error'):
+    super().__init__(mean_absolute_gradient_error,
+                     reduction=reduction, name=name, method=method,
+                     norm=norm, batch_dims=batch_dims, image_dims=image_dims,
+                     multichannel=multichannel, complex_part=complex_part)
+
+
+@tf.keras.utils.register_keras_serializable(package="MRI")
+class MeanSquaredGradientError(iqa_losses.LossFunctionWrapperIQA):
+  def __init__(self,
+               method='sobel',
+               norm=False,
+               batch_dims=None,
+               image_dims=None,
+               multichannel=True,
+               complex_part=None,
+               reduction=tf.keras.losses.Reduction.AUTO,
+               name='mean_squared_gradient_error'):
+    super().__init__(mean_squared_gradient_error,
+                     reduction=reduction, name=name, method=method,
+                     norm=norm, batch_dims=batch_dims, image_dims=image_dims,
+                     multichannel=multichannel, complex_part=complex_part)
+
+@tf.keras.utils.register_keras_serializable(package="MRI")
+def mean_absolute_error(y_true, y_pred):
+  y_pred = tf.convert_to_tensor(y_pred)
+  y_true = tf.cast(y_true, y_pred.dtype)
+  return tf.math.reduce_mean(tf.math.abs(y_pred - y_true), axis=-1)
+
+@tf.keras.utils.register_keras_serializable(package="MRI")
+def mean_squared_error(y_true, y_pred):
+  y_pred = tf.convert_to_tensor(y_pred)
+  y_true = tf.cast(y_true, y_pred.dtype)
+  return tf.math.reduce_mean(
+      tf.math.real(tf.math.squared_difference(y_pred, y_true)), axis=-1)
+
+
+@tf.keras.utils.register_keras_serializable(package="MRI")
+def mean_absolute_gradient_error(y_true, y_pred, method='sobel',
+                                 norm=False, batch_dims=None, image_dims=None):
+  y_pred = tf.convert_to_tensor(y_pred)
+  y_true = tf.cast(y_true, y_pred.dtype)
+
+  grad_true = image_gradients(
+      y_true, method=method, norm=norm,
+      batch_dims=batch_dims, image_dims=image_dims)
+  grad_pred = image_gradients(
+      y_pred, method=method, norm=norm,
+      batch_dims=batch_dims, image_dims=image_dims)
+
+  return mean_absolute_error(grad_true, grad_pred)
+
+
+@tf.keras.utils.register_keras_serializable(package="MRI")
+def mean_squared_gradient_error(y_true, y_pred, method='sobel',
+                                norm=False, batch_dims=None, image_dims=None):
+  y_pred = tf.convert_to_tensor(y_pred)
+  y_true = tf.cast(y_true, y_pred.dtype)
+
+  grad_true = image_gradients(
+      y_true, method=method, norm=norm,
+      batch_dims=batch_dims, image_dims=image_dims)
+  grad_pred = image_gradients(
+      y_pred, method=method, norm=norm,
+      batch_dims=batch_dims, image_dims=image_dims)
+
+  return mean_squared_error(grad_true, grad_pred)
+
 
 
 def _filter_image(image, kernels):
