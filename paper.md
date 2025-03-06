@@ -19,7 +19,7 @@ authors:
   - name: Olivier Jaubert
     orcid: 0000-0002-7854-4150
     affiliation: 1
-  - name: Rebecca Baker
+  - name: Rebecca Rose Baker
     orcid: 0000-0002-5016-7912
     affiliation: "1, 2"
   - name: Tina Yao
@@ -46,7 +46,7 @@ affiliations:
    ror: 02jx3x895   
  - name: UCL Centre for Medical Imaging, University College London, London, UK.
    index: 2
- - name: UCL Institute of Health Informatics, University College London, London, UK.
+ - name: UK Research and Innovation Centre for Doctoral Training in AI-enabled Healthcare Systems, University College London, London, UK.
    index: 3
 date: 26 February 2025
 bibliography: paper.bib
@@ -54,12 +54,12 @@ bibliography: paper.bib
 
 # Summary
 
-Open-source reconstruction software is vital for the ongoing development of accelerated Magnetic Resonance Imaging (MRI). Current state-of-the-art techniques are complex and often time-consuming, which hinders uptake of accelerated techniques in the clinical environment. Recently, Deep Learning (DL) has revolutionized MRI reconstruction, reducing reconstruction time while maintaining high image quality. However, deployment in the research and clinical environment requires a of combination of modern DL frameworks, such as TensorFlow, with MRI reconstruction operations. Thus, we present *‘TensorFlow MRI’*, an open-source library of TensorFlow operators for rapid computational MRI, particularly focussed on reconstruction (DL and non-DL) and post-processing for MRI data. 
+Open-source reconstruction software is vital for the ongoing development of accelerated magnetic resonance imaging (MRI). Current state-of-the-art techniques are complex and often time-consuming, which hinders uptake of accelerated techniques in the clinical environment. Recently, deep learning (DL) has revolutionized MRI reconstruction, reducing reconstruction time while maintaining high image quality. However, deployment in the research and clinical environment requires a of combination of modern DL frameworks, such as TensorFlow, with MRI reconstruction operations. Thus, we present *‘TensorFlow MRI’*, an open-source library of TensorFlow operators for rapid computational MRI, particularly focussed on reconstruction (DL and non-DL) and post-processing for MRI data. 
 
 # Statement of need
 
 *‘TensorFlow MRI’* is a library of TensorFlow operators for computational magnetic resonance imaging. Its purpose is to simplify the creation of end-to-end MRI reconstruction and processing pipelines, within a unified platform.
-*‘TensorFlow’* is a highly efficient scientific computing framework, designed for machine learning. It has two key advantages: (i) It can be run easily on heterogenous hardware, including CPUs and GPUs, with no or minimal code changes, and, (ii) It enables automatic differentiation, which is essential for deep learning, but also convenient for other optimization problems, such as iterative types of MRI reconstruction. 
+*‘TensorFlow’* is a highly efficient scientific computing framework, designed for machine learning (ML). It has two key advantages: (i) It can be run easily on heterogenous hardware, including CPUs and GPUs, with no or minimal code changes, and, (ii) It enables automatic differentiation, which is essential for deep learning, but also convenient for other optimization problems, such as iterative types of MRI reconstruction. 
 However, MRI reconstructions often rely on MRI-specific software, which does not typically interface easily with TensorFlow’s computing model. We developed *‘TensorFlow MRI’* to address this, by extending the TensorFlow ecosystem to seamlessly incorporate MRI-specific functionality.
 *‘TensorFlow MRI’* features include: MRI-adapted linear algebra and convex optimization frameworks, differentiable operators and utilities for k-space sampling, parallel imaging and compressed sensing, and other signal processing operators that are common in MRI. It also provides a collection of frequently used ML models, layers, metrics and loss functions for image reconstruction and post-processing.
 TensorFlow MRI also contributes a native non-uniform fast Fourier transform (NUFFT), a basic operation in non-Cartesian MRI reconstruction. We use and adapt the FINUFFT library [@BarnettNUFFT][@ShihNUFFT] and contribute interfacing code and a custom gradient implementation for seamless use within TensorFlow.
@@ -70,7 +70,7 @@ Furthermore, *‘TensorFlow MRI’* can be deployed in streaming reconstructions
 
 # Research projects
 
-*‘TensorFlow MRI’* has been used in several peer-reviewed publications, which are relevant for clinical MRI. Importantly, in all these applications, *‘TensorFlow MRI’* reconstruction has been seamlessly integrated with Gadgetron [@HansenGadgetron] for online low-latency reconstruction. The following three papers use *‘TensorFlow MRI’* for image reconstruction, with open-source code available:
+*‘TensorFlow MRI’* has been used in several peer-reviewed publications, which are relevant for clinical MRI. Importantly, in all these applications *‘TensorFlow MRI’* reconstruction has been seamlessly integrated with Gadgetron [@HansenGadgetron] for online low-latency reconstruction. The following three papers use *‘TensorFlow MRI’* for image reconstruction, with open-source code available:
 
 [@JaubertHyperSlice] *‘HyperSLICE: HyperBand optimized spiral for low-latency interactive cardiac examination’*
 Open source code available at: 
@@ -79,13 +79,13 @@ In this paper we used *‘TensorFlow MRI’* to train DL models to reconstruct r
 
 [@JaubertNaturalVideos] *‘Training deep learning based dynamic MR image reconstruction using open-source natural videos’*
 Open source code available at: [https://github.com/mrphys/Image_Reconstruction_Inter4k.git](https://github.com/mrphys/Image_Reconstruction_Inter4k.git)
-In this paper we used *‘TensorFlow MRI’* to train DL models using natural video data, for reconstruction of real-time MRI data. The repository uses Cartesian, Radial and Spiral real-time acquisition sampling trajectories, with reconstructions from VarNet, 3D-UNet and FastDVDNet models.
+In this paper we used *‘TensorFlow MRI’* to train DL models using natural video data, for reconstruction of real-time MRI data. The repository uses Cartesian, radial and spiral real-time acquisition sampling trajectories, with reconstructions from VarNet, 3D-UNet and FastDVDNet models.
  
 [@BakerDenoising] *‘Rapid 2D 23Na MRI of the calf using a denoising convolutional neural network’*
 Open source code available at: [https://github.com/mrphys/sodium_MRI_DnCNN.git](https://github.com/mrphys/sodium_MRI_DnCNN.git) 
-In this paper we used *‘TensorFlow MRI’* to train a denoising network to improve the image quality for Sodium MRI data.
+In this paper we used *‘TensorFlow MRI’* to train a denoising network to improve the image quality for sodium MRI data.
 
 # Financial support
-This work was funded by UKRI (grant MR/S032290/1).
+This work was funded by UKRI FLF (grant MR/S032290/1). RRB is funded by the Michael J. Fox Foundation for Parkinson’s Research (grant MJFF-021438)
 
 # References
