@@ -15,7 +15,8 @@ jobs:
   build:
 
     name: Build package
-    runs-on: ubuntu-24.04 # ubuntu-latest
+    #runs-on: ubuntu-24.04 # ubuntu-latest
+    runs-on: self-hosted
 
     container:
       image: ghcr.io/mrphys/tensorflow-manylinux:1.14.0
@@ -117,7 +118,9 @@ jobs:
 
     name: Release
     needs: build
-    runs-on: ubuntu-24.04 # ubuntu-latest
+    #runs-on: ubuntu-24.04 # ubuntu-latest
+    runs-on: self-hosted
+
     if: startsWith(github.ref, 'refs/tags')
 
     steps:
@@ -172,7 +175,9 @@ jobs:
           password: ${{ secrets.PYPI_API_TOKEN }}
           packages-dir: artifacts/
   paper:
-    runs-on: ubuntu-24.04 # ubuntu-latest
+    #runs-on: ubuntu-24.04 # ubuntu-latest
+    runs-on: self-hosted
+    
     name: Paper Draft
     steps:
       - name: Checkout
