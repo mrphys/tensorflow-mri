@@ -117,3 +117,54 @@
 [2025-03-13 16:26:37Z INFO JobDispatcher] Set runner/worker IPC timeout to 30 seconds.
 [2025-03-13 16:26:37Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
 [2025-03-13 16:26:38Z INFO GitHubActionsService] AAD Correlation ID for this token request: Unknown
+[2025-03-13 16:51:50Z INFO MessageListener] Message '2773057028059513339' received from session '8c6e7705-5e22-44c3-b70c-95e4d9e8d8ce'.
+[2025-03-13 16:51:50Z INFO ConfigurationStore] HasCredentials()
+[2025-03-13 16:51:50Z INFO ConfigurationStore] stored True
+[2025-03-13 16:51:50Z INFO CredentialManager] GetCredentialProvider
+[2025-03-13 16:51:50Z INFO CredentialManager] Creating type OAuth
+[2025-03-13 16:51:50Z INFO CredentialManager] Creating credential type: OAuth
+[2025-03-13 16:51:50Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-03-13 16:51:50Z INFO ActionsRunServer] EstablishVssConnection
+[2025-03-13 16:51:50Z INFO ActionsRunServer] Establish connection with 100 seconds timeout.
+[2025-03-13 16:51:50Z INFO GitHubActionsService] Starting operation Location.GetConnectionData
+[2025-03-13 16:51:51Z INFO GitHubActionsService] Finished operation Location.GetConnectionData
+[2025-03-13 16:51:51Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-03-13 16:51:51Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-03-13 16:51:51Z INFO GitHubActionsService] AAD Correlation ID for this token request: Unknown
+[2025-03-13 16:51:51Z INFO JobDispatcher] Job request 248 for plan 604df001-1dfe-44b0-a8bd-44bfa2ebab8f job d42c20df-8c41-5cde-0f8e-3f65be0e1af4 received.
+[2025-03-13 16:51:51Z INFO JobDispatcher] Pull OrchestrationId 604df001-1dfe-44b0-a8bd-44bfa2ebab8f.build._3_10 from JWT claims
+[2025-03-13 16:51:51Z INFO MessageListener] Received job status event. JobState: Busy
+[2025-03-13 16:51:51Z INFO MessageListener] _getMessagesTokenSource is already disposed.
+[2025-03-13 16:51:51Z INFO Terminal] WRITE LINE: 2025-03-13 16:51:51Z: Running job: Build package (3.10)
+[2025-03-13 16:51:51Z INFO JobDispatcher] Start renew job request 248 for job d42c20df-8c41-5cde-0f8e-3f65be0e1af4.
+[2025-03-13 16:51:52Z INFO JobDispatcher] Successfully renew job request 248, job is valid till 13/03/2025 17:01:52
+[2025-03-13 16:51:52Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-03-13 16:51:52Z INFO ProcessInvokerWrapper] Starting process:
+[2025-03-13 16:51:52Z INFO ProcessInvokerWrapper]   File name: '/home/jenny/tensorflow-mri/actions-runner/bin/Runner.Worker'
+[2025-03-13 16:51:52Z INFO ProcessInvokerWrapper]   Arguments: 'spawnclient 156 159'
+[2025-03-13 16:51:52Z INFO ProcessInvokerWrapper]   Working directory: '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-03-13 16:51:52Z INFO ProcessInvokerWrapper]   Require exit code zero: 'False'
+[2025-03-13 16:51:52Z INFO ProcessInvokerWrapper]   Encoding web name:  ; code page: ''
+[2025-03-13 16:51:52Z INFO ProcessInvokerWrapper]   Force kill process on cancellation: 'True'
+[2025-03-13 16:51:52Z INFO ProcessInvokerWrapper]   Redirected STDIN: 'False'
+[2025-03-13 16:51:52Z INFO ProcessInvokerWrapper]   Persist current code page: 'False'
+[2025-03-13 16:51:52Z INFO ProcessInvokerWrapper]   Keep redirected STDIN open: 'False'
+[2025-03-13 16:51:52Z INFO ProcessInvokerWrapper]   High priority process: 'True'
+[2025-03-13 16:51:52Z INFO ProcessInvokerWrapper] Process started with process id 2181839, waiting for process exit.
+[2025-03-13 16:51:52Z INFO JobDispatcher] Send job request message to worker for job d42c20df-8c41-5cde-0f8e-3f65be0e1af4.
+[2025-03-13 16:51:52Z INFO ProcessChannel] Sending message of length 32204, with hash '6672b0ddf36f2ea97a562a8593458f60cba6ff1016e7f51ddcfe555e189e8a14'
+[2025-03-13 16:51:52Z INFO JobNotification] Entering JobStarted Notification
+[2025-03-13 16:51:52Z INFO JobNotification] Entering StartMonitor
+[2025-03-13 16:52:52Z INFO JobDispatcher] Successfully renew job request 248, job is valid till 13/03/2025 17:02:52
+[2025-03-13 16:53:52Z INFO JobDispatcher] Successfully renew job request 248, job is valid till 13/03/2025 17:03:52
+[2025-03-13 16:54:52Z INFO JobDispatcher] Successfully renew job request 248, job is valid till 13/03/2025 17:04:52
+[2025-03-13 16:55:52Z INFO JobDispatcher] Successfully renew job request 248, job is valid till 13/03/2025 17:05:52
+[2025-03-13 16:56:52Z INFO JobDispatcher] Successfully renew job request 248, job is valid till 13/03/2025 17:06:52
+[2025-03-13 16:57:52Z INFO JobDispatcher] Successfully renew job request 248, job is valid till 13/03/2025 17:07:52
+[2025-03-13 16:58:53Z INFO JobDispatcher] Successfully renew job request 248, job is valid till 13/03/2025 17:08:53
+[2025-03-13 16:59:53Z INFO JobDispatcher] Successfully renew job request 248, job is valid till 13/03/2025 17:09:53
+[2025-03-13 17:00:53Z INFO JobDispatcher] Successfully renew job request 248, job is valid till 13/03/2025 17:10:53
+[2025-03-13 17:01:53Z INFO JobDispatcher] Successfully renew job request 248, job is valid till 13/03/2025 17:11:53
+[2025-03-13 17:02:53Z INFO JobDispatcher] Successfully renew job request 248, job is valid till 13/03/2025 17:12:53
+[2025-03-13 17:03:53Z INFO JobDispatcher] Successfully renew job request 248, job is valid till 13/03/2025 17:13:53
+[2025-03-13 17:04:53Z INFO JobDispatcher] Successfully renew job request 248, job is valid till 13/03/2025 17:14:53
