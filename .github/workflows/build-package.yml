@@ -31,8 +31,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          lfs: true
+        #with:
+        #  lfs: true
 
       - name: Free Disk Space Before Build
         run: |
