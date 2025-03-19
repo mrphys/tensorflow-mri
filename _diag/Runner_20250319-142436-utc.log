@@ -1,0 +1,221 @@
+[2025-03-19 14:24:36Z INFO HostContext] No proxy settings were found based on environmental variables (http_proxy/https_proxy/HTTP_PROXY/HTTPS_PROXY)
+[2025-03-19 14:24:36Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/bin'
+[2025-03-19 14:24:36Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri'
+[2025-03-19 14:24:36Z INFO HostContext] Well known config file 'Credentials': '/home/jenny/tensorflow-mri/.credentials'
+[2025-03-19 14:24:36Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/bin'
+[2025-03-19 14:24:36Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri'
+[2025-03-19 14:24:36Z INFO HostContext] Well known config file 'Runner': '/home/jenny/tensorflow-mri/.runner'
+[2025-03-19 14:24:36Z INFO Listener] Runner is built for Linux (X64) - linux-x64.
+[2025-03-19 14:24:36Z INFO Listener] RuntimeInformation: Ubuntu 20.04.6 LTS.
+[2025-03-19 14:24:36Z INFO Listener] Version: 2.322.0
+[2025-03-19 14:24:36Z INFO Listener] Commit: 0edc478ca75d0a753dcbcec7405f3f26db67b1ac
+[2025-03-19 14:24:36Z INFO Listener] Culture: en-GB
+[2025-03-19 14:24:36Z INFO Listener] UI Culture: en-GB
+[2025-03-19 14:24:36Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/bin'
+[2025-03-19 14:24:36Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri'
+[2025-03-19 14:24:36Z INFO Listener] Validating directory permissions for: '/home/jenny/tensorflow-mri'
+[2025-03-19 14:24:36Z INFO CommandLineParser] Parse
+[2025-03-19 14:24:36Z INFO CommandLineParser] Parsing 5 args
+[2025-03-19 14:24:36Z INFO CommandLineParser] parsing argument
+[2025-03-19 14:24:36Z INFO CommandLineParser] HasArgs: False
+[2025-03-19 14:24:36Z INFO CommandLineParser] Adding Command: configure
+[2025-03-19 14:24:36Z INFO CommandLineParser] parsing argument
+[2025-03-19 14:24:36Z INFO CommandLineParser] HasArgs: True
+[2025-03-19 14:24:36Z INFO CommandLineParser] arg: url
+[2025-03-19 14:24:36Z INFO CommandLineParser] parsing argument
+[2025-03-19 14:24:36Z INFO CommandLineParser] HasArgs: True
+[2025-03-19 14:24:36Z INFO CommandLineParser] Adding option 'url': 'https://github.com/mrphys/tensorflow-mri'
+[2025-03-19 14:24:36Z INFO CommandLineParser] parsing argument
+[2025-03-19 14:24:36Z INFO CommandLineParser] HasArgs: True
+[2025-03-19 14:24:36Z INFO CommandLineParser] arg: token
+[2025-03-19 14:24:36Z INFO CommandLineParser] parsing argument
+[2025-03-19 14:24:36Z INFO CommandLineParser] HasArgs: True
+[2025-03-19 14:24:36Z INFO CommandLineParser] Adding option 'token': '***'
+[2025-03-19 14:24:36Z INFO Listener] Arguments parsed
+[2025-03-19 14:24:36Z INFO Runner] ExecuteCommand
+[2025-03-19 14:24:36Z INFO ConfigurationStore] currentAssemblyLocation: /home/jenny/tensorflow-mri/bin/Runner.Listener.dll
+[2025-03-19 14:24:36Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/bin'
+[2025-03-19 14:24:36Z INFO ConfigurationStore] binPath: /home/jenny/tensorflow-mri/bin
+[2025-03-19 14:24:36Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/bin'
+[2025-03-19 14:24:36Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri'
+[2025-03-19 14:24:36Z INFO ConfigurationStore] RootFolder: /home/jenny/tensorflow-mri
+[2025-03-19 14:24:36Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/bin'
+[2025-03-19 14:24:36Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri'
+[2025-03-19 14:24:36Z INFO HostContext] Well known config file 'Runner': '/home/jenny/tensorflow-mri/.runner'
+[2025-03-19 14:24:36Z INFO ConfigurationStore] ConfigFilePath: /home/jenny/tensorflow-mri/.runner
+[2025-03-19 14:24:36Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/bin'
+[2025-03-19 14:24:36Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri'
+[2025-03-19 14:24:36Z INFO HostContext] Well known config file 'Credentials': '/home/jenny/tensorflow-mri/.credentials'
+[2025-03-19 14:24:36Z INFO ConfigurationStore] CredFilePath: /home/jenny/tensorflow-mri/.credentials
+[2025-03-19 14:24:36Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/bin'
+[2025-03-19 14:24:36Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri'
+[2025-03-19 14:24:36Z INFO HostContext] Well known config file 'MigratedCredentials': '/home/jenny/tensorflow-mri/.credentials_migrated'
+[2025-03-19 14:24:36Z INFO ConfigurationStore] MigratedCredFilePath: /home/jenny/tensorflow-mri/.credentials_migrated
+[2025-03-19 14:24:36Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/bin'
+[2025-03-19 14:24:36Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri'
+[2025-03-19 14:24:36Z INFO HostContext] Well known config file 'Service': '/home/jenny/tensorflow-mri/.service'
+[2025-03-19 14:24:36Z INFO ConfigurationStore] ServiceConfigFilePath: /home/jenny/tensorflow-mri/.service
+[2025-03-19 14:24:36Z INFO CommandSettings] Flag 'help': 'False'
+[2025-03-19 14:24:36Z INFO CommandSettings] Flag 'version': 'False'
+[2025-03-19 14:24:36Z INFO CommandSettings] Flag 'commit': 'False'
+[2025-03-19 14:24:36Z INFO CommandSettings] Flag 'check': 'False'
+[2025-03-19 14:24:36Z INFO CommandSettings] Command 'configure': 'True'
+[2025-03-19 14:24:36Z INFO Terminal] WRITE LINE: 
+[2025-03-19 14:24:36Z INFO Terminal] WRITE LINE: --------------------------------------------------------------------------------
+[2025-03-19 14:24:36Z INFO Terminal] WRITE LINE: |        ____ _ _   _   _       _          _        _   _                      |
+[2025-03-19 14:24:36Z INFO Terminal] WRITE LINE: |       / ___(_) |_| | | |_   _| |__      / \   ___| |_(_) ___  _ __  ___      |
+[2025-03-19 14:24:36Z INFO Terminal] WRITE LINE: |      | |  _| | __| |_| | | | | '_ \    / _ \ / __| __| |/ _ \| '_ \/ __|     |
+[2025-03-19 14:24:36Z INFO Terminal] WRITE LINE: |      | |_| | | |_|  _  | |_| | |_) |  / ___ \ (__| |_| | (_) | | | \__ \     |
+[2025-03-19 14:24:36Z INFO Terminal] WRITE LINE: |       \____|_|\__|_| |_|\__,_|_.__/  /_/   \_\___|\__|_|\___/|_| |_|___/     |
+[2025-03-19 14:24:36Z INFO Terminal] WRITE LINE: |                                                                              |
+[2025-03-19 14:24:36Z INFO Terminal] WRITE: |                       
+[2025-03-19 14:24:36Z INFO Terminal] WRITE: Self-hosted runner registration
+[2025-03-19 14:24:36Z INFO Terminal] WRITE LINE:                         |
+[2025-03-19 14:24:36Z INFO Terminal] WRITE LINE: |                                                                              |
+[2025-03-19 14:24:36Z INFO Terminal] WRITE LINE: --------------------------------------------------------------------------------
+[2025-03-19 14:24:36Z INFO ConfigurationManager] ConfigureAsync
+[2025-03-19 14:24:36Z INFO CommandSettings] Flag 'generateServiceConfig': 'False'
+[2025-03-19 14:24:36Z INFO ConfigurationStore] IsConfigured()
+[2025-03-19 14:24:36Z INFO ConfigurationStore] IsConfigured: False
+[2025-03-19 14:24:36Z INFO ConfigurationManager] Is configured: False
+[2025-03-19 14:24:36Z INFO CommandSettings] Arg 'url': 'https://github.com/mrphys/tensorflow-mri'
+[2025-03-19 14:24:36Z INFO CommandSettings] Remove url from Arg dictionary.
+[2025-03-19 14:24:36Z INFO CommandSettings] Arg 'token': '***'
+[2025-03-19 14:24:36Z INFO CommandSettings] Remove token from Arg dictionary.
+[2025-03-19 14:24:37Z INFO ConfigurationManager] Http response code: OK from 'POST https://api.github.com/actions/runner-registration' (CCD8:5B0A2:E7327:117A56:67DAD3A4)
+[2025-03-19 14:24:37Z INFO ConfigurationManager] Using V2 flow: False
+[2025-03-19 14:24:37Z INFO ConfigurationManager] cred retrieved via GitHub auth
+[2025-03-19 14:24:37Z INFO RunnerServer] EstablishVssConnection
+[2025-03-19 14:24:37Z INFO RunnerServer] Establish connection with 100 seconds timeout.
+[2025-03-19 14:24:37Z INFO GitHubActionsService] Starting operation Location.GetConnectionData
+[2025-03-19 14:24:37Z INFO RunnerServer] EstablishVssConnection
+[2025-03-19 14:24:37Z INFO RunnerServer] Establish connection with 60 seconds timeout.
+[2025-03-19 14:24:37Z INFO GitHubActionsService] Starting operation Location.GetConnectionData
+[2025-03-19 14:24:37Z INFO RunnerServer] EstablishVssConnection
+[2025-03-19 14:24:37Z INFO RunnerServer] Establish connection with 60 seconds timeout.
+[2025-03-19 14:24:37Z INFO GitHubActionsService] Starting operation Location.GetConnectionData
+[2025-03-19 14:24:37Z INFO GitHubActionsService] Finished operation Location.GetConnectionData
+[2025-03-19 14:24:37Z INFO GitHubActionsService] Finished operation Location.GetConnectionData
+[2025-03-19 14:24:37Z INFO GitHubActionsService] Finished operation Location.GetConnectionData
+[2025-03-19 14:24:37Z INFO Terminal] WRITE LINE: 
+[2025-03-19 14:24:37Z INFO ConfigurationManager] Test Connection complete.
+[2025-03-19 14:24:37Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/bin'
+[2025-03-19 14:24:37Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri'
+[2025-03-19 14:24:37Z INFO HostContext] Well known config file 'RSACredentials': '/home/jenny/tensorflow-mri/.credentials_rsaparams'
+[2025-03-19 14:24:37Z INFO RSAFileKeyManager] Creating new RSA key using 2048-bit key length
+[2025-03-19 14:24:37Z INFO RSAFileKeyManager] Successfully saved RSA key parameters to file /home/jenny/tensorflow-mri/.credentials_rsaparams
+[2025-03-19 14:24:37Z INFO RSAFileKeyManager] Which2: 'chmod'
+[2025-03-19 14:24:37Z INFO RSAFileKeyManager] Location: '/usr/bin/chmod'
+[2025-03-19 14:24:37Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/bin'
+[2025-03-19 14:24:37Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri'
+[2025-03-19 14:24:37Z INFO ProcessInvokerWrapper] Starting process:
+[2025-03-19 14:24:37Z INFO ProcessInvokerWrapper]   File name: '/usr/bin/chmod'
+[2025-03-19 14:24:37Z INFO ProcessInvokerWrapper]   Arguments: '600 /home/jenny/tensorflow-mri/.credentials_rsaparams'
+[2025-03-19 14:24:37Z INFO ProcessInvokerWrapper]   Working directory: '/home/jenny/tensorflow-mri'
+[2025-03-19 14:24:37Z INFO ProcessInvokerWrapper]   Require exit code zero: 'False'
+[2025-03-19 14:24:37Z INFO ProcessInvokerWrapper]   Encoding web name:  ; code page: ''
+[2025-03-19 14:24:37Z INFO ProcessInvokerWrapper]   Force kill process on cancellation: 'False'
+[2025-03-19 14:24:37Z INFO ProcessInvokerWrapper]   Redirected STDIN: 'False'
+[2025-03-19 14:24:37Z INFO ProcessInvokerWrapper]   Persist current code page: 'False'
+[2025-03-19 14:24:37Z INFO ProcessInvokerWrapper]   Keep redirected STDIN open: 'False'
+[2025-03-19 14:24:37Z INFO ProcessInvokerWrapper]   High priority process: 'False'
+[2025-03-19 14:24:37Z INFO ProcessInvokerWrapper] Process started with process id 1931861, waiting for process exit.
+[2025-03-19 14:24:37Z INFO ProcessInvokerWrapper] STDOUT/STDERR stream read finished.
+[2025-03-19 14:24:37Z INFO ProcessInvokerWrapper] STDOUT/STDERR stream read finished.
+[2025-03-19 14:24:37Z INFO ProcessInvokerWrapper] Finished process 1931861 with exit code 0, and elapsed time 00:00:00.0032349.
+[2025-03-19 14:24:37Z INFO RSAFileKeyManager] Successfully set permissions for RSA key parameters file /home/jenny/tensorflow-mri/.credentials_rsaparams
+[2025-03-19 14:24:37Z INFO CommandSettings] Arg 'runnergroup': ''
+[2025-03-19 14:24:37Z INFO CommandSettings] Flag 'unattended': 'False'
+[2025-03-19 14:24:37Z INFO PromptManager] ReadValue
+[2025-03-19 14:24:37Z INFO Terminal] WRITE: Enter the name of the runner group to add this runner to: 
+[2025-03-19 14:24:37Z INFO Terminal] WRITE: [press Enter for Default] 
+[2025-03-19 14:24:37Z INFO Terminal] READ LINE
+[2025-03-19 14:24:41Z INFO Terminal] Read value: ''
+[2025-03-19 14:24:41Z INFO PromptManager] Falling back to the default: 'Default'
+[2025-03-19 14:24:41Z INFO Terminal] WRITE LINE: 
+[2025-03-19 14:24:41Z INFO ConfigurationManager] Found a self-hosted runner group with id 1 and name Default
+[2025-03-19 14:24:41Z INFO CommandSettings] Flag 'disableupdate': 'False'
+[2025-03-19 14:24:41Z INFO CommandSettings] Flag 'ephemeral': 'False'
+[2025-03-19 14:24:41Z INFO CommandSettings] Arg 'name': ''
+[2025-03-19 14:24:41Z INFO CommandSettings] Flag 'unattended': 'False'
+[2025-03-19 14:24:41Z INFO PromptManager] ReadValue
+[2025-03-19 14:24:41Z INFO Terminal] WRITE: Enter the name of runner: 
+[2025-03-19 14:24:41Z INFO Terminal] WRITE: [press Enter for eagle] 
+[2025-03-19 14:24:41Z INFO Terminal] READ LINE
+[2025-03-19 14:24:41Z INFO Terminal] Read value: ''
+[2025-03-19 14:24:41Z INFO PromptManager] Falling back to the default: 'eagle'
+[2025-03-19 14:24:41Z INFO Terminal] WRITE LINE: 
+[2025-03-19 14:24:41Z INFO CommandSettings] Arg 'labels': ''
+[2025-03-19 14:24:41Z INFO CommandSettings] Flag 'unattended': 'False'
+[2025-03-19 14:24:41Z INFO PromptManager] ReadValue
+[2025-03-19 14:24:41Z INFO Terminal] WRITE: This runner will have the following labels: 'self-hosted', 'Linux', 'X64' 
+Enter any additional labels (ex. label-1,label-2): 
+[2025-03-19 14:24:41Z INFO Terminal] WRITE: [press Enter to skip] 
+[2025-03-19 14:24:41Z INFO Terminal] READ LINE
+[2025-03-19 14:24:42Z INFO Terminal] Read value: ''
+[2025-03-19 14:24:42Z INFO Terminal] WRITE LINE: 
+[2025-03-19 14:24:42Z INFO CommandSettings] Flag 'disableupdate': 'False'
+[2025-03-19 14:24:42Z INFO CommandSettings] Flag 'no-default-labels': 'False'
+[2025-03-19 14:24:43Z INFO CommandSettings] Flag 'disableupdate': 'False'
+[2025-03-19 14:24:43Z INFO CommandSettings] Flag 'ephemeral': 'False'
+[2025-03-19 14:24:43Z INFO ConfigurationStore] Saving OAuth credential @ /home/jenny/tensorflow-mri/.credentials
+[2025-03-19 14:24:43Z INFO ConfigurationStore] Credentials Saved.
+[2025-03-19 14:24:43Z INFO ConfigurationStore] HasCredentials()
+[2025-03-19 14:24:43Z INFO ConfigurationStore] stored True
+[2025-03-19 14:24:43Z INFO CredentialManager] GetCredentialProvider
+[2025-03-19 14:24:43Z INFO CredentialManager] Creating type OAuth
+[2025-03-19 14:24:43Z INFO CredentialManager] Creating credential type: OAuth
+[2025-03-19 14:24:43Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/.credentials_rsaparams
+[2025-03-19 14:24:43Z INFO RunnerServer] EstablishVssConnection
+[2025-03-19 14:24:43Z INFO RunnerServer] Establish connection with 100 seconds timeout.
+[2025-03-19 14:24:43Z INFO GitHubActionsService] Starting operation Location.GetConnectionData
+[2025-03-19 14:24:43Z INFO RunnerServer] EstablishVssConnection
+[2025-03-19 14:24:43Z INFO RunnerServer] Establish connection with 60 seconds timeout.
+[2025-03-19 14:24:43Z INFO GitHubActionsService] Starting operation Location.GetConnectionData
+[2025-03-19 14:24:43Z INFO RunnerServer] EstablishVssConnection
+[2025-03-19 14:24:43Z INFO RunnerServer] Establish connection with 60 seconds timeout.
+[2025-03-19 14:24:43Z INFO GitHubActionsService] Starting operation Location.GetConnectionData
+[2025-03-19 14:24:43Z INFO GitHubActionsService] Finished operation Location.GetConnectionData
+[2025-03-19 14:24:43Z INFO GitHubActionsService] Finished operation Location.GetConnectionData
+[2025-03-19 14:24:43Z INFO GitHubActionsService] Finished operation Location.GetConnectionData
+[2025-03-19 14:24:43Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/.credentials_rsaparams
+[2025-03-19 14:24:43Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/.credentials_rsaparams
+[2025-03-19 14:24:44Z INFO GitHubActionsService] AAD Correlation ID for this token request: Unknown
+[2025-03-19 14:24:44Z INFO CommandSettings] Arg 'work': ''
+[2025-03-19 14:24:44Z INFO CommandSettings] Flag 'unattended': 'False'
+[2025-03-19 14:24:44Z INFO PromptManager] ReadValue
+[2025-03-19 14:24:44Z INFO Terminal] WRITE: Enter name of work folder: 
+[2025-03-19 14:24:44Z INFO Terminal] WRITE: [press Enter for _work] 
+[2025-03-19 14:24:44Z INFO Terminal] READ LINE
+[2025-03-19 14:24:44Z INFO Terminal] Read value: ''
+[2025-03-19 14:24:44Z INFO PromptManager] Falling back to the default: '_work'
+[2025-03-19 14:24:44Z INFO ConfigurationStore] Saving runner settings.
+[2025-03-19 14:24:44Z INFO ConfigurationStore] Settings Saved.
+[2025-03-19 14:24:44Z INFO Terminal] WRITE LINE: 
+[2025-03-19 14:24:44Z INFO Terminal] WRITE LINE: 
+[2025-03-19 14:24:44Z INFO SystemDControlManager] Service name 'actions.runner.mrphys-tensorflow-mri.eagle.service' display name 'GitHub Actions Runner (mrphys-tensorflow-mri.eagle)' will be used for service configuration.
+[2025-03-19 14:24:44Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/bin'
+[2025-03-19 14:24:44Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri'
+[2025-03-19 14:24:44Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/bin'
+[2025-03-19 14:24:44Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/bin'
+[2025-03-19 14:24:44Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri'
+[2025-03-19 14:24:44Z INFO UnixUtil] Which2: 'chmod'
+[2025-03-19 14:24:44Z INFO UnixUtil] Location: '/usr/bin/chmod'
+[2025-03-19 14:24:44Z INFO UnixUtil] Running /usr/bin/chmod 755 "/home/jenny/tensorflow-mri/svc.sh"
+[2025-03-19 14:24:44Z INFO ProcessInvokerWrapper] Starting process:
+[2025-03-19 14:24:44Z INFO ProcessInvokerWrapper]   File name: '/usr/bin/chmod'
+[2025-03-19 14:24:44Z INFO ProcessInvokerWrapper]   Arguments: '755 "/home/jenny/tensorflow-mri/svc.sh"'
+[2025-03-19 14:24:44Z INFO ProcessInvokerWrapper]   Working directory: '/home/jenny/tensorflow-mri'
+[2025-03-19 14:24:44Z INFO ProcessInvokerWrapper]   Require exit code zero: 'True'
+[2025-03-19 14:24:44Z INFO ProcessInvokerWrapper]   Encoding web name:  ; code page: ''
+[2025-03-19 14:24:44Z INFO ProcessInvokerWrapper]   Force kill process on cancellation: 'False'
+[2025-03-19 14:24:44Z INFO ProcessInvokerWrapper]   Redirected STDIN: 'False'
+[2025-03-19 14:24:44Z INFO ProcessInvokerWrapper]   Persist current code page: 'False'
+[2025-03-19 14:24:44Z INFO ProcessInvokerWrapper]   Keep redirected STDIN open: 'False'
+[2025-03-19 14:24:44Z INFO ProcessInvokerWrapper]   High priority process: 'False'
+[2025-03-19 14:24:44Z INFO ProcessInvokerWrapper] Updated oom_score_adj to 500 for PID: 1931940.
+[2025-03-19 14:24:44Z INFO ProcessInvokerWrapper] Process started with process id 1931940, waiting for process exit.
+[2025-03-19 14:24:44Z INFO ProcessInvokerWrapper] STDOUT/STDERR stream read finished.
+[2025-03-19 14:24:44Z INFO ProcessInvokerWrapper] STDOUT/STDERR stream read finished.
+[2025-03-19 14:24:44Z INFO ProcessInvokerWrapper] Finished process 1931940 with exit code 0, and elapsed time 00:00:00.0013216.
+[2025-03-19 14:24:44Z INFO Listener] Runner execution has finished with return code 0

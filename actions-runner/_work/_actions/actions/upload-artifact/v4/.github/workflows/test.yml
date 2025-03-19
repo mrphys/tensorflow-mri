@@ -16,7 +16,8 @@ jobs:
 
     strategy:
       matrix:
-        runs-on: [ubuntu-latest, macos-latest, windows-latest]
+        #runs-on: [ubuntu-latest, macos-latest, windows-latest]
+        runs-on: self-hosted
       fail-fast: false
 
     runs-on: ${{ matrix.runs-on }}
@@ -216,7 +217,8 @@ jobs:
   merge:
     name: Merge
     needs: build
-    runs-on: ubuntu-latest
+    #runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
     - name: Checkout

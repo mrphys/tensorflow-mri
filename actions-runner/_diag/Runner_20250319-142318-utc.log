@@ -1,0 +1,92 @@
+[2025-03-19 14:23:18Z INFO HostContext] No proxy settings were found based on environmental variables (http_proxy/https_proxy/HTTP_PROXY/HTTPS_PROXY)
+[2025-03-19 14:23:18Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-03-19 14:23:18Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri/actions-runner'
+[2025-03-19 14:23:18Z INFO HostContext] Well known config file 'Credentials': '/home/jenny/tensorflow-mri/actions-runner/.credentials'
+[2025-03-19 14:23:18Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-03-19 14:23:18Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri/actions-runner'
+[2025-03-19 14:23:18Z INFO HostContext] Well known config file 'Runner': '/home/jenny/tensorflow-mri/actions-runner/.runner'
+[2025-03-19 14:23:18Z INFO Listener] Runner is built for Linux (X64) - linux-x64.
+[2025-03-19 14:23:18Z INFO Listener] RuntimeInformation: Ubuntu 20.04.6 LTS.
+[2025-03-19 14:23:18Z INFO Listener] Version: 2.322.0
+[2025-03-19 14:23:18Z INFO Listener] Commit: 0edc478ca75d0a753dcbcec7405f3f26db67b1ac
+[2025-03-19 14:23:18Z INFO Listener] Culture: en-GB
+[2025-03-19 14:23:18Z INFO Listener] UI Culture: en-GB
+[2025-03-19 14:23:18Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-03-19 14:23:18Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri/actions-runner'
+[2025-03-19 14:23:18Z INFO Listener] Validating directory permissions for: '/home/jenny/tensorflow-mri/actions-runner'
+[2025-03-19 14:23:18Z INFO CommandLineParser] Parse
+[2025-03-19 14:23:18Z INFO CommandLineParser] Parsing 3 args
+[2025-03-19 14:23:18Z INFO CommandLineParser] parsing argument
+[2025-03-19 14:23:18Z INFO CommandLineParser] HasArgs: False
+[2025-03-19 14:23:18Z INFO CommandLineParser] Adding Command: remove
+[2025-03-19 14:23:18Z INFO CommandLineParser] parsing argument
+[2025-03-19 14:23:18Z INFO CommandLineParser] HasArgs: True
+[2025-03-19 14:23:18Z INFO CommandLineParser] arg: token
+[2025-03-19 14:23:18Z INFO CommandLineParser] parsing argument
+[2025-03-19 14:23:18Z INFO CommandLineParser] HasArgs: True
+[2025-03-19 14:23:18Z INFO CommandLineParser] Adding option 'token': '***'
+[2025-03-19 14:23:18Z INFO Listener] Arguments parsed
+[2025-03-19 14:23:18Z INFO Runner] ExecuteCommand
+[2025-03-19 14:23:18Z INFO ConfigurationStore] currentAssemblyLocation: /home/jenny/tensorflow-mri/actions-runner/bin/Runner.Listener.dll
+[2025-03-19 14:23:18Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-03-19 14:23:18Z INFO ConfigurationStore] binPath: /home/jenny/tensorflow-mri/actions-runner/bin
+[2025-03-19 14:23:18Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-03-19 14:23:18Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri/actions-runner'
+[2025-03-19 14:23:18Z INFO ConfigurationStore] RootFolder: /home/jenny/tensorflow-mri/actions-runner
+[2025-03-19 14:23:18Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-03-19 14:23:18Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri/actions-runner'
+[2025-03-19 14:23:18Z INFO HostContext] Well known config file 'Runner': '/home/jenny/tensorflow-mri/actions-runner/.runner'
+[2025-03-19 14:23:18Z INFO ConfigurationStore] ConfigFilePath: /home/jenny/tensorflow-mri/actions-runner/.runner
+[2025-03-19 14:23:18Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-03-19 14:23:18Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri/actions-runner'
+[2025-03-19 14:23:18Z INFO HostContext] Well known config file 'Credentials': '/home/jenny/tensorflow-mri/actions-runner/.credentials'
+[2025-03-19 14:23:18Z INFO ConfigurationStore] CredFilePath: /home/jenny/tensorflow-mri/actions-runner/.credentials
+[2025-03-19 14:23:18Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-03-19 14:23:18Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri/actions-runner'
+[2025-03-19 14:23:18Z INFO HostContext] Well known config file 'MigratedCredentials': '/home/jenny/tensorflow-mri/actions-runner/.credentials_migrated'
+[2025-03-19 14:23:18Z INFO ConfigurationStore] MigratedCredFilePath: /home/jenny/tensorflow-mri/actions-runner/.credentials_migrated
+[2025-03-19 14:23:18Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-03-19 14:23:18Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri/actions-runner'
+[2025-03-19 14:23:18Z INFO HostContext] Well known config file 'Service': '/home/jenny/tensorflow-mri/actions-runner/.service'
+[2025-03-19 14:23:18Z INFO ConfigurationStore] ServiceConfigFilePath: /home/jenny/tensorflow-mri/actions-runner/.service
+[2025-03-19 14:23:18Z INFO CommandSettings] Flag 'help': 'False'
+[2025-03-19 14:23:18Z INFO CommandSettings] Flag 'version': 'False'
+[2025-03-19 14:23:18Z INFO CommandSettings] Flag 'commit': 'False'
+[2025-03-19 14:23:18Z INFO CommandSettings] Flag 'check': 'False'
+[2025-03-19 14:23:18Z INFO CommandSettings] Command 'configure': 'False'
+[2025-03-19 14:23:18Z INFO CommandSettings] Command 'remove': 'True'
+[2025-03-19 14:23:18Z INFO CommandSettings] Flag 'local': 'False'
+[2025-03-19 14:23:18Z INFO ConfigurationStore] IsServiceConfigured()
+[2025-03-19 14:23:18Z INFO ConfigurationStore] IsServiceConfigured: False
+[2025-03-19 14:23:18Z INFO ConfigurationStore] IsConfigured()
+[2025-03-19 14:23:18Z INFO ConfigurationStore] IsConfigured: True
+[2025-03-19 14:23:18Z INFO ConfigurationStore] HasCredentials()
+[2025-03-19 14:23:18Z INFO ConfigurationStore] stored True
+[2025-03-19 14:23:18Z INFO ConfigurationStore] Read setting file: 294 chars
+[2025-03-19 14:23:18Z INFO CommandSettings] Arg 'token': '***'
+[2025-03-19 14:23:18Z INFO CommandSettings] Remove token from Arg dictionary.
+[2025-03-19 14:23:19Z INFO ConfigurationManager] Http response code: OK from 'POST https://api.github.com/actions/runner-registration' (8098:37518B:17367:1C2B2:67DAD356)
+[2025-03-19 14:23:19Z INFO ConfigurationManager] cred retrieved via GitHub auth
+[2025-03-19 14:23:19Z INFO RunnerServer] EstablishVssConnection
+[2025-03-19 14:23:19Z INFO RunnerServer] Establish connection with 100 seconds timeout.
+[2025-03-19 14:23:19Z INFO GitHubActionsService] Starting operation Location.GetConnectionData
+[2025-03-19 14:23:19Z INFO RunnerServer] EstablishVssConnection
+[2025-03-19 14:23:19Z INFO RunnerServer] Establish connection with 60 seconds timeout.
+[2025-03-19 14:23:19Z INFO GitHubActionsService] Starting operation Location.GetConnectionData
+[2025-03-19 14:23:19Z INFO RunnerServer] EstablishVssConnection
+[2025-03-19 14:23:19Z INFO RunnerServer] Establish connection with 60 seconds timeout.
+[2025-03-19 14:23:19Z INFO GitHubActionsService] Starting operation Location.GetConnectionData
+[2025-03-19 14:23:19Z INFO GitHubActionsService] Finished operation Location.GetConnectionData
+[2025-03-19 14:23:19Z INFO GitHubActionsService] Finished operation Location.GetConnectionData
+[2025-03-19 14:23:19Z INFO GitHubActionsService] Finished operation Location.GetConnectionData
+[2025-03-19 14:23:19Z INFO Terminal] WRITE LINE: 
+[2025-03-19 14:23:19Z INFO ConfigurationStore] IsConfigured()
+[2025-03-19 14:23:19Z INFO ConfigurationStore] IsConfigured: True
+[2025-03-19 14:23:19Z INFO ConfigurationStore] HasCredentials()
+[2025-03-19 14:23:19Z INFO ConfigurationStore] stored True
+[2025-03-19 14:23:19Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-03-19 14:23:19Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri/actions-runner'
+[2025-03-19 14:23:19Z INFO HostContext] Well known config file 'RSACredentials': '/home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams'
+[2025-03-19 14:23:19Z INFO RSAFileKeyManager] Deleting RSA key parameters file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-03-19 14:23:19Z INFO Terminal] WRITE LINE: 
+[2025-03-19 14:23:19Z INFO Listener] Runner execution has finished with return code 0
