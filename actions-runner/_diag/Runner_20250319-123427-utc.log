@@ -219,3 +219,208 @@
 [2025-03-19 13:24:30Z INFO GitHubActionsService] AAD Correlation ID for this token request: Unknown
 [2025-03-19 13:29:32Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
 [2025-03-19 13:29:32Z INFO GitHubActionsService] AAD Correlation ID for this token request: Unknown
+[2025-03-19 13:43:46Z INFO MessageListener] No message retrieved from session '6785f28f-46b8-409b-b987-346dc0132ec9' within last 30 minutes.
+[2025-03-19 13:44:08Z INFO MessageListener] Message '571637294444564502' received from session '6785f28f-46b8-409b-b987-346dc0132ec9'.
+[2025-03-19 13:44:08Z INFO ConfigurationStore] HasCredentials()
+[2025-03-19 13:44:08Z INFO ConfigurationStore] stored True
+[2025-03-19 13:44:08Z INFO CredentialManager] GetCredentialProvider
+[2025-03-19 13:44:08Z INFO CredentialManager] Creating type OAuth
+[2025-03-19 13:44:08Z INFO CredentialManager] Creating credential type: OAuth
+[2025-03-19 13:44:08Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-03-19 13:44:08Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-03-19 13:44:08Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-03-19 13:44:09Z INFO GitHubActionsService] AAD Correlation ID for this token request: Unknown
+[2025-03-19 13:44:10Z INFO JobDispatcher] Job request 0 for plan b0449f54-93fc-4d57-8f9f-b37b3b557707 job 9f24585b-db1b-5672-990f-12d710c54840 received.
+[2025-03-19 13:44:10Z INFO MessageListener] Received job status event. JobState: Busy
+[2025-03-19 13:44:10Z INFO MessageListener] _getMessagesTokenSource is already disposed.
+[2025-03-19 13:44:10Z INFO JobDispatcher] Job request 192e8edf-50f6-5ec3-baea-953e35899daa processed succeed.
+[2025-03-19 13:44:10Z INFO Terminal] WRITE LINE: 2025-03-19 13:44:10Z: Running job: Build package (3.9)
+[2025-03-19 13:44:10Z INFO JobDispatcher] Start renew job request 0 for job 9f24585b-db1b-5672-990f-12d710c54840.
+[2025-03-19 13:44:10Z INFO JobDispatcher] Successfully renew job 9f24585b-db1b-5672-990f-12d710c54840, job is valid till 19/03/2025 13:54:10
+[2025-03-19 13:44:10Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-03-19 13:44:10Z INFO ProcessInvokerWrapper] Starting process:
+[2025-03-19 13:44:10Z INFO ProcessInvokerWrapper]   File name: '/home/jenny/tensorflow-mri/actions-runner/bin/Runner.Worker'
+[2025-03-19 13:44:10Z INFO ProcessInvokerWrapper]   Arguments: 'spawnclient 148 156'
+[2025-03-19 13:44:10Z INFO ProcessInvokerWrapper]   Working directory: '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-03-19 13:44:10Z INFO ProcessInvokerWrapper]   Require exit code zero: 'False'
+[2025-03-19 13:44:10Z INFO ProcessInvokerWrapper]   Encoding web name:  ; code page: ''
+[2025-03-19 13:44:10Z INFO ProcessInvokerWrapper]   Force kill process on cancellation: 'True'
+[2025-03-19 13:44:10Z INFO ProcessInvokerWrapper]   Redirected STDIN: 'False'
+[2025-03-19 13:44:10Z INFO ProcessInvokerWrapper]   Persist current code page: 'False'
+[2025-03-19 13:44:10Z INFO ProcessInvokerWrapper]   Keep redirected STDIN open: 'False'
+[2025-03-19 13:44:10Z INFO ProcessInvokerWrapper]   High priority process: 'True'
+[2025-03-19 13:44:10Z INFO ProcessInvokerWrapper] Process started with process id 1864653, waiting for process exit.
+[2025-03-19 13:44:10Z INFO JobDispatcher] Send job request message to worker for job 9f24585b-db1b-5672-990f-12d710c54840.
+[2025-03-19 13:44:10Z INFO ProcessChannel] Sending message of length 27078, with hash '07007ba81571919b5f40056fc897ba3dfe658ec31fb567851915df9e13ada165'
+[2025-03-19 13:44:10Z INFO JobNotification] Entering JobStarted Notification
+[2025-03-19 13:44:10Z INFO JobNotification] Entering StartMonitor
+[2025-03-19 13:44:37Z INFO ProcessInvokerWrapper] STDOUT/STDERR stream read finished.
+[2025-03-19 13:44:37Z INFO ProcessInvokerWrapper] STDOUT/STDERR stream read finished.
+[2025-03-19 13:44:37Z INFO ProcessInvokerWrapper] Finished process 1864653 with exit code 102, and elapsed time 00:00:26.8211773.
+[2025-03-19 13:44:37Z INFO JobDispatcher] Worker finished for job 9f24585b-db1b-5672-990f-12d710c54840. Code: 102
+[2025-03-19 13:44:37Z INFO JobDispatcher] finish job request for job 9f24585b-db1b-5672-990f-12d710c54840 with result: Failed
+[2025-03-19 13:44:37Z INFO Terminal] WRITE LINE: 2025-03-19 13:44:37Z: Job Build package (3.9) completed with result: Failed
+[2025-03-19 13:44:37Z INFO JobDispatcher] Stop renew job request for job 9f24585b-db1b-5672-990f-12d710c54840.
+[2025-03-19 13:44:37Z INFO JobDispatcher] job renew has been cancelled, stop renew job 9f24585b-db1b-5672-990f-12d710c54840.
+[2025-03-19 13:44:37Z INFO JobNotification] Entering JobCompleted Notification
+[2025-03-19 13:44:37Z INFO JobNotification] Entering EndMonitor
+[2025-03-19 13:44:37Z INFO MessageListener] Received job status event. JobState: Online
+[2025-03-19 13:44:37Z INFO MessageListener] Message '1334343901878870472' received from session '6785f28f-46b8-409b-b987-346dc0132ec9'.
+[2025-03-19 13:44:37Z INFO ConfigurationStore] HasCredentials()
+[2025-03-19 13:44:37Z INFO ConfigurationStore] stored True
+[2025-03-19 13:44:37Z INFO CredentialManager] GetCredentialProvider
+[2025-03-19 13:44:37Z INFO CredentialManager] Creating type OAuth
+[2025-03-19 13:44:37Z INFO CredentialManager] Creating credential type: OAuth
+[2025-03-19 13:44:37Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-03-19 13:44:37Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-03-19 13:44:37Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-03-19 13:44:37Z INFO GitHubActionsService] AAD Correlation ID for this token request: Unknown
+[2025-03-19 13:44:37Z ERR  GitHubActionsService] POST request to https://run-actions-1-azure-eastus.actions.githubusercontent.com/29/acquirejob failed. HTTP Status: Conflict
+[2025-03-19 13:44:37Z INFO Runner] Skipping message Job. Job message already acquired '62ee582a-51e4-5fe1-ad26-cd08e1bd049c'. job assignment is invalid: MissingKey
+[2025-03-19 13:44:39Z INFO MessageListener] Message '3247446629867151477' received from session '6785f28f-46b8-409b-b987-346dc0132ec9'.
+[2025-03-19 13:44:39Z INFO ConfigurationStore] HasCredentials()
+[2025-03-19 13:44:39Z INFO ConfigurationStore] stored True
+[2025-03-19 13:44:39Z INFO CredentialManager] GetCredentialProvider
+[2025-03-19 13:44:39Z INFO CredentialManager] Creating type OAuth
+[2025-03-19 13:44:39Z INFO CredentialManager] Creating credential type: OAuth
+[2025-03-19 13:44:39Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-03-19 13:44:39Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-03-19 13:44:39Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-03-19 13:44:39Z INFO GitHubActionsService] AAD Correlation ID for this token request: Unknown
+[2025-03-19 13:44:40Z INFO JobDispatcher] Job request 0 for plan b0449f54-93fc-4d57-8f9f-b37b3b557707 job e29adb2e-1048-5880-a635-e6b7d362ffbf received.
+[2025-03-19 13:44:40Z INFO MessageListener] Received job status event. JobState: Busy
+[2025-03-19 13:44:40Z INFO MessageListener] _getMessagesTokenSource is already disposed.
+[2025-03-19 13:44:40Z INFO JobDispatcher] Job request 9f24585b-db1b-5672-990f-12d710c54840 processed succeed.
+[2025-03-19 13:44:40Z INFO Terminal] WRITE LINE: 2025-03-19 13:44:40Z: Running job: Paper Draft
+[2025-03-19 13:44:40Z INFO JobDispatcher] Start renew job request 0 for job e29adb2e-1048-5880-a635-e6b7d362ffbf.
+[2025-03-19 13:44:40Z INFO JobDispatcher] Successfully renew job e29adb2e-1048-5880-a635-e6b7d362ffbf, job is valid till 19/03/2025 13:54:40
+[2025-03-19 13:44:40Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-03-19 13:44:40Z INFO ProcessInvokerWrapper] Starting process:
+[2025-03-19 13:44:40Z INFO ProcessInvokerWrapper]   File name: '/home/jenny/tensorflow-mri/actions-runner/bin/Runner.Worker'
+[2025-03-19 13:44:40Z INFO ProcessInvokerWrapper]   Arguments: 'spawnclient 156 161'
+[2025-03-19 13:44:40Z INFO ProcessInvokerWrapper]   Working directory: '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-03-19 13:44:40Z INFO ProcessInvokerWrapper]   Require exit code zero: 'False'
+[2025-03-19 13:44:40Z INFO ProcessInvokerWrapper]   Encoding web name:  ; code page: ''
+[2025-03-19 13:44:40Z INFO ProcessInvokerWrapper]   Force kill process on cancellation: 'True'
+[2025-03-19 13:44:40Z INFO ProcessInvokerWrapper]   Redirected STDIN: 'False'
+[2025-03-19 13:44:40Z INFO ProcessInvokerWrapper]   Persist current code page: 'False'
+[2025-03-19 13:44:40Z INFO ProcessInvokerWrapper]   Keep redirected STDIN open: 'False'
+[2025-03-19 13:44:40Z INFO ProcessInvokerWrapper]   High priority process: 'True'
+[2025-03-19 13:44:40Z INFO ProcessInvokerWrapper] Process started with process id 1872771, waiting for process exit.
+[2025-03-19 13:44:40Z INFO JobDispatcher] Send job request message to worker for job e29adb2e-1048-5880-a635-e6b7d362ffbf.
+[2025-03-19 13:44:40Z INFO ProcessChannel] Sending message of length 20908, with hash 'bc9c93f4b6911f94536a17080a411426fff25331e2ac6c2c0c8ffc5bae38fd29'
+[2025-03-19 13:44:40Z INFO JobNotification] Entering JobStarted Notification
+[2025-03-19 13:44:40Z INFO JobNotification] Entering StartMonitor
+[2025-03-19 13:44:47Z INFO ProcessInvokerWrapper] STDOUT/STDERR stream read finished.
+[2025-03-19 13:44:47Z INFO ProcessInvokerWrapper] STDOUT/STDERR stream read finished.
+[2025-03-19 13:44:47Z INFO ProcessInvokerWrapper] Finished process 1872771 with exit code 102, and elapsed time 00:00:06.8900968.
+[2025-03-19 13:44:47Z INFO JobDispatcher] Worker finished for job e29adb2e-1048-5880-a635-e6b7d362ffbf. Code: 102
+[2025-03-19 13:44:47Z INFO JobDispatcher] finish job request for job e29adb2e-1048-5880-a635-e6b7d362ffbf with result: Failed
+[2025-03-19 13:44:47Z INFO Terminal] WRITE LINE: 2025-03-19 13:44:47Z: Job Paper Draft completed with result: Failed
+[2025-03-19 13:44:47Z INFO JobDispatcher] Stop renew job request for job e29adb2e-1048-5880-a635-e6b7d362ffbf.
+[2025-03-19 13:44:47Z INFO JobDispatcher] job renew has been cancelled, stop renew job e29adb2e-1048-5880-a635-e6b7d362ffbf.
+[2025-03-19 13:44:47Z INFO JobNotification] Entering JobCompleted Notification
+[2025-03-19 13:44:47Z INFO JobNotification] Entering EndMonitor
+[2025-03-19 13:44:47Z INFO MessageListener] Received job status event. JobState: Online
+[2025-03-19 13:48:36Z INFO MessageListener] Message '2396369743901633684' received from session '6785f28f-46b8-409b-b987-346dc0132ec9'.
+[2025-03-19 13:48:36Z INFO ConfigurationStore] HasCredentials()
+[2025-03-19 13:48:36Z INFO ConfigurationStore] stored True
+[2025-03-19 13:48:36Z INFO CredentialManager] GetCredentialProvider
+[2025-03-19 13:48:36Z INFO CredentialManager] Creating type OAuth
+[2025-03-19 13:48:36Z INFO CredentialManager] Creating credential type: OAuth
+[2025-03-19 13:48:36Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-03-19 13:48:36Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-03-19 13:48:36Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-03-19 13:48:37Z INFO GitHubActionsService] AAD Correlation ID for this token request: Unknown
+[2025-03-19 13:48:37Z INFO JobDispatcher] Job request 0 for plan 5b2cb858-9d8b-4489-a424-71acb1f501b7 job 083e63f3-dfea-5722-950e-8b1f2439e1c7 received.
+[2025-03-19 13:48:37Z INFO MessageListener] Received job status event. JobState: Busy
+[2025-03-19 13:48:37Z INFO MessageListener] _getMessagesTokenSource is already disposed.
+[2025-03-19 13:48:37Z INFO JobDispatcher] Job request e29adb2e-1048-5880-a635-e6b7d362ffbf processed succeed.
+[2025-03-19 13:48:37Z INFO Terminal] WRITE LINE: 2025-03-19 13:48:37Z: Running job: Paper Draft
+[2025-03-19 13:48:37Z INFO JobDispatcher] Start renew job request 0 for job 083e63f3-dfea-5722-950e-8b1f2439e1c7.
+[2025-03-19 13:48:38Z INFO JobDispatcher] Successfully renew job 083e63f3-dfea-5722-950e-8b1f2439e1c7, job is valid till 19/03/2025 13:58:38
+[2025-03-19 13:48:38Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-03-19 13:48:38Z INFO ProcessInvokerWrapper] Starting process:
+[2025-03-19 13:48:38Z INFO ProcessInvokerWrapper]   File name: '/home/jenny/tensorflow-mri/actions-runner/bin/Runner.Worker'
+[2025-03-19 13:48:38Z INFO ProcessInvokerWrapper]   Arguments: 'spawnclient 148 156'
+[2025-03-19 13:48:38Z INFO ProcessInvokerWrapper]   Working directory: '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-03-19 13:48:38Z INFO ProcessInvokerWrapper]   Require exit code zero: 'False'
+[2025-03-19 13:48:38Z INFO ProcessInvokerWrapper]   Encoding web name:  ; code page: ''
+[2025-03-19 13:48:38Z INFO ProcessInvokerWrapper]   Force kill process on cancellation: 'True'
+[2025-03-19 13:48:38Z INFO ProcessInvokerWrapper]   Redirected STDIN: 'False'
+[2025-03-19 13:48:38Z INFO ProcessInvokerWrapper]   Persist current code page: 'False'
+[2025-03-19 13:48:38Z INFO ProcessInvokerWrapper]   Keep redirected STDIN open: 'False'
+[2025-03-19 13:48:38Z INFO ProcessInvokerWrapper]   High priority process: 'True'
+[2025-03-19 13:48:38Z INFO ProcessInvokerWrapper] Process started with process id 1910987, waiting for process exit.
+[2025-03-19 13:48:38Z INFO JobDispatcher] Send job request message to worker for job 083e63f3-dfea-5722-950e-8b1f2439e1c7.
+[2025-03-19 13:48:38Z INFO ProcessChannel] Sending message of length 20908, with hash 'f6339b3d7812cddbcc041b06da8cf920062453e8e2ca53438fc98cae63a74ae5'
+[2025-03-19 13:48:38Z INFO JobNotification] Entering JobStarted Notification
+[2025-03-19 13:48:38Z INFO JobNotification] Entering StartMonitor
+[2025-03-19 13:48:44Z INFO ProcessInvokerWrapper] STDOUT/STDERR stream read finished.
+[2025-03-19 13:48:44Z INFO ProcessInvokerWrapper] STDOUT/STDERR stream read finished.
+[2025-03-19 13:48:44Z INFO ProcessInvokerWrapper] Finished process 1910987 with exit code 102, and elapsed time 00:00:06.1923506.
+[2025-03-19 13:48:44Z INFO JobDispatcher] Worker finished for job 083e63f3-dfea-5722-950e-8b1f2439e1c7. Code: 102
+[2025-03-19 13:48:44Z INFO JobDispatcher] finish job request for job 083e63f3-dfea-5722-950e-8b1f2439e1c7 with result: Failed
+[2025-03-19 13:48:44Z INFO Terminal] WRITE LINE: 2025-03-19 13:48:44Z: Job Paper Draft completed with result: Failed
+[2025-03-19 13:48:44Z INFO JobDispatcher] Stop renew job request for job 083e63f3-dfea-5722-950e-8b1f2439e1c7.
+[2025-03-19 13:48:44Z INFO JobDispatcher] job renew has been cancelled, stop renew job 083e63f3-dfea-5722-950e-8b1f2439e1c7.
+[2025-03-19 13:48:44Z INFO JobNotification] Entering JobCompleted Notification
+[2025-03-19 13:48:44Z INFO JobNotification] Entering EndMonitor
+[2025-03-19 13:48:44Z INFO MessageListener] Received job status event. JobState: Online
+[2025-03-19 13:48:44Z INFO MessageListener] Message '7144451524485818918' received from session '6785f28f-46b8-409b-b987-346dc0132ec9'.
+[2025-03-19 13:48:44Z INFO ConfigurationStore] HasCredentials()
+[2025-03-19 13:48:44Z INFO ConfigurationStore] stored True
+[2025-03-19 13:48:44Z INFO CredentialManager] GetCredentialProvider
+[2025-03-19 13:48:44Z INFO CredentialManager] Creating type OAuth
+[2025-03-19 13:48:44Z INFO CredentialManager] Creating credential type: OAuth
+[2025-03-19 13:48:44Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-03-19 13:48:44Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-03-19 13:48:44Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-03-19 13:48:44Z INFO GitHubActionsService] AAD Correlation ID for this token request: Unknown
+[2025-03-19 13:48:45Z INFO JobDispatcher] Job request 0 for plan 5b2cb858-9d8b-4489-a424-71acb1f501b7 job a22b22c7-e90c-5d5f-9e20-307c2549ce9f received.
+[2025-03-19 13:48:45Z INFO MessageListener] Received job status event. JobState: Busy
+[2025-03-19 13:48:45Z INFO MessageListener] _getMessagesTokenSource is already disposed.
+[2025-03-19 13:48:45Z INFO JobDispatcher] Job request 083e63f3-dfea-5722-950e-8b1f2439e1c7 processed succeed.
+[2025-03-19 13:48:45Z INFO Terminal] WRITE LINE: 2025-03-19 13:48:45Z: Running job: Build package (3.8)
+[2025-03-19 13:48:45Z INFO JobDispatcher] Start renew job request 0 for job a22b22c7-e90c-5d5f-9e20-307c2549ce9f.
+[2025-03-19 13:48:45Z INFO JobDispatcher] Successfully renew job a22b22c7-e90c-5d5f-9e20-307c2549ce9f, job is valid till 19/03/2025 13:58:45
+[2025-03-19 13:48:45Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-03-19 13:48:45Z INFO ProcessInvokerWrapper] Starting process:
+[2025-03-19 13:48:45Z INFO ProcessInvokerWrapper]   File name: '/home/jenny/tensorflow-mri/actions-runner/bin/Runner.Worker'
+[2025-03-19 13:48:45Z INFO ProcessInvokerWrapper]   Arguments: 'spawnclient 155 159'
+[2025-03-19 13:48:45Z INFO ProcessInvokerWrapper]   Working directory: '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-03-19 13:48:45Z INFO ProcessInvokerWrapper]   Require exit code zero: 'False'
+[2025-03-19 13:48:45Z INFO ProcessInvokerWrapper]   Encoding web name:  ; code page: ''
+[2025-03-19 13:48:45Z INFO ProcessInvokerWrapper]   Force kill process on cancellation: 'True'
+[2025-03-19 13:48:45Z INFO ProcessInvokerWrapper]   Redirected STDIN: 'False'
+[2025-03-19 13:48:45Z INFO ProcessInvokerWrapper]   Persist current code page: 'False'
+[2025-03-19 13:48:45Z INFO ProcessInvokerWrapper]   Keep redirected STDIN open: 'False'
+[2025-03-19 13:48:45Z INFO ProcessInvokerWrapper]   High priority process: 'True'
+[2025-03-19 13:48:45Z INFO ProcessInvokerWrapper] Process started with process id 1911178, waiting for process exit.
+[2025-03-19 13:48:45Z INFO JobDispatcher] Send job request message to worker for job a22b22c7-e90c-5d5f-9e20-307c2549ce9f.
+[2025-03-19 13:48:45Z INFO ProcessChannel] Sending message of length 27078, with hash 'e5d0799baffb30c3e4e99f55abc1e66e92e8be00ee97990a1a6ba8eb581ead37'
+[2025-03-19 13:48:45Z INFO JobNotification] Entering JobStarted Notification
+[2025-03-19 13:48:45Z INFO JobNotification] Entering StartMonitor
+[2025-03-19 13:48:55Z INFO ProcessInvokerWrapper] STDOUT/STDERR stream read finished.
+[2025-03-19 13:48:55Z INFO ProcessInvokerWrapper] STDOUT/STDERR stream read finished.
+[2025-03-19 13:48:55Z INFO ProcessInvokerWrapper] Finished process 1911178 with exit code 102, and elapsed time 00:00:09.4486856.
+[2025-03-19 13:48:55Z INFO JobDispatcher] Worker finished for job a22b22c7-e90c-5d5f-9e20-307c2549ce9f. Code: 102
+[2025-03-19 13:48:55Z INFO JobDispatcher] finish job request for job a22b22c7-e90c-5d5f-9e20-307c2549ce9f with result: Failed
+[2025-03-19 13:48:55Z INFO Terminal] WRITE LINE: 2025-03-19 13:48:55Z: Job Build package (3.8) completed with result: Failed
+[2025-03-19 13:48:55Z INFO JobDispatcher] Stop renew job request for job a22b22c7-e90c-5d5f-9e20-307c2549ce9f.
+[2025-03-19 13:48:55Z INFO JobDispatcher] job renew has been cancelled, stop renew job a22b22c7-e90c-5d5f-9e20-307c2549ce9f.
+[2025-03-19 13:48:55Z INFO JobNotification] Entering JobCompleted Notification
+[2025-03-19 13:48:55Z INFO JobNotification] Entering EndMonitor
+[2025-03-19 13:48:55Z INFO MessageListener] Received job status event. JobState: Online
+[2025-03-19 13:48:55Z INFO MessageListener] Message '8721832855488399904' received from session '6785f28f-46b8-409b-b987-346dc0132ec9'.
+[2025-03-19 13:48:55Z INFO ConfigurationStore] HasCredentials()
+[2025-03-19 13:48:55Z INFO ConfigurationStore] stored True
+[2025-03-19 13:48:55Z INFO CredentialManager] GetCredentialProvider
+[2025-03-19 13:48:55Z INFO CredentialManager] Creating type OAuth
+[2025-03-19 13:48:55Z INFO CredentialManager] Creating credential type: OAuth
+[2025-03-19 13:48:55Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-03-19 13:48:55Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-03-19 13:48:55Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-03-19 13:48:55Z INFO GitHubActionsService] AAD Correlation ID for this token request: Unknown
+[2025-03-19 13:48:55Z ERR  GitHubActionsService] POST request to https://run-actions-1-azure-eastus.actions.githubusercontent.com/12/acquirejob failed. HTTP Status: Conflict
+[2025-03-19 13:48:55Z INFO Runner] Skipping message Job. Job message already acquired '542d79f2-c579-51f8-8dc1-9c1e4b7f4fa6'. job assignment is invalid: MissingKey

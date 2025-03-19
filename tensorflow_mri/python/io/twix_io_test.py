@@ -25,10 +25,6 @@ class ParseTwixTest(test_util.TestCase):
   """Tests for `parse_twix` function."""
 
   def test_parse_twix(self):
-
-    import os
-    print("JAS current dir: ", os.getcwd())
-
     """Tests reading from a file."""
     contents = tf.io.read_file(TEST_FILE)
 

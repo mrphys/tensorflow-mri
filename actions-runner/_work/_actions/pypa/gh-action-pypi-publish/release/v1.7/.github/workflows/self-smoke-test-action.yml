@@ -1,0 +1,97 @@
+---
+
+name: 🧪
+
+on:   # yamllint disable-line rule:truthy
+  push:
+  pull_request:
+
+env:
+  devpi-password: abcd1234
+  devpi-username: root
+  devpi-port: 3141
+
+  FORCE_COLOR: 1  # Request colored output from CLI tools supporting it
+  MYPY_FORCE_COLOR: 1  # MyPy's color enforcement
+  PIP_DISABLE_PIP_VERSION_CHECK: 1
+  PIP_NO_PYTHON_VERSION_WARNING: 1
+  PIP_NO_WARN_SCRIPT_LOCATION: 1
+  PY_COLORS: 1  # Recognized by the `py` package, dependency of `pytest`
+  TOX_PARALLEL_NO_SPINNER: 1
+  TOX_TESTENV_PASSENV: >-  # Make tox-wrapped tools see color requests
+    FORCE_COLOR
+    MYPY_FORCE_COLOR
+    NO_COLOR
+    PY_COLORS
+    PYTEST_THEME
+    PYTEST_THEME_MODE
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+
+    services:
+      devpi:
+        image: muccg/devpi
+        env:
+          DEVPI_PASSWORD: ${{ env.devpi-password }}
+        ports:
+        - 3141
+
+    timeout-minutes: 2
+
+    steps:
+    - name: Check out the action locally
+      uses: actions/checkout@v3
+      with:
+        path: test
+    - name: Install the packaging-related tools
+      run: python3 -m pip install build twine
+      env:
+        PIP_CONSTRAINT: test/requirements/runtime.txt
+    - name: Create the stub package importable directory
+      run: mkdir -pv src/test_package
+    - name: Populate the stub package `__init__.py`
+      run: echo '__version__ = "0.1"' > src/test_package/__init__.py
+    - name: Populate the stub package `README.md`
+      run: echo "# Test Package" > README.md
+    - name: Populate the stub package `pyproject.toml`
+      run: echo "$CONTENTS" > pyproject.toml
+      env:
+        CONTENTS: |
+          [build-system]
+          requires = [
+            "setuptools == 65.6.3",
+          ]
+          build-backend = "setuptools.build_meta"
+
+          [project]
+          name = "test-package"
+          version = "0.1"
+          readme = "README.md"
+    - name: Build the stub package sdist and wheel distributions
+      run: python3 -m build
+    - name: Register the stub package in devpi
+      run: twine register dist/*.tar.gz
+      env:
+        TWINE_USERNAME: ${{ env.devpi-username }}
+        TWINE_PASSWORD: ${{ env.devpi-password }}
+        TWINE_REPOSITORY_URL: >-
+          http://localhost:${{
+            job.services.devpi.ports[env.devpi-port]
+          }}/${{
+            env.devpi-username
+          }}/public/
+    - name: ✅ Smoke-test the locally checked out action
+      uses: ./test
+      env:
+        DEBUG: >-
+          true
+        PATH: utter-nonsense
+      with:
+        user: ${{ env.devpi-username }}
+        password: ${{ env.devpi-password }}
+        repository-url: >-
+          http://devpi:${{ env.devpi-port }}/${{ env.devpi-username }}/public/
+
+...

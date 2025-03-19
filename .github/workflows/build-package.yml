@@ -15,8 +15,7 @@ jobs:
   build:
 
     name: Build package
-    #runs-on: ubuntu-24.04 # ubuntu-latest
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     container:
       image: ghcr.io/mrphys/tensorflow-manylinux:1.14.0
@@ -32,29 +31,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          path: main
-        #with:
-        #  lfs: true
-
-      - name: Free Disk Space Before Build
-        run: |
-          echo "Disk space before cleanup:"
-          df -h
-          sudo rm -rf /usr/local/.ghcup
-          sudo rm -rf /opt/hostedtoolcache/CodeQL
-          sudo rm -rf /usr/local/lib/android/sdk/ndk
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /usr/local/share/boost
-
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          
-          sudo apt-get clean
-          echo "Disk space after cleanup:"
-          df -h
-
-      - name: Get directory
-        run: ls
+          lfs: true
 
       - name: Lint code
         run: |
@@ -102,30 +79,12 @@ jobs:
           packages-dir: artifacts/
           skip-existing: true
 
-      - name: Free Disk Space After Build
-        run: |
-          echo "Disk space before post-build cleanup:"
-          df -h
-          sudo rm -rf /usr/local/.ghcup
-          sudo rm -rf /opt/hostedtoolcache/CodeQL
-          sudo rm -rf /usr/local/lib/android/sdk/ndk
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /usr/local/share/boost
-
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          
-          sudo apt-get clean
-          echo "Disk space after post-build cleanup:"
-          df -h
 
   release:
 
     name: Release
     needs: build
-    #runs-on: ubuntu-24.04 # ubuntu-latest
-    runs-on: self-hosted
-
+    runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags')
 
     steps:
@@ -179,27 +138,3 @@ jobs:
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
           packages-dir: artifacts/
-  paper:
-    #runs-on: ubuntu-24.04 # ubuntu-latest
-    runs-on: self-hosted
-    
-    name: Paper Draft
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      #- name: Build draft PDF
-      #  uses: openjournals/openjournals-draft-action@master
-      - name: Open Journals PDF Generator
-        uses: openjournals/openjournals-draft-action@v.1.0
-        with:
-          journal: joss
-          # This should be the path to the paper within your repo.
-          paper-path: paper.md
-      - name: Upload
-        uses: actions/upload-artifact@v4
-        with:
-          name: paper
-          # This is the output path where Pandoc will write the compiled
-          # PDF. Note, this should be the same directory as the input
-          # paper.md
-          path: paper.pdf

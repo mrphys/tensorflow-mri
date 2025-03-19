@@ -52,8 +52,8 @@ TensorFlow MRI contains operators for:
   layers and building blocks for neural networks, including support for
   complex-valued weights, inputs and outputs.
 * Linear algebra
-   (`tfmri.linalg <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/linalg>`_):
-   linear operators specialized for image processing and MRI.
+  (`tfmri.linalg <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/linalg>`_):
+  linear operators specialized for image processing and MRI.
 * Loss functions
   (`tfmri.losses <https://mrphys.github.io/tensorflow-mri/api_docs/tfmri/losses>`_):
   for classification, segmentation and image restoration.
@@ -145,7 +145,7 @@ Video Tutorial
 ---------------------
 
 
-Here is a video tutorial demonstrating how TensorFlow MRI can be used (including a specific example problem for creating fully sampled k-space data from undersampled raw data with partial-fourier, as well as creating coil-combined 'ground truth' images from this, and paired undersampled radial multi-coil complex data, which is used to train a 3D Unet. I also show how to do a Compressed Sensing (CS) reconstruction of the same raw-data)
+Here is a video tutorial demonstrating how TensorFlow MRI can be use (including a specific example problem for creating fully sampled k-space data from undersampled raw data with partial-fourier, as well as creating coil-combined 'ground truth' images from this, and paired undersampled radial multi-coild complex data, which is used to train a 3D Unet. I also show how to do a CS recosntruction of the same raw-data)
 
 [![Watch the video](tools/assets/thumb.png)](https://vimeo.com/1054518675/e19c8abad3)
 
