@@ -31,6 +31,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          path: main
         #with:
         #  lfs: true
 
@@ -50,6 +52,9 @@ jobs:
           sudo apt-get clean
           echo "Disk space after cleanup:"
           df -h
+
+      - name: Get directory
+        run: ls
 
       - name: Lint code
         run: |

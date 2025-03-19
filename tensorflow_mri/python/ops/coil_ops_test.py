@@ -163,6 +163,7 @@ class CoilCompressionTest(test_util.TestCase):
   def setUpClass(cls):
     super().setUpClass()
     cls.data = io_util.read_hdf5('tests/data/coil_ops_data.h5')
+    /home/jenny/tensorflow-mri/tests/data/coil_ops_data.h5
 
   # TODO(jmontalt): Look into SVD accuracy issues and re-enable these tests.
   # @test_util.run_in_graph_and_eager_modes
