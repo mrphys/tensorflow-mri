@@ -1,8 +1,8 @@
 #!/bin/bash
 
-SVC_NAME="actions.runner.mrphys-tensorflow-mri.eagle.service"
+SVC_NAME="actions.runner.mrphys.eagle.service"
 SVC_NAME=${SVC_NAME// /_}
-SVC_DESCRIPTION="GitHub Actions Runner (mrphys-tensorflow-mri.eagle)"
+SVC_DESCRIPTION="GitHub Actions Runner (mrphys.eagle)"
 
 SVC_CMD=$1
 arg_2=${2}
