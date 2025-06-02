@@ -7,7 +7,7 @@
   "targets": {
     ".NETCoreApp,Version=v8.0": {},
     ".NETCoreApp,Version=v8.0/linux-x64": {
-      "Runner.Common/2.323.0": {
+      "Runner.Common/2.324.0": {
         "dependencies": {
           "Microsoft.Win32.Registry": "5.0.0",
           "Newtonsoft.Json": "13.0.3",
@@ -39,27 +39,26 @@
           }
         }
       },
-      "Azure.Storage.Blobs/12.23.0": {
+      "Azure.Storage.Blobs/12.24.0": {
         "dependencies": {
-          "Azure.Storage.Common": "12.22.0",
-          "System.Text.Json": "6.0.10"
+          "Azure.Storage.Common": "12.23.0"
         },
         "runtime": {
-          "lib/net6.0/Azure.Storage.Blobs.dll": {
-            "assemblyVersion": "12.23.0.0",
-            "fileVersion": "12.2300.24.56203"
+          "lib/net8.0/Azure.Storage.Blobs.dll": {
+            "assemblyVersion": "12.24.0.0",
+            "fileVersion": "12.2400.25.16105"
           }
         }
       },
-      "Azure.Storage.Common/12.22.0": {
+      "Azure.Storage.Common/12.23.0": {
         "dependencies": {
           "Azure.Core": "1.44.1",
           "System.IO.Hashing": "6.0.0"
         },
         "runtime": {
-          "lib/net6.0/Azure.Storage.Common.dll": {
-            "assemblyVersion": "12.22.0.0",
-            "fileVersion": "12.2200.24.56203"
+          "lib/net8.0/Azure.Storage.Common.dll": {
+            "assemblyVersion": "12.23.0.0",
+            "fileVersion": "12.2300.25.16105"
           }
         }
       },
@@ -969,13 +968,13 @@
         "runtime": {
           "Runner.Sdk.dll": {
             "assemblyVersion": "1.0.0",
-            "fileVersion": "2.323.0.0"
+            "fileVersion": "2.324.0.0"
           }
         }
       },
       "Sdk/1.0.0": {
         "dependencies": {
-          "Azure.Storage.Blobs": "12.23.0",
+          "Azure.Storage.Blobs": "12.24.0",
           "Microsoft.AspNet.WebApi.Client": "6.0.0",
           "Microsoft.Win32.Registry": "5.0.0",
           "Minimatch": "2.0.0",
@@ -992,14 +991,14 @@
         "runtime": {
           "Sdk.dll": {
             "assemblyVersion": "1.0.0",
-            "fileVersion": "2.323.0.0"
+            "fileVersion": "2.324.0.0"
           }
         }
       }
     }
   },
   "libraries": {
-    "Runner.Common/2.323.0": {
+    "Runner.Common/2.324.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
@@ -1011,19 +1010,19 @@
       "path": "azure.core/1.44.1",
       "hashPath": "azure.core.1.44.1.nupkg.sha512"
     },
-    "Azure.Storage.Blobs/12.23.0": {
+    "Azure.Storage.Blobs/12.24.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-wokJ5KX/iViQQ32xyCu69+Ter0aR4B9QQ+oR9NCpc/WPIanxnDErrmFfdmE7K8ZdccjHkvE/wEnqJxaF1+5wFg==",
-      "path": "azure.storage.blobs/12.23.0",
-      "hashPath": "azure.storage.blobs.12.23.0.nupkg.sha512"
+      "sha512": "sha512-0SWiMtEYcemn5U69BqVPdqGDwcbl+lsF9L3WFPpqk1Db5g+ytr3L3GmUxMbvvdPNuFwTf03kKtWJpW/qW33T8A==",
+      "path": "azure.storage.blobs/12.24.0",
+      "hashPath": "azure.storage.blobs.12.24.0.nupkg.sha512"
     },
-    "Azure.Storage.Common/12.22.0": {
+    "Azure.Storage.Common/12.23.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-0Vm30bRpQ0fcswB0xQMhKAOSXnRygnF2f/029uPaIDLaj1/yfX4jmU0fFjJe9ojGEj/vlAmsApCEOyL9if6zHg==",
-      "path": "azure.storage.common/12.22.0",
-      "hashPath": "azure.storage.common.12.22.0.nupkg.sha512"
+      "sha512": "sha512-X/pe1LS3lC6s6MSL7A6FzRfnB6P72rNBt5oSuyan6Q4Jxr+KiN9Ufwqo32YLHOVfPcB8ESZZ4rBDketn+J37Rw==",
+      "path": "azure.storage.common/12.23.0",
+      "hashPath": "azure.storage.common.12.23.0.nupkg.sha512"
     },
     "Microsoft.AspNet.WebApi.Client/6.0.0": {
       "type": "package",

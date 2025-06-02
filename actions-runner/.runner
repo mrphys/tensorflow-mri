@@ -1,9 +1,9 @@
 ﻿{
-  "agentId": 69,
+  "agentId": 25,
   "agentName": "eagle",
   "poolId": 1,
   "poolName": "Default",
-  "serverUrl": "https://pipelinesghubeus4.actions.githubusercontent.com/NTUZowzK3aqQAAwnopNgDNqxgAD4gF99Up9OfcDRpxA9LKTUKY/",
-  "gitHubUrl": "https://github.com/mrphys",
+  "serverUrl": "https://pipelinesghubeus25.actions.githubusercontent.com/vt3bImj3043IXjYZVOBEgt9xtkc1LUzoh1ehrojRmktneQJqoL/",
+  "gitHubUrl": "https://github.com/mrphys/tensorflow-mri",
   "workFolder": "_work"
 }

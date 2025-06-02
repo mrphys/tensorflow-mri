@@ -1,0 +1,225 @@
+[2025-06-02 09:12:33Z INFO HostContext] No proxy settings were found based on environmental variables (http_proxy/https_proxy/HTTP_PROXY/HTTPS_PROXY)
+[2025-06-02 09:12:33Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-06-02 09:12:33Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri/actions-runner'
+[2025-06-02 09:12:33Z INFO HostContext] Well known config file 'Credentials': '/home/jenny/tensorflow-mri/actions-runner/.credentials'
+[2025-06-02 09:12:33Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-06-02 09:12:33Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri/actions-runner'
+[2025-06-02 09:12:33Z INFO HostContext] Well known config file 'Runner': '/home/jenny/tensorflow-mri/actions-runner/.runner'
+[2025-06-02 09:12:33Z INFO Listener] Runner is built for Linux (X64) - linux-x64.
+[2025-06-02 09:12:33Z INFO Listener] RuntimeInformation: Ubuntu 20.04.6 LTS.
+[2025-06-02 09:12:33Z INFO Listener] Version: 2.324.0
+[2025-06-02 09:12:33Z INFO Listener] Commit: da3412efd49b1cf1a0fbdcbcee4e4ac4cc2177c8
+[2025-06-02 09:12:33Z INFO Listener] Culture: en-GB
+[2025-06-02 09:12:33Z INFO Listener] UI Culture: en-GB
+[2025-06-02 09:12:33Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-06-02 09:12:33Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri/actions-runner'
+[2025-06-02 09:12:33Z INFO Listener] Validating directory permissions for: '/home/jenny/tensorflow-mri/actions-runner'
+[2025-06-02 09:12:33Z INFO CommandLineParser] Parse
+[2025-06-02 09:12:33Z INFO CommandLineParser] Parsing 5 args
+[2025-06-02 09:12:33Z INFO CommandLineParser] parsing argument
+[2025-06-02 09:12:33Z INFO CommandLineParser] HasArgs: False
+[2025-06-02 09:12:33Z INFO CommandLineParser] Adding Command: configure
+[2025-06-02 09:12:33Z INFO CommandLineParser] parsing argument
+[2025-06-02 09:12:33Z INFO CommandLineParser] HasArgs: True
+[2025-06-02 09:12:33Z INFO CommandLineParser] arg: url
+[2025-06-02 09:12:33Z INFO CommandLineParser] parsing argument
+[2025-06-02 09:12:33Z INFO CommandLineParser] HasArgs: True
+[2025-06-02 09:12:33Z INFO CommandLineParser] Adding option 'url': 'https://github.com/mrphys/tensorflow-mri'
+[2025-06-02 09:12:33Z INFO CommandLineParser] parsing argument
+[2025-06-02 09:12:33Z INFO CommandLineParser] HasArgs: True
+[2025-06-02 09:12:33Z INFO CommandLineParser] arg: token
+[2025-06-02 09:12:33Z INFO CommandLineParser] parsing argument
+[2025-06-02 09:12:33Z INFO CommandLineParser] HasArgs: True
+[2025-06-02 09:12:33Z INFO CommandLineParser] Adding option 'token': '***'
+[2025-06-02 09:12:33Z INFO Listener] Arguments parsed
+[2025-06-02 09:12:33Z INFO Runner] ExecuteCommand
+[2025-06-02 09:12:33Z INFO ConfigurationStore] currentAssemblyLocation: /home/jenny/tensorflow-mri/actions-runner/bin/Runner.Listener.dll
+[2025-06-02 09:12:33Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-06-02 09:12:33Z INFO ConfigurationStore] binPath: /home/jenny/tensorflow-mri/actions-runner/bin
+[2025-06-02 09:12:33Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-06-02 09:12:33Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri/actions-runner'
+[2025-06-02 09:12:33Z INFO ConfigurationStore] RootFolder: /home/jenny/tensorflow-mri/actions-runner
+[2025-06-02 09:12:33Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-06-02 09:12:33Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri/actions-runner'
+[2025-06-02 09:12:33Z INFO HostContext] Well known config file 'Runner': '/home/jenny/tensorflow-mri/actions-runner/.runner'
+[2025-06-02 09:12:33Z INFO ConfigurationStore] ConfigFilePath: /home/jenny/tensorflow-mri/actions-runner/.runner
+[2025-06-02 09:12:33Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-06-02 09:12:33Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri/actions-runner'
+[2025-06-02 09:12:33Z INFO HostContext] Well known config file 'MigratedRunner': '/home/jenny/tensorflow-mri/actions-runner/.runner_migrated'
+[2025-06-02 09:12:33Z INFO ConfigurationStore] MigratedConfigFilePath: /home/jenny/tensorflow-mri/actions-runner/.runner_migrated
+[2025-06-02 09:12:33Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-06-02 09:12:33Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri/actions-runner'
+[2025-06-02 09:12:33Z INFO HostContext] Well known config file 'Credentials': '/home/jenny/tensorflow-mri/actions-runner/.credentials'
+[2025-06-02 09:12:33Z INFO ConfigurationStore] CredFilePath: /home/jenny/tensorflow-mri/actions-runner/.credentials
+[2025-06-02 09:12:33Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-06-02 09:12:33Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri/actions-runner'
+[2025-06-02 09:12:33Z INFO HostContext] Well known config file 'MigratedCredentials': '/home/jenny/tensorflow-mri/actions-runner/.credentials_migrated'
+[2025-06-02 09:12:33Z INFO ConfigurationStore] MigratedCredFilePath: /home/jenny/tensorflow-mri/actions-runner/.credentials_migrated
+[2025-06-02 09:12:33Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-06-02 09:12:33Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri/actions-runner'
+[2025-06-02 09:12:33Z INFO HostContext] Well known config file 'Service': '/home/jenny/tensorflow-mri/actions-runner/.service'
+[2025-06-02 09:12:33Z INFO ConfigurationStore] ServiceConfigFilePath: /home/jenny/tensorflow-mri/actions-runner/.service
+[2025-06-02 09:12:33Z INFO CommandSettings] Flag 'help': 'False'
+[2025-06-02 09:12:33Z INFO CommandSettings] Flag 'version': 'False'
+[2025-06-02 09:12:33Z INFO CommandSettings] Flag 'commit': 'False'
+[2025-06-02 09:12:33Z INFO CommandSettings] Flag 'check': 'False'
+[2025-06-02 09:12:33Z INFO CommandSettings] Command 'configure': 'True'
+[2025-06-02 09:12:33Z INFO Terminal] WRITE LINE: 
+[2025-06-02 09:12:33Z INFO Terminal] WRITE LINE: --------------------------------------------------------------------------------
+[2025-06-02 09:12:33Z INFO Terminal] WRITE LINE: |        ____ _ _   _   _       _          _        _   _                      |
+[2025-06-02 09:12:33Z INFO Terminal] WRITE LINE: |       / ___(_) |_| | | |_   _| |__      / \   ___| |_(_) ___  _ __  ___      |
+[2025-06-02 09:12:33Z INFO Terminal] WRITE LINE: |      | |  _| | __| |_| | | | | '_ \    / _ \ / __| __| |/ _ \| '_ \/ __|     |
+[2025-06-02 09:12:33Z INFO Terminal] WRITE LINE: |      | |_| | | |_|  _  | |_| | |_) |  / ___ \ (__| |_| | (_) | | | \__ \     |
+[2025-06-02 09:12:33Z INFO Terminal] WRITE LINE: |       \____|_|\__|_| |_|\__,_|_.__/  /_/   \_\___|\__|_|\___/|_| |_|___/     |
+[2025-06-02 09:12:33Z INFO Terminal] WRITE LINE: |                                                                              |
+[2025-06-02 09:12:33Z INFO Terminal] WRITE: |                       
+[2025-06-02 09:12:33Z INFO Terminal] WRITE: Self-hosted runner registration
+[2025-06-02 09:12:33Z INFO Terminal] WRITE LINE:                         |
+[2025-06-02 09:12:33Z INFO Terminal] WRITE LINE: |                                                                              |
+[2025-06-02 09:12:33Z INFO Terminal] WRITE LINE: --------------------------------------------------------------------------------
+[2025-06-02 09:12:33Z INFO ConfigurationManager] ConfigureAsync
+[2025-06-02 09:12:33Z INFO CommandSettings] Flag 'generateServiceConfig': 'False'
+[2025-06-02 09:12:33Z INFO ConfigurationStore] IsConfigured()
+[2025-06-02 09:12:33Z INFO ConfigurationStore] IsConfigured: False
+[2025-06-02 09:12:33Z INFO ConfigurationManager] Is configured: False
+[2025-06-02 09:12:33Z INFO CommandSettings] Arg 'url': 'https://github.com/mrphys/tensorflow-mri'
+[2025-06-02 09:12:33Z INFO CommandSettings] Remove url from Arg dictionary.
+[2025-06-02 09:12:33Z INFO CommandSettings] Arg 'token': '***'
+[2025-06-02 09:12:33Z INFO CommandSettings] Remove token from Arg dictionary.
+[2025-06-02 09:12:34Z INFO ConfigurationManager] Http response code: OK from 'POST https://api.github.com/actions/runner-registration' (E7E8:2014C1:12BE7AB:17BA8DE:683D6B01)
+[2025-06-02 09:12:34Z INFO ConfigurationManager] Using V2 flow: False
+[2025-06-02 09:12:34Z INFO ConfigurationManager] cred retrieved via GitHub auth
+[2025-06-02 09:12:34Z INFO RunnerServer] EstablishVssConnection
+[2025-06-02 09:12:34Z INFO RunnerServer] Establish connection with 100 seconds timeout.
+[2025-06-02 09:12:34Z INFO GitHubActionsService] Starting operation Location.GetConnectionData
+[2025-06-02 09:12:34Z INFO RunnerServer] EstablishVssConnection
+[2025-06-02 09:12:34Z INFO RunnerServer] Establish connection with 60 seconds timeout.
+[2025-06-02 09:12:34Z INFO GitHubActionsService] Starting operation Location.GetConnectionData
+[2025-06-02 09:12:34Z INFO RunnerServer] EstablishVssConnection
+[2025-06-02 09:12:34Z INFO RunnerServer] Establish connection with 60 seconds timeout.
+[2025-06-02 09:12:34Z INFO GitHubActionsService] Starting operation Location.GetConnectionData
+[2025-06-02 09:12:34Z INFO GitHubActionsService] Finished operation Location.GetConnectionData
+[2025-06-02 09:12:34Z INFO GitHubActionsService] Finished operation Location.GetConnectionData
+[2025-06-02 09:12:34Z INFO GitHubActionsService] Finished operation Location.GetConnectionData
+[2025-06-02 09:12:35Z INFO Terminal] WRITE LINE: 
+[2025-06-02 09:12:35Z INFO ConfigurationManager] Test Connection complete.
+[2025-06-02 09:12:35Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-06-02 09:12:35Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri/actions-runner'
+[2025-06-02 09:12:35Z INFO HostContext] Well known config file 'RSACredentials': '/home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams'
+[2025-06-02 09:12:35Z INFO RSAFileKeyManager] Creating new RSA key using 2048-bit key length
+[2025-06-02 09:12:35Z INFO RSAFileKeyManager] Successfully saved RSA key parameters to file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-06-02 09:12:35Z INFO RSAFileKeyManager] Which2: 'chmod'
+[2025-06-02 09:12:35Z INFO RSAFileKeyManager] Location: '/usr/bin/chmod'
+[2025-06-02 09:12:35Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-06-02 09:12:35Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri/actions-runner'
+[2025-06-02 09:12:35Z INFO ProcessInvokerWrapper] Starting process:
+[2025-06-02 09:12:35Z INFO ProcessInvokerWrapper]   File name: '/usr/bin/chmod'
+[2025-06-02 09:12:35Z INFO ProcessInvokerWrapper]   Arguments: '600 /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams'
+[2025-06-02 09:12:35Z INFO ProcessInvokerWrapper]   Working directory: '/home/jenny/tensorflow-mri/actions-runner'
+[2025-06-02 09:12:35Z INFO ProcessInvokerWrapper]   Require exit code zero: 'False'
+[2025-06-02 09:12:35Z INFO ProcessInvokerWrapper]   Encoding web name:  ; code page: ''
+[2025-06-02 09:12:35Z INFO ProcessInvokerWrapper]   Force kill process on cancellation: 'False'
+[2025-06-02 09:12:35Z INFO ProcessInvokerWrapper]   Redirected STDIN: 'False'
+[2025-06-02 09:12:35Z INFO ProcessInvokerWrapper]   Persist current code page: 'False'
+[2025-06-02 09:12:35Z INFO ProcessInvokerWrapper]   Keep redirected STDIN open: 'False'
+[2025-06-02 09:12:35Z INFO ProcessInvokerWrapper]   High priority process: 'False'
+[2025-06-02 09:12:35Z INFO ProcessInvokerWrapper] Process started with process id 3659458, waiting for process exit.
+[2025-06-02 09:12:35Z INFO ProcessInvokerWrapper] STDOUT/STDERR stream read finished.
+[2025-06-02 09:12:35Z INFO ProcessInvokerWrapper] STDOUT/STDERR stream read finished.
+[2025-06-02 09:12:35Z INFO ProcessInvokerWrapper] Finished process 3659458 with exit code 0, and elapsed time 00:00:00.0032510.
+[2025-06-02 09:12:35Z INFO RSAFileKeyManager] Successfully set permissions for RSA key parameters file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-06-02 09:12:35Z INFO CommandSettings] Arg 'runnergroup': ''
+[2025-06-02 09:12:35Z INFO CommandSettings] Flag 'unattended': 'False'
+[2025-06-02 09:12:35Z INFO PromptManager] ReadValue
+[2025-06-02 09:12:35Z INFO Terminal] WRITE: Enter the name of the runner group to add this runner to: 
+[2025-06-02 09:12:35Z INFO Terminal] WRITE: [press Enter for Default] 
+[2025-06-02 09:12:35Z INFO Terminal] READ LINE
+[2025-06-02 09:12:38Z INFO Terminal] Read value: ''
+[2025-06-02 09:12:38Z INFO PromptManager] Falling back to the default: 'Default'
+[2025-06-02 09:12:38Z INFO Terminal] WRITE LINE: 
+[2025-06-02 09:12:38Z INFO ConfigurationManager] Found a self-hosted runner group with id 1 and name Default
+[2025-06-02 09:12:38Z INFO CommandSettings] Flag 'disableupdate': 'False'
+[2025-06-02 09:12:38Z INFO CommandSettings] Flag 'ephemeral': 'False'
+[2025-06-02 09:12:38Z INFO CommandSettings] Arg 'name': ''
+[2025-06-02 09:12:38Z INFO CommandSettings] Flag 'unattended': 'False'
+[2025-06-02 09:12:38Z INFO PromptManager] ReadValue
+[2025-06-02 09:12:38Z INFO Terminal] WRITE: Enter the name of runner: 
+[2025-06-02 09:12:38Z INFO Terminal] WRITE: [press Enter for eagle] 
+[2025-06-02 09:12:38Z INFO Terminal] READ LINE
+[2025-06-02 09:12:38Z INFO Terminal] Read value: ''
+[2025-06-02 09:12:38Z INFO PromptManager] Falling back to the default: 'eagle'
+[2025-06-02 09:12:38Z INFO Terminal] WRITE LINE: 
+[2025-06-02 09:12:38Z INFO CommandSettings] Arg 'labels': ''
+[2025-06-02 09:12:38Z INFO CommandSettings] Flag 'unattended': 'False'
+[2025-06-02 09:12:38Z INFO PromptManager] ReadValue
+[2025-06-02 09:12:38Z INFO Terminal] WRITE: This runner will have the following labels: 'self-hosted', 'Linux', 'X64' 
+Enter any additional labels (ex. label-1,label-2): 
+[2025-06-02 09:12:38Z INFO Terminal] WRITE: [press Enter to skip] 
+[2025-06-02 09:12:38Z INFO Terminal] READ LINE
+[2025-06-02 09:12:39Z INFO Terminal] Read value: ''
+[2025-06-02 09:12:39Z INFO Terminal] WRITE LINE: 
+[2025-06-02 09:12:39Z INFO CommandSettings] Flag 'disableupdate': 'False'
+[2025-06-02 09:12:39Z INFO CommandSettings] Flag 'no-default-labels': 'False'
+[2025-06-02 09:12:39Z INFO CommandSettings] Flag 'disableupdate': 'False'
+[2025-06-02 09:12:39Z INFO CommandSettings] Flag 'ephemeral': 'False'
+[2025-06-02 09:12:39Z INFO ConfigurationStore] Saving OAuth credential @ /home/jenny/tensorflow-mri/actions-runner/.credentials
+[2025-06-02 09:12:39Z INFO ConfigurationStore] Credentials Saved.
+[2025-06-02 09:12:39Z INFO ConfigurationStore] HasCredentials()
+[2025-06-02 09:12:39Z INFO ConfigurationStore] stored True
+[2025-06-02 09:12:39Z INFO CredentialManager] GetCredentialProvider
+[2025-06-02 09:12:39Z INFO CredentialManager] Creating type OAuth
+[2025-06-02 09:12:39Z INFO CredentialManager] Creating credential type: OAuth
+[2025-06-02 09:12:39Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-06-02 09:12:39Z INFO RunnerServer] EstablishVssConnection
+[2025-06-02 09:12:39Z INFO RunnerServer] Establish connection with 100 seconds timeout.
+[2025-06-02 09:12:39Z INFO GitHubActionsService] Starting operation Location.GetConnectionData
+[2025-06-02 09:12:39Z INFO RunnerServer] EstablishVssConnection
+[2025-06-02 09:12:39Z INFO RunnerServer] Establish connection with 60 seconds timeout.
+[2025-06-02 09:12:39Z INFO GitHubActionsService] Starting operation Location.GetConnectionData
+[2025-06-02 09:12:39Z INFO RunnerServer] EstablishVssConnection
+[2025-06-02 09:12:39Z INFO RunnerServer] Establish connection with 60 seconds timeout.
+[2025-06-02 09:12:39Z INFO GitHubActionsService] Starting operation Location.GetConnectionData
+[2025-06-02 09:12:39Z INFO GitHubActionsService] Finished operation Location.GetConnectionData
+[2025-06-02 09:12:39Z INFO GitHubActionsService] Finished operation Location.GetConnectionData
+[2025-06-02 09:12:39Z INFO GitHubActionsService] Finished operation Location.GetConnectionData
+[2025-06-02 09:12:40Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-06-02 09:12:40Z INFO RSAFileKeyManager] Loading RSA key parameters from file /home/jenny/tensorflow-mri/actions-runner/.credentials_rsaparams
+[2025-06-02 09:12:41Z INFO GitHubActionsService] AAD Correlation ID for this token request: Unknown
+[2025-06-02 09:12:41Z INFO CommandSettings] Arg 'work': ''
+[2025-06-02 09:12:41Z INFO CommandSettings] Flag 'unattended': 'False'
+[2025-06-02 09:12:41Z INFO PromptManager] ReadValue
+[2025-06-02 09:12:41Z INFO Terminal] WRITE: Enter name of work folder: 
+[2025-06-02 09:12:41Z INFO Terminal] WRITE: [press Enter for _work] 
+[2025-06-02 09:12:41Z INFO Terminal] READ LINE
+[2025-06-02 09:12:43Z INFO Terminal] Read value: ''
+[2025-06-02 09:12:43Z INFO PromptManager] Falling back to the default: '_work'
+[2025-06-02 09:12:43Z INFO ConfigurationStore] Saving runner settings.
+[2025-06-02 09:12:43Z INFO ConfigurationStore] Settings Saved.
+[2025-06-02 09:12:43Z INFO Terminal] WRITE LINE: 
+[2025-06-02 09:12:43Z INFO Terminal] WRITE LINE: 
+[2025-06-02 09:12:43Z INFO SystemDControlManager] Service name 'actions.runner.mrphys-tensorflow-mri.eagle.service' display name 'GitHub Actions Runner (mrphys-tensorflow-mri.eagle)' will be used for service configuration.
+[2025-06-02 09:12:43Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-06-02 09:12:43Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri/actions-runner'
+[2025-06-02 09:12:43Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-06-02 09:12:43Z INFO HostContext] Well known directory 'Bin': '/home/jenny/tensorflow-mri/actions-runner/bin'
+[2025-06-02 09:12:43Z INFO HostContext] Well known directory 'Root': '/home/jenny/tensorflow-mri/actions-runner'
+[2025-06-02 09:12:43Z INFO UnixUtil] Which2: 'chmod'
+[2025-06-02 09:12:43Z INFO UnixUtil] Location: '/usr/bin/chmod'
+[2025-06-02 09:12:43Z INFO UnixUtil] Running /usr/bin/chmod 755 "/home/jenny/tensorflow-mri/actions-runner/svc.sh"
+[2025-06-02 09:12:43Z INFO ProcessInvokerWrapper] Starting process:
+[2025-06-02 09:12:43Z INFO ProcessInvokerWrapper]   File name: '/usr/bin/chmod'
+[2025-06-02 09:12:43Z INFO ProcessInvokerWrapper]   Arguments: '755 "/home/jenny/tensorflow-mri/actions-runner/svc.sh"'
+[2025-06-02 09:12:43Z INFO ProcessInvokerWrapper]   Working directory: '/home/jenny/tensorflow-mri/actions-runner'
+[2025-06-02 09:12:43Z INFO ProcessInvokerWrapper]   Require exit code zero: 'True'
+[2025-06-02 09:12:43Z INFO ProcessInvokerWrapper]   Encoding web name:  ; code page: ''
+[2025-06-02 09:12:43Z INFO ProcessInvokerWrapper]   Force kill process on cancellation: 'False'
+[2025-06-02 09:12:43Z INFO ProcessInvokerWrapper]   Redirected STDIN: 'False'
+[2025-06-02 09:12:43Z INFO ProcessInvokerWrapper]   Persist current code page: 'False'
+[2025-06-02 09:12:43Z INFO ProcessInvokerWrapper]   Keep redirected STDIN open: 'False'
+[2025-06-02 09:12:43Z INFO ProcessInvokerWrapper]   High priority process: 'False'
+[2025-06-02 09:12:43Z INFO ProcessInvokerWrapper] Updated oom_score_adj to 500 for PID: 3659644.
+[2025-06-02 09:12:43Z INFO ProcessInvokerWrapper] Process started with process id 3659644, waiting for process exit.
+[2025-06-02 09:12:43Z INFO ProcessInvokerWrapper] STDOUT/STDERR stream read finished.
+[2025-06-02 09:12:43Z INFO ProcessInvokerWrapper] STDOUT/STDERR stream read finished.
+[2025-06-02 09:12:43Z INFO ProcessInvokerWrapper] Finished process 3659644 with exit code 0, and elapsed time 00:00:00.0008893.
+[2025-06-02 09:12:43Z INFO Listener] Runner execution has finished with return code 0
